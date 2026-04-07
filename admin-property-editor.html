@@ -167,6 +167,14 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .pe-photo-num{width:24px;height:24px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);flex-shrink:0;margin-top:11px;}
 .pe-photo-preview{width:60px;height:46px;border-radius:8px;background:var(--bg);overflow:hidden;flex-shrink:0;margin-top:7px;display:none;}
 .pe-photo-preview img{width:100%;height:100%;object-fit:cover;}
+.pe-photo-group{margin-bottom:24px;}
+.pe-photo-group-label{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.pe-photo-group-label .pe-label{margin-bottom:0;}
+.pe-room-photos-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:12px;}
+.pe-room-photos-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.pe-room-photos-card-title{font-family:'Fraunces',serif;font-size:15px;font-weight:400;color:var(--text);}
+.pe-room-photos-card-title .pe-room-photos-empty{color:var(--text3);font-style:italic;font-size:13px;font-family:inherit;}
+.pe-room-photos-empty-msg{padding:18px;background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;font-size:13px;color:var(--text3);text-align:center;}
 .pe-hero-preview{width:100%;height:180px;border-radius:10px;background:var(--bg);overflow:hidden;margin-top:10px;display:none;border:1px solid var(--border);}
 .pe-hero-preview img{width:100%;height:100%;object-fit:cover;}
 
@@ -366,11 +374,45 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 3. PHOTOS -->
+      <!-- 3. ROOMS & PRICING -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
             <div class="pe-section-num">3</div>
+            <div class="pe-section-title">Rooms & pricing</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="addRoom()">+ Add room type</button>
+        </div>
+        <div class="pe-section-body">
+          <div id="rooms-wrap" style="margin-bottom:14px;"></div>
+          <div style="padding:14px;background:var(--surface2);border-radius:9px;font-size:13px;color:var(--text2);line-height:1.6;">
+            <strong style="color:var(--text);">Commission:</strong> TheBearing collects the selected rate as a deposit. The property collects the remaining balance directly from the guest.
+          </div>
+          <div class="pe-grid-2" style="margin-top:14px;">
+            <div>
+              <label class="pe-label">Commission rate</label>
+              <select class="pe-input" id="f-commission" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option value="10">10% (standard)</option><option value="12">12%</option>
+                <option value="15">15%</option><option value="8">8% (negotiated)</option>
+              </select>
+            </div>
+            <div>
+              <label class="pe-label">Cancellation policy</label>
+              <select class="pe-input" id="f-cancel" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option>Free cancellation up to 30 days</option>
+                <option>Free cancellation up to 14 days</option>
+                <option>Non-refundable</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. PHOTOS -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">4</div>
             <div class="pe-section-title">Photos</div>
           </div>
           <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-ghost btn-sm">
@@ -382,66 +424,52 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
             <div class="pe-cf-icon">☁</div>
             <div class="pe-cf-text">Upload photos to <a href="https://dash.cloudflare.com" target="_blank" class="pe-cf-link">Cloudflare Images</a>, then paste the delivery URL here. Format: <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px;">https://imagedelivery.net/xxx/image-id/public</code></div>
           </div>
-          <div class="pe-field">
-            <label class="pe-label">Hero photo<span class="pe-label-req">*</span><span class="pe-label-hint">(main full-screen image)</span></label>
-            <div style="display:flex;gap:8px;">
-              <input class="pe-input" id="f-hero" placeholder="https://imagedelivery.net/..." oninput="prevHero(this)" style="flex:1;">
-              <button class="btn btn-ghost" onclick="testImg('f-hero')">Test</button>
+
+          <!-- HERO IMAGES -->
+          <div class="pe-photo-group">
+            <div class="pe-photo-group-label">
+              <label class="pe-label">Hero images<span class="pe-label-req">*</span><span class="pe-label-hint">(landing-page header rotation — first image = main hero)</span></label>
             </div>
-            <div class="pe-hero-preview" id="prev-hero"><img alt="Hero"></div>
+            <div id="hero-wrap" style="display:flex;flex-direction:column;gap:8px;">
+              <div class="pe-photo-row"><div class="pe-photo-num">1</div><input class="pe-input" id="f-h1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph1');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph1"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">2</div><input class="pe-input" id="f-h2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph2');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph2"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">3</div><input class="pe-input" id="f-h3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph3');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph3"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">4</div><input class="pe-input" id="f-h4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph4');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph4"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">5</div><input class="pe-input" id="f-h5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph5');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph5"><img alt=""></div></div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addHero()">+ Add hero image</button>
           </div>
-          <label class="pe-label" style="margin-bottom:12px;display:block;">Gallery photos<span class="pe-label-hint">(min 6 recommended)</span></label>
-          <div id="gallery-wrap" style="display:flex;flex-direction:column;gap:8px;">
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">1</div>
-              <input class="pe-input" id="f-g1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg1')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg1"><img alt=""></div>
+
+          <!-- GALLERY PHOTOS -->
+          <div class="pe-photo-group">
+            <div class="pe-photo-group-label">
+              <label class="pe-label">Gallery photos<span class="pe-label-hint">(editorial photo grid further down the page)</span></label>
             </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">2</div>
-              <input class="pe-input" id="f-g2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg2')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg2"><img alt=""></div>
+            <div id="gallery-wrap" style="display:flex;flex-direction:column;gap:8px;">
+              <div class="pe-photo-row"><div class="pe-photo-num">1</div><input class="pe-input" id="f-g1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg1');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg1"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">2</div><input class="pe-input" id="f-g2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg2');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg2"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">3</div><input class="pe-input" id="f-g3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg3');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg3"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">4</div><input class="pe-input" id="f-g4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg4');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg4"><img alt=""></div></div>
+              <div class="pe-photo-row"><div class="pe-photo-num">5</div><input class="pe-input" id="f-g5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg5');updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg5"><img alt=""></div></div>
             </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">3</div>
-              <input class="pe-input" id="f-g3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg3')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg3"><img alt=""></div>
-            </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">4</div>
-              <input class="pe-input" id="f-g4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg4')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg4"><img alt=""></div>
-            </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">5</div>
-              <input class="pe-input" id="f-g5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg5')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg5"><img alt=""></div>
-            </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">6</div>
-              <input class="pe-input" id="f-g6" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg6')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg6"><img alt=""></div>
-            </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">7</div>
-              <input class="pe-input" id="f-g7" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg7')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg7"><img alt=""></div>
-            </div>
-            <div class="pe-photo-row">
-              <div class="pe-photo-num">8</div>
-              <input class="pe-input" id="f-g8" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg8')" style="flex:1;">
-              <div class="pe-photo-preview" id="pg8"><img alt=""></div>
-            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addGallery()">+ Add gallery photo</button>
           </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addPhoto()">+ Add another photo</button>
+
+          <!-- ROOM PHOTOS -->
+          <div class="pe-photo-group" style="margin-bottom:0;">
+            <div class="pe-photo-group-label">
+              <label class="pe-label">Room photos<span class="pe-label-hint">(pulls in room types from section 3 — add 3 photos per room)</span></label>
+            </div>
+            <div id="room-photos-wrap"></div>
+          </div>
         </div>
       </div>
 
-      <!-- 4. DETAILS & TAGS -->
+      <!-- 5. DETAILS & TAGS -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
-            <div class="pe-section-num">4</div>
+            <div class="pe-section-num">5</div>
             <div class="pe-section-title">Details & tags</div>
           </div>
         </div>
@@ -477,40 +505,6 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
           <div class="pe-field">
             <label class="pe-label">Tags<span class="pe-label-hint">(click to toggle)</span></label>
             <div class="pe-tags" id="tags-wrap"><button class="pe-tag" onclick="toggleTag(this)">Adults only</button><button class="pe-tag" onclick="toggleTag(this)">Family-friendly</button><button class="pe-tag" onclick="toggleTag(this)">Remote</button><button class="pe-tag" onclick="toggleTag(this)">No Wi-Fi</button><button class="pe-tag" onclick="toggleTag(this)">Private chef</button><button class="pe-tag" onclick="toggleTag(this)">Butler service</button><button class="pe-tag" onclick="toggleTag(this)">Diving</button><button class="pe-tag" onclick="toggleTag(this)">Wellness</button><button class="pe-tag" onclick="toggleTag(this)">Wildlife</button><button class="pe-tag" onclick="toggleTag(this)">Cultural</button><button class="pe-tag" onclick="toggleTag(this)">Design</button><button class="pe-tag" onclick="toggleTag(this)">Wilderness</button><button class="pe-tag" onclick="toggleTag(this)">Beachfront</button><button class="pe-tag" onclick="toggleTag(this)">Mountain</button><button class="pe-tag" onclick="toggleTag(this)">Desert</button><button class="pe-tag" onclick="toggleTag(this)">Overwater</button><button class="pe-tag" onclick="toggleTag(this)">Architecture</button><button class="pe-tag" onclick="toggleTag(this)">Eco / Sustainable</button><button class="pe-tag" onclick="toggleTag(this)">Under 20 rooms</button><button class="pe-tag" onclick="toggleTag(this)">Private pool</button><button class="pe-tag" onclick="toggleTag(this)">All-inclusive</button><button class="pe-tag" onclick="toggleTag(this)">Safari</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 5. ROOMS & PRICING -->
-      <div class="pe-section">
-        <div class="pe-section-head">
-          <div class="pe-section-left">
-            <div class="pe-section-num">5</div>
-            <div class="pe-section-title">Rooms & pricing</div>
-          </div>
-          <button class="btn btn-ghost btn-sm" onclick="addRoom()">+ Add room type</button>
-        </div>
-        <div class="pe-section-body">
-          <div id="rooms-wrap" style="margin-bottom:14px;"></div>
-          <div style="padding:14px;background:var(--surface2);border-radius:9px;font-size:13px;color:var(--text2);line-height:1.6;">
-            <strong style="color:var(--text);">Commission:</strong> TheBearing collects the selected rate as a deposit. The property collects the remaining balance directly from the guest.
-          </div>
-          <div class="pe-grid-2" style="margin-top:14px;">
-            <div>
-              <label class="pe-label">Commission rate</label>
-              <select class="pe-input" id="f-commission" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
-                <option value="10">10% (standard)</option><option value="12">12%</option>
-                <option value="15">15%</option><option value="8">8% (negotiated)</option>
-              </select>
-            </div>
-            <div>
-              <label class="pe-label">Cancellation policy</label>
-              <select class="pe-input" id="f-cancel" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
-                <option>Free cancellation up to 30 days</option>
-                <option>Free cancellation up to 14 days</option>
-                <option>Non-refundable</option>
-              </select>
             </div>
           </div>
         </div>
@@ -745,335 +739,14 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 </div>
 
 <script>
+// ── PROPERTY EDITOR ─────────────────────────────────────────────────
+
+// Counters for dynamically-added rows. Defaults match the static rows
+// pre-populated in the HTML markup (5 hero, 5 gallery, 0 rooms).
+var heroCount = 5;
+var galleryCount = 5;
 var roomCount = 0;
-var photoCount = 8;
 
-
-var roomCount = 0;
-var galleryCount = 8;
-
-// ── ROOM MANAGEMENT ────────────────────────────────────────────────
-function addRoom() {
-  roomCount++;
-  var rc = document.getElementById('rooms-container');
-  var div = document.createElement('div');
-  div.id = 'room-' + roomCount;
-  div.style.cssText = 'background:var(--surface2);border-radius:var(--r);padding:14px 18px;border:1px solid var(--border);position:relative;';
-  div.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:flex-end;">' +
-    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Room / cabin type</label><input class="input" id="room-name-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updatePreview();updateJSON()"></div>' +
-    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Price per person</label><div style="display:flex;align-items:center;gap:0;"><div style="padding:8px 10px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.75rem;color:var(--text3);">$</div><input class="input" type="number" id="room-price-'+roomCount+'" placeholder="0" style="border-radius:0 var(--r) var(--r) 0;" oninput="updatePreview();updateJSON();updateCompleteness()"></div></div>' +
-    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Per</label><select class="input select" id="room-per-'+roomCount+'"><option>night</option><option>person</option><option>voyage</option><option>week</option></select></div>' +
-    '<button onclick="removeRoom('+roomCount+')" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
-    '</div>' +
-    '<div style="margin-top:8px;"><input class="input" id="room-desc-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="font-size:.86rem;"></div>';
-  rc.appendChild(div);
-  updateCompleteness();
-  updateJSON();
-}
-
-function removeRoom(n) {
-  var el = document.getElementById('room-' + n);
-  if (el) el.remove();
-  updateCompleteness();
-  updateJSON();
-}
-
-// ── PHOTO PREVIEW ───────────────────────────────────────────────────
-function previewPhoto(input, previewId) {
-  var url = input.value.trim();
-  var prev = document.getElementById(previewId);
-  if (!prev) return;
-  if (url) {
-    prev.style.display = 'block';
-    prev.querySelector('img').src = url;
-    if (previewId === 'prev-hero') {
-      var previewImg = document.getElementById('preview-img');
-      var placeholder = document.getElementById('preview-img-placeholder');
-      if (previewImg) { previewImg.src = url; previewImg.style.display = 'block'; }
-      if (placeholder) placeholder.style.display = 'none';
-    }
-  } else {
-    prev.style.display = 'none';
-  }
-  updateJSON();
-}
-
-function testPhoto(fieldId) {
-  var url = document.getElementById(fieldId).value.trim();
-  if (url) window.open(url, '_blank');
-  else showToast('Enter a URL first', 'warn');
-}
-
-// ── TAGS ─────────────────────────────────────────────────────────────
-function toggleTag(btn) {
-  btn.classList.toggle('active');
-  updatePreview();
-  updateJSON();
-}
-
-function getSelectedTags() {
-  return Array.from(document.querySelectorAll('#tags-container .chip.active')).map(b => b.textContent);
-}
-
-// ── GALLERY ────────────────────────────────────────────────────────
-function addGalleryField() {
-  galleryCount++;
-  var container = document.getElementById('gallery-fields');
-  var div = document.createElement('div');
-  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
-  var n = galleryCount;
-  div.innerHTML = '<div style="width:22px;text-align:center;font-size:.88rem;color:var(--text3);">'+n+'</div>' +
-    '<input class="input" id="f-photo-'+n+'" placeholder="https://imagedelivery.net/..." style="flex:1;" oninput="previewPhoto(this,&apos;prev-'+n+'&apos;);updateJSON()">' +
-    '<div id="prev-'+n+'" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>';
-  container.appendChild(div);
-}
-
-// ── WORD / CHAR COUNTERS ──────────────────────────────────────────
-function countWords(el, counterId) {
-  var words = el.value.trim().split(/\s+/).filter(w => w).length;
-  var el2 = document.getElementById(counterId);
-  if (el2) el2.textContent = words + ' words' + (words < 50 ? ' · aim for 50+' : words > 300 ? ' · aim for under 300' : ' ✓');
-}
-
-function countChars(el, counterId, max) {
-  var len = el.value.length;
-  var el2 = document.getElementById(counterId);
-  if (el2) {
-    el2.textContent = len + ' / ' + max + ' chars';
-    el2.style.color = len > max ? 'var(--red)' : len > max * 0.9 ? 'var(--amber)' : 'var(--text3)';
-  }
-}
-
-// ── HOOK COUNTER ──────────────────────────────────────────────────
-document.getElementById('f-hook').addEventListener('input', function() {
-  var el = document.getElementById('hook-count');
-  var len = this.value.length;
-  el.textContent = len + ' chars' + (len < 60 ? ' · aim for 60–120' : len > 150 ? ' · getting long' : ' ✓');
-});
-
-// ── COMPLETENESS ─────────────────────────────────────────────────
-var REQUIRED_FIELDS = [
-  { id: 'f-name', key: 'name', label: 'Property name' },
-  { id: 'f-type', key: 'type', label: 'Property type' },
-  { id: 'f-hook', key: 'hook', label: 'Hook line' },
-  { id: 'f-photo-hero', key: 'hero', label: 'Hero photo' },
-  { id: 'f-desc-short', key: 'desc', label: 'Short description' },
-  { id: 'f-access-name', key: 'access', label: 'Private Access experience' },
-  { id: 'f-contact-name', key: 'contact', label: 'Contact details' },
-];
-
-function updateCompleteness() {
-  var filled = 0;
-  REQUIRED_FIELDS.forEach(function(f) {
-    var el = document.getElementById(f.id);
-    var haVal = el && el.value.trim().length > 0;
-    // Update checklist
-    var chk = document.getElementById('chk-' + f.key);
-    if (chk) {
-      var dot = chk.querySelector('.chk-dot');
-      var svg = chk.querySelector('svg');
-      var span = chk.querySelector('span');
-      if (haVal) {
-        dot.style.borderColor = 'var(--emerald)';
-        dot.style.background = 'var(--em-dim)';
-        svg.style.opacity = '1';
-        svg.style.stroke = 'var(--emerald)';
-        span.style.color = 'var(--text)';
-      } else {
-        dot.style.borderColor = 'var(--border2)';
-        dot.style.background = 'transparent';
-        svg.style.opacity = '0';
-        span.style.color = 'var(--text3)';
-      }
-    }
-    if (haVal) filled++;
-  });
-  
-  // Check rooms
-  var hasRooms = roomCount > 0 && document.getElementById('room-price-1') && document.getElementById('room-price-1').value;
-  var chkRooms = document.getElementById('chk-rooms');
-  if (chkRooms) {
-    var dot = chkRooms.querySelector('.chk-dot');
-    var svg = chkRooms.querySelector('svg');
-    var span = chkRooms.querySelector('span');
-    if (hasRooms) {
-      dot.style.borderColor = 'var(--emerald)';dot.style.background = 'var(--em-dim)';
-      svg.style.opacity = '1';svg.style.stroke = 'var(--emerald)';span.style.color = 'var(--text)';
-      filled++;
-    }
-  }
-  
-  var total = REQUIRED_FIELDS.length + 1;
-  var pct = Math.round((filled / total) * 100);
-  document.getElementById('completeness-pct').textContent = pct + '%';
-  document.getElementById('completeness-bar').style.width = pct + '%';
-  
-  updatePreview();
-  updateJSON();
-}
-
-// ── LIVE CARD PREVIEW ─────────────────────────────────────────────
-function updatePreview() {
-  var name = document.getElementById('f-name').value || 'Property name';
-  var type = document.getElementById('f-type').value || 'Property type';
-  var country = document.getElementById('f-country').value || '';
-  var region = document.getElementById('f-region').value || '';
-  var hook = document.getElementById('f-hook').value || '"Your hook line will appear here..."';
-  var tags = getSelectedTags();
-  
-  // Get first room price
-  var priceText = 'From —';
-  for (var i = 1; i <= roomCount; i++) {
-    var priceEl = document.getElementById('room-price-' + i);
-    var perEl = document.getElementById('room-per-' + i);
-    if (priceEl && priceEl.value) {
-      priceText = 'From $' + parseInt(priceEl.value).toLocaleString() + ' / ' + (perEl ? perEl.value : 'night');
-      break;
-    }
-  }
-  
-  document.getElementById('preview-name').textContent = name;
-  document.getElementById('preview-region').textContent = (region || country) + (type ? ' · ' + type : '');
-  document.getElementById('preview-loc').textContent = [region, country].filter(Boolean).join(' · ');
-  document.getElementById('preview-hook').textContent = '"' + hook.replace(/^["']|["']$/g,'') + '"';
-  document.getElementById('preview-price').textContent = priceText;
-  
-  var tagsEl = document.getElementById('preview-tags');
-  tagsEl.innerHTML = tags.slice(0,4).map(t => '<span style="font-size:.9rem;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
-  
-  var tag = document.getElementById('f-tag').value;
-  var badgeEl = document.getElementById('preview-badge');
-  badgeEl.innerHTML = tag ? '<span style="font-size:.88rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);background:rgba(200,133,63,.85);color:#fff;">'+tag+'</span>' : '';
-}
-
-// ── JSON EXPORT ───────────────────────────────────────────────────
-function buildJSON() {
-  var photos = [];
-  for (var i = 1; i <= galleryCount; i++) {
-    var el = document.getElementById('f-photo-' + i);
-    if (el && el.value.trim()) photos.push(el.value.trim());
-  }
-  
-  var rooms = [];
-  for (var i = 1; i <= roomCount; i++) {
-    var nameEl = document.getElementById('room-name-' + i);
-    var priceEl = document.getElementById('room-price-' + i);
-    var perEl = document.getElementById('room-per-' + i);
-    var descEl = document.getElementById('room-desc-' + i);
-    if (nameEl && nameEl.value) {
-      rooms.push({
-        name: nameEl.value,
-        price: priceEl ? parseInt(priceEl.value) || 0 : 0,
-        per: perEl ? perEl.value : 'night',
-        description: descEl ? descEl.value : ''
-      });
-    }
-  }
-  
-  return {
-    name: document.getElementById('f-name').value,
-    slug: document.getElementById('f-slug').value,
-    type: document.getElementById('f-type').value,
-    status: document.getElementById('f-status').value,
-    country: document.getElementById('f-country').value,
-    region: document.getElementById('f-region').value,
-    airport: document.getElementById('f-airport').value,
-    tag: document.getElementById('f-tag').value,
-    hook: document.getElementById('f-hook').value,
-    description_short: document.getElementById('f-desc-short').value,
-    description_long: document.getElementById('f-desc-long').value,
-    verdict: document.getElementById('f-verdict').value,
-    photos: { hero: document.getElementById('f-photo-hero').value, gallery: photos },
-    details: {
-      total_rooms: document.getElementById('f-rooms-total').value,
-      max_guests: document.getElementById('f-max-guests').value,
-      year: document.getElementById('f-year').value,
-      awards: document.getElementById('f-awards').value,
-      sustainability: document.getElementById('f-sustainability').value,
-      season: document.getElementById('f-season').value,
-      getting_there: document.getElementById('f-getting-there').value,
-      tags: getSelectedTags()
-    },
-    rooms: rooms,
-    commission_rate: document.getElementById('f-commission').value,
-    cancellation: document.getElementById('f-cancellation').value,
-    private_access: {
-      name: document.getElementById('f-access-name').value,
-      description: document.getElementById('f-access-desc').value,
-      photo: document.getElementById('f-access-photo').value
-    },
-    contact: {
-      name: document.getElementById('f-contact-name').value,
-      title: document.getElementById('f-contact-title').value,
-      email: document.getElementById('f-contact-email').value,
-      phone: document.getElementById('f-contact-phone').value,
-      website: document.getElementById('f-website').value,
-      ical: document.getElementById('f-ical').value
-    },
-    seo: {
-      slug: document.getElementById('f-slug').value,
-      meta_title: document.getElementById('f-meta-title').value,
-      meta_description: document.getElementById('f-meta-desc').value
-    },
-    notes: document.getElementById('f-notes').value,
-    created_at: new Date().toISOString(),
-    published_at: null
-  };
-}
-
-function updateJSON() {
-  var json = buildJSON();
-  var el = document.getElementById('json-preview');
-  if (el) el.textContent = JSON.stringify(json, null, 2);
-}
-
-function copyJSON() {
-  var json = buildJSON();
-  navigator.clipboard.writeText(JSON.stringify(json, null, 2))
-    .then(() => showToast('JSON copied to clipboard', 'success'));
-}
-
-function saveDraft() {
-  var json = buildJSON();
-  localStorage.setItem('tb_property_draft', JSON.stringify(json));
-  showToast('Draft saved locally', 'success');
-}
-
-function previewProperty() {
-  showToast('Preview: connect backend to render live', 'warn');
-}
-
-function publishProperty() {
-  var name = document.getElementById('f-name').value;
-  var hero = document.getElementById('f-photo-hero').value;
-  var contact = document.getElementById('f-contact-email').value;
-  
-  if (!name || !hero || !contact) {
-    showToast('Complete required fields before publishing', 'warn');
-    return;
-  }
-  
-  var json = buildJSON();
-  json.published_at = new Date().toISOString();
-  json.status = 'live';
-  
-  // Copy JSON to clipboard for backend handoff
-  navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(() => {
-    showToast('Property data copied — send to backend to go live', 'success');
-  });
-  
-  // Show status bar
-  var bar = document.getElementById('status-bar');
-  bar.style.cssText = 'padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.92rem;background:var(--em-dim);border:1px solid rgba(16,185,129,.2);color:var(--emerald);';
-  bar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>' + name + '</strong> is ready to publish. JSON payload copied to clipboard — pass to your backend endpoint to create the live page.';
-}
-
-// Init — add first room
-addRoom();
-updateCompleteness();
-
-
-// Override/add the new field IDs to match new HTML
 function getFieldVal(id) {
   var el = document.getElementById(id);
   return el ? el.value.trim() : '';
@@ -1083,7 +756,7 @@ var REQUIRED = [
   {id:'f-name',    key:'name',    label:'Property name'},
   {id:'f-type',    key:'type',    label:'Property type'},
   {id:'f-hook',    key:'hook',    label:'Hook line'},
-  {id:'f-hero',    key:'hero',    label:'Hero photo'},
+  {id:'f-h1',      key:'hero',    label:'Hero photo'},
   {id:'f-desc-short', key:'desc', label:'Short description'},
   {id:'f-access-name', key:'access', label:'Private Access'},
   {id:'f-cname',   key:'contact', label:'Contact details'},
@@ -1201,23 +874,112 @@ function toggleTag(btn) {
   updateAll();
 }
 
-function addPhoto() {
-  photoCount++;
-  var wrap = document.getElementById('gallery-wrap');
+// ── HERO + GALLERY ADD ─────────────────────────────────────────────
+function addHero() {
+  heroCount++;
+  var n = heroCount;
+  var wrap = document.getElementById('hero-wrap');
   var div = document.createElement('div');
   div.className = 'pe-photo-row';
-  div.innerHTML = '<div class="pe-photo-num">'+photoCount+'</div><input class="pe-input" id="f-g'+photoCount+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg'+photoCount+'')" style="flex:1;"><div class="pe-photo-preview" id="pg'+photoCount+'"><img alt=""></div>';
+  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><input class="pe-input" id="f-h'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;ph'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph'+n+'"><img alt=""></div>';
   wrap.appendChild(div);
 }
 
+function addGallery() {
+  galleryCount++;
+  var n = galleryCount;
+  var wrap = document.getElementById('gallery-wrap');
+  var div = document.createElement('div');
+  div.className = 'pe-photo-row';
+  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><input class="pe-input" id="f-g'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;pg'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg'+n+'"><img alt=""></div>';
+  wrap.appendChild(div);
+}
+
+// Backward-compat alias in case any inline handler still calls addPhoto()
+function addPhoto() { addGallery(); }
+
+// ── ROOM PHOTOS ────────────────────────────────────────────────────
+// Each room (rn-N) gets a sub-card with id="rpc-N" containing 3 default
+// photo input rows. The card title syncs live with the room name.
+function addRoomPhoto(roomId) {
+  var card = document.getElementById('rpc-'+roomId);
+  if (!card) return;
+  var rowsWrap = card.querySelector('.pe-room-photos-rows');
+  // Count existing rows in this card to compute next index
+  var existing = rowsWrap.querySelectorAll('.pe-photo-row').length;
+  var idx = existing + 1;
+  var div = document.createElement('div');
+  div.className = 'pe-photo-row';
+  var inputId = 'rph-'+roomId+'-'+idx;
+  var prevId = 'rphp-'+roomId+'-'+idx;
+  div.innerHTML = '<div class="pe-photo-num">'+idx+'</div><input class="pe-input" id="'+inputId+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;'+prevId+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="'+prevId+'"><img alt=""></div>';
+  rowsWrap.appendChild(div);
+}
+
+function createRoomPhotoCard(roomId) {
+  var wrap = document.getElementById('room-photos-wrap');
+  if (!wrap) return;
+  // Remove empty-state placeholder if it exists
+  var empty = wrap.querySelector('.pe-room-photos-empty-msg');
+  if (empty) empty.remove();
+  var card = document.createElement('div');
+  card.className = 'pe-room-photos-card';
+  card.id = 'rpc-'+roomId;
+  card.innerHTML =
+    '<div class="pe-room-photos-card-head">' +
+      '<div class="pe-room-photos-card-title" id="rpc-title-'+roomId+'"><span class="pe-room-photos-empty">Untitled room</span></div>' +
+      '<button class="btn btn-ghost btn-sm" onclick="addRoomPhoto('+roomId+')">+ Add photo</button>' +
+    '</div>' +
+    '<div class="pe-room-photos-rows" style="display:flex;flex-direction:column;gap:8px;"></div>';
+  wrap.appendChild(card);
+  // Pre-populate 3 default photo rows
+  for (var i = 0; i < 3; i++) addRoomPhoto(roomId);
+}
+
+function syncRoomPhotoCardTitle(roomId) {
+  var nameInput = document.getElementById('rn-'+roomId);
+  var titleEl = document.getElementById('rpc-title-'+roomId);
+  if (!nameInput || !titleEl) return;
+  var v = nameInput.value.trim();
+  if (v) {
+    titleEl.textContent = 'Photos for ' + v;
+  } else {
+    titleEl.innerHTML = '<span class="pe-room-photos-empty">Untitled room</span>';
+  }
+}
+
+function showEmptyRoomPhotosState() {
+  var wrap = document.getElementById('room-photos-wrap');
+  if (!wrap) return;
+  if (wrap.children.length === 0) {
+    wrap.innerHTML = '<div class="pe-room-photos-empty-msg">Add a room type in section 3 to upload room photos.</div>';
+  }
+}
+
+// ── ROOMS ──────────────────────────────────────────────────────────
 function addRoom() {
   roomCount++;
+  var n = roomCount;
   var wrap = document.getElementById('rooms-wrap');
   var div = document.createElement('div');
   div.className = 'pe-room-row';
-  div.id = 'room-'+roomCount;
-  div.innerHTML = '<div class="pe-room-grid"><div><label class="pe-label">Room / cabin type</label><input class="pe-input" id="rn-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updateAll()"></div><div><label class="pe-label">Price</label><div style="display:flex;"><div style="padding:11px 11px;background:var(--surface2);border:1.5px solid var(--border2);border-right:none;border-radius:9px 0 0 9px;font-size:13px;color:var(--text3);">$</div><input class="pe-input" type="number" id="rp-'+roomCount+'" placeholder="0" style="border-radius:0 9px 9px 0;border-left:none;" oninput="updateAll()"></div></div><div><label class="pe-label">Per</label><select class="pe-input" id="ru-'+roomCount+'" style="appearance:none;"><option>night</option><option>person</option><option>voyage</option></select></div><button onclick="document.getElementById('room-'+roomCount+'').remove();updateAll();" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:22px;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><input class="pe-input" id="rd-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="margin-top:8px;font-size:13px;">';
+  div.id = 'room-'+n;
+  div.innerHTML = '<div class="pe-room-grid"><div><label class="pe-label">Room / cabin type</label><input class="pe-input" id="rn-'+n+'" placeholder="e.g. Deluxe Suite" oninput="syncRoomPhotoCardTitle('+n+');updateAll()"></div><div><label class="pe-label">Price</label><div style="display:flex;"><div style="padding:11px 11px;background:var(--surface2);border:1.5px solid var(--border2);border-right:none;border-radius:9px 0 0 9px;font-size:13px;color:var(--text3);">$</div><input class="pe-input" type="number" id="rp-'+n+'" placeholder="0" style="border-radius:0 9px 9px 0;border-left:none;" oninput="updateAll()"></div></div><div><label class="pe-label">Per</label><select class="pe-input" id="ru-'+n+'" style="appearance:none;" onchange="updateAll()"><option>night</option><option>person</option><option>voyage</option></select></div><button onclick="removeRoom('+n+')" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:22px;flex-shrink:0;" title="Remove room"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><input class="pe-input" id="rd-'+n+'" placeholder="Brief description — size, view, standout feature..." style="margin-top:8px;font-size:13px;" oninput="updateAll()">';
   wrap.appendChild(div);
+  // Mirror the room into the room-photos block
+  createRoomPhotoCard(n);
+  updateAll();
+}
+
+function removeRoom(n) {
+  // Remove the room row itself
+  var row = document.getElementById('room-'+n);
+  if (row) row.remove();
+  // Wipe its photo sub-card silently
+  var card = document.getElementById('rpc-'+n);
+  if (card) card.remove();
+  // Restore empty-state if no rooms left
+  showEmptyRoomPhotosState();
   updateAll();
 }
 
@@ -1234,17 +996,34 @@ function cc(el, id, max) {
 }
 
 function updateJSON() {
-  var photos = [];
-  for(var i=1;i<=photoCount;i++){ var e=document.getElementById('f-g'+i); if(e&&e.value.trim()) photos.push(e.value.trim()); }
+  // Hero images
+  var hero = [];
+  for(var i=1;i<=heroCount;i++){ var e=document.getElementById('f-h'+i); if(e&&e.value.trim()) hero.push(e.value.trim()); }
+  // Gallery images
+  var gallery = [];
+  for(var i=1;i<=galleryCount;i++){ var e=document.getElementById('f-g'+i); if(e&&e.value.trim()) gallery.push(e.value.trim()); }
+  // Rooms (with their photos keyed by room name)
   var rooms = [];
-  for(var i=1;i<=roomCount;i++){ var n=document.getElementById('rn-'+i),p=document.getElementById('rp-'+i),u=document.getElementById('ru-'+i),d=document.getElementById('rd-'+i); if(n&&n.value) rooms.push({name:n.value,price:parseInt(p&&p.value)||0,per:u?u.value:'night',description:d?d.value:''}); }
+  var roomPhotos = {};
+  for(var i=1;i<=roomCount;i++){
+    var n=document.getElementById('rn-'+i),p=document.getElementById('rp-'+i),u=document.getElementById('ru-'+i),d=document.getElementById('rd-'+i);
+    if(n&&n.value){
+      var roomName = n.value.trim();
+      rooms.push({name:roomName,price:parseInt(p&&p.value)||0,per:u?u.value:'night',description:d?d.value:''});
+      // Collect photos for this room
+      var rphotos = [];
+      var inputs = document.querySelectorAll('[id^="rph-'+i+'-"]');
+      inputs.forEach(function(inp){ if(inp.value.trim()) rphotos.push(inp.value.trim()); });
+      if(rphotos.length) roomPhotos[roomName] = rphotos;
+    }
+  }
   var json = {
     name:getFieldVal('f-name'),slug:getFieldVal('f-slug'),type:getFieldVal('f-type'),
     status:getFieldVal('f-status'),country:getFieldVal('f-country'),region:getFieldVal('f-region'),
     airport:getFieldVal('f-airport'),tag:getFieldVal('f-tag'),hook:getFieldVal('f-hook'),
     description_short:getFieldVal('f-desc-short'),description_long:getFieldVal('f-desc-long'),
     verdict:getFieldVal('f-verdict'),
-    photos:{hero:getFieldVal('f-hero'),gallery:photos},
+    photos:{hero:hero,gallery:gallery,rooms:roomPhotos},
     details:{total_rooms:getFieldVal('f-rcount'),max_guests:getFieldVal('f-maxg'),year:getFieldVal('f-year'),awards:getFieldVal('f-awards'),season:getFieldVal('f-season'),getting_there:getFieldVal('f-getting-there'),tags:Array.from(document.querySelectorAll('.pe-tag.on')).map(t=>t.textContent)},
     rooms:rooms,commission_rate:getFieldVal('f-commission'),cancellation:getFieldVal('f-cancel'),
     private_access:{name:getFieldVal('f-access-name'),description:getFieldVal('f-access-desc'),photo:getFieldVal('f-access-photo')},
@@ -1270,7 +1049,7 @@ function previewProperty() {
 }
 
 function publishProperty() {
-  var name = getFieldVal('f-name'), hero = getFieldVal('f-hero'), email = getFieldVal('f-cemail');
+  var name = getFieldVal('f-name'), hero = getFieldVal('f-h1'), email = getFieldVal('f-cemail');
   if(!name||!hero||!email){ showToast('Complete required fields before publishing','warn'); return; }
   var el = document.getElementById('json-out');
   if(el) navigator.clipboard.writeText(el.textContent).then(()=>{
