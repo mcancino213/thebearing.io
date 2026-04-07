@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in — TheBearing Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#08080d;--surface:#0f0f17;--surface2:#16161f;--border:rgba(255,255,255,.06);--border2:rgba(255,255,255,.11);--text:#eeeef5;--text2:rgba(238,238,245,.5);--text3:rgba(238,238,245,.28);--gold:#c8853f;--gold2:#e09a50;--r:7px;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+.login-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 480px;align-items:stretch;}
+.login-left{position:relative;background:var(--surface);border-right:1px solid var(--border);overflow:hidden;padding:48px;display:flex;flex-direction:column;justify-content:space-between;}
+/* Grid bg */
+.login-left::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+/* Gold radial glow */
+.login-left::after{content:'';position:absolute;bottom:-120px;left:-80px;width:500px;height:500px;background:radial-gradient(circle,rgba(200,133,63,.12) 0%,transparent 70%);pointer-events:none;}
+.brand{display:flex;align-items:center;gap:12px;position:relative;z-index:1;}
+.brand-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#a06428);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.85rem;font-weight:800;color:#fff;}
+.brand-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;}
+.brand-tag{font-size:.65rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
+.left-body{position:relative;z-index:1;}
+.left-headline{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;line-height:1.1;margin-bottom:16px;letter-spacing:-.02em;}
+.left-sub{font-size:.88rem;color:var(--text2);line-height:1.65;max-width:400px;}
+.stat-row{display:flex;gap:28px;position:relative;z-index:1;}
+.stat-item{}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--gold);margin-bottom:2px;}
+.stat-lbl{font-size:.7rem;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;}
+.login-right{display:flex;align-items:center;justify-content:center;padding:48px 56px;}
+.login-form{width:100%;max-width:340px;}
+.login-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:4px;}
+.login-sub{font-size:.8rem;color:var(--text3);margin-bottom:28px;}
+.field{margin-bottom:14px;}
+label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;}
+input{width:100%;padding:9px 13px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.84rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+input:focus{border-color:var(--gold);}
+input::placeholder{color:var(--text3);}
+.btn-sign{width:100%;padding:11px;background:var(--gold);color:#fff;border:none;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:600;cursor:pointer;margin-top:4px;transition:background .15s;}
+.btn-sign:hover{background:var(--gold2);}
+.login-notice{margin-top:20px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);font-size:.74rem;color:var(--text3);display:flex;gap:8px;}
+.notice-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:5px;}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-left">
+    <div class="brand">
+      <div class="brand-mark">TB</div>
+      <div><div class="brand-name">TheBearing.io</div><div class="brand-tag">Admin Portal</div></div>
+    </div>
+    <div class="left-body">
+      <div class="left-headline">The command<br>centre for<br><span style="color:var(--gold);">curated travel.</span></div>
+      <div class="left-sub">Manage properties, guests, bookings, and platform health from one beautifully designed workspace.</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-item"><div class="stat-num">24</div><div class="stat-lbl">Properties live</div></div>
+      <div class="stat-item"><div class="stat-num">$284k</div><div class="stat-lbl">GMV this month</div></div>
+      <div class="stat-item"><div class="stat-num">1,284</div><div class="stat-lbl">Members</div></div>
+    </div>
+  </div>
+  <div class="login-right">
+    <div class="login-form">
+      <div class="login-title">Sign in</div>
+      <div class="login-sub">Team access only</div>
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" placeholder="you@thebearing.io">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••••">
+      </div>
+      <button class="btn-sign" onclick="window.location='admin-dashboard.html'">Sign in →</button>
+      <div class="login-notice">
+        <div class="notice-dot"></div>
+        <div>Access is restricted to TheBearing team members. Contact Miguel to request access.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

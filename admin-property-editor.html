@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Property Editor — TheBearing Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #08080d;
+  --surface:  #0f0f17;
+  --surface2: #16161f;
+  --surface3: #1e1e2a;
+  --surface4: #252534;
+  --border:   rgba(255,255,255,.06);
+  --border2:  rgba(255,255,255,.11);
+  --border3:  rgba(255,255,255,.18);
+  --text:     #eeeef5;
+  --text2:    rgba(238,238,245,.5);
+  --text3:    rgba(238,238,245,.28);
+  --gold:     #c8853f;
+  --gold2:    #e09a50;
+  --gold-dim: rgba(200,133,63,.14);
+  --gold-glow:rgba(200,133,63,.06);
+  --emerald:  #10b981;
+  --em-dim:   rgba(16,185,129,.13);
+  --amber:    #f59e0b;
+  --am-dim:   rgba(245,158,11,.13);
+  --red:      #f87171;
+  --red-dim:  rgba(248,113,113,.13);
+  --blue:     #60a5fa;
+  --blue-dim: rgba(96,165,250,.13);
+  --purple:   #a78bfa;
+  --pu-dim:   rgba(167,139,250,.13);
+  --sidebar-w:228px;
+  --r:        7px;
+  --r-lg:     11px;
+  --r-xl:     16px;
+  --shadow:   0 0 0 1px rgba(255,255,255,.055), 0 2px 8px rgba(0,0,0,.5);
+  --shadow-lg:0 0 0 1px rgba(255,255,255,.055), 0 8px 32px rgba(0,0,0,.7);
+  --shadow-xl:0 0 0 1px rgba(255,255,255,.055), 0 20px 60px rgba(0,0,0,.9);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:'DM Sans',sans-serif;cursor:pointer}
+input,select,textarea{font-family:'DM Sans',sans-serif}
+
+/* ── LAYOUT ── */
+.admin-shell{display:flex;min-height:100vh}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;
+  z-index:100;
+  overflow-y:auto;
+}
+.main{margin-left:var(--sidebar-w);flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  height:52px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 28px;
+  gap:16px;background:var(--bg);
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(12px);
+}
+.page-body{padding:28px;flex:1;}
+
+/* ── SIDEBAR ── */
+.sb-brand{
+  padding:20px 18px 16px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sb-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--gold),#a06428);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;
+  color:#fff;letter-spacing:.02em;flex-shrink:0;
+}
+.sb-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);letter-spacing:.01em;}
+.sb-sub{font-size:.65rem;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;}
+.sb-section{
+  font-size:.6rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text3);
+  padding:16px 18px 6px;
+}
+.sb-nav{padding:8px;flex:1;}
+.sb-link{
+  display:flex;align-items:center;gap:9px;
+  padding:7px 10px;border-radius:var(--r);
+  font-size:.82rem;font-weight:500;color:var(--text2);
+  transition:all .15s;position:relative;
+  margin-bottom:1px;
+}
+.sb-link:hover{background:var(--surface2);color:var(--text);}
+.sb-link.active{background:var(--surface3);color:var(--text);}
+.sb-link.active::before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:16px;border-radius:0 2px 2px 0;
+  background:var(--gold);
+}
+.sb-link svg{width:15px;height:15px;flex-shrink:0;opacity:.7;}
+.sb-link.active svg{opacity:1;}
+.sb-badge{
+  margin-left:auto;padding:2px 7px;border-radius:100px;
+  font-size:.62rem;font-weight:600;font-family:'JetBrains Mono',monospace;
+  background:var(--surface3);color:var(--text2);
+}
+.sb-badge.alert{background:var(--red-dim);color:var(--red);}
+.sb-badge.warn{background:var(--am-dim);color:var(--amber);}
+.sb-footer{
+  padding:12px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:9px;
+}
+.sb-avatar{
+  width:28px;height:28px;border-radius:6px;
+  background:linear-gradient(135deg,#2a4a6a,#1a2a4a);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;color:#60a5fa;
+  flex-shrink:0;
+}
+.sb-user-name{font-size:.78rem;font-weight:500;}
+.sb-user-role{font-size:.62rem;color:var(--text3);}
+
+/* ── TOPBAR ── */
+.topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.01em;flex:1;}
+.topbar-crumb{font-size:.78rem;color:var(--text3);display:flex;align-items:center;gap:6px;}
+.topbar-crumb span{color:var(--text2);}
+.tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card-title{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.01em;}
+.card-body{padding:20px;}
+.card-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+
+/* ── STAT TILES ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;inset:0;background:var(--gold-glow);opacity:0;transition:opacity .3s;pointer-events:none;}
+.stat:hover::before{opacity:1;}
+.stat-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px;}
+.stat-sub{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:5px;}
+.stat-trend-up{color:var(--emerald);}
+.stat-trend-dn{color:var(--red);}
+.stat-icon{position:absolute;top:16px;right:16px;opacity:.12;}
+.stat-icon svg{width:28px;height:28px;}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{padding:10px 14px;text-align:left;font-size:.63rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
+.tbl td{padding:12px 14px;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tbody tr{transition:background .12s;}
+.tbl tbody tr:hover{background:var(--surface2);}
+.tbl-link{cursor:pointer;}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:.67rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+.badge-green{background:var(--em-dim);color:var(--emerald);}
+.badge-amber{background:var(--am-dim);color:var(--amber);}
+.badge-red{background:var(--red-dim);color:var(--red);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);}
+.badge-purple{background:var(--pu-dim);color:var(--purple);}
+.badge-gold{background:var(--gold-dim);color:var(--gold2);}
+.badge-neutral{background:var(--surface3);color:var(--text2);}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--r);font-size:.8rem;font-weight:500;border:none;transition:all .15s;cursor:pointer;white-space:nowrap;}
+.btn svg{width:13px;height:13px;flex-shrink:0;}
+.btn-primary{background:var(--gold);color:#fff;}
+.btn-primary:hover{background:var(--gold2);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--surface3);border-color:var(--border3);}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.btn-danger:hover{background:rgba(248,113,113,.2);}
+.btn-sm{padding:5px 10px;font-size:.74rem;}
+.btn-lg{padding:10px 20px;font-size:.86rem;}
+.btn-icon{padding:7px;}
+
+/* ── INPUTS ── */
+.input{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
+.input:focus{border-color:var(--gold);}
+.input::placeholder{color:var(--text3);}
+.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(238,238,245,.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;}
+.field{margin-bottom:14px;}
+.field-row{display:grid;gap:12px;}
+.field-row.cols-2{grid-template-columns:1fr 1fr;}
+.field-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--r);padding:3px;}
+.tab{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;}
+.tab.active{background:var(--surface4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.tab:hover:not(.active){color:var(--text);}
+
+/* ── PILLS / CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:100px;font-size:.72rem;color:var(--text2);cursor:pointer;transition:all .15s;}
+.chip:hover,.chip.active{background:var(--gold-dim);border-color:rgba(200,133,63,.3);color:var(--gold2);}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:60px 20px;}
+.empty-icon{width:48px;height:48px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.empty-icon svg{width:22px;height:22px;opacity:.4;}
+.empty-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:6px;}
+.empty-sub{font-size:.8rem;color:var(--text3);max-width:280px;margin:0 auto;line-height:1.6;}
+
+/* ── MISC ── */
+.mono{font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.text-gold{color:var(--gold);}
+.text-emerald{color:var(--emerald);}
+.text-amber{color:var(--amber);}
+.text-red{color:var(--red);}
+.text-blue{color:var(--blue);}
+.text-muted{color:var(--text2);}
+.text-dim{color:var(--text3);}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+.avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.scroll-x{overflow-x:auto;}
+.flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
+.gap-8{gap:8px;} .gap-12{gap:12px;} .gap-16{gap:16px;}
+.mt-4{margin-top:4px;} .mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;}
+.mb-4{margin-bottom:4px;} .mb-8{margin-bottom:8px;} .mb-12{margin-bottom:12px;} .mb-16{margin-bottom:16px;} .mb-24{margin-bottom:24px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── MINI CHART ── */
+.sparkline{display:flex;align-items:flex-end;gap:3px;height:32px;}
+.spark-bar{flex:1;background:var(--gold-dim);border-radius:2px 2px 0 0;transition:background .15s;min-width:4px;}
+.spark-bar:hover{background:var(--gold);}
+.spark-bar.hi{background:var(--gold);}
+
+/* ── ACTIVITY FEED ── */
+.activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
+.activity-item:last-child{border-bottom:none;}
+.activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px;}
+.activity-text{font-size:.8rem;line-height:1.55;}
+.activity-time{font-size:.68rem;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+
+/* ── KANBAN ── */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;}
+.kanban-col{min-width:220px;width:220px;flex-shrink:0;}
+.kanban-col-head{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.kanban-col-title{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.kanban-count{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--text3);}
+.k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+.k-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow);}
+.k-card-name{font-size:.82rem;font-weight:600;margin-bottom:4px;}
+.k-card-sub{font-size:.72rem;color:var(--text2);}
+.k-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+
+/* ── TIMELINE ── */
+.timeline{position:relative;padding-left:24px;}
+.timeline::before{content:'';position:absolute;left:6px;top:6px;bottom:0;width:1px;background:var(--border);}
+.tl-item{position:relative;padding-bottom:20px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-dot{position:absolute;left:-20px;top:3px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg);flex-shrink:0;}
+.tl-time{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:3px;}
+.tl-title{font-size:.82rem;font-weight:500;margin-bottom:2px;}
+.tl-sub{font-size:.76rem;color:var(--text2);line-height:1.5;}
+
+/* ── HEALTH SCORE ── */
+.health-bar{height:4px;background:var(--surface3);border-radius:100px;overflow:hidden;margin-top:6px;}
+.health-fill{height:100%;border-radius:100px;transition:width .5s ease;}
+
+/* ── SCROLL ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--border3);}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.fade-in{animation:fadeIn .35s ease both;}
+.fade-in-2{animation:fadeIn .35s .08s ease both;}
+.fade-in-3{animation:fadeIn .35s .16s ease both;}
+.fade-in-4{animation:fadeIn .35s .24s ease both;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);width:480px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-xl);animation:fadeIn .2s ease;}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;}
+.modal-body{padding:24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:.82rem;z-index:300;box-shadow:var(--shadow-lg);animation:fadeIn .25s ease;max-width:320px;}
+.toast-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ── SPLIT PANEL ── */
+.split-panel{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 52px);}
+.split-left{border-right:1px solid var(--border);overflow-y:auto;}
+.split-right{overflow-y:auto;background:var(--bg);}
+</style><body><div class="admin-shell"><aside class="sidebar"><div class="sb-brand">
+      <div class="sb-mark">TB</div>
+      <div><div class="sb-title">TheBearing</div><div class="sb-sub">Admin Portal</div></div>
+    </div>
+    <nav class="sb-nav"><a class="sb-link " href="admin-dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Dashboard</a><div class="sb-section">CRM</div><a class="sb-link active" href="admin-properties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0H5m-2 0H1m18-9h-2M7 12H5"/></svg>Properties<span class="sb-badge">24</span></a><a class="sb-link " href="admin-guests.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Guests<span class="sb-badge">1.4k</span></a><div class="sb-section">Operations</div><a class="sb-link " href="admin-bookings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>Bookings<span class="sb-badge">47</span></a><a class="sb-link " href="admin-conversations.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>Conversations<span class="sb-badge alert">6</span></a><a class="sb-link " href="admin-payments.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>Payments</a><div class="sb-section">Platform</div><a class="sb-link " href="admin-content.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>Content<span class="sb-badge warn">3</span></a><a class="sb-link " href="admin-analytics.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>Analytics</a><a class="sb-link " href="admin-settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Settings</a></nav><div class="sb-footer">
+      <div class="sb-avatar">MR</div>
+      <div><div class="sb-user-name">Miguel</div><div class="sb-user-role">Founder</div></div>
+    </div></aside><div class="main">
+<div class="topbar fade-in">
+  <div class="topbar-crumb">
+    <a href="admin-properties.html" style="color:var(--text3);">Properties</a>
+    <span style="color:var(--border3);">/</span>
+    <span>New property</span>
+  </div>
+  <div class="tb-actions">
+    <button class="btn btn-ghost" onclick="saveDraft()">Save draft</button>
+    <button class="btn btn-secondary" onclick="previewProperty()">Preview →</button>
+    <button class="btn btn-primary" id="publish-btn" onclick="publishProperty()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Publish live
+    </button>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- Status bar -->
+  <div id="status-bar" style="display:none;padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.82rem;" class="fade-in">
+  </div>
+
+  <!-- Progress indicator -->
+  <div class="card fade-in" style="margin-bottom:20px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:.78rem;font-weight:600;">Listing completeness</div>
+      <div id="completeness-pct" style="font-size:.78rem;font-family:'JetBrains Mono',monospace;color:var(--gold);">0%</div>
+    </div>
+    <div style="height:5px;background:var(--surface3);border-radius:100px;overflow:hidden;">
+      <div id="completeness-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--emerald));border-radius:100px;transition:width .4s ease;"></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;" id="completeness-chips"></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;" class="fade-in-2">
+
+    <!-- LEFT COLUMN — all the fields -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <!-- 1. CORE IDENTITY -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">1</div>
+            <div class="card-title">Core identity</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Property name <span style="color:var(--red);">*</span></label>
+              <input class="input" id="f-name" placeholder="e.g. Singita Grumeti" oninput="updateCompleteness()">
+            </div>
+            <div class="field">
+              <label>Property type <span style="color:var(--red);">*</span></label>
+              <select class="input select" id="f-type" onchange="updateCompleteness()">
+                <option value="">Select type...</option>
+                <option>Boutique hotel</option>
+                <option>Safari lodge</option>
+                <option>Desert resort</option>
+                <option>River cruise</option>
+                <option>Expedition cruise</option>
+                <option>Private island</option>
+                <option>Villa</option>
+                <option>Ryokan</option>
+                <option>Mountain lodge</option>
+                <option>Overwater bungalow</option>
+                <option>Treehouse / Tented camp</option>
+                <option>Heritage hotel</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row cols-3">
+            <div class="field">
+              <label>Country <span style="color:var(--red);">*</span></label>
+              <input class="input" id="f-country" placeholder="e.g. Tanzania" oninput="updateCompleteness()">
+            </div>
+            <div class="field">
+              <label>Region / area</label>
+              <input class="input" id="f-region" placeholder="e.g. Serengeti, Grumeti">
+            </div>
+            <div class="field">
+              <label>Nearest airport / city</label>
+              <input class="input" id="f-airport" placeholder="e.g. JRO · Kilimanjaro">
+            </div>
+          </div>
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Display tag <span style="color:var(--text3);font-weight:400;">(shown on card)</span></label>
+              <input class="input" id="f-tag" placeholder="e.g. Wilderness · Nat Geo pick">
+            </div>
+            <div class="field">
+              <label>Status</label>
+              <select class="input select" id="f-status" onchange="updateCompleteness()">
+                <option value="draft">Draft</option>
+                <option value="live">Live</option>
+                <option value="coming-soon">Coming soon</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>One-line hook <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(shown on card — make it memorable)</span></label>
+            <input class="input" id="f-hook" placeholder="e.g. &quot;350,000 private acres. The migration passes through here. Almost nowhere else can say that.&quot;" oninput="updateCompleteness()">
+            <div id="hook-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DESCRIPTION -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">2</div>
+            <div class="card-title">Description</div>
+          </div>
+          <div style="font-size:.72rem;color:var(--text3);">Shown on the property page</div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Short description <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(2–3 sentences · shown above the fold)</span></label>
+            <textarea class="input" id="f-desc-short" rows="3" style="resize:none;" placeholder="The opening paragraph a guest reads first. Should answer: what makes this place impossible to forget?" oninput="updateCompleteness();countWords(this,'desc-short-count')"></textarea>
+            <div id="desc-short-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          </div>
+          <div class="field">
+            <label>Full description <span style="color:var(--text3);font-weight:400;">(4–6 paragraphs · shown on property page)</span></label>
+            <textarea class="input" id="f-desc-long" rows="8" style="resize:vertical;min-height:160px;" placeholder="The full story of the property. What it feels like to be there. What makes it different. What the guest will remember." oninput="countWords(this,'desc-long-count')"></textarea>
+            <div id="desc-long-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          </div>
+          <div class="field">
+            <label>The Bearing verdict <span style="color:var(--text3);font-weight:400;">(our editorial voice · 1–2 sentences)</span></label>
+            <textarea class="input" id="f-verdict" rows="2" style="resize:none;" placeholder="e.g. &quot;We added this because nowhere else in the Serengeti gives you access to a private concession during the migration at this price point.&quot;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PHOTOS -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">3</div>
+            <div class="card-title">Photos</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-ghost btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+              Cloudflare Images →
+            </a>
+            <div style="font-size:.7rem;color:var(--text3);">Upload there, paste URL here</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:.76rem;color:var(--text3);line-height:1.6;">
+            <strong style="color:var(--text2);">How to add photos:</strong> Upload your images to Cloudflare Images at dash.cloudflare.com → Images. Copy the delivery URL (looks like <span class="mono" style="font-size:.72rem;">https://imagedelivery.net/xxx/image-id/public</span>) and paste it below.
+          </div>
+
+          <!-- Hero photo -->
+          <div class="field">
+            <label>Hero photo URL <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(main full-screen image)</span></label>
+            <div style="display:flex;gap:8px;">
+              <input class="input" id="f-photo-hero" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-hero');updateCompleteness()" style="flex:1;">
+              <button class="btn btn-ghost btn-sm" onclick="testPhoto('f-photo-hero')">Test</button>
+            </div>
+            <div id="prev-hero" style="margin-top:8px;height:120px;border-radius:var(--r);overflow:hidden;background:var(--surface3);display:none;">
+              <img style="width:100%;height:100%;object-fit:cover;" alt="Hero preview">
+            </div>
+          </div>
+
+          <!-- Gallery photos -->
+          <div style="margin-bottom:8px;">
+            <label>Gallery photos <span style="color:var(--text3);font-weight:400;">(min 6 recommended)</span></label>
+          </div>
+          <div id="gallery-fields" style="display:flex;flex-direction:column;gap:8px;">
+            
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">1</div>
+              <input class="input" id="f-photo-1" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-1');updateCompleteness()" style="flex:1;">
+              <div id="prev-1" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">2</div>
+              <input class="input" id="f-photo-2" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-2');updateCompleteness()" style="flex:1;">
+              <div id="prev-2" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">3</div>
+              <input class="input" id="f-photo-3" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-3');updateCompleteness()" style="flex:1;">
+              <div id="prev-3" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">4</div>
+              <input class="input" id="f-photo-4" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-4');updateCompleteness()" style="flex:1;">
+              <div id="prev-4" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">5</div>
+              <input class="input" id="f-photo-5" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-5');updateCompleteness()" style="flex:1;">
+              <div id="prev-5" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">6</div>
+              <input class="input" id="f-photo-6" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-6');updateCompleteness()" style="flex:1;">
+              <div id="prev-6" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">7</div>
+              <input class="input" id="f-photo-7" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-7');updateCompleteness()" style="flex:1;">
+              <div id="prev-7" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">8</div>
+              <input class="input" id="f-photo-8" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-8');updateCompleteness()" style="flex:1;">
+              <div id="prev-8" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addGalleryField()">+ Add another photo</button>
+        </div>
+      </div>
+
+      <!-- 4. DETAILS & TAGS -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">4</div>
+            <div class="card-title">Details & tags</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field-row cols-3">
+            <div class="field">
+              <label>Total rooms / units</label>
+              <input class="input" id="f-rooms-total" type="number" placeholder="e.g. 15">
+            </div>
+            <div class="field">
+              <label>Max guests</label>
+              <input class="input" id="f-max-guests" type="number" placeholder="e.g. 30">
+            </div>
+            <div class="field">
+              <label>Year opened / renovated</label>
+              <input class="input" id="f-year" placeholder="e.g. 2018 / 2023">
+            </div>
+          </div>
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Awards / recognition</label>
+              <input class="input" id="f-awards" placeholder="e.g. Nat Geo pick · Relais & Châteaux">
+            </div>
+            <div class="field">
+              <label>Sustainability rating</label>
+              <select class="input select" id="f-sustainability">
+                <option value="">Not assessed</option>
+                <option>Gold — leading standard</option>
+                <option>Silver — strong practices</option>
+                <option>Bronze — improving</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tags <span style="color:var(--text3);font-weight:400;">(click to toggle)</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;" id="tags-container"><button class="chip" onclick="toggleTag(this)">Adults only</button><button class="chip" onclick="toggleTag(this)">Family-friendly</button><button class="chip" onclick="toggleTag(this)">Remote</button><button class="chip" onclick="toggleTag(this)">No Wi-Fi</button><button class="chip" onclick="toggleTag(this)">Private chef</button><button class="chip" onclick="toggleTag(this)">Butler service</button><button class="chip" onclick="toggleTag(this)">Diving</button><button class="chip" onclick="toggleTag(this)">Wellness</button><button class="chip" onclick="toggleTag(this)">Wildlife</button><button class="chip" onclick="toggleTag(this)">Cultural</button><button class="chip" onclick="toggleTag(this)">Design</button><button class="chip" onclick="toggleTag(this)">Wilderness</button><button class="chip" onclick="toggleTag(this)">Beachfront</button><button class="chip" onclick="toggleTag(this)">Mountain</button><button class="chip" onclick="toggleTag(this)">Desert</button><button class="chip" onclick="toggleTag(this)">Overwater</button><button class="chip" onclick="toggleTag(this)">Architecture</button><button class="chip" onclick="toggleTag(this)">Eco / Sustainable</button><button class="chip" onclick="toggleTag(this)">Under 20 rooms</button><button class="chip" onclick="toggleTag(this)">Private pool</button><button class="chip" onclick="toggleTag(this)">All-inclusive</button><button class="chip" onclick="toggleTag(this)">Safari</button><button class="chip" onclick="toggleTag(this)">Fishing</button><button class="chip" onclick="toggleTag(this)">Helicopter access</button>
+            </div>
+          </div>
+          <div class="field" style="margin-top:4px;">
+            <label>Best season to visit</label>
+            <input class="input" id="f-season" placeholder="e.g. October – April (avoid summer monsoon)">
+          </div>
+          <div class="field">
+            <label>How to get there</label>
+            <textarea class="input" id="f-getting-there" rows="2" style="resize:none;" placeholder="e.g. Fly to Kilimanjaro (JRO), then charter flight to Grumeti airstrip (~1hr). We arrange transfers."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. ROOMS & PRICING -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">5</div>
+            <div class="card-title">Rooms & pricing</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="addRoom()">+ Add room type</button>
+        </div>
+        <div class="card-body">
+          <div id="rooms-container" style="display:flex;flex-direction:column;gap:12px;">
+            <!-- Room rows added dynamically -->
+          </div>
+          <div style="margin-top:14px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);font-size:.76rem;color:var(--text3);line-height:1.6;">
+            <strong style="color:var(--text2);">Commission:</strong> TheBearing collects 10% of the booking total as a deposit. The property collects the remaining 90% directly from the guest.
+          </div>
+          <div class="field-row cols-2" style="margin-top:12px;">
+            <div class="field">
+              <label>Commission rate</label>
+              <select class="input select" id="f-commission">
+                <option value="10">10% (standard)</option>
+                <option value="12">12%</option>
+                <option value="15">15%</option>
+                <option value="8">8% (negotiated)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Cancellation policy</label>
+              <select class="input select" id="f-cancellation">
+                <option>Free cancellation up to 30 days</option>
+                <option>Free cancellation up to 14 days</option>
+                <option>Free cancellation up to 7 days</option>
+                <option>Non-refundable</option>
+                <option>Custom — specify in notes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. PRIVATE ACCESS EXPERIENCE -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">6</div>
+            <div class="card-title">The Bearing Private Access</div>
+          </div>
+          <span class="badge badge-gold">Exclusive · required</span>
+        </div>
+        <div class="card-body">
+          <div style="padding:12px 14px;background:var(--gold-dim);border-radius:var(--r);border:1px solid rgba(200,133,63,.2);margin-bottom:14px;font-size:.78rem;color:var(--text2);line-height:1.6;">
+            Every property on TheBearing must include at least one exclusive experience — something a guest cannot book anywhere else. This is our core differentiator. Work with the property to define something real.
+          </div>
+          <div class="field">
+            <label>Experience name <span style="color:var(--red);">*</span></label>
+            <input class="input" id="f-access-name" placeholder="e.g. Private sunrise at Edfu Temple" oninput="updateCompleteness()">
+          </div>
+          <div class="field">
+            <label>Description <span style="color:var(--red);">*</span></label>
+            <textarea class="input" id="f-access-desc" rows="3" style="resize:none;" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateCompleteness()"></textarea>
+          </div>
+          <div class="field">
+            <label>Photo URL <span style="color:var(--text3);font-weight:400;">(Cloudflare Images)</span></label>
+            <div style="display:flex;gap:8px;">
+              <input class="input" id="f-access-photo" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-access')" style="flex:1;">
+              <button class="btn btn-ghost btn-sm" onclick="testPhoto('f-access-photo')">Test</button>
+            </div>
+            <div id="prev-access" style="margin-top:8px;height:80px;border-radius:var(--r);overflow:hidden;background:var(--surface3);display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. CONTACT & OPERATIONS -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">7</div>
+            <div class="card-title">Contact & operations</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Primary contact name <span style="color:var(--red);">*</span></label>
+              <input class="input" id="f-contact-name" placeholder="General Manager name" oninput="updateCompleteness()">
+            </div>
+            <div class="field">
+              <label>Title / role</label>
+              <input class="input" id="f-contact-title" placeholder="e.g. General Manager">
+            </div>
+          </div>
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Email <span style="color:var(--red);">*</span></label>
+              <input class="input" id="f-contact-email" type="email" placeholder="gm@property.com" oninput="updateCompleteness()">
+            </div>
+            <div class="field">
+              <label>WhatsApp / phone</label>
+              <input class="input" id="f-contact-phone" placeholder="+1 (000) 000-0000">
+            </div>
+          </div>
+          <div class="field-row cols-2">
+            <div class="field">
+              <label>Property website</label>
+              <input class="input" id="f-website" placeholder="https://www.property.com">
+            </div>
+            <div class="field">
+              <label>iCal availability URL</label>
+              <input class="input" id="f-ical" placeholder="webcal://...">
+            </div>
+          </div>
+          <div class="field">
+            <label>Internal notes <span style="color:var(--text3);font-weight:400;">(not shown publicly)</span></label>
+            <textarea class="input" id="f-notes" rows="3" style="resize:none;" placeholder="Relationship notes, commission negotiations, anything the team needs to know..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. SEO -->
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">8</div>
+            <div class="card-title">SEO</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Page URL slug</label>
+            <div style="display:flex;align-items:center;gap:0;">
+              <div style="padding:8px 12px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.78rem;color:var(--text3);white-space:nowrap;">thebearing.io/</div>
+              <input class="input" id="f-slug" placeholder="property-name" style="border-radius:0 var(--r) var(--r) 0;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')">
+            </div>
+          </div>
+          <div class="field">
+            <label>Meta title <span style="color:var(--text3);font-weight:400;">(60 chars max)</span></label>
+            <input class="input" id="f-meta-title" placeholder="e.g. Singita Grumeti — Safari Lodge · Serengeti, Tanzania · TheBearing" oninput="countChars(this,'meta-title-count',60)">
+            <div id="meta-title-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          </div>
+          <div class="field">
+            <label>Meta description <span style="color:var(--text3);font-weight:400;">(160 chars max)</span></label>
+            <textarea class="input" id="f-meta-desc" rows="2" style="resize:none;" placeholder="350,000 private acres in the Serengeti. Book Singita Grumeti through TheBearing for exclusive access and no booking fees." oninput="countChars(this,'meta-desc-count',160)"></textarea>
+            <div id="meta-desc-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN — live preview card + publish checklist -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Live card preview -->
+      <div class="card" style="position:sticky;top:68px;">
+        <div class="card-header"><div class="card-title">Card preview</div><span class="badge badge-neutral">Live preview</span></div>
+        <div style="margin:0 -1px -1px;border-radius:0 0 var(--r-lg) var(--r-lg);overflow:hidden;">
+          <div id="preview-card" style="background:var(--surface2);">
+            <!-- Card image -->
+            <div style="height:160px;position:relative;overflow:hidden;background:var(--surface3);">
+              <img id="preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="">
+              <div id="preview-img-placeholder" style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <div style="font-size:.68rem;color:var(--text3);">Add hero photo</div>
+              </div>
+              <div style="position:absolute;top:10px;left:10px;" id="preview-badge"></div>
+            </div>
+            <!-- Card body -->
+            <div style="padding:14px;">
+              <div id="preview-region" style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;">Region · Type</div>
+              <div id="preview-name" style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:2px;">Property name</div>
+              <div id="preview-loc" style="font-size:.72rem;color:var(--text3);margin-bottom:8px;">Location</div>
+              <div id="preview-hook" style="font-size:.74rem;color:var(--text2);line-height:1.5;font-style:italic;margin-bottom:10px;">"Your hook line will appear here..."</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;" id="preview-tags"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div id="preview-price" style="font-size:.8rem;color:var(--gold);font-weight:600;">From —</div>
+                <div style="display:flex;gap:6px;">
+                  <div style="padding:5px 10px;background:var(--surface3);border-radius:100px;font-size:.68rem;color:var(--text2);">Enquire</div>
+                  <div style="padding:5px 10px;background:var(--gold);border-radius:100px;font-size:.68rem;color:#fff;font-weight:600;">Book now</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Publish checklist -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">Publish checklist</div></div>
+        <div class="card-body" style="padding:12px 16px;">
+          <div style="display:flex;flex-direction:column;gap:6px;" id="checklist">
+            <div class="check-item" id="chk-name" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Property name</span>
+            </div><div class="check-item" id="chk-type" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Property type</span>
+            </div><div class="check-item" id="chk-hook" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Hook line</span>
+            </div><div class="check-item" id="chk-hero" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Hero photo</span>
+            </div><div class="check-item" id="chk-desc" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Short description</span>
+            </div><div class="check-item" id="chk-access" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Private Access experience</span>
+            </div><div class="check-item" id="chk-contact" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">Contact details</span>
+            </div><div class="check-item" id="chk-rooms" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <span style="font-size:.76rem;color:var(--text3);">At least one room / price</span>
+            </div>
+          </div>
+          <div class="divider" style="margin:10px 0;"></div>
+          <button class="btn btn-primary" style="width:100%;" id="publish-btn-2" onclick="publishProperty()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Publish live
+          </button>
+          <div style="font-size:.68rem;color:var(--text3);text-align:center;margin-top:6px;line-height:1.6;">Publishing exports a JSON payload ready for your backend to create the property page.</div>
+        </div>
+      </div>
+
+      <!-- JSON export preview -->
+      <div class="card">
+        <div class="card-header"><div class="card-title">JSON export</div><button class="btn btn-ghost btn-sm" onclick="copyJSON()">Copy</button></div>
+        <div style="padding:12px;background:var(--bg);border-radius:0 0 var(--r-lg) var(--r-lg);">
+          <pre id="json-preview" style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);overflow:auto;max-height:200px;line-height:1.6;white-space:pre-wrap;">{
+  "name": "",
+  "type": "",
+  ...
+}</pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+var roomCount = 0;
+var galleryCount = 8;
+
+// ── ROOM MANAGEMENT ────────────────────────────────────────────────
+function addRoom() {
+  roomCount++;
+  var rc = document.getElementById('rooms-container');
+  var div = document.createElement('div');
+  div.id = 'room-' + roomCount;
+  div.style.cssText = 'background:var(--surface2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border);position:relative;';
+  div.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:flex-end;">' +
+    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Room / cabin type</label><input class="input" id="room-name-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updatePreview();updateJSON()"></div>' +
+    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Price per person</label><div style="display:flex;align-items:center;gap:0;"><div style="padding:8px 10px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.75rem;color:var(--text3);">$</div><input class="input" type="number" id="room-price-'+roomCount+'" placeholder="0" style="border-radius:0 var(--r) var(--r) 0;" oninput="updatePreview();updateJSON();updateCompleteness()"></div></div>' +
+    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Per</label><select class="input select" id="room-per-'+roomCount+'"><option>night</option><option>person</option><option>voyage</option><option>week</option></select></div>' +
+    '<button onclick="removeRoom('+roomCount+')" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
+    '</div>' +
+    '<div style="margin-top:8px;"><input class="input" id="room-desc-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="font-size:.76rem;"></div>';
+  rc.appendChild(div);
+  updateCompleteness();
+  updateJSON();
+}
+
+function removeRoom(n) {
+  var el = document.getElementById('room-' + n);
+  if (el) el.remove();
+  updateCompleteness();
+  updateJSON();
+}
+
+// ── PHOTO PREVIEW ───────────────────────────────────────────────────
+function previewPhoto(input, previewId) {
+  var url = input.value.trim();
+  var prev = document.getElementById(previewId);
+  if (!prev) return;
+  if (url) {
+    prev.style.display = 'block';
+    prev.querySelector('img').src = url;
+    if (previewId === 'prev-hero') {
+      var previewImg = document.getElementById('preview-img');
+      var placeholder = document.getElementById('preview-img-placeholder');
+      if (previewImg) { previewImg.src = url; previewImg.style.display = 'block'; }
+      if (placeholder) placeholder.style.display = 'none';
+    }
+  } else {
+    prev.style.display = 'none';
+  }
+  updateJSON();
+}
+
+function testPhoto(fieldId) {
+  var url = document.getElementById(fieldId).value.trim();
+  if (url) window.open(url, '_blank');
+  else showToast('Enter a URL first', 'warn');
+}
+
+// ── TAGS ─────────────────────────────────────────────────────────────
+function toggleTag(btn) {
+  btn.classList.toggle('active');
+  updatePreview();
+  updateJSON();
+}
+
+function getSelectedTags() {
+  return Array.from(document.querySelectorAll('#tags-container .chip.active')).map(b => b.textContent);
+}
+
+// ── GALLERY ────────────────────────────────────────────────────────
+function addGalleryField() {
+  galleryCount++;
+  var container = document.getElementById('gallery-fields');
+  var div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  var n = galleryCount;
+  div.innerHTML = '<div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">'+n+'</div>' +
+    '<input class="input" id="f-photo-'+n+'" placeholder="https://imagedelivery.net/..." style="flex:1;" oninput="previewPhoto(this,&apos;prev-'+n+'&apos;);updateJSON()">' +
+    '<div id="prev-'+n+'" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>';
+  container.appendChild(div);
+}
+
+// ── WORD / CHAR COUNTERS ──────────────────────────────────────────
+function countWords(el, counterId) {
+  var words = el.value.trim().split(/\s+/).filter(w => w).length;
+  var el2 = document.getElementById(counterId);
+  if (el2) el2.textContent = words + ' words' + (words < 50 ? ' · aim for 50+' : words > 300 ? ' · aim for under 300' : ' ✓');
+}
+
+function countChars(el, counterId, max) {
+  var len = el.value.length;
+  var el2 = document.getElementById(counterId);
+  if (el2) {
+    el2.textContent = len + ' / ' + max + ' chars';
+    el2.style.color = len > max ? 'var(--red)' : len > max * 0.9 ? 'var(--amber)' : 'var(--text3)';
+  }
+}
+
+// ── HOOK COUNTER ──────────────────────────────────────────────────
+document.getElementById('f-hook').addEventListener('input', function() {
+  var el = document.getElementById('hook-count');
+  var len = this.value.length;
+  el.textContent = len + ' chars' + (len < 60 ? ' · aim for 60–120' : len > 150 ? ' · getting long' : ' ✓');
+});
+
+// ── COMPLETENESS ─────────────────────────────────────────────────
+var REQUIRED_FIELDS = [
+  { id: 'f-name', key: 'name', label: 'Property name' },
+  { id: 'f-type', key: 'type', label: 'Property type' },
+  { id: 'f-hook', key: 'hook', label: 'Hook line' },
+  { id: 'f-photo-hero', key: 'hero', label: 'Hero photo' },
+  { id: 'f-desc-short', key: 'desc', label: 'Short description' },
+  { id: 'f-access-name', key: 'access', label: 'Private Access experience' },
+  { id: 'f-contact-name', key: 'contact', label: 'Contact details' },
+];
+
+function updateCompleteness() {
+  var filled = 0;
+  REQUIRED_FIELDS.forEach(function(f) {
+    var el = document.getElementById(f.id);
+    var haVal = el && el.value.trim().length > 0;
+    // Update checklist
+    var chk = document.getElementById('chk-' + f.key);
+    if (chk) {
+      var dot = chk.querySelector('.chk-dot');
+      var svg = chk.querySelector('svg');
+      var span = chk.querySelector('span');
+      if (haVal) {
+        dot.style.borderColor = 'var(--emerald)';
+        dot.style.background = 'var(--em-dim)';
+        svg.style.opacity = '1';
+        svg.style.stroke = 'var(--emerald)';
+        span.style.color = 'var(--text)';
+      } else {
+        dot.style.borderColor = 'var(--border2)';
+        dot.style.background = 'transparent';
+        svg.style.opacity = '0';
+        span.style.color = 'var(--text3)';
+      }
+    }
+    if (haVal) filled++;
+  });
+  
+  // Check rooms
+  var hasRooms = roomCount > 0 && document.getElementById('room-price-1') && document.getElementById('room-price-1').value;
+  var chkRooms = document.getElementById('chk-rooms');
+  if (chkRooms) {
+    var dot = chkRooms.querySelector('.chk-dot');
+    var svg = chkRooms.querySelector('svg');
+    var span = chkRooms.querySelector('span');
+    if (hasRooms) {
+      dot.style.borderColor = 'var(--emerald)';dot.style.background = 'var(--em-dim)';
+      svg.style.opacity = '1';svg.style.stroke = 'var(--emerald)';span.style.color = 'var(--text)';
+      filled++;
+    }
+  }
+  
+  var total = REQUIRED_FIELDS.length + 1;
+  var pct = Math.round((filled / total) * 100);
+  document.getElementById('completeness-pct').textContent = pct + '%';
+  document.getElementById('completeness-bar').style.width = pct + '%';
+  
+  updatePreview();
+  updateJSON();
+}
+
+// ── LIVE CARD PREVIEW ─────────────────────────────────────────────
+function updatePreview() {
+  var name = document.getElementById('f-name').value || 'Property name';
+  var type = document.getElementById('f-type').value || 'Property type';
+  var country = document.getElementById('f-country').value || '';
+  var region = document.getElementById('f-region').value || '';
+  var hook = document.getElementById('f-hook').value || '"Your hook line will appear here..."';
+  var tags = getSelectedTags();
+  
+  // Get first room price
+  var priceText = 'From —';
+  for (var i = 1; i <= roomCount; i++) {
+    var priceEl = document.getElementById('room-price-' + i);
+    var perEl = document.getElementById('room-per-' + i);
+    if (priceEl && priceEl.value) {
+      priceText = 'From $' + parseInt(priceEl.value).toLocaleString() + ' / ' + (perEl ? perEl.value : 'night');
+      break;
+    }
+  }
+  
+  document.getElementById('preview-name').textContent = name;
+  document.getElementById('preview-region').textContent = (region || country) + (type ? ' · ' + type : '');
+  document.getElementById('preview-loc').textContent = [region, country].filter(Boolean).join(' · ');
+  document.getElementById('preview-hook').textContent = '"' + hook.replace(/^["']|["']$/g,'') + '"';
+  document.getElementById('preview-price').textContent = priceText;
+  
+  var tagsEl = document.getElementById('preview-tags');
+  tagsEl.innerHTML = tags.slice(0,4).map(t => '<span style="font-size:.6rem;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
+  
+  var tag = document.getElementById('f-tag').value;
+  var badgeEl = document.getElementById('preview-badge');
+  badgeEl.innerHTML = tag ? '<span style="font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);background:rgba(200,133,63,.85);color:#fff;">'+tag+'</span>' : '';
+}
+
+// ── JSON EXPORT ───────────────────────────────────────────────────
+function buildJSON() {
+  var photos = [];
+  for (var i = 1; i <= galleryCount; i++) {
+    var el = document.getElementById('f-photo-' + i);
+    if (el && el.value.trim()) photos.push(el.value.trim());
+  }
+  
+  var rooms = [];
+  for (var i = 1; i <= roomCount; i++) {
+    var nameEl = document.getElementById('room-name-' + i);
+    var priceEl = document.getElementById('room-price-' + i);
+    var perEl = document.getElementById('room-per-' + i);
+    var descEl = document.getElementById('room-desc-' + i);
+    if (nameEl && nameEl.value) {
+      rooms.push({
+        name: nameEl.value,
+        price: priceEl ? parseInt(priceEl.value) || 0 : 0,
+        per: perEl ? perEl.value : 'night',
+        description: descEl ? descEl.value : ''
+      });
+    }
+  }
+  
+  return {
+    name: document.getElementById('f-name').value,
+    slug: document.getElementById('f-slug').value,
+    type: document.getElementById('f-type').value,
+    status: document.getElementById('f-status').value,
+    country: document.getElementById('f-country').value,
+    region: document.getElementById('f-region').value,
+    airport: document.getElementById('f-airport').value,
+    tag: document.getElementById('f-tag').value,
+    hook: document.getElementById('f-hook').value,
+    description_short: document.getElementById('f-desc-short').value,
+    description_long: document.getElementById('f-desc-long').value,
+    verdict: document.getElementById('f-verdict').value,
+    photos: { hero: document.getElementById('f-photo-hero').value, gallery: photos },
+    details: {
+      total_rooms: document.getElementById('f-rooms-total').value,
+      max_guests: document.getElementById('f-max-guests').value,
+      year: document.getElementById('f-year').value,
+      awards: document.getElementById('f-awards').value,
+      sustainability: document.getElementById('f-sustainability').value,
+      season: document.getElementById('f-season').value,
+      getting_there: document.getElementById('f-getting-there').value,
+      tags: getSelectedTags()
+    },
+    rooms: rooms,
+    commission_rate: document.getElementById('f-commission').value,
+    cancellation: document.getElementById('f-cancellation').value,
+    private_access: {
+      name: document.getElementById('f-access-name').value,
+      description: document.getElementById('f-access-desc').value,
+      photo: document.getElementById('f-access-photo').value
+    },
+    contact: {
+      name: document.getElementById('f-contact-name').value,
+      title: document.getElementById('f-contact-title').value,
+      email: document.getElementById('f-contact-email').value,
+      phone: document.getElementById('f-contact-phone').value,
+      website: document.getElementById('f-website').value,
+      ical: document.getElementById('f-ical').value
+    },
+    seo: {
+      slug: document.getElementById('f-slug').value,
+      meta_title: document.getElementById('f-meta-title').value,
+      meta_description: document.getElementById('f-meta-desc').value
+    },
+    notes: document.getElementById('f-notes').value,
+    created_at: new Date().toISOString(),
+    published_at: null
+  };
+}
+
+function updateJSON() {
+  var json = buildJSON();
+  var el = document.getElementById('json-preview');
+  if (el) el.textContent = JSON.stringify(json, null, 2);
+}
+
+function copyJSON() {
+  var json = buildJSON();
+  navigator.clipboard.writeText(JSON.stringify(json, null, 2))
+    .then(() => showToast('JSON copied to clipboard', 'success'));
+}
+
+function saveDraft() {
+  var json = buildJSON();
+  localStorage.setItem('tb_property_draft', JSON.stringify(json));
+  showToast('Draft saved locally', 'success');
+}
+
+function previewProperty() {
+  showToast('Preview: connect backend to render live', 'warn');
+}
+
+function publishProperty() {
+  var name = document.getElementById('f-name').value;
+  var hero = document.getElementById('f-photo-hero').value;
+  var contact = document.getElementById('f-contact-email').value;
+  
+  if (!name || !hero || !contact) {
+    showToast('Complete required fields before publishing', 'warn');
+    return;
+  }
+  
+  var json = buildJSON();
+  json.published_at = new Date().toISOString();
+  json.status = 'live';
+  
+  // Copy JSON to clipboard for backend handoff
+  navigator.clipboard.writeText(JSON.stringify(json, null, 2)).then(() => {
+    showToast('Property data copied — send to backend to go live', 'success');
+  });
+  
+  // Show status bar
+  var bar = document.getElementById('status-bar');
+  bar.style.cssText = 'padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.82rem;background:var(--em-dim);border:1px solid rgba(16,185,129,.2);color:var(--emerald);';
+  bar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>' + name + '</strong> is ready to publish. JSON payload copied to clipboard — pass to your backend endpoint to create the live page.';
+}
+
+// Init — add first room
+addRoom();
+updateCompleteness();
+</script>
+
+<script>
+function showToast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast';
+  var color = type==='success' ? '#10b981' : type==='warn' ? '#f59e0b' : '#f87171';
+  t.innerHTML = '<div class="toast-icon" style="background:'+color+'20"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>'+msg+'</span>';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+</div></div></body></html>
