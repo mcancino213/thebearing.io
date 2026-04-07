@@ -9,38 +9,50 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:       #08080d;
-  --surface:  #0f0f17;
-  --surface2: #16161f;
-  --surface3: #1e1e2a;
-  --surface4: #252534;
-  --border:   rgba(255,255,255,.06);
-  --border2:  rgba(255,255,255,.11);
-  --border3:  rgba(255,255,255,.18);
-  --text:     #eeeef5;
-  --text2:    rgba(238,238,245,.5);
-  --text3:    rgba(238,238,245,.28);
-  --gold:     #c8853f;
-  --gold2:    #e09a50;
-  --gold-dim: rgba(200,133,63,.14);
-  --gold-glow:rgba(200,133,63,.06);
-  --emerald:  #10b981;
-  --em-dim:   rgba(16,185,129,.13);
-  --amber:    #f59e0b;
-  --am-dim:   rgba(245,158,11,.13);
-  --red:      #f87171;
-  --red-dim:  rgba(248,113,113,.13);
-  --blue:     #60a5fa;
-  --blue-dim: rgba(96,165,250,.13);
-  --purple:   #a78bfa;
-  --pu-dim:   rgba(167,139,250,.13);
-  --sidebar-w:228px;
-  --r:        7px;
-  --r-lg:     11px;
-  --r-xl:     16px;
-  --shadow:   0 0 0 1px rgba(255,255,255,.055), 0 2px 8px rgba(0,0,0,.5);
-  --shadow-lg:0 0 0 1px rgba(255,255,255,.055), 0 8px 32px rgba(0,0,0,.7);
-  --shadow-xl:0 0 0 1px rgba(255,255,255,.055), 0 20px 60px rgba(0,0,0,.9);
+  /* Sidebar — dark */
+  --sb-bg:       #0f1117;
+  --sb-surface:  #161b27;
+  --sb-active:   #1e2230;
+  --sb-border:   rgba(255,255,255,.07);
+  --sb-text:     rgba(255,255,255,.5);
+  --sb-text-hi:  #ffffff;
+  --sb-w:        228px;
+  /* Main — light */
+  --bg:          #f4f5f8;
+  --surface:     #ffffff;
+  --surface2:    #f8f9fb;
+  --surface3:    #f0f1f4;
+  --border:      #e5e7eb;
+  --border2:     #d1d5db;
+  --text:        #0f1117;
+  --text2:       #4b5563;
+  --text3:       #9ca3af;
+  /* Accents */
+  --gold:        #c17f3e;
+  --gold2:       #d4924f;
+  --gold-dim:    rgba(193,127,62,.1);
+  --emerald:     #059669;
+  --em-dim:      #ecfdf5;
+  --em-text:     #065f46;
+  --amber:       #d97706;
+  --am-dim:      #fffbeb;
+  --am-text:     #92400e;
+  --red:         #dc2626;
+  --red-dim:     #fef2f2;
+  --red-text:    #991b1b;
+  --blue:        #2563eb;
+  --blue-dim:    #eff6ff;
+  --blue-text:   #1e40af;
+  --purple:      #7c3aed;
+  --pu-dim:      #f5f3ff;
+  --pu-text:     #4c1d95;
+  /* Misc */
+  --r:           7px;
+  --r-lg:        11px;
+  --r-xl:        16px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:   0 12px 32px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.06);
 }
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
@@ -50,28 +62,27 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 /* ── LAYOUT ── */
 .admin-shell{display:flex;min-height:100vh}
 .sidebar{
-  width:var(--sidebar-w);flex-shrink:0;
-  background:var(--surface);
-  border-right:1px solid var(--border);
+  width:var(--sb-w);flex-shrink:0;
+  background:var(--sb-bg);
+  border-right:1px solid var(--sb-border);
   display:flex;flex-direction:column;
   position:fixed;top:0;left:0;bottom:0;
-  z-index:100;
-  overflow-y:auto;
+  z-index:100;overflow-y:auto;
 }
-.main{margin-left:var(--sidebar-w);flex:1;min-width:0;display:flex;flex-direction:column}
+.main{margin-left:var(--sb-w);flex:1;min-width:0;display:flex;flex-direction:column;}
 .topbar{
   height:52px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 28px;
-  gap:16px;background:var(--bg);
+  display:flex;align-items:center;padding:0 24px;
+  gap:16px;background:var(--surface);
   position:sticky;top:0;z-index:50;
-  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow-sm);
 }
-.page-body{padding:28px;flex:1;}
+.page-body{padding:24px;flex:1;}
 
 /* ── SIDEBAR ── */
 .sb-brand{
   padding:20px 18px 16px;
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid var(--sb-border);
   display:flex;align-items:center;gap:10px;
 }
 .sb-mark{
@@ -81,95 +92,93 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   font-family:'Syne',sans-serif;font-size:.75rem;font-weight:800;
   color:#fff;letter-spacing:.02em;flex-shrink:0;
 }
-.sb-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--text);letter-spacing:.01em;}
-.sb-sub{font-size:.65rem;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;}
+.sb-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:#fff;letter-spacing:.01em;}
+.sb-sub{font-size:.65rem;color:rgba(255,255,255,.3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;}
 .sb-section{
   font-size:.6rem;font-weight:600;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--text3);
+  text-transform:uppercase;color:rgba(255,255,255,.25);
   padding:16px 18px 6px;
 }
 .sb-nav{padding:8px;flex:1;}
 .sb-link{
   display:flex;align-items:center;gap:9px;
   padding:7px 10px;border-radius:var(--r);
-  font-size:.82rem;font-weight:500;color:var(--text2);
+  font-size:.82rem;font-weight:500;color:var(--sb-text);
   transition:all .15s;position:relative;
   margin-bottom:1px;
 }
-.sb-link:hover{background:var(--surface2);color:var(--text);}
-.sb-link.active{background:var(--surface3);color:var(--text);}
+.sb-link:hover{background:var(--sb-surface);color:var(--sb-text-hi);}
+.sb-link.active{background:var(--sb-active);color:var(--sb-text-hi);}
 .sb-link.active::before{
   content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
   width:3px;height:16px;border-radius:0 2px 2px 0;
   background:var(--gold);
 }
-.sb-link svg{width:15px;height:15px;flex-shrink:0;opacity:.7;}
-.sb-link.active svg{opacity:1;}
+.sb-link svg{width:15px;height:15px;flex-shrink:0;opacity:.6;}
+.sb-link.active svg,.sb-link:hover svg{opacity:1;}
 .sb-badge{
   margin-left:auto;padding:2px 7px;border-radius:100px;
   font-size:.62rem;font-weight:600;font-family:'JetBrains Mono',monospace;
-  background:var(--surface3);color:var(--text2);
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);
 }
-.sb-badge.alert{background:var(--red-dim);color:var(--red);}
-.sb-badge.warn{background:var(--am-dim);color:var(--amber);}
+.sb-badge.alert{background:rgba(220,38,38,.2);color:#fca5a5;}
+.sb-badge.warn{background:rgba(217,119,6,.2);color:#fcd34d;}
 .sb-footer{
-  padding:12px;border-top:1px solid var(--border);
+  padding:12px;border-top:1px solid var(--sb-border);
   display:flex;align-items:center;gap:9px;
 }
 .sb-avatar{
   width:28px;height:28px;border-radius:6px;
-  background:linear-gradient(135deg,#2a4a6a,#1a2a4a);
+  background:rgba(255,255,255,.08);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;color:#60a5fa;
+  font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;color:rgba(255,255,255,.6);
   flex-shrink:0;
 }
-.sb-user-name{font-size:.78rem;font-weight:500;}
-.sb-user-role{font-size:.62rem;color:var(--text3);}
+.sb-user-name{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.7);}
+.sb-user-role{font-size:.62rem;color:rgba(255,255,255,.3);}
 
 /* ── TOPBAR ── */
-.topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.01em;flex:1;}
+.topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.01em;color:var(--text);flex:1;}
 .topbar-crumb{font-size:.78rem;color:var(--text3);display:flex;align-items:center;gap:6px;}
 .topbar-crumb span{color:var(--text2);}
 .tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
 
 /* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);}
-.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.card-title{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.01em;}
-.card-body{padding:20px;}
-.card-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card-title{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.01em;color:var(--text);}
+.card-body{padding:18px;}
+.card-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
 
 /* ── STAT TILES ── */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden;}
-.stat::before{content:'';position:absolute;inset:0;background:var(--gold-glow);opacity:0;transition:opacity .3s;pointer-events:none;}
-.stat:hover::before{opacity:1;}
-.stat-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
-.stat-value{font-family:'Syne',sans-serif;font-size:1.7rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
+.stat-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px;}
 .stat-sub{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:5px;}
-.stat-trend-up{color:var(--emerald);}
-.stat-trend-dn{color:var(--red);}
-.stat-icon{position:absolute;top:16px;right:16px;opacity:.12;}
+.stat-trend-up{color:var(--emerald);font-weight:600;}
+.stat-trend-dn{color:var(--red);font-weight:600;}
+.stat-icon{position:absolute;top:14px;right:14px;opacity:.08;}
 .stat-icon svg{width:28px;height:28px;}
 
 /* ── TABLE ── */
 .tbl{width:100%;border-collapse:collapse;}
-.tbl th{padding:10px 14px;text-align:left;font-size:.63rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
-.tbl td{padding:12px 14px;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl th{padding:9px 14px;text-align:left;font-size:.63rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2);}
+.tbl td{padding:11px 14px;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text);}
 .tbl tr:last-child td{border-bottom:none;}
-.tbl tbody tr{transition:background .12s;}
+.tbl tbody tr{transition:background .1s;}
 .tbl tbody tr:hover{background:var(--surface2);}
 .tbl-link{cursor:pointer;}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:100px;font-size:.67rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
-.badge-green{background:var(--em-dim);color:var(--emerald);}
-.badge-amber{background:var(--am-dim);color:var(--amber);}
-.badge-red{background:var(--red-dim);color:var(--red);}
-.badge-blue{background:var(--blue-dim);color:var(--blue);}
-.badge-purple{background:var(--pu-dim);color:var(--purple);}
-.badge-gold{background:var(--gold-dim);color:var(--gold2);}
-.badge-neutral{background:var(--surface3);color:var(--text2);}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:.67rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+.badge-green{background:var(--em-dim);color:var(--em-text);}
+.badge-amber{background:var(--am-dim);color:var(--am-text);}
+.badge-red{background:var(--red-dim);color:var(--red-text);}
+.badge-blue{background:var(--blue-dim);color:var(--blue-text);}
+.badge-purple{background:var(--pu-dim);color:var(--pu-text);}
+.badge-gold{background:var(--gold-dim);color:var(--gold);}
+.badge-neutral{background:var(--surface3);color:var(--text2);border:1px solid var(--border);}
 .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
 
 /* ── BUTTONS ── */
@@ -177,21 +186,21 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 .btn svg{width:13px;height:13px;flex-shrink:0;}
 .btn-primary{background:var(--gold);color:#fff;}
 .btn-primary:hover{background:var(--gold2);}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
-.btn-secondary:hover{background:var(--surface3);border-color:var(--border3);}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border2);box-shadow:var(--shadow-sm);}
+.btn-secondary:hover{background:var(--surface2);border-color:var(--border2);}
 .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
 .btn-ghost:hover{background:var(--surface2);color:var(--text);}
-.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,.2);}
-.btn-danger:hover{background:rgba(248,113,113,.2);}
+.btn-danger{background:var(--red-dim);color:var(--red-text);border:1px solid rgba(220,38,38,.15);}
+.btn-danger:hover{background:#fee2e2;}
 .btn-sm{padding:5px 10px;font-size:.74rem;}
 .btn-lg{padding:10px 20px;font-size:.86rem;}
 .btn-icon{padding:7px;}
 
 /* ── INPUTS ── */
-.input{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;}
-.input:focus{border-color:var(--gold);}
+.input{width:100%;padding:8px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+.input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(193,127,62,.1);}
 .input::placeholder{color:var(--text3);}
-.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(238,238,245,.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+.select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
 label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;}
 .field{margin-bottom:14px;}
 .field-row{display:grid;gap:12px;}
@@ -199,20 +208,20 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .field-row.cols-3{grid-template-columns:1fr 1fr 1fr;}
 
 /* ── TABS ── */
-.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:var(--r);padding:3px;}
+.tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:3px;}
 .tab{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;}
-.tab.active{background:var(--surface4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4);}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
 .tab:hover:not(.active){color:var(--text);}
 
-/* ── PILLS / CHIPS ── */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface3);border:1px solid var(--border2);border-radius:100px;font-size:.72rem;color:var(--text2);cursor:pointer;transition:all .15s;}
-.chip:hover,.chip.active{background:var(--gold-dim);border-color:rgba(200,133,63,.3);color:var(--gold2);}
+/* ── CHIPS ── */
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:100px;font-size:.72rem;color:var(--text2);cursor:pointer;transition:all .15s;}
+.chip:hover,.chip.active{background:var(--gold-dim);border-color:rgba(193,127,62,.3);color:var(--gold);}
 
 /* ── EMPTY STATE ── */
 .empty{text-align:center;padding:60px 20px;}
 .empty-icon{width:48px;height:48px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
-.empty-icon svg{width:22px;height:22px;opacity:.4;}
-.empty-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:6px;}
+.empty-icon svg{width:22px;height:22px;opacity:.3;}
+.empty-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:6px;color:var(--text);}
 .empty-sub{font-size:.8rem;color:var(--text3);max-width:280px;margin:0 auto;line-height:1.6;}
 
 /* ── MISC ── */
@@ -224,49 +233,48 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .text-blue{color:var(--blue);}
 .text-muted{color:var(--text2);}
 .text-dim{color:var(--text3);}
-.divider{height:1px;background:var(--border);margin:20px 0;}
+.divider{height:1px;background:var(--border);margin:16px 0;}
 .avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;flex-shrink:0;}
 .scroll-x{overflow-x:auto;}
 .flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
 .gap-8{gap:8px;} .gap-12{gap:12px;} .gap-16{gap:16px;}
-.mt-4{margin-top:4px;} .mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;}
-.mb-4{margin-bottom:4px;} .mb-8{margin-bottom:8px;} .mb-12{margin-bottom:12px;} .mb-16{margin-bottom:16px;} .mb-24{margin-bottom:24px;}
+.mt-4{margin-top:4px;} .mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-20{margin-top:20px;}
+.mb-4{margin-bottom:4px;} .mb-8{margin-bottom:8px;} .mb-12{margin-bottom:12px;} .mb-16{margin-bottom:16px;} .mb-20{margin-bottom:20px;}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
 
-/* ── MINI CHART ── */
+/* ── SPARKLINES / CHARTS ── */
 .sparkline{display:flex;align-items:flex-end;gap:3px;height:32px;}
 .spark-bar{flex:1;background:var(--gold-dim);border-radius:2px 2px 0 0;transition:background .15s;min-width:4px;}
 .spark-bar:hover{background:var(--gold);}
-.spark-bar.hi{background:var(--gold);}
 
 /* ── ACTIVITY FEED ── */
 .activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
 .activity-item:last-child{border-bottom:none;}
 .activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px;}
-.activity-text{font-size:.8rem;line-height:1.55;}
+.activity-text{font-size:.8rem;line-height:1.55;color:var(--text);}
 .activity-time{font-size:.68rem;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
 
 /* ── KANBAN ── */
-.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;}
-.kanban-col{min-width:220px;width:220px;flex-shrink:0;}
-.kanban-col-head{padding:10px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
+.kanban-col{min-width:210px;width:210px;flex-shrink:0;}
+.kanban-col-head{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:8px;}
 .kanban-col-title{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
 .kanban-count{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--text3);}
-.k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:8px;cursor:pointer;transition:all .15s;}
-.k-card:hover{border-color:var(--border2);transform:translateY(-1px);box-shadow:var(--shadow);}
-.k-card-name{font-size:.82rem;font-weight:600;margin-bottom:4px;}
+.k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px;margin-bottom:8px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow-sm);}
+.k-card:hover{border-color:var(--border2);box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.k-card-name{font-size:.82rem;font-weight:600;margin-bottom:3px;color:var(--text);}
 .k-card-sub{font-size:.72rem;color:var(--text2);}
 .k-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
 
 /* ── TIMELINE ── */
 .timeline{position:relative;padding-left:24px;}
 .timeline::before{content:'';position:absolute;left:6px;top:6px;bottom:0;width:1px;background:var(--border);}
-.tl-item{position:relative;padding-bottom:20px;}
+.tl-item{position:relative;padding-bottom:18px;}
 .tl-item:last-child{padding-bottom:0;}
 .tl-dot{position:absolute;left:-20px;top:3px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg);flex-shrink:0;}
-.tl-time{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:3px;}
-.tl-title{font-size:.82rem;font-weight:500;margin-bottom:2px;}
+.tl-time{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:2px;}
+.tl-title{font-size:.82rem;font-weight:500;margin-bottom:2px;color:var(--text);}
 .tl-sub{font-size:.76rem;color:var(--text2);line-height:1.5;}
 
 /* ── HEALTH SCORE ── */
@@ -276,33 +284,31 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 /* ── SCROLL ── */
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--surface4);border-radius:10px;}
-::-webkit-scrollbar-thumb:hover{background:var(--border3);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
 
 /* ── ANIMATIONS ── */
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-.fade-in{animation:fadeIn .35s ease both;}
-.fade-in-2{animation:fadeIn .35s .08s ease both;}
-.fade-in-3{animation:fadeIn .35s .16s ease both;}
-.fade-in-4{animation:fadeIn .35s .24s ease both;}
+.fade-in{animation:fadeIn .3s ease both;}
+.fade-in-2{animation:fadeIn .3s .06s ease both;}
+.fade-in-3{animation:fadeIn .3s .12s ease both;}
+.fade-in-4{animation:fadeIn .3s .18s ease both;}
 
 /* ── MODAL ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
 .modal-overlay.open{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-xl);width:480px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-xl);animation:fadeIn .2s ease;}
-.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.modal-title{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;}
-.modal-body{padding:24px;}
-.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);width:480px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:fadeIn .2s ease;}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;color:var(--text);}
+.modal-body{padding:22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--r-lg);padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:.82rem;z-index:300;box-shadow:var(--shadow-lg);animation:fadeIn .25s ease;max-width:320px;}
-.toast-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;border-radius:var(--r-lg);padding:11px 15px;display:flex;align-items:center;gap:9px;font-size:.8rem;z-index:300;box-shadow:var(--shadow-lg);animation:fadeIn .25s ease;max-width:320px;}
 
 /* ── SPLIT PANEL ── */
-.split-panel{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 52px);}
-.split-left{border-right:1px solid var(--border);overflow-y:auto;}
+.split-panel{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 52px);}
+.split-left{border-right:1px solid var(--border);overflow-y:auto;background:var(--surface);}
 .split-right{overflow-y:auto;background:var(--bg);}
 </style><body><div class="admin-shell"><aside class="sidebar"><div class="sb-brand">
       <div class="sb-mark">TB</div>
@@ -315,7 +321,7 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 <div class="topbar fade-in">
   <div class="topbar-title">Dashboard</div>
   <div class="tb-actions">
-    <span style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">Mon 6 Apr 2026 · 09:14</span>
+    <span style="font-size:.72rem;color:var(--text3);font-family:'JetBrains Mono',monospace;">Mon 7 Apr 2026 · 09:14</span>
     <a href="admin-invite-property.html" class="btn btn-primary">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       Invite property
@@ -323,42 +329,36 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
   </div>
 </div>
 <div class="page-body">
-  <div class="stat-grid fade-in"><div class="stat"><div class="stat-label">GMV this month</div><div class="stat-value">$284k</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 18% vs last month</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div></div><div class="stat"><div class="stat-label">Commission earned</div><div class="stat-value">$28.4k</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 22% vs last month</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="1.5"><path d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg></div></div><div class="stat"><div class="stat-label">Active bookings</div><div class="stat-value">47</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 8 this week</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div></div><div class="stat"><div class="stat-label">Members</div><div class="stat-value">1,284</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 34 this week</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div></div></div>
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:16px;" class="fade-in-2">
+  <div class="stat-grid fade-in"><div class="stat"><div class="stat-label">GMV this month</div><div class="stat-value">$284k</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 18% vs last month</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div></div><div class="stat"><div class="stat-label">Commission earned</div><div class="stat-value">$28.4k</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 22% vs last month</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="1.5"><path d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/></svg></div></div><div class="stat"><div class="stat-label">Active bookings</div><div class="stat-value">47</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 8 this week</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div></div><div class="stat"><div class="stat-label">Members</div><div class="stat-value">1,284</div><div class="stat-sub"><span class="stat-trend-up">↑</span> 34 this week</div><div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.5"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div></div>  </div>
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:16px;" class="fade-in-2">
     <div class="card">
-      <div class="card-header"><div class="card-title">GMV — Last 12 months</div><div style="display:flex;gap:8px;"><span class="chip active">Monthly</span><span class="chip">Weekly</span></div></div>
+      <div class="card-header"><div class="card-title">GMV — Last 12 months</div><div style="display:flex;gap:6px;"><span class="chip active">Monthly</span><span class="chip">Weekly</span></div></div>
       <div class="card-body">
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px;">
-          <div><div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;">$284,200</div><div style="font-size:.72rem;color:var(--text3);">April 2026 (MTD)</div></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
+          <div><div style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:var(--text);">$284,200</div><div style="font-size:.72rem;color:var(--text3);">April 2026 (MTD)</div></div>
           <div style="text-align:right;"><div style="font-size:.78rem;color:var(--emerald);font-weight:600;">↑ 18% MoM · Best month to date</div></div>
         </div>
-        <svg viewBox="0 0 700 100" style="width:100%;height:100px;display:block;margin:8px 0;" preserveAspectRatio="none">
-          <defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c8853f" stop-opacity=".2"/><stop offset="100%" stop-color="#c8853f" stop-opacity="0"/></linearGradient></defs>
-          <line x1="0" y1="25" x2="700" y2="25" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
-          <line x1="0" y1="50" x2="700" y2="50" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
-          <line x1="0" y1="75" x2="700" y2="75" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <svg viewBox="0 0 700 100" style="width:100%;height:100px;" preserveAspectRatio="none">
+          <defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c17f3e" stop-opacity=".15"/><stop offset="100%" stop-color="#c17f3e" stop-opacity="0"/></linearGradient></defs>
           <path d="M0,90 L58,85 L116,82 L175,76 L233,71 L291,68 L350,60 L408,52 L466,44 L525,36 L583,22 L641,14 L700,8 L700,100 L0,100 Z" fill="url(#gv)"/>
-          <path d="M0,90 L58,85 L116,82 L175,76 L233,71 L291,68 L350,60 L408,52 L466,44 L525,36 L583,22 L641,14 L700,8" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="700" cy="8" r="4" fill="var(--gold)" stroke="var(--bg)" stroke-width="2"/>
-          <text x="0" y="98" fill="rgba(238,238,245,.2)" font-size="8" font-family="JetBrains Mono">May 25</text>
-          <text x="233" y="98" fill="rgba(238,238,245,.2)" font-size="8" font-family="JetBrains Mono">Aug</text>
-          <text x="466" y="98" fill="rgba(238,238,245,.2)" font-size="8" font-family="JetBrains Mono">Nov</text>
-          <text x="641" y="98" fill="var(--gold)" font-size="8" font-family="JetBrains Mono">Apr 26</text>
+          <path d="M0,90 L58,85 L116,82 L175,76 L233,71 L291,68 L350,60 L408,52 L466,44 L525,36 L583,22 L641,14 L700,8" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="700" cy="8" r="4" fill="var(--gold)" stroke="white" stroke-width="2"/>
         </svg>
       </div>
     </div>
     <div class="card">
       <div class="card-header"><div class="card-title">Live activity</div><span class="badge badge-green"><span class="badge-dot"></span>Live</span></div>
-      <div class="card-body" style="padding:12px 16px;"><div class="activity-item"><div class="activity-dot" style="background:var(--emerald);"></div><div><div class="activity-text">New booking — <strong>Sarah Mitchell</strong> · Nour El Nil</div><div class="activity-time">2 min ago · TB-0847 · $5,600</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--blue);"></div><div><div class="activity-text">New member — <strong>James Park</strong> joined as Founding Member</div><div class="activity-time">14 min ago</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--amber);"></div><div><div class="activity-text">Enquiry stale — <strong>Nour El Nil</strong> hasn't replied in 7h</div><div class="activity-time">7 hrs ago · from Carla Rossi</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--emerald);"></div><div><div class="activity-text">Deposit collected — <strong>$560</strong> · TB-0847 · Stripe</div><div class="activity-time">Just now</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--purple);"></div><div><div class="activity-text"><strong>Al Moudira</strong> submitted listing update</div><div class="activity-time">5 hrs ago · review pending</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--gold);"></div><div><div class="activity-text"><strong>Capella Bangkok</strong> signed partnership agreement</div><div class="activity-time">Yesterday</div></div></div>      </div>
+      <div class="card-body" style="padding:10px 14px;"><div class="activity-item"><div class="activity-dot" style="background:var(--emerald);"></div><div><div class="activity-text">New booking — <strong>Sarah Mitchell</strong> · Nour El Nil</div><div class="activity-time">2 min ago</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--blue);"></div><div><div class="activity-text">New member — <strong>James Park</strong> joined</div><div class="activity-time">14 min ago</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--amber);"></div><div><div class="activity-text">Enquiry stale — <strong>Nour El Nil</strong> 7h no reply</div><div class="activity-time">7 hrs ago</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--emerald);"></div><div><div class="activity-text">Deposit collected — <strong>$560</strong> · TB-0847</div><div class="activity-time">Just now</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--gold);"></div><div><div class="activity-text"><strong>Al Moudira</strong> submitted listing update</div><div class="activity-time">5 hrs ago</div></div></div><div class="activity-item"><div class="activity-dot" style="background:var(--blue);"></div><div><div class="activity-text"><strong>Capella Bangkok</strong> signed agreement</div><div class="activity-time">Yesterday</div></div></div>      </div>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:16px;" class="fade-in-3">
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:16px;margin-bottom:16px;" class="fade-in-3">
     <div class="card">
       <div class="card-header"><div class="card-title">Recent bookings</div><a href="admin-bookings.html" class="btn btn-ghost btn-sm">View all →</a></div>
-      <div class="scroll-x"><table class="tbl"><thead><tr><th>Ref</th><th>Guest</th><th>Property</th><th>Dates</th><th>Value</th><th>Deposit</th><th>Status</th></tr></thead><tbody><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0847</span></td><td><div style="font-weight:500;">Sarah Mitchell</div><div style="font-size:.7rem;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d5a6fbb8bca1b6bdb0b9b995b2b8b4bcb9fbb6bab8">[email&#160;protected]</a></div></td><td>Nour El Nil</td><td style="font-size:.78rem;color:var(--text2);">Oct 15–21</td><td class="mono">$5,600</td><td><span class="badge badge-green">$560 ✓</span></td><td><span class="badge badge-amber">Awaiting conf.</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0846</span></td><td><div style="font-weight:500;">James & Carol Park</div><div style="font-size:.7rem;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bed4cedfccd5fed7ddd2d1cbda90ddd1d3">[email&#160;protected]</a></div></td><td>Amangiri</td><td style="font-size:.78rem;color:var(--text2);">Nov 3–8</td><td class="mono">$16,000</td><td><span class="badge badge-green">$1,600 ✓</span></td><td><span class="badge badge-green">Confirmed</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0845</span></td><td><div style="font-weight:500;">Elena Vasquez</div><div style="font-size:.7rem;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f792d98196848682928db79a92d994989a">[email&#160;protected]</a></div></td><td>La Maison Bleue</td><td style="font-size:.78rem;color:var(--text2);">Dec 19–26</td><td class="mono">$4,200</td><td><span class="badge badge-green">$420 ✓</span></td><td><span class="badge badge-green">Confirmed</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0844</span></td><td><div style="font-weight:500;">Thomas Whitfield</div><div style="font-size:.7rem;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5e2a702936372a38373b323a1e333b703d3133">[email&#160;protected]</a></div></td><td>Al Moudira</td><td style="font-size:.78rem;color:var(--text2);">Jan 8–14</td><td class="mono">$7,800</td><td><span class="badge badge-amber">$780 hold</span></td><td><span class="badge badge-amber">Quote hold</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0843</span></td><td><div style="font-weight:500;">Priya Mehta</div><div style="font-size:.7rem;color:var(--text3);"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e9999b809088c784a98e84888085c78a8684">[email&#160;protected]</a></div></td><td>Casa Cook</td><td style="font-size:.78rem;color:var(--text2);">Feb 2–9</td><td class="mono">$3,500</td><td><span class="badge badge-green">$350 ✓</span></td><td><span class="badge badge-blue">Pre-arrival</span></td></tr></tbody></table></div></div>
+      <div class="scroll-x"><table class="tbl"><thead><tr><th>Ref</th><th>Guest</th><th>Property</th><th>Dates</th><th>Value</th><th>Deposit</th><th>Status</th></tr></thead><tbody><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0847</span></td><td><div style="font-weight:500;">Sarah Mitchell</div><div style="font-size:.7rem;color:var(--text3);">s.mitchell@gmail.com</div></td><td>Nour El Nil</td><td style="font-size:.78rem;color:var(--text2);">Oct 15–21</td><td class="mono">$5,600</td><td><span class="badge badge-green">$560 ✓</span></td><td><span class="badge badge-amber">Awaiting conf.</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0846</span></td><td><div style="font-weight:500;">James & Carol Park</div><div style="font-size:.7rem;color:var(--text3);">jpark@icloud.com</div></td><td>Amangiri</td><td style="font-size:.78rem;color:var(--text2);">Nov 3–8</td><td class="mono">$16,000</td><td><span class="badge badge-green">$1,600 ✓</span></td><td><span class="badge badge-green">Confirmed</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0845</span></td><td><div style="font-weight:500;">Elena Vasquez</div><div style="font-size:.7rem;color:var(--text3);">e.vasquez@me.com</div></td><td>La Maison Bleue</td><td style="font-size:.78rem;color:var(--text2);">Dec 19–26</td><td class="mono">$4,200</td><td><span class="badge badge-green">$420 ✓</span></td><td><span class="badge badge-green">Confirmed</span></td></tr><tr class="tbl-link" onclick="window.location='admin-booking-detail.html'"><td><span class="mono text-gold">TB-0844</span></td><td><div style="font-weight:500;">Thomas Whitfield</div><div style="font-size:.7rem;color:var(--text3);">t.whitfield@me.com</div></td><td>Al Moudira</td><td style="font-size:.78rem;color:var(--text2);">Jan 8–14</td><td class="mono">$7,800</td><td><span class="badge badge-amber">$780 hold</span></td><td><span class="badge badge-amber">Quote hold</span></td></tr></tbody></table></div>
+    </div>
     <div class="card">
       <div class="card-header"><div class="card-title">Property health</div><a href="admin-properties.html" class="btn btn-ghost btn-sm">All →</a></div>
-      <div class="card-body" style="padding:12px 16px;"><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">Nour El Nil</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--emerald);">96%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">All data current</div><div class="health-bar"><div class="health-fill" style="width:96%;background:var(--emerald);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">Amangiri</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--emerald);">91%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">No availability sync</div><div class="health-bar"><div class="health-fill" style="width:91%;background:var(--emerald);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">Casa Cook El Gouna</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">84%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Availability outdated</div><div class="health-bar"><div class="health-fill" style="width:84%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">La Maison Bleue</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">78%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Photos pending</div><div class="health-bar"><div class="health-fill" style="width:78%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">Al Moudira</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">71%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Contact unverified</div><div class="health-bar"><div class="health-fill" style="width:71%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;">Singita Grumeti</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--red);">55%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Onboarding</div><div class="health-bar"><div class="health-fill" style="width:55%;background:var(--red);"></div></div></div>      </div>
+      <div class="card-body" style="padding:10px 14px;"><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">Nour El Nil</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--emerald);">96%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">All data current</div><div class="health-bar"><div class="health-fill" style="width:96%;background:var(--emerald);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">Amangiri</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--emerald);">91%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">No availability sync</div><div class="health-bar"><div class="health-fill" style="width:91%;background:var(--emerald);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">Casa Cook El Gouna</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">84%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Availability outdated</div><div class="health-bar"><div class="health-fill" style="width:84%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">La Maison Bleue</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">78%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Photos pending</div><div class="health-bar"><div class="health-fill" style="width:78%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">Al Moudira</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--amber);">71%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Contact unverified</div><div class="health-bar"><div class="health-fill" style="width:71%;background:var(--amber);"></div></div></div><div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:3px;"><div style="font-size:.8rem;font-weight:500;color:var(--text);">Singita Grumeti</div><span style="font-size:.7rem;font-family:'JetBrains Mono',monospace;color:var(--red);">55%</span></div><div style="font-size:.68rem;color:var(--text3);margin-bottom:3px;">Onboarding</div><div class="health-bar"><div class="health-fill" style="width:55%;background:var(--red);"></div></div></div>      </div>
     </div>
   </div>
   <div class="grid-3 fade-in-4">
@@ -368,7 +368,16 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 function showToast(msg, type) {
   var t = document.createElement('div');
-  t.classN
+  t.className = 'toast';
+  var color = type==='success' ? '#059669' : type==='warn' ? '#d97706' : '#dc2626';
+  t.innerHTML = '<div style="width:18px;height:18px;border-radius:50%;background:'+color+'30;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>'+msg+'</span>';
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+</script>
+</div></div></body></html>
