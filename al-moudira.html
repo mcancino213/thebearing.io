@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Al Moudira — TheBearing.io</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
+    --border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);
+    --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
+    --terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);
+    --sea:#2e6a8a;--moss:#3a7055;--gold:#9a7230;
+    --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;
+    --nav-h:66px;
+  }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{overflow-x:hidden;scroll-behavior:smooth;}
+body{font-family:'Geist',system-ui,sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+
+/* ── CANONICAL NAV ── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+.nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
+.nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);}
+.nav-logo .dot{color:var(--terra);}
+.nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
+.nav-links-desktop{display:flex;align-items:center;gap:22px;}
+.nav-link-d{font-size:.78rem;color:var(--bark);transition:color .15s;}
+.nav-link-d:hover{color:var(--ink);}
+.nav-link-d.featured{color:var(--terra);}
+.nav-right{display:flex;align-items:center;gap:14px;}
+.nav-btn{font-size:.76rem;padding:8px 18px;border-radius:100px;border:none;cursor:pointer;font-family:'Geist',sans-serif;font-weight:500;transition:all .15s;}
+.nav-btn:hover{opacity:.85;}
+.nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--terra),var(--terra-d));display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:#fff;cursor:pointer;}
+
+/* ── HERO ── */
+.hero{position:relative;height:72vh;min-height:480px;margin-top:var(--nav-h);overflow:hidden;}
+.hero-img{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;}
+.hero-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 0%,rgba(0,0,0,.0) 40%,rgba(0,0,0,.5) 100%);}
+.hero-content{position:absolute;bottom:36px;left:40px;right:40px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;}
+.hero-badge{display:inline-block;padding:4px 12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);border-radius:100px;font-size:.65rem;font-weight:600;letter-spacing:.08em;color:#fff;margin-bottom:8px;}
+.hero-type{font-size:.7rem;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+.hero-name{font-family:'Instrument Serif',serif;font-size:3rem;color:#fff;line-height:1.1;margin-bottom:6px;}
+.hero-loc{display:flex;align-items:center;gap:5px;font-size:.8rem;color:rgba(255,255,255,.7);}
+
+/* ── LAYOUT ── */
+.prop-wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
+.prop-grid{display:grid;grid-template-columns:1fr 360px;gap:48px;padding-top:40px;align-items:start;}
+.prop-main{min-width:0;}
+.prop-sidebar{position:sticky;top:calc(var(--nav-h) + 20px);}
+
+/* ── BOOKING CARD ── */
+.book-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:24px;box-shadow:0 4px 24px rgba(80,55,25,.08);margin-bottom:16px;}
+.book-price-from{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;}
+.book-price-num{font-family:'Instrument Serif',serif;font-size:2.2rem;color:var(--ink);line-height:1;}
+.book-price-unit{font-size:.72rem;color:var(--stone);margin-bottom:16px;margin-top:2px;}
+.book-divider{height:1px;background:var(--border);margin:16px 0;}
+.book-detail{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:8px;}
+.book-detail-lbl{color:var(--stone);}
+.book-detail-val{font-weight:500;}
+
+/* ── DUAL CTA ── */
+.cta-primary{width:100%;padding:14px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;}
+.cta-primary:hover{opacity:.88;}
+.cta-secondary{width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.cta-secondary:hover{border-color:var(--terra);color:var(--terra);}
+.cta-note{font-size:.68rem;color:var(--stone);text-align:center;margin-top:8px;}
+
+/* ── TRUST ITEMS ── */
+.trust-item{display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--bark);margin-bottom:6px;}
+.trust-item svg{flex-shrink:0;}
+
+/* ── CONTENT SECTIONS ── */
+.sec{margin-bottom:36px;}
+.sec-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;}
+.sec-title{font-family:'Instrument Serif',serif;font-size:1.65rem;color:var(--ink);margin-bottom:14px;line-height:1.25;}
+.sec-body{font-size:.9rem;color:var(--bark);line-height:1.75;}
+.hook-quote{font-family:'Instrument Serif',serif;font-size:1.15rem;font-style:italic;color:var(--bark);line-height:1.65;border-left:2px solid var(--terra);padding-left:20px;margin:24px 0;}
+
+/* ── ROOM CARDS ── */
+.rooms-grid{display:flex;flex-direction:column;gap:12px;}
+.room-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.room-name{font-weight:600;font-size:.88rem;margin-bottom:2px;}
+.room-meta{font-size:.75rem;color:var(--stone);}
+.room-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);white-space:nowrap;font-weight:500;}
+
+/* ── GALLERY ── */
+.gallery{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:32px;border-radius:var(--r-xl);overflow:hidden;}
+.gallery img{width:100%;height:260px;object-fit:cover;display:block;}
+
+/* ── OVERLAY ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.overlay.open{display:flex;}
+.sheet{background:#fff;border-radius:20px;width:500px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo-wrap" href="index.html">
+    <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
+    <div class="nav-tagline">Pointing you to the extraordinary.</div>
+  </a>
+  <div class="nav-links-desktop">
+    <a class="nav-link-d" href="hotels.html" style="font-weight:600;color:var(--ink);">Hotels</a>
+    <a class="nav-link-d" href="cruises.html">Cruises</a>
+    <a class="nav-link-d" href="villas.html">Villas</a>
+    <a class="nav-link-d" href="collections.html">Collections</a>
+    <a class="nav-link-d nav-vibe" href="vibe-search.html">✦ Vibe Search</a>
+    <a class="nav-link-d" href="how-we-choose.html">How we choose</a>
+    <a class="nav-link-d" href="journal.html">Journal</a>
+    <a class="nav-link-d featured" href="the-envoy.html">The Envoy</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="window.location='search.html'" title="Search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    </button>
+    <button class="nav-btn" onclick="window.location='my-account.html'" title="Account">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <img class="hero-img" src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=1600&q=80&fit=crop" alt="Al Moudira">
+  <div class="hero-scrim"></div>
+  <div class="hero-content">
+    <div>
+      <div class="hero-badge">Cultural</div>
+      <div class="hero-type">Boutique Hotel</div>
+      <h1 class="hero-name">Al Moudira</h1>
+      <div class="hero-loc">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+        Luxor West Bank · Egypt
+      </div>
+    </div>
+    <div style="flex-shrink:0;padding:12px 20px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:var(--r-xl);text-align:right;">
+      <div style="font-size:.6rem;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;">From</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;">$480</div>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.6);margin-top:2px;">per night</div>
+    </div>
+  </div>
+</div>
+
+<div class="prop-wrap">
+  <div class="prop-grid">
+
+    <!-- ── MAIN CONTENT ── -->
+    <div class="prop-main">
+
+      <!-- Tagline -->
+      <div style="padding:24px 0 8px;">
+        <div style="font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">The Bearing edit</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);line-height:1.4;">The most extravagantly romantic hotel in Egypt. Built by hand over 12 years.</div>
+      </div>
+
+      <!-- Gallery -->
+      <div class="gallery" style="margin-top:24px;">
+        <img src="https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=1600&q=80&fit=crop" alt="Al Moudira" style="object-position:center 40%;">
+        <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80&fit=crop" alt="Al Moudira detail">
+      </div>
+
+      <!-- Hook quote -->
+      <div class="hook-quote">"Twelve years, four hundred craftsmen, and an obsession with Ottoman detail. Al Moudira is what happens when someone builds a hotel for love, not return on investment."</div>
+
+      <!-- Description -->
+      <div class="sec">
+        <div class="sec-label">Overview</div>
+        <div class="sec-body">Madame Zeina Aboukheir spent twelve years building Al Moudira on the Luxor West Bank, employing four hundred local craftsmen to hand-carve, paint, and tile every surface. The result is a private palace of 54 rooms arranged around courtyards and gardens, minutes from the Valley of the Kings.</div>
+      </div>
+
+      <!-- Property details -->
+      <div class="sec">
+        <div class="sec-label">At a glance</div>
+        <div style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Setting</span><span style="font-weight:500;text-align:right;">Luxor West Bank · Egypt</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Style</span><span style="font-weight:500;text-align:right;">Neo-Ottoman palace</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Rooms</span><span style="font-weight:500;text-align:right;">54 rooms & suites</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Garden</span><span style="font-weight:500;text-align:right;">2 acres of palm garden</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Closest site</span><span style="font-weight:500;text-align:right;">Valley of the Kings (8 min)</span></div><div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:.8rem;"><span style="color:var(--stone);">Season</span><span style="font-weight:500;text-align:right;">Oct–Apr ideal</span></div>
+        </div>
+      </div>
+
+      <!-- Rooms -->
+      <div class="sec">
+        <div class="sec-label">Room types</div>
+        <div class="rooms-grid">
+          <div class="room-card"><div><div class="room-name">Classic Room</div><div class="room-meta">35m² · King or twin</div></div><div class="room-price">$480/night</div></div><div class="room-card"><div><div class="room-name">Deluxe Room</div><div class="room-meta">45m² · King</div></div><div class="room-price">$580/night</div></div><div class="room-card"><div><div class="room-name">Suite</div><div class="room-meta">75m² · King + sitting room</div></div><div class="room-price">$820/night</div></div>
+        </div>
+      </div>
+
+      <!-- What's included -->
+      <div class="sec">
+        <div class="sec-label">What's included</div>
+        <div style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);padding:16px 20px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--bark);margin-bottom:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Breakfast</div><div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--bark);margin-bottom:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Welcome drink</div><div style="display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--bark);margin-bottom:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Garden access</div>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div style="margin-bottom:40px;"><span style="display:inline-block;padding:4px 10px;background:var(--linen);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;">Egypt</span><span style="display:inline-block;padding:4px 10px;background:var(--linen);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;">Heritage</span><span style="display:inline-block;padding:4px 10px;background:var(--linen);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;">Boutique</span></div>
+
+    </div>
+
+    <!-- ── BOOKING SIDEBAR ── -->
+    <div class="prop-sidebar">
+      <div class="book-card">
+        <div class="book-price-from">From</div>
+        <div class="book-price-num">$480</div>
+        <div class="book-price-unit">per night</div>
+
+        <div class="book-divider"></div>
+
+        <div class="book-detail"><span class="book-detail-lbl">Setting</span><span class="book-detail-val">Luxor West Bank · Egypt</span></div><div class="book-detail"><span class="book-detail-lbl">Rooms</span><span class="book-detail-val">54 rooms & suites</span></div>
+
+        <div class="book-divider"></div>
+
+        <!-- DUAL CTA -->
+        <button class="cta-primary" onclick="document.getElementById('book-overlay').classList.add('open')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Book now
+        </button>
+        <button class="cta-secondary" onclick="openQuickEnquiry('Al Moudira')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Send an enquiry first
+        </button>
+        <div class="cta-note">Both options: same price as booking direct · 0% fees</div>
+
+        <div class="book-divider"></div>
+        <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>
+        <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>No fees · 0% commission</div>
+        <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Reply within 24 hours</div>
+      </div>
+
+      <!-- Back to listing -->
+      <div style="text-align:center;">
+        <a href="hotels.html" style="font-size:.75rem;color:var(--stone);display:inline-flex;align-items:center;gap:5px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+          Back to all properties
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── INSTANT BOOK OVERLAY ── -->
+<div class="overlay" id="book-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">Boutique Hotel</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;">Al Moudira</div>
+      </div>
+      <button onclick="document.getElementById('book-overlay').classList.remove('open')" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div style="font-size:.82rem;color:var(--stone);margin-bottom:20px;line-height:1.55;">Your card is held but not charged until the property confirms availability (within 24 hours). Cancel free if unavailable.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Date</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option></select></div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:8px;">Select room</label>
+      
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--terra);border-radius:var(--r-md);cursor:pointer;background:rgba(176,88,48,.04);margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="radio" name="room-book-al-moudira" checked style="accent-color:var(--terra);">
+              <div>
+                <div style="font-size:.84rem;font-weight:600;">Classic Room</div>
+                <div style="font-size:.7rem;color:var(--stone);">35m² · King or twin</div>
+              </div>
+            </div>
+            <div style="font-size:.84rem;font-weight:700;color:var(--terra);white-space:nowrap;">$480/night</div>
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--border-hi);border-radius:var(--r-md);cursor:pointer;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="radio" name="room-book-al-moudira"  style="accent-color:var(--terra);">
+              <div>
+                <div style="font-size:.84rem;font-weight:600;">Deluxe Room</div>
+                <div style="font-size:.7rem;color:var(--stone);">45m² · King</div>
+              </div>
+            </div>
+            <div style="font-size:.84rem;font-weight:700;color:var(--terra);white-space:nowrap;">$580/night</div>
+          </label>
+          <label style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--border-hi);border-radius:var(--r-md);cursor:pointer;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input type="radio" name="room-book-al-moudira"  style="accent-color:var(--terra);">
+              <div>
+                <div style="font-size:.84rem;font-weight:600;">Suite</div>
+                <div style="font-size:.7rem;color:var(--stone);">75m² · King + sitting room</div>
+              </div>
+            </div>
+            <div style="font-size:.84rem;font-weight:700;color:var(--terra);white-space:nowrap;">$820/night</div>
+          </label>
+    </div>
+
+    <div style="background:var(--linen);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:.8rem;"><span style="color:var(--bark);">Classic Room</span><span style="font-weight:600;">$480/night</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;"><span style="color:var(--bark);">TheBearing.io fee</span><span style="font-weight:600;color:var(--moss);">$0</span></div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Card to hold reservation</label>
+      <input type="text" placeholder="1234 5678 9012 3456" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;margin-bottom:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <input type="text" placeholder="MM / YY" style="padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        <input type="text" placeholder="CVV" style="padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+      </div>
+    </div>
+
+    <button onclick="document.getElementById('book-overlay').classList.remove('open');alert('Booking request submitted!\nAl Moudira will confirm within 24 hours.\nYou will receive an email confirmation shortly.');" style="width:100%;padding:14px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Confirm booking request
+    </button>
+    <div style="font-size:.68rem;color:var(--stone);text-align:center;">Card held · not charged · full refund if property can't confirm</div>
+  </div>
+</div>
+
+
+<!-- ══ QUICK ENQUIRY MODAL ══ -->
+<div id="quick-enquiry-overlay" onclick="if(event.target===this)closeQuickEnquiry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:#fff;border-radius:20px;width:480px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);">
+    <div style="padding:28px 28px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="eq-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--ink);margin-bottom:2px;">Send an enquiry</div>
+          <div style="font-size:.8rem;color:var(--stone);">No payment. The property replies within 24 hours.</div>
+        </div>
+        <button onclick="closeQuickEnquiry()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Full name</label><input type="text" placeholder="Your name" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Email</label><input type="email" placeholder="you@email.com" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option><option>Family (2+kids)</option></select></div>
+      </div>
+      <div style="margin-bottom:16px;"><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Your message</label><textarea placeholder="Tell us what you're looking for — dates, room type, any special requests or questions. The property will reply directly." style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;resize:none;min-height:90px;line-height:1.55;"></textarea></div>
+      <button onclick="submitQuickEnquiry()" style="width:100%;padding:13px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send enquiry
+      </button>
+      <div style="font-size:.68rem;color:var(--stone);text-align:center;padding-bottom:24px;">No payment · No obligation · Property replies within 24 hours</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function openQuickEnquiry(name) {
+  var lbl = document.getElementById('eq-property-label');
+  if (lbl && name) lbl.textContent = name;
+  var el = document.getElementById('quick-enquiry-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeQuickEnquiry() {
+  document.getElementById('quick-enquiry-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function submitQuickEnquiry() {
+  closeQuickEnquiry();
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px;';
+  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+</script>
+
+<!-- ══ THE ENVOY FAB ══ -->
+<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-txt">
+    <div class="ci-fab-label">The Envoy</div>
+    <div class="ci-fab-sub">Your Resident Expert</div>
+  </div>
+</button>
+
+<!-- ══ THE ENVOY DRAWER ══ -->
+<div class="ci-drawer" id="ci-drawer">
+
+  <div class="ci-head">
+    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+    <div class="ci-head-txt">
+      <div class="ci-name">The Envoy</div>
+      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    </div>
+    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+  </div>
+
+  <div class="ci-context" id="ci-context">
+    <div class="ci-context-dot"></div>
+    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
+  </div>
+
+  <div class="ci-messages" id="ci-messages"></div>
+
+  <div class="ci-sugs" id="ci-sugs">
+    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
+  </div>
+
+  <div class="ci-input-row">
+    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
+    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
+  </div>
+
+</div>
+
+
+<script>
+/* ══ THE ENVOY — PERSISTENT DRAWER ══ */
+
+var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable travel concierge helping guests find the perfect rare hotel or boutique cruise from the The Bearing collection.\n\nYour voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places. Short, evocative sentences. No bullet points. Never sound like a brochure.\n\nYou ONLY recommend properties and experiences within the The Bearing collection. You never suggest external booking sites, other hotel brands, or accommodation outside of The Bearing.\n\nWhen recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3-5 sentences.";
+
+var ciOpen = false;
+var ciBusy = false;
+
+// Persist history across pages via sessionStorage
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+function ciClearOnFresh() {
+  // Only clear if no history exists yet (first visit)
+}
+
+var ciHistory = ciLoadHistory();
+
+function openEnvoy() {
+  ciOpen = true;
+  document.getElementById('ci-drawer').classList.add('open');
+  var _fab = document.getElementById('ci-fab');
+  if(_fab){ _fab.style.opacity='0'; _fab.style.transform='translateY(16px)'; setTimeout(function(){ _fab.style.display='none'; }, 280); }
+  document.body.classList.add('ci-open');
+  // Restore messages from history
+  ciRestoreMessages();
+  setTimeout(function(){ document.getElementById('ci-input').focus(); }, 400);
+}
+
+function closeEnvoy() {
+  ciOpen = false;
+  document.getElementById('ci-drawer').classList.remove('open');
+  var _fab2 = document.getElementById('ci-fab');
+  if(_fab2){ _fab2.style.display='flex'; setTimeout(function(){ _fab2.style.opacity='1'; _fab2.style.transform=''; }, 20); }
+  document.body.classList.remove('ci-open');
+}
+
+function ciRestoreMessages() {
+  var msgs = document.getElementById('ci-messages');
+  msgs.innerHTML = '';
+  if (ciHistory.length === 0) {
+    // First time — show welcome
+    ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
+  } else {
+    // Restore previous conversation
+    ciHistory.forEach(function(m) {
+      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+    });
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Update context pill based on current page
+(function() {
+  var path = window.location.pathname;
+  var ctx = 'Browsing The Bearing';
+  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
+  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
+  var el = document.getElementById('ci-context-txt');
+  if (el) el.textContent = ctx;
+})();
+
+function ciAsk(btn) {
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(btn.textContent.trim());
+}
+
+function ciSend() {
+  var inp = document.getElementById('ci-input');
+  var q = inp.value.trim();
+  if (!q || ciBusy) return;
+  inp.value = '';
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(q);
+}
+
+async function ciSendMsg(text) {
+  ciAddMsg(text, 'user');
+  ciHistory.push({ role: 'user', content: text });
+  ciSaveHistory(ciHistory);
+
+  ciBusy = true;
+  var t = ciShowTyping();
+
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+    });
+    var data = await res.json();
+    var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
+    t.remove();
+    ciBusy = false;
+    ciAddMsg(reply, 'ai');
+    ciHistory.push({ role: 'assistant', content: reply });
+    ciSaveHistory(ciHistory);
+  } catch(e) {
+    t.remove();
+    ciBusy = false;
+    ciAddMsg('Something went wrong — please try again.', 'ai');
+  }
+}
+
+function ciAddMsg(text, type) {
+  var msgs = document.getElementById('ci-messages');
+  var div = document.createElement('div');
+  div.className = 'ci-msg ' + type;
+  text.split('\n').filter(function(p){ return p.trim(); }).forEach(function(p, i) {
+    var el = document.createElement('p');
+    el.textContent = p.trim();
+    if (i > 0) el.style.marginTop = '5px';
+    div.appendChild(el);
+  });
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function ciShowTyping() {
+  var msgs = document.getElementById('ci-messages');
+  var d = document.createElement('div');
+  d.className = 'ci-typing-msg';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+// Restore open state if user navigated while drawer was open
+if (sessionStorage.getItem('ci_was_open') === '1') {
+  // Small delay to let page render
+  setTimeout(openEnvoy, 100);
+}
+window.addEventListener('beforeunload', function() {
+  sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
+});
+</script>
+
+
+<!-- ══ LENS GATE OVERLAY ══ -->
+<div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
+  <div class="lens-gate-sheet">
+    <div class="lens-gate-grip" onclick="closeLensGate()"></div>
+    <div class="lens-gate-icon">
+      <svg viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
+    </div>
+    <div class="lens-gate-title">Unlock The Lens</div>
+    <div class="lens-gate-sub">Three specialists are waiting — the chef, the textile designer, the writer. Access is included when you book through The Bearing, or join as a member.</div>
+
+    <!-- Expert faces preview -->
+    <div class="lens-gate-experts">
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#9a7230,#7a5820);margin-right:-8px;z-index:3;">A</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#2e6a8a,#1a4a6a);margin-right:-8px;z-index:2;">J</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#3a7055,#2a5040);margin-right:-8px;z-index:1;">S</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#8c4422,#6a3218);">R</div>
+    </div>
+
+    <!-- Two paths -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="border:1px solid var(--border-hi);border-radius:var(--r-md);padding:14px 12px;text-align:center;cursor:pointer;" onclick="openOverlay('inq-overlay');closeLensGate();">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">Included with booking</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;">Book this property</div>
+        <div style="font-size:.7rem;color:var(--stone);line-height:1.4;">The Lens unlocks automatically for this property and sitewide for 1 year.</div>
+      </div>
+      <div style="border:1.5px solid var(--ink);border-radius:var(--r-md);padding:14px 12px;text-align:center;background:var(--ink);cursor:pointer;" onclick="showMemberSignup()">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,120,.9);margin-bottom:4px;">Annual membership</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:#fff;margin-bottom:4px;">$99 / year</div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.6);line-height:1.4;">All properties · All specialists · Priority advisor access.</div>
+      </div>
+    </div>
+
+    <div id="member-signup" style="display:none;">
+      <input class="lens-gate-input" id="lens-email" type="email" placeholder="Your email address" autocomplete="email">
+      <button class="lens-gate-submit" onclick="submitLensGate()">Continue to payment</button>
+    </div>
+    <div class="lens-gate-note">Book first and The Lens is complimentary · Cancel membership anytime</div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+/* ── 3-STEP BOOKING FLOW ── */
+function goStep(n) {
+  [1,2,3].forEach(function(i){
+    document.getElementById('step-'+i).classList.toggle('active', i===n);
+    var pip = document.getElementById('pip-'+i);
+    pip.classList.remove('active','done');
+    if(i < n) pip.classList.add('done');
+    else if(i === n) pip.classList.add('active');
+  });
+
+  // Scroll sheet to top on step change
+  var sheet = document.querySelector('.sheet');
+  if(sheet) sheet.scrollTop = 0;
+
+  if(n === 2) populateReview();
+  if(n === 3) populateConfirmation();
+}
+
+function val(id){ return (document.getElementById(id)||{}).value || ''; }
+
+function populateReview(){
+  var name   = val('inq-name')   || 'Sarah Mitchell';
+  var email  = val('inq-email')  || 'sarah.mitchell@gmail.com';
+  var date   = val('inq-date');
+  var guests = val('inq-guests') || '2 adults';
+  var cabin  = val('inq-cabin')  || 'Deluxe Suite';
+  var notes  = val('inq-notes');
+
+  setText('rv-name',  name);
+  setText('rv-email', email);
+  setText('rv-date',  date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : '15 October 2025');
+  setText('rv-guests', guests);
+  setText('rv-cabin',  cabin);
+
+  var notesRow = document.getElementById('rv-notes-row');
+  if(notes && notes.trim()){
+    setText('rv-notes', notes);
+    if(notesRow) notesRow.style.display = 'flex';
+  } else {
+    if(notesRow) notesRow.style.display = 'none';
+  }
+}
+
+function populateConfirmation(){
+  var name   = val('inq-name');
+  var cabin  = val('inq-cabin') || 'Luxury Room';
+  var date   = val('inq-date');
+  var guests = val('inq-guests') || '2 guests';
+
+  // Format dates
+  var checkIn = date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '15 Oct 2025';
+  var checkOut = '';
+  if(date){
+    var d = new Date(date+'T00:00');
+    d.setDate(d.getDate()+6);
+    checkOut = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  } else { checkOut = '21 Oct 2025'; }
+
+  // Build guest first message
+  var guestMsg = 'Hi';
+  if(name) guestMsg += ' — my name is ' + name;
+  guestMsg += '. I'd like to inquire about the ' + cabin + ' on Nour El Nil';
+  if(guests) guestMsg += ' for ' + guests;
+  if(date) guestMsg += ', departing ' + checkIn;
+  guestMsg += '. Please let me know availability and next steps.';
+
+  var previewEl = document.getElementById('preview-msg');
+  if(previewEl) previewEl.textContent = guestMsg;
+
+  // Update booking card dates and cabin
+  var cardDetails = document.querySelectorAll('.booking-card [data-checkin]');
+  var checkInEls  = document.querySelectorAll('#inbox-thread .checkin-val');
+  var checkOutEls = document.querySelectorAll('#inbox-thread .checkout-val');
+  var cabinEls    = document.querySelectorAll('#inbox-thread .cabin-val');
+  checkInEls.forEach(function(el){ el.textContent = checkIn; });
+  checkOutEls.forEach(function(el){ el.textContent = checkOut; });
+  cabinEls.forEach(function(el){ el.textContent = cabin; });
+}
+
+function setText(id, txt){
+  var el = document.getElementById(id);
+  if(el) el.textContent = txt;
+}
+</script>
+
+
+<script>
+/* ── Mosaic focus expand ──
+   Click tile N → it takes 75%.
+   Left neighbour (N-1) gets 12.5%, right neighbour (N+1) gets 12.5%.
+   All other tiles collapse to 0 (hidden).
+   Clicking a visible neighbour re-focuses it.
+   Scrolling away resets to equal sixths.
+*/
+/* ══ MOSAIC CAROUSEL ══ */
+(function(){
+
+  var focused = -1;
+  var TRANS   = 'flex .4s cubic-bezier(.4,0,.2,1), opacity .3s';
+
+  function getTiles(){
+    return Array.from(document.querySelectorAll('#mosaic-track [data-tile]'));
+  }
+
+  function render(){
+    var track  = document.getElementById('mosaic-track');
+    var tiles  = getTiles();
+    var prevFocused = focused;
+
+    if(focused === -1){
+      tiles.forEach(function(t,i){
+        t.style.transition = TRANS;
+        t.style.display    = '';
+        t.style.flex       = '0 0 calc(100% / 3 - 2px)';
+        t.style.opacity    = '1';
+        t.style.cursor     = 'pointer';
+      });
+      setTimeout(function(){
+        track.style.overflowX = 'auto';
+        if(prevFocused >= 0){
+          var tileW = track.scrollWidth / tiles.length;
+          track.scrollLeft = Math.max(0, Math.min((prevFocused - 1) * tileW, track.scrollWidth - track.clientWidth));
+        }
+      }, 420);
+      document.getElementById('mosaic-fade').style.opacity = '1';
+      var x = document.getElementById('mc-close');
+      if(x) x.remove();
+
+    } else {
+      track.style.overflowX = 'hidden';
+      var total = tiles.length;
+      // Decide which two tiles to show as neighbours
+      var n1, n2;
+      if(focused === 0){
+        // First photo: show tiles 1 and 2 on the right
+        n1 = 1; n2 = 2;
+      } else if(focused === total - 1){
+        // Last photo: show tiles total-2 and total-3 on the left
+        n1 = total - 2; n2 = total - 3;
+      } else {
+        // Middle: one each side
+        n1 = focused - 1; n2 = focused + 1;
+      }
+
+      tiles.forEach(function(t,i){
+        t.style.transition = TRANS;
+        if(i === focused){
+          t.style.display  = '';
+          t.style.flex     = '0 0 75%';
+          t.style.opacity  = '1';
+          t.style.cursor   = 'pointer';
+        } else if(i === n1 || i === n2){
+          t.style.display  = '';
+          t.style.flex     = '0 0 12.5%';
+          t.style.opacity  = '.7';
+          t.style.cursor   = 'pointer';
+        } else {
+          t.style.display  = 'none';
+          t.style.flex     = '0 0 0%';
+          t.style.opacity  = '0';
+          t.style.cursor   = 'default';
+        }
+      });
+      document.getElementById('mosaic-fade').style.opacity = '0';
+
+      // Scroll so the right tiles are in view
+      if(focused === 0){
+        // Photo 1 left-aligned: n2 is rightmost, scroll to 0
+        track.scrollLeft = 0;
+      } else if(focused === total - 1){
+        // Last photo right-aligned: scroll to max
+        track.scrollLeft = track.scrollWidth;
+      } else {
+        // Middle: left neighbour at left edge
+        var tileW = track.scrollWidth / total;
+        track.scrollLeft = (focused - 1) * tileW;
+      }
+
+      if(!document.getElementById('mc-close')){
+        var btn = document.createElement('button');
+        btn.id  = 'mc-close';
+        btn.textContent = '✕';
+        btn.style.cssText = 'position:absolute;top:12px;right:12px;z-index:30;'
+          +'width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);'
+          +'border:1px solid rgba(255,255,255,.35);color:#fff;font-size:.85rem;'
+          +'cursor:pointer;display:flex;align-items:center;justify-content:center;';
+        btn.onclick = function(e){ e.stopPropagation(); focused=-1; render(); };
+        document.getElementById('mosaic-track').parentNode.appendChild(btn);
+      }
+    }
+  }
+
+  // Wire up tile clicks
+  getTiles().forEach(function(t,i){
+    t.onclick = function(){
+      var total = getTiles().length;
+      var n1, n2;
+      if(focused === 0){ n1=1; n2=2; }
+      else if(focused === total-1){ n1=total-2; n2=total-3; }
+      else { n1=focused-1; n2=focused+1; }
+
+      if(focused === -1){
+        focused = i; render();
+      } else if(i === focused){
+        focused = -1; render();
+      } else if(i === n1 || i === n2){
+        focused = i; render();
+      }
+    };
+  });
+
+  // Simple swipe when expanded
+  var track = document.getElementById('mosaic-track');
+  var x0 = null;
+  track.addEventListener('touchstart', function(e){ x0 = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener('touchend', function(e){
+    if(focused === -1 || x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if(Math.abs(dx) > 50){
+      var tiles = getTiles();
+      var n = focused + (dx < 0 ? 1 : -1);
+      if(n >= 0 && n < tiles.length){ focused = n; render(); }
+    }
+  }, {passive:true});
+  track.addEventListener('mousedown', function(e){ x0 = e.clientX; }, {passive:true});
+  track.addEventListener('mouseup', function(e){
+    if(focused === -1 || x0 === null) return;
+    var dx = e.clientX - x0; x0 = null;
+    if(Math.abs(dx) > 50){
+      var tiles = getTiles();
+      var n = focused + (dx < 0 ? 1 : -1);
+      if(n >= 0 && n < tiles.length){ focused = n; render(); }
+    }
+  });
+
+})();
+
+// Only collapse on explicit click — not on scroll
+</script>
+
+
+<!-- ══ CABIN PHOTO VIEWER ══ -->
+<div id="cabin-viewer" onclick="closeCabinViewer()" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.92);flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">
+
+  <!-- Header -->
+  <div onclick="event.stopPropagation()" style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);z-index:2;">
+    <div>
+      <div id="cv-name" style="font-family:'Instrument Serif',serif;font-size:1.1rem;color:#fff;font-style:italic;"></div>
+      <div id="cv-counter" style="font-size:.65rem;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.06em;"></div>
+    </div>
+    <button onclick="closeCabinViewer()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+    </button>
+  </div>
+
+  <!-- Main image -->
+  <img id="cv-img" onclick="closeCabinViewer()" src="" alt="" style="max-width:92vw;max-height:78vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 60px rgba(0,0,0,.5);transition:opacity .2s;cursor:pointer;" title="Click to close">
+
+  <!-- Nav arrows -->
+  <button id="cv-prev" onclick="event.stopPropagation();cvNav(-1)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><polyline points="9,2 4,7 9,12"/></svg>
+  </button>
+  <button id="cv-next" onclick="event.stopPropagation();cvNav(1)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><polyline points="5,2 10,7 5,12"/></svg>
+  </button>
+
+  <!-- Thumbnail strip -->
+  <div id="cv-thumbs" onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;padding:14px 20px 20px;display:flex;justify-content:center;gap:8px;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);overflow-x:auto;"></div>
+
+  <!-- Tap anywhere (incl. photo) to close — controls stop propagation -->
+</div>
+
+<script>
+/* ── Cabin photo viewer ── */
+var cvPhotos = {};
+var cvCurrent = { cabin: '', idx: 0 };
+
+// Populate with the single cabin image for now — more can be added later
+// Each cabin gets an array of src strings
+(function() {
+  var cards = document.querySelectorAll('.cabin-card');
+  ['Panoramic Suite','Deluxe Suite','Luxury Room'].forEach(function(name, i) {
+    var img = cards[i] && cards[i].querySelector('.cabin-img img');
+    cvPhotos[name] = img ? [img.src] : [];
+  });
+})();
+
+function openCabinPhotos(name) {
+  var photos = cvPhotos[name] || [];
+  if (!photos.length) return;
+  cvCurrent = { cabin: name, idx: 0 };
+  cvRender();
+  var v = document.getElementById('cabin-viewer');
+  v.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCabinViewer() {
+  document.getElementById('cabin-viewer').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function cvNav(dir) {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  cvCurrent.idx = (cvCurrent.idx + dir + photos.length) % photos.length;
+  cvRender();
+}
+
+function cvRender() {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  var idx    = cvCurrent.idx;
+
+  // Main image
+  var img = document.getElementById('cv-img');
+  img.style.opacity = '0';
+  setTimeout(function() {
+    img.src = photos[idx];
+    img.style.opacity = '1';
+  }, 120);
+
+  // Name + counter
+  document.getElementById('cv-name').textContent = cvCurrent.cabin;
+  document.getElementById('cv-counter').textContent = (idx + 1) + ' of ' + photos.length + '  ·  tap outside to close';
+
+  // Show/hide arrows
+  document.getElementById('cv-prev').style.display = photos.length > 1 ? 'flex' : 'none';
+  document.getElementById('cv-next').style.display = photos.length > 1 ? 'flex' : 'none';
+
+  // Thumbnails
+  var strip = document.getElementById('cv-thumbs');
+  strip.innerHTML = '';
+  if (photos.length > 1) {
+    photos.forEach(function(src, i) {
+      var t = document.createElement('div');
+      t.style.cssText = 'width:52px;height:36px;border-radius:4px;overflow:hidden;cursor:pointer;flex-shrink:0;border:2px solid ' + (i === idx ? '#fff' : 'transparent') + ';transition:border-color .15s;';
+      var im = document.createElement('img');
+      im.src = src;
+      im.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      t.appendChild(im);
+      t.onclick = function(e) { e.stopPropagation(); cvCurrent.idx = i; cvRender(); };
+      strip.appendChild(t);
+    });
+  }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('cabin-viewer').style.display === 'none') return;
+  if (e.key === 'ArrowRight') cvNav(1);
+  if (e.key === 'ArrowLeft')  cvNav(-1);
+  if (e.key === 'Escape')     closeCabinViewer();
+});
+</script>
+
+<script>
+function selectCabin(name) {
+  // Pre-select cabin in the form dropdown
+  var sel = document.getElementById('inq-cabin');
+  if (sel) {
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === name) {
+        sel.selectedIndex = i;
+        break;
+      }
+    }
+  }
+  openOverlay('inq-overlay');
+}
+
+function togglePref(btn){ btn.classList.toggle('active'); }
+function submitAccount(){
+  var name  = document.getElementById('acc-name') && document.getElementById('acc-name').value;
+  var email = document.getElementById('acc-email') && document.getElementById('acc-email').value;
+  closeOverlay('account-overlay');
+  toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
+}
+</script>
+
+
+<!-- ══ ACCOUNT OVERLAY ══ -->
+<div class="overlay" id="account-overlay" onclick="if(event.target===this)closeOverlay('account-overlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-grip" onclick="closeOverlay('account-overlay')"></div>
+    <div class="step-panel active" style="padding:24px 22px 40px;">
+
+      <div class="inq-kicker">The Bearing</div>
+      <div class="inq-title">Create your account</div>
+      <div class="inq-sub">Save properties, track your inquiries, and get personalised recommendations from your The Envoy.</div>
+
+      <div class="f-field">
+        <label class="f-lbl">Full name</label>
+        <input class="f-inp" id="acc-name" type="text" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Email address</label>
+        <input class="f-inp" id="acc-email" type="email" placeholder="you@email.com" autocomplete="email">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Phone (optional)</label>
+        <input class="f-inp" id="acc-phone" type="tel" placeholder="+1 (000) 000-0000" autocomplete="tel">
+      </div>
+
+      <!-- Travel preferences -->
+      <div style="margin-bottom:14px;">
+        <label class="f-lbl" style="margin-bottom:8px;display:block;">Travel style</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="acc-pref-btn" onclick="togglePref(this)">Remote &amp; untouched</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Beach &amp; privacy</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Cultural &amp; historic</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Wilderness</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Luxury cruises</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Design hotels</button>
+        </div>
+      </div>
+
+      <button class="f-next" onclick="submitAccount()">Create my account →</button>
+      <p class="f-note">Already have an account? <span style="color:var(--terra);cursor:pointer;text-decoration:underline;" onclick="toast('Sign in coming soon')">Sign in</span></p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function tcSearch(val) {
+  var q = (val || '').trim().toLowerCase();
+  if (!q) return;
+  // For the demo, "egypt" (or anything containing it) goes to search results
+  if (q.indexOf('egypt') !== -1) {
+    window.location = 'search.html';
+  } else {
+    // Any other term also goes to search.html for now
+    window.location = 'search.html';
+  }
+}
+function tcSearchFromInput(inputId) {
+  var el = document.getElementById(inputId);
+  tcSearch(el ? el.value : 'egypt');
+}
+</script>
+<script>
+// The Bearing 404 intercept — catches dead links and missing pages
+(function(){
+  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
+    'collections.html','journal.html','how-we-choose.html','founding-member.html',
+    'about.html','my-account.html','bookings.html','channels.html',
+    'lens.html','saved.html','preferences.html','settings.html','404.html'];
+  function fname(href){
+    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href]');
+    if(!a) return;
+    var href = a.getAttribute('href');
+    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
+    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
+    var f = fname(href);
+    if(f && VALID.indexOf(f) === -1){
+      e.preventDefault();
+      window.location = '404.html';
+    }
+  });
+  // Also intercept window.location assignments by watching for navigation errors
+  window.addEventListener('error', function(e){
+    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
+  }, true);
+})();
+</script>
+
+
+<script>
+(function(){
+  var V=['the-bearing.html','nour-el-nil.html','search.html','hotels.html','cruises.html','villas.html','vibe-search.html','the-envoy.html','collections.html','journal.html','how-we-choose.html','founding-member.html','about.html','my-account.html','bookings.html','channels.html','lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+  function f(h){try{return h.split('/').pop().split('?')[0].split('#')[0];}catch(e){return '';}}
+  document.addEventListener('click',function(e){
+    var a=e.target.closest('a[href]');
+    if(!a)return;
+    var h=a.getAttribute('href');
+    if(!h||h[0]==='#'||h.indexOf('mailto:')===0)return;
+    if(h.indexOf('http')===0||h.indexOf('//')===0)return;
+    var n=f(h);
+    if(n&&V.indexOf(n)===-1){e.preventDefault();window.location='404.html';}
+  });
+})();
+</script>
+
+
+<div style="background:#1a1510;border-top:1px solid rgba(255,255,255,.06);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
+  <div style="font-size:.68rem;color:rgba(255,255,255,.2);">© 2026 TheBearing.io</div>
+  <a href="pp-login.html" style="font-size:.68rem;color:rgba(255,255,255,.22);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.45)'" onmouseout="this.style.color='rgba(255,255,255,.22)'">Property partner? Sign in</a>
+</div>
+<!-- ══ THEBEARING CHECKOUT MODAL ══════════════════════════════════════
+     Stripe integration: replace STRIPE_PUBLISHABLE_KEY with live key
+     Everything else is ready to go.
+     Commission collected = 10% of total booking value (configurable)
+     Guest pays remainder directly to property.
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="tb-checkout-overlay" onclick="if(event.target===this)tbCloseCheckout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+  <div id="tb-checkout-sheet" style="background:#fff;border-radius:24px;width:520px;max-width:94vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:tbSlideUp .3s cubic-bezier(.32,.72,0,1);">
+
+    <!-- Header -->
+    <div style="padding:28px 28px 0;position:sticky;top:0;background:#fff;z-index:1;border-radius:24px 24px 0 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+        <div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:5px;" id="tb-co-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;line-height:1.15;" id="tb-co-title">Book your stay</div>
+        </div>
+        <button onclick="tbCloseCheckout()" style="width:34px;height:34px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:background .15s;" onmouseover="this.style.background='#f5f0e8'" onmouseout="this.style.background='#fff'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Step indicator -->
+      <div style="display:flex;gap:6px;padding:16px 0 14px;border-bottom:1px solid #f0ebe0;">
+        <div class="tb-step-pip" id="tb-pip-1" style="height:3px;flex:1;border-radius:100px;background:var(--terra,#b05830);transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-2" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-3" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Trip details -->
+    <div id="tb-step-1" style="padding:20px 28px 28px;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 1 of 3 — Trip details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
+          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>2 adults, 1 child</option>
+            <option>2 adults, 2 children</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;" id="tb-co-room-label">Room / cabin type</label>
+          <select id="tb-co-room" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <!-- Populated dynamically per property -->
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Special requests or questions (optional)</label>
+        <textarea id="tb-co-notes" placeholder="Dietary requirements, anniversary celebration, arrival time, anything you'd like the property to know..." style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;resize:none;min-height:80px;line-height:1.55;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'"></textarea>
+      </div>
+
+      <!-- Price summary -->
+      <div id="tb-price-summary" style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;" id="tb-line-room">Select dates and room</span>
+          <span style="font-weight:600;" id="tb-line-total">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;">TheBearing.io fee</span>
+          <span style="font-weight:600;color:#3a7055;">$0</span>
+        </div>
+        <div style="height:1px;background:#e5e0d8;margin:8px 0;"></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:.85rem;font-weight:700;">Booking deposit (10%)</span>
+          <span style="font-size:.85rem;font-weight:700;color:#b05830;" id="tb-deposit-amount">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:.75rem;color:#9a8e80;">Balance paid direct to property</span>
+          <span style="font-size:.75rem;color:#9a8e80;" id="tb-balance-amount">—</span>
+        </div>
+      </div>
+
+      <!-- How it works callout -->
+      <div style="background:#f0f7f4;border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <div style="font-size:.75rem;color:#2a5040;line-height:1.6;"><strong>How this works:</strong> You pay a 10% deposit to TheBearing.io now to secure your booking. The property will contact you directly within 24 hours to confirm and arrange the remaining 90% in their preferred way.</div>
+      </div>
+
+      <button onclick="tbGoStep(2)" id="tb-step1-btn" style="width:100%;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+        Continue to your details
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 2: Guest details -->
+    <div id="tb-step-2" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 2 of 3 — Your details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">First name</label>
+          <input type="text" id="tb-co-firstname" placeholder="Your first name" autocomplete="given-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Last name</label>
+          <input type="text" id="tb-co-lastname" placeholder="Your last name" autocomplete="family-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Email address</label>
+        <input type="email" id="tb-co-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;">Your booking confirmation and the property's contact details will be sent here.</div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Phone number (optional)</label>
+        <input type="tel" id="tb-co-phone" placeholder="+1 (000) 000-0000" autocomplete="tel" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+      </div>
+
+      <!-- Booking summary recap -->
+      <div style="background:#faf7f1;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Booking summary</div>
+        <div style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:4px;" id="tb-step2-summary"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(1)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbGoStep(3)" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          Continue to payment
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div id="tb-step-3" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 3 of 3 — Secure payment</div>
+
+      <!-- Stripe card element container -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:8px;">Card details</label>
+        <!-- In production: <div id="stripe-card-element"></div> -->
+        <!-- Demo UI that matches Stripe Elements styling -->
+        <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="tb-co-card" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;letter-spacing:.05em;" oninput="tbFormatCard(this)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="MM / YY" maxlength="7" id="tb-co-expiry" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;" oninput="tbFormatExpiry(this)">
+          </div>
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="CVV" maxlength="4" id="tb-co-cvv" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:#9a8e80;margin-top:6px;display:flex;align-items:center;gap:4px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Secured by Stripe · 256-bit SSL · PCI DSS compliant
+        </div>
+      </div>
+
+      <!-- Final charge summary -->
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:8px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Charge summary</div>
+        <div id="tb-step3-summary" style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;"></div>
+        <div style="height:1px;background:#e5e0d8;margin-bottom:10px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.9rem;font-weight:700;color:#1e1810;">Charged now</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:1.4rem;font-weight:600;color:#b05830;" id="tb-final-charge">—</span>
+        </div>
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;" id="tb-balance-note">—</div>
+      </div>
+
+      <!-- What happens next -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:.68rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens next</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+            <span>You'll receive an email confirmation with your booking reference and the property's direct contact details.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+            <span>The property contacts you directly within 24 hours to confirm your stay and arrange the balance.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+            <span>Your deposit is fully refundable if the property cannot confirm your dates.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(2)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbSubmitBooking()" id="tb-pay-btn" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <span id="tb-pay-btn-text">Pay deposit now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div id="tb-step-4" style="padding:40px 28px;display:none;text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:#f0f7f4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;margin-bottom:8px;">Booking confirmed</div>
+      <div style="font-size:.82rem;color:#5a4e40;line-height:1.65;margin-bottom:6px;" id="tb-confirm-msg">Your deposit has been received.</div>
+      <div style="font-family:monospace;font-size:.78rem;color:#9a8e80;background:#faf7f1;padding:8px 16px;border-radius:100px;display:inline-block;margin-bottom:24px;" id="tb-confirm-ref">TB-2025-XXXX</div>
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;text-align:left;margin-bottom:24px;">
+        <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens now</div>
+        <div style="font-size:.78rem;color:#5a4e40;line-height:1.7;">
+          ✓ Confirmation email sent to <strong id="tb-confirm-email"></strong><br>
+          ✓ Property's direct contact details included<br>
+          ✓ The property will reach out within 24 hours<br>
+          ✓ Balance arranged directly with the property
+        </div>
+      </div>
+      <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:#1e1810;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes tbSlideUp { from { opacity:0; transform:translateY(20px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+</style>
+
+<script>
+// ── THEBEARING CHECKOUT ENGINE ────────────────────────────────────────
+// STRIPE INTEGRATION POINT:
+// 1. Add <script src="https://js.stripe.com/v3/"></script> to <head>
+// 2. Replace 'STRIPE_PUBLISHABLE_KEY' with your live key
+// 3. In tbSubmitBooking(), uncomment the Stripe PaymentIntent call
+// 4. Replace the demo card inputs with: stripe.elements().create('card')
+// Everything else is wired and ready.
+// const stripe = Stripe('STRIPE_PUBLISHABLE_KEY');
+// ─────────────────────────────────────────────────────────────────────
+
+var tbCheckout = {
+  property: '',
+  pricePerNight: 0,
+  rooms: [],
+  currentStep: 1,
+  totalAmount: 0,
+  depositAmount: 0,
+  commissionRate: 0.10  // 10% — configurable per property
+};
+
+function tbOpenCheckout(config) {
+  // config = { property, label, rooms, pricePerNight, roomLabel }
+  tbCheckout.property    = config.property    || 'this property';
+  tbCheckout.pricePerNight = config.pricePerNight || 0;
+  tbCheckout.rooms       = config.rooms       || [{ name:'Standard', price:0 }];
+  tbCheckout.commissionRate = config.commissionRate || 0.10;
+
+  // Set property label and title
+  document.getElementById('tb-co-property-label').textContent = config.property;
+  document.getElementById('tb-co-title').textContent = config.title || 'Book your stay';
+
+  // Set room label
+  var roomLbl = document.getElementById('tb-co-room-label');
+  if (roomLbl) roomLbl.textContent = config.roomLabel || 'Room / cabin type';
+
+  // Populate room select
+  var sel = document.getElementById('tb-co-room');
+  sel.innerHTML = tbCheckout.rooms.map(r =>
+    '<option value="'+r.price+'">'+r.name+' — from $'+r.price.toLocaleString()+'/pp</option>'
+  ).join('');
+
+  tbGoStep(1);
+  tbUpdateSummary();
+
+  var el = document.getElementById('tb-checkout-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function tbCloseCheckout() {
+  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function tbGoStep(n) {
+  [1,2,3,4].forEach(i => {
+    var s = document.getElementById('tb-step-'+i);
+    var p = document.getElementById('tb-pip-'+i);
+    if (s) s.style.display = (i===n) ? 'block' : 'none';
+    if (p) p.style.background = (i<=n) ? 'var(--terra,#b05830)' : '#e5e0d8';
+  });
+  tbCheckout.currentStep = n;
+  if (n===2) tbBuildStep2Summary();
+  if (n===3) tbBuildStep3Summary();
+  document.getElementById('tb-checkout-sheet').scrollTop = 0;
+}
+
+function tbUpdateSummary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
+  var guestsSel = document.getElementById('tb-co-guests');
+  var guests    = guestsSel ? (guestsSel.value.match(/\d+/) || [2])[0] : 2;
+
+  var nights = 0;
+  if (arrival && departure) {
+    nights = Math.round((new Date(departure)-new Date(arrival))/(1000*60*60*24));
+    if (nights < 0) nights = 0;
+  }
+
+  var total   = roomPrice * parseInt(guests) * (nights || 1);
+  var deposit = Math.round(total * tbCheckout.commissionRate);
+  var balance = total - deposit;
+  tbCheckout.totalAmount   = total;
+  tbCheckout.depositAmount = deposit;
+
+  var lineRoom = document.getElementById('tb-line-room');
+  var lineTotal = document.getElementById('tb-line-total');
+  var depEl    = document.getElementById('tb-deposit-amount');
+  var balEl    = document.getElementById('tb-balance-amount');
+
+  if (lineRoom && total > 0) {
+    lineRoom.textContent  = (roomSel ? roomSel.options[roomSel.selectedIndex].text.split('—')[0].trim() : '') + (nights > 0 ? ' · '+nights+' night'+(nights>1?'s':'') : '');
+    lineTotal.textContent = '$'+total.toLocaleString();
+    depEl.textContent     = '$'+deposit.toLocaleString();
+    balEl.textContent     = '$'+balance.toLocaleString()+' paid to property';
+  } else if (lineRoom) {
+    lineRoom.textContent  = 'Select dates and room type';
+    lineTotal.textContent = '—';
+    depEl.textContent     = '—';
+    balEl.textContent     = '—';
+  }
+
+  // Update pay button
+  var payBtn = document.getElementById('tb-pay-btn-text');
+  if (payBtn) payBtn.textContent = deposit > 0 ? 'Pay $'+deposit.toLocaleString()+' deposit' : 'Pay deposit now';
+}
+
+function tbBuildStep2Summary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var guests    = document.getElementById('tb-co-guests').value;
+  var nights    = (arrival && departure) ? Math.round((new Date(departure)-new Date(arrival))/(86400000)) : 0;
+  var s = document.getElementById('tb-step2-summary');
+  if (s) s.innerHTML = [
+    '<div><strong>'+tbCheckout.property+'</strong></div>',
+    arrival ? '<div>'+new Date(arrival).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+' → '+new Date(departure).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>' : '',
+    nights > 0 ? '<div>'+nights+' night'+(nights>1?'s':'')+' · '+guests+'</div>' : '',
+    roomName ? '<div>'+roomName+'</div>' : '',
+    tbCheckout.depositAmount > 0 ? '<div style="margin-top:6px;font-weight:600;color:#b05830;">Deposit: $'+tbCheckout.depositAmount.toLocaleString()+'</div>' : ''
+  ].join('');
+}
+
+function tbBuildStep3Summary() {
+  tbBuildStep2Summary();
+  var s3 = document.getElementById('tb-step3-summary');
+  var fc = document.getElementById('tb-final-charge');
+  var bn = document.getElementById('tb-balance-note');
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var balance   = tbCheckout.totalAmount - tbCheckout.depositAmount;
+
+  if (s3) s3.innerHTML = [
+    '<div style="display:flex;justify-content:space-between;"><span>'+tbCheckout.property+'</span><span style="font-weight:600;">$'+tbCheckout.totalAmount.toLocaleString()+'</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">TheBearing.io fee</span><span style="color:#3a7055;font-weight:600;">$0</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">Balance to property</span><span style="color:#9a8e80;">$'+balance.toLocaleString()+'</span></div>',
+  ].join('');
+  if (fc) fc.textContent = tbCheckout.depositAmount > 0 ? '$'+tbCheckout.depositAmount.toLocaleString() : '—';
+  if (bn) bn.textContent = 'Remaining $'+balance.toLocaleString()+' arranged directly with '+tbCheckout.property;
+}
+
+function tbFormatCard(el) {
+  var v = el.value.replace(/\D/g,'').substring(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function tbFormatExpiry(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.substring(0,2)+' / '+v.substring(2,4);
+  el.value = v;
+}
+
+function tbSubmitBooking() {
+  var btn = document.getElementById('tb-pay-btn');
+  var btnText = document.getElementById('tb-pay-btn-text');
+
+  // Validation
+  var card = document.getElementById('tb-co-card').value.replace(/\s/g,'');
+  var expiry = document.getElementById('tb-co-expiry').value;
+  var cvv = document.getElementById('tb-co-cvv').value;
+  var email = document.getElementById('tb-co-email').value;
+  var firstname = document.getElementById('tb-co-firstname').value;
+
+  if (!firstname || !email || card.length < 15 || !expiry || !cvv) {
+    alert('Please fill in all required fields before proceeding.');
+    return;
+  }
+
+  // Loading state
+  btnText.textContent = 'Processing…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  // ── STRIPE INTEGRATION POINT ──────────────────────────────────────
+  // In production, replace this setTimeout with:
+  //
+  // const { paymentMethod, error } = await stripe.createPaymentMethod({
+  //   type: 'card',
+  //   card: cardElement,  // stripe.elements().create('card')
+  //   billing_details: { name: firstname + ' ' + lastname, email }
+  // });
+  // if (error) { show error; return; }
+  //
+  // const response = await fetch('/api/create-payment-intent', {
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     paymentMethodId: paymentMethod.id,
+  //     amount: tbCheckout.depositAmount * 100, // cents
+  //     currency: 'usd',
+  //     description: 'TheBearing deposit — ' + tbCheckout.property,
+  //     metadata: { booking_ref: ref, property: tbCheckout.property }
+  //   })
+  // });
+  // const { clientSecret } = await response.json();
+  // const result = await stripe.confirmCardPayment(clientSecret);
+  // ─────────────────────────────────────────────────────────────────
+
+  // Demo: simulate payment processing
+  setTimeout(function() {
+    var ref = 'TB-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*9000);
+    document.getElementById('tb-confirm-ref').textContent = ref;
+    document.getElementById('tb-confirm-msg').textContent =
+      'Your $'+tbCheckout.depositAmount.toLocaleString()+' deposit for '+tbCheckout.property+' has been received. The property will contact you directly within 24 hours.';
+    document.getElementById('tb-confirm-email').textContent = email;
+    tbGoStep(4);
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btnText.textContent = 'Pay deposit now';
+  }, 1800);
+}
+</script>
+
+</body>
+</html>

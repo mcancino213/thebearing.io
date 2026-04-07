@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Bearing — Rare Hotels & Cruises</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+  /* All functions that onclick= attributes call must be defined here,
+     before the body HTML is parsed. */
+  function toggleMenu(){
+    var menu = document.getElementById('nav-menu');
+    var btn  = document.getElementById('nav-menu-btn');
+    var open = menu.classList.toggle('open');
+    btn.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+  function closeMenu(){
+    var menu = document.getElementById('nav-menu');
+    var btn  = document.getElementById('nav-menu-btn');
+    if(menu) menu.classList.remove('open');
+    if(btn)  btn.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function openAdvisor(){ closeMenu(); openEnvoy(); }
+  function openOverlay(id){
+    var el = document.getElementById(id);
+    if(el){ el.classList.add('open'); document.body.style.overflow='hidden'; }
+  }
+  function closeOverlay(id){
+    var el = document.getElementById(id);
+    if(el){ el.classList.remove('open'); document.body.style.overflow=''; }
+  }
+  function setStype(el){ document.querySelectorAll('.stype').forEach(function(b){ b.classList.remove('active'); }); el.classList.add('active'); }
+  function setFilter(el){ document.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('active'); }); el.classList.add('active'); }
+  var toastT;
+  function toast(msg){
+    var el = document.getElementById('toast-el');
+    if(!el) return;
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(function(){ el.classList.remove('show'); }, 2800);
+  }
+</script>
+<style>
+  /* ── CANONICAL NAV ── */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+  .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
+  .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1;}
+  .nav-logo .dot{color:var(--terra);font-family:'Geist',sans-serif;font-size:.75em;font-weight:400;}
+  .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
+  .nav-links-desktop{display:flex;align-items:center;gap:22px;}
+  .nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
+  .nav-link-d:hover{color:var(--ink);}
+  .nav-link-d.featured{color:var(--terra);}
+  .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
+  .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .nav-btn{background:none;border:none;cursor:pointer;color:var(--stone);padding:4px;display:flex;align-items:center;transition:color .15s;}
+  .nav-btn:hover{color:var(--ink);}
+  .nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--terra),var(--terra-d));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Instrument Serif',serif;font-style:italic;font-size:.9rem;cursor:pointer;}
+
+  :root {
+    --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
+    --border:rgba(80,60,30,0.1);--border-hi:rgba(80,60,30,0.18);
+    --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
+    --terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,0.09);
+    --gold:#9a7230;--sea:#2e6a8a;--moss:#3a7055;
+    --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;
+  }
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  html{font-size:16px;scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Geist',system-ui,sans-serif;background:var(--cream);color:var(--ink);min-height:100dvh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+  ::-webkit-scrollbar{width:0;height:0;}
+  img{display:block;width:100%;height:100%;object-fit:cover;}
+
+  /* tags */
+  .tag{display:inline-flex;align-items:center;font-size:.66rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;padding:3px 9px;border-radius:100px;background:rgba(255,255,255,.18);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(4px);}
+  .tag.dark{background:var(--sand);color:var(--bark);border:1px solid var(--border);}
+  .tag.gold-d{background:rgba(154,114,48,.1);color:var(--gold);border-color:rgba(154,114,48,.2);}
+  .tag.terra-d{background:var(--terra-dim);color:var(--terra);border-color:rgba(176,88,48,.2);}
+  .tag.moss-d{background:rgba(58,112,85,.09);color:var(--moss);border-color:rgba(58,112,85,.2);}
+  .tag.sea-d{background:rgba(46,106,138,.09);color:var(--sea);border-color:rgba(46,106,138,.2);}
+
+  /* nav */
+  .wish-count{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;background:var(--terra);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.5);transition:opacity .25s,transform .25s;pointer-events:none;}
+  .wish-count.show{opacity:1;transform:scale(1);}
+  /* hamburger */
+  .nav-menu-btn{width:38px;height:38px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;color:var(--stone);transition:background .15s;}
+  .nav-menu-btn:hover{background:var(--sand);}
+  .nav-menu-btn span{display:block;width:18px;height:1.5px;background:currentColor;border-radius:1px;transition:transform .25s,opacity .2s,width .2s;}
+  .nav-menu-btn.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);}
+  .nav-menu-btn.open span:nth-child(2){opacity:0;width:0;}
+  .nav-menu-btn.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);}
+
+  /* hero */
+  .hero{position:relative;height:100dvh;min-height:580px;overflow:hidden;background:linear-gradient(160deg,#1a1208 0%,#2a1e0e 50%,#1a1510 100%);}
+  .hero-img-wrap{position:absolute;inset:0;overflow:hidden;}
+  .hero-img-wrap img{position:absolute;inset:0;animation:hZoom 14s ease-out forwards;}
+  @keyframes hZoom{from{transform:scale(1.04)}to{transform:scale(1)}}
+  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,5,.22) 0%,rgba(10,8,5,.04) 42%,rgba(10,8,5,.42) 72%,rgba(10,8,5,.82) 100%);}
+  .hero-shimmer{position:absolute;left:0;right:0;top:43%;height:1px;background:rgba(255,255,255,.1);box-shadow:0 0 28px 6px rgba(255,255,255,.05);}
+  .hero-content{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:36px 22px 40px;}
+  .hero-kicker{display:flex;align-items:center;gap:7px;margin-bottom:14px;opacity:0;animation:up .7s .3s forwards;}
+  .kicker-pip{width:5px;height:5px;border-radius:50%;background:rgba(255,200,140,.9);}
+  .kicker-txt{font-size:.68rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.85);text-shadow:0 1px 4px rgba(0,0,0,.4);}
+  .hero-h1{font-family:'Instrument Serif',serif;font-size:clamp(2.7rem,10vw,4.2rem);font-weight:400;line-height:1.04;color:#fff;margin-bottom:12px;text-shadow:0 2px 28px rgba(0,0,0,.28);opacity:0;animation:up .7s .45s forwards;}
+  .hero-h1 em{font-style:italic;color:rgba(255,215,165,.96);}
+  .hero-sub{font-size:.9rem;font-weight:300;color:rgba(255,255,255,.75);line-height:1.7;max-width:300px;margin-bottom:26px;opacity:0;animation:up .7s .6s forwards;text-shadow:0 1px 6px rgba(0,0,0,.3);}
+
+  /* search panel */
+  .search-panel{background:rgba(255,255,255,.84);border:1px solid rgba(255,255,255,.55);border-radius:var(--r-xl);overflow:hidden;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 4px 32px rgba(0,0,0,.24),0 1px 0 rgba(255,255,255,.9) inset;opacity:0;animation:up .7s .75s forwards;}
+  .stype-row{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);}
+  .stype{padding:12px 8px;border:none;background:none;cursor:pointer;font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;color:var(--mist);text-align:center;border-right:1px solid var(--border);transition:all .18s;position:relative;}
+  .stype:last-child{border-right:none;}
+  .stype.active{color:var(--ink);background:rgba(255,255,255,.5);}
+  .stype.active::after{content:'';position:absolute;bottom:0;left:18px;right:18px;height:2px;background:var(--terra);border-radius:2px 2px 0 0;}
+  .stype-icon{font-size:1rem;display:block;margin-bottom:2px;}
+  .sfields{padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .sfield{display:flex;align-items:center;gap:10px;padding:11px 12px;background:rgba(250,247,241,.8);border-radius:var(--r-md);border:1px solid var(--border);cursor:pointer;transition:border-color .18s,background .18s;}
+  .sfield:hover{border-color:var(--border-hi);background:rgba(255,255,255,.95);}
+  .sfield-icon{color:var(--terra);flex-shrink:0;font-size:.9rem;}
+  .sfield-label{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);}
+  .sfield-val{font-size:.86rem;color:var(--stone);margin-top:1px;}
+  .sfield-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .search-cta{margin:0 12px 12px;width:calc(100% - 24px);padding:13px;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;font-family:'Geist',sans-serif;font-size:.87rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);transition:opacity .15s,transform .15s;}
+  .search-cta:hover{opacity:.92;}
+  .search-cta:active{transform:scale(.98);}
+
+  /* page */
+  .page{background:var(--cream);}
+  .trust{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+  .trust-cell{background:#fff;padding:16px 12px;text-align:center;}
+  .trust-num{font-family:'Instrument Serif',serif;font-size:1.8rem;line-height:1;color:var(--ink);margin-bottom:2px;}
+  .trust-num em{font-style:italic;color:var(--terra);font-size:1.4rem;}
+  .trust-lbl{font-size:.63rem;font-weight:500;color:var(--mist);text-transform:uppercase;letter-spacing:.1em;}
+
+  .module{padding:40px 0;}
+  .module.warm{background:var(--linen);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .module-inner{padding:0 20px;}
+  .mod-head{margin-bottom:22px;}
+  .mod-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px;}
+  .eyebrow{font-size:.61rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);display:flex;align-items:center;gap:8px;}
+  .eyebrow::after{content:'';flex:1;height:1px;background:var(--border);}
+  .mod-title{font-family:'Instrument Serif',serif;font-size:1.7rem;line-height:1.14;color:var(--ink);margin-top:6px;}
+  .mod-title em{font-style:italic;color:var(--terra);}
+  .see-all{font-size:.73rem;font-weight:500;color:var(--terra);background:none;border:none;cursor:pointer;flex-shrink:0;}
+
+  .h-scroll{display:flex;gap:14px;overflow-x:auto;padding:0 20px 4px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+
+  /* editorial cards */
+  .edit-card{flex-shrink:0;width:270px;height:340px;border-radius:var(--r-lg);overflow:hidden;position:relative;cursor:pointer;scroll-snap-align:start;transition:transform .28s;box-shadow:0 6px 24px rgba(0,0,0,.16);}
+  .edit-card:hover{transform:scale(1.025);}
+  .edit-card:active{transform:scale(.98);}
+  .edit-img{position:absolute;inset:0;transition:transform .55s ease;}
+  .edit-card:hover .edit-img{transform:scale(1.06);}
+  .edit-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,6,3,.85) 0%,rgba(8,6,3,.3) 52%,rgba(8,6,3,.08) 100%);}
+  .edit-chip{position:absolute;top:12px;left:12px;font-size:.61rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(176,88,48,.85);color:#fff;border:1px solid rgba(255,255,255,.15);}
+  .edit-body{position:absolute;bottom:0;left:0;right:0;padding:18px 16px;}
+  .edit-region{font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,200,140,.9);margin-bottom:5px;}
+  .edit-title{font-family:'Instrument Serif',serif;font-size:1.1rem;line-height:1.22;color:#fff;margin-bottom:5px;}
+  .edit-meta{font-size:.72rem;color:rgba(255,255,255,.5);}
+
+  /* filters */
+  .filters{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;padding-left:0;padding-right:0;margin:0 0 20px;}
+  .fpill{flex-shrink:0;padding:7px 14px;border-radius:100px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:'Geist',sans-serif;font-size:.76rem;font-weight:500;color:var(--stone);white-space:nowrap;transition:all .16s;}
+  .fpill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .fpill:hover:not(.active){border-color:var(--border-hi);color:var(--ink);}
+
+  /* property cards */
+  .prop-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;margin-bottom:14px;transition:transform .2s,box-shadow .2s;box-shadow:0 1px 6px rgba(80,55,25,.06);}
+  .prop-card:last-child{margin-bottom:0;}
+  .prop-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(80,55,25,.12);}
+  .prop-img-wrap{position:relative;height:200px;overflow:hidden;}
+  .prop-img-wrap img{position:absolute;inset:0;transition:transform .55s ease;}
+  .prop-card:hover .prop-img-wrap img{transform:scale(1.05);}
+  .prop-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(8,6,3,.58) 0%,rgba(8,6,3,.15) 55%,transparent 100%);}
+  .prop-bottom{position:absolute;bottom:12px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-end;}
+  .prop-photo-name{font-family:'Instrument Serif',serif;font-size:1.15rem;line-height:1.2;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.3);}
+  .prop-photo-loc{font-size:.65rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:3px;}
+  .prop-heart{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.8);font-size:.95rem;transition:all .15s;}
+  .prop-heart:hover{background:rgba(255,255,255,.32);}
+  .prop-heart:active{transform:scale(.85);}
+  .prop-heart.saved{background:var(--terra);border-color:var(--terra);color:#fff;}
+  .prop-body{padding:14px 16px;}
+  .prop-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+  .prop-desc{font-size:.81rem;font-weight:300;color:var(--bark);line-height:1.62;margin-bottom:12px;}
+  .prop-data{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px;}
+  .d-cell{padding:9px 12px;border-right:1px solid var(--border);background:var(--linen);}
+  .d-cell:last-child{border-right:none;}
+  .d-lbl{font-size:.57rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);margin-bottom:2px;}
+  .d-val{font-size:.88rem;font-weight:500;color:var(--ink);}
+  .d-val .u{font-size:.68rem;color:var(--stone);font-weight:400;}
+  .prop-foot{display:flex;align-items:center;justify-content:space-between;}
+  .prop-from{font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);}
+  .prop-price{font-family:'Instrument Serif',serif;font-size:1.22rem;color:var(--ink);}
+  .prop-price .per{font-family:'Geist',sans-serif;font-size:.7rem;color:var(--stone);font-weight:400;}
+  .prop-btn{padding:10px 20px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-sm);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(176,88,48,.24);transition:opacity .15s,transform .15s;}
+  .prop-btn:hover{opacity:.9;}
+  .prop-btn:active{transform:scale(.96);}
+  .prop-btn.moss{background:linear-gradient(135deg,#3a7055,#285c42);box-shadow:0 3px 12px rgba(58,112,85,.2);}
+
+
+  /* ══ AI ADVISOR CHAT ══ */
+  .ai-advisor-section{padding:40px 20px;}
+  .ai-advisor-wrap{border-radius:var(--r-xl);overflow:hidden;border:1px solid var(--border-hi);box-shadow:0 8px 40px rgba(80,55,25,.12);background:#fff;}
+
+  .ai-header{position:relative;height:150px;overflow:hidden;flex-shrink:0;}
+  .ai-header img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .ai-header-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(18,10,4,.4) 0%,rgba(18,10,4,.75) 100%);}
+  .ai-header-content{position:absolute;inset:0;z-index:2;padding:18px 20px;display:flex;flex-direction:column;justify-content:flex-end;}
+  .ai-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);font-size:.59rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);margin-bottom:9px;width:fit-content;}
+  .ai-badge-dot{width:6px;height:6px;border-radius:50%;background:rgba(120,220,140,.9);box-shadow:0 0 0 2px rgba(120,220,140,.3);animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 2px rgba(120,220,140,.3)}50%{box-shadow:0 0 0 5px rgba(120,220,140,.1)}}
+  .ai-header-title{font-family:'Instrument Serif',serif;font-size:1.38rem;line-height:1.15;color:#fff;}
+  .ai-header-title em{font-style:italic;color:rgba(255,210,155,.96);}
+
+  .ai-thread{padding:18px 16px 6px;display:flex;flex-direction:column;gap:14px;min-height:240px;max-height:400px;overflow-y:auto;scroll-behavior:smooth;}
+  .ai-thread::-webkit-scrollbar{width:0;}
+
+  .msg{display:flex;gap:9px;align-items:flex-start;}
+  .msg.user{flex-direction:row-reverse;}
+  .msg-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+  .msg-avatar.ai{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;font-family:'Instrument Serif',serif;font-size:.72rem;font-style:italic;}
+  .msg-avatar.user{background:var(--sand);color:var(--bark);font-size:.65rem;font-weight:600;}
+  .msg-bubble{max-width:84%;padding:10px 14px;border-radius:16px;line-height:1.64;font-size:.83rem;}
+  .msg.ai .msg-bubble{background:var(--linen);color:var(--ink);border-radius:4px 16px 16px 16px;border:1px solid var(--border);}
+  .msg.user .msg-bubble{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border-radius:16px 4px 16px 16px;}
+
+  /* Property card inside chat bubble */
+  .msg-prop-card{margin-top:10px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-md);overflow:hidden;cursor:pointer;transition:box-shadow .2s;}
+  .msg-prop-card:hover{box-shadow:0 4px 16px rgba(80,55,25,.1);}
+  .msg-prop-img{height:100px;overflow:hidden;position:relative;}
+  .msg-prop-img img{width:100%;height:100%;object-fit:cover;}
+  .msg-prop-body{padding:10px 12px;}
+  .msg-prop-loc{font-size:.59rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-bottom:3px;}
+  .msg-prop-name{font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px;}
+  .msg-prop-why{font-size:.75rem;color:var(--bark);line-height:1.5;margin-bottom:8px;}
+  .msg-prop-footer{display:flex;align-items:center;justify-content:space-between;}
+  .msg-prop-price{font-family:'Instrument Serif',serif;font-size:.92rem;color:var(--ink);}
+  .msg-prop-cta{font-size:.72rem;font-weight:600;color:var(--terra);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;gap:3px;}
+
+  /* Typing indicator */
+  .typing-wrap{display:flex;gap:9px;align-items:flex-start;}
+  .typing{display:flex;align-items:center;gap:5px;padding:12px 16px;background:var(--linen);border:1px solid var(--border);border-radius:4px 16px 16px 16px;}
+  .typing span{width:6px;height:6px;border-radius:50%;background:var(--mist);}
+  .typing span:nth-child(1){animation:tdot .9s 0s infinite;}
+  .typing span:nth-child(2){animation:tdot .9s .18s infinite;}
+  .typing span:nth-child(3){animation:tdot .9s .36s infinite;}
+  @keyframes tdot{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+
+  /* Quick suggestion pills */
+  .ai-suggestions{padding:12px 16px;display:flex;gap:7px;flex-wrap:wrap;border-top:1px solid var(--border);}
+  .ai-sug{padding:7px 13px;border-radius:100px;border:1px solid var(--border);background:var(--cream);font-family:'Geist',sans-serif;font-size:.74rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .ai-sug:hover{border-color:var(--terra);color:var(--terra);background:rgba(176,88,48,.07);}
+
+  /* Input bar */
+  .ai-input-bar{display:flex;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid var(--border);background:#fff;}
+  .ai-input{flex:1;padding:10px 14px;background:var(--cream);border:1px solid var(--border);border-radius:100px;color:var(--ink);font-family:'Geist',sans-serif;font-size:.85rem;outline:none;transition:border-color .18s,background .18s;}
+  .ai-input::placeholder{color:var(--mist);}
+  .ai-input:focus{border-color:var(--terra);background:#fff;}
+  .ai-send{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--terra),var(--terra-d));border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(176,88,48,.3);transition:opacity .15s,transform .15s;}
+  .ai-send:hover{opacity:.88;}
+  .ai-send:active{transform:scale(.93);}
+  .ai-send svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-left:1px;}
+
+
+
+  /* nav menu — full overlay, drops from top */
+  .nav-menu{position:fixed;top:0;left:0;right:0;bottom:0;z-index:95;visibility:hidden;}
+  .nav-menu.open{visibility:visible;}
+  .nav-menu-overlay{position:absolute;inset:0;background:rgba(20,14,7,.5);opacity:0;transition:opacity .28s;}
+  .nav-menu.open .nav-menu-overlay{opacity:1;}
+  .nav-menu-panel{
+    position:absolute;top:0;left:0;right:0;
+    background:var(--cream);
+    transform:translateY(-100%);
+    transition:transform .36s cubic-bezier(.32,.72,0,1);
+    display:flex;flex-direction:column;
+    max-height:92dvh;overflow:hidden;
+    border-bottom:1px solid var(--border-hi);
+    box-shadow:0 12px 48px rgba(30,20,10,.18);
+  }
+  .nav-menu.open .nav-menu-panel{transform:translateY(0);}
+
+  .menu-header{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:58px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .menu-logo{font-family:'Instrument Serif',serif;font-size:1.2rem;color:var(--ink);}
+  .menu-logo .dot{color:var(--terra);font-size:.72em;font-family:'Geist',sans-serif;font-weight:400;letter-spacing:-.01em;opacity:.8;}
+  .menu-close{width:34px;height:34px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--stone);transition:background .15s;}
+  .menu-close:hover{background:var(--sand);}
+  .menu-links{flex:1;overflow-y:auto;padding:6px 0;}
+  .menu-link{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--ink);cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:background .15s;}
+  .menu-link:hover{background:var(--linen);}
+  .menu-link-arr{color:var(--mist);font-size:.85rem;transition:transform .15s,color .15s;}
+  .menu-link:hover .menu-link-arr{transform:translateX(3px);color:var(--terra);}
+  .menu-link
+  .menu-divider{height:1px;background:var(--border);margin:6px 22px;}
+  .menu-section-label{padding:12px 22px 2px;font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);}
+  .menu-footer{padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;}
+  .menu-footer-txt{font-size:.74rem;color:var(--mist);line-height:1.55;}
+  .menu-cta-row{display:flex;gap:8px;margin-top:10px;}
+  .menu-cta{flex:1;padding:11px;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;text-align:center;transition:opacity .15s;}
+  .menu-cta.primary{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;}
+  .menu-cta.secondary{background:none;border:1px solid var(--border-hi);color:var(--bark);}
+  .menu-cta:hover{opacity:.85;}
+
+  /* adv bar */
+  .adv-bar{position:fixed;top:66px;left:0;right:0;z-index:85;background:var(--ink);border-bottom:1px solid rgba(255,255,255,.08);transform:translateY(-100%);opacity:0;transition:transform .38s cubic-bezier(.32,.72,0,1),opacity .28s ease;will-change:transform;pointer-events:none;}
+  .adv-bar.visible{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .adv-bar-inner{display:flex;align-items:center;gap:12px;padding:11px 18px;}
+  .adv-bar-dot{width:7px;height:7px;border-radius:50%;background:rgba(120,220,140,.95);flex-shrink:0;box-shadow:0 0 0 2px rgba(120,220,140,.25);animation:advPulse 2.4s ease-in-out infinite;}
+  @keyframes advPulse{0%,100%{box-shadow:0 0 0 2px rgba(120,220,140,.25);}50%{box-shadow:0 0 0 5px rgba(120,220,140,.08);}}
+  .adv-bar-text{flex:1;font-size:.8rem;font-weight:400;color:rgba(255,255,255,.72);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .adv-bar-text strong{font-weight:500;color:#fff;}
+  .adv-bar-btn{flex-shrink:0;padding:8px 16px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;letter-spacing:.02em;position:relative;overflow:hidden;transition:opacity .15s,transform .15s;}
+  .adv-bar-btn::after{content:'';position:absolute;top:0;bottom:0;left:-100%;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);animation:shimmer 2.8s ease-in-out 1.2s infinite;}
+  @keyframes shimmer{0%{left:-100%;}50%,100%{left:160%;}}
+  .adv-bar-btn:hover{opacity:.9;}
+  .adv-bar-btn:active{transform:scale(.96);}
+
+  /* cruise cards */
+  .cruise-card{flex-shrink:0;width:250px;height:305px;border-radius:var(--r-lg);overflow:hidden;position:relative;cursor:pointer;scroll-snap-align:start;transition:transform .28s;box-shadow:0 6px 24px rgba(0,0,0,.14);}
+  .cruise-card:hover{transform:scale(1.025);}
+  .cruise-card:active{transform:scale(.98);}
+  .cruise-img{position:absolute;inset:0;transition:transform .55s ease;}
+  .cruise-card:hover .cruise-img{transform:scale(1.06);}
+  .cruise-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(5,12,24,.9) 0%,rgba(5,12,24,.35) 55%,rgba(5,12,24,.08) 100%);}
+  .cruise-nights{position:absolute;top:12px;right:12px;padding:4px 10px;border-radius:100px;background:rgba(255,255,255,.16);color:rgba(200,235,255,.92);font-size:.67rem;font-weight:600;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(6px);}
+  .cruise-body{position:absolute;bottom:0;left:0;right:0;padding:18px 16px;}
+  .cruise-line{font-size:.6rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(155,210,245,.9);margin-bottom:4px;}
+  .cruise-name{font-family:'Instrument Serif',serif;font-size:1.05rem;line-height:1.22;color:#fff;margin-bottom:3px;}
+  .cruise-route{font-size:.75rem;color:rgba(255,255,255,.52);margin-bottom:12px;}
+  .cruise-foot{display:flex;align-items:center;justify-content:space-between;}
+  .cruise-price{font-family:'Instrument Serif',serif;font-size:1.05rem;color:#fff;}
+  .cruise-price small{font-family:'Geist',sans-serif;font-size:.68rem;color:rgba(255,255,255,.48);font-weight:400;}
+  .cruise-btn{padding:7px 13px;border-radius:8px;cursor:pointer;font-family:'Geist',sans-serif;font-size:.73rem;font-weight:600;background:rgba(46,106,138,.65);color:rgba(180,225,255,.94);border:1px solid rgba(46,106,138,.45);transition:background .15s;}
+  .cruise-btn:hover{background:var(--sea);color:#fff;}
+
+  /* sheets */
+  .overlay{position:fixed;inset:0;z-index:200;background:rgba(30,20,10,.45);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .3s;}
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .sheet{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(160deg,#faf7f1 0%,#f4efe4 100%);border-radius:28px 28px 0 0;border:1px solid rgba(255,255,255,.06);border-bottom:none;padding:0 20px 52px;max-height:88dvh;overflow-y:auto;transform:translateY(100%);box-shadow:0 -8px 48px rgba(80,55,25,.12),0 0 0 1px rgba(176,88,48,.1);transition:transform .44s cubic-bezier(.32,.72,0,1);}
+  .overlay.open .sheet{transform:translateY(0);}
+  .sheet-grip{width:40px;height:4px;background:var(--sand,#ece5d8);border-radius:2px;margin:16px auto 22px;cursor:pointer;}
+  .sheet-kicker{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:8px;}
+  .sheet-title{font-family:'Instrument Serif',serif;font-size:1.48rem;color:var(--ink,#1e1810);margin-bottom:4px;}
+  .sheet-sub{font-size:.78rem;color:var(--stone,#9a8e80);margin-bottom:24px;line-height:1.6;}
+  .sf{display:flex;flex-direction:column;gap:11px;}
+  .f-lbl{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist,#bdb4a8);margin-bottom:5px;display:block;transition:color .18s;}
+  .f-inp{width:100%;padding:13px 16px;background:#fff;border:1px solid var(--border-hi,#ddd4c4);border-radius:12px;color:var(--ink,#1e1810);font-family:'Geist',sans-serif;font-size:.86rem;outline:none;transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none;}
+  .f-inp::placeholder{color:var(--mist,#bdb4a8);}
+  .f-inp:focus{border-color:var(--terra,#b05830);background:#fff;box-shadow:0 0 0 3px rgba(176,88,48,.1);}
+  .f-inp option{background:#fff;color:var(--ink,#1e1810);}
+  .f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .f-ta{height:84px;resize:none;line-height:1.6;}
+  .f-submit{width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830 0%,#8c4422 100%);color:#fff;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;box-shadow:0 4px 24px rgba(176,88,48,.35),0 0 0 1px rgba(176,88,48,.2);margin-top:4px;transition:opacity .15s,transform .15s;position:relative;overflow:hidden;}
+  .f-submit::after{content:'';position:absolute;top:0;bottom:0;left:-100%;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);animation:fShimmer 2.5s ease-in-out 1s infinite;}
+  @keyframes fShimmer{0%{left:-100%}50%,100%{left:140%}}
+  .f-submit:hover{opacity:.92;box-shadow:0 6px 32px rgba(176,88,48,.45);}
+  .f-submit:active{transform:scale(.98);}
+  .f-note{font-size:.66rem;color:var(--mist,#bdb4a8);text-align:center;margin-top:8px;line-height:1.8;}
+  .w-empty{text-align:center;padding:44px 0;}
+  .w-empty-ico{display:flex;align-items:center;justify-content:center;margin-bottom:14px;opacity:.2;}
+  .w-empty-txt{font-size:.86rem;color:var(--mist);line-height:1.6;}
+  .w-item{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--border);}
+  .w-thumb{width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;}
+  .w-thumb img{width:100%;height:100%;object-fit:cover;}
+  .w-info{flex:1;min-width:0;}
+  .w-name{font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .w-loc{font-size:.73rem;color:var(--mist);margin-top:2px;}
+  .w-del{background:none;border:none;color:var(--mist);cursor:pointer;font-size:1rem;padding:6px;transition:color .15s;}
+  .w-del:hover{color:var(--terra);}
+
+  footer{background:var(--linen);border-top:1px solid var(--border);padding:38px 20px 54px;text-align:center;}
+  .foot-logo{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);margin-bottom:7px;}
+  .foot-logo .dot{color:var(--terra);font-size:.72em;font-family:'Geist',sans-serif;font-weight:400;letter-spacing:-.01em;opacity:.8;}
+  .foot-tag{font-size:.82rem;color:var(--stone);margin-bottom:22px;line-height:1.6;}
+  .foot-links{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:22px;}
+  .foot-links a{font-size:.76rem;color:var(--mist);text-decoration:none;}
+  .foot-links a:hover{color:var(--stone);}
+  .commission-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:.66rem;color:var(--mist);margin-bottom:14px;}
+  .com-dot{width:5px;height:5px;border-radius:50%;background:var(--moss);}
+  .foot-copy{font-size:.68rem;color:var(--mist);}
+
+  .toast{position:fixed;bottom:28px;left:50%;z-index:500;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--cream);padding:11px 22px;border-radius:100px;font-size:.8rem;font-weight:500;white-space:nowrap;box-shadow:0 6px 28px rgba(30,24,14,.2);opacity:0;pointer-events:none;transition:opacity .28s,transform .32s cubic-bezier(.34,1.4,.64,1);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  /* ══ AI ADVISOR SECTION ══ */
+  .advisor-section {
+    padding: 48px 20px 0;
+    background: var(--cream);
+    border-top: 1px solid var(--border);
+  }
+
+  /* Header */
+  .advisor-header { margin-bottom: 24px; }
+  .advisor-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: .62rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--terra); margin-bottom: 10px;
+  }
+  .adv-pulse {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--terra);
+    box-shadow: 0 0 0 0 rgba(176,88,48,.4);
+    animation: pulse 2s ease-out infinite;
+  }
+  @keyframes pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(176,88,48,.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(176,88,48,0); }
+    100% { box-shadow: 0 0 0 0 rgba(176,88,48,0); }
+  }
+  .advisor-h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 2rem; line-height: 1.1; color: var(--ink); margin-bottom: 10px;
+  }
+  .advisor-h2 em { font-style: italic; color: var(--terra); }
+  .advisor-lead {
+    font-size: .85rem; font-weight: 300; color: var(--bark); line-height: 1.7; max-width: 320px;
+  }
+
+  /* Card shell */
+  .advisor-card {
+    position: relative;
+    border-radius: var(--r-xl); overflow: hidden;
+    box-shadow: 0 8px 40px rgba(80,55,25,.14);
+    display: flex; flex-direction: column;
+  }
+
+  /* Background photo */
+  .adv-bg { position: absolute; inset: 0; }
+  .adv-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .adv-bg-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom,
+      rgba(14,10,5,.7) 0%,
+      rgba(14,10,5,.75) 100%);
+  }
+
+  /* Chat window */
+  .adv-chat {
+    position: relative; z-index: 2;
+    padding: 20px 16px 12px;
+    min-height: 260px;
+    max-height: 380px;
+    overflow-y: auto;
+    display: flex; flex-direction: column; gap: 14px;
+    scroll-behavior: smooth;
+  }
+  .adv-chat::-webkit-scrollbar { width: 0; }
+
+  /* Messages */
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg-ai { align-self: flex-start; max-width: 92%; }
+  .msg-user { align-self: flex-end; flex-direction: row-reverse; max-width: 82%; }
+
+  .msg-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.75); margin-top: 1px;
+  }
+
+  .msg-bubble {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .msg-bubble p {
+    font-family: 'Geist', sans-serif;
+    font-size: .84rem; font-weight: 300; line-height: 1.68;
+    color: rgba(255,255,255,.88);
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.12);
+    backdrop-filter: blur(12px);
+    padding: 11px 14px; border-radius: 4px 16px 16px 16px;
+    margin: 0;
+  }
+  .msg-user .msg-bubble p {
+    background: rgba(176,88,48,.75);
+    border-color: rgba(255,255,255,.15);
+    color: #fff;
+    border-radius: 16px 4px 16px 16px;
+    font-weight: 400;
+  }
+
+  /* Thinking indicator */
+  .msg-thinking .msg-bubble p {
+    display: flex; align-items: center; gap: 5px;
+    padding: 12px 16px;
+  }
+  .thinking-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,.5);
+    animation: think .9s ease-in-out infinite;
+  }
+  .thinking-dot:nth-child(2) { animation-delay: .18s; }
+  .thinking-dot:nth-child(3) { animation-delay: .36s; }
+  @keyframes think {
+    0%,80%,100% { transform: scale(.7); opacity: .4; }
+    40%          { transform: scale(1);  opacity: 1; }
+  }
+
+  /* Suggestion chips */
+  .adv-chips {
+    display: flex; flex-wrap: wrap; gap: 7px;
+    padding-left: 38px;
+  }
+  .adv-chip {
+    padding: 7px 13px; border-radius: 100px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(255,255,255,.08);
+    backdrop-filter: blur(8px);
+    color: rgba(255,255,255,.82);
+    font-family: 'Geist', sans-serif; font-size: .76rem; font-weight: 400;
+    cursor: pointer; transition: background .18s, border-color .18s;
+  }
+  .adv-chip:hover { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.35); }
+
+  /* Property recommendation card inside chat */
+  .rec-card {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(12px);
+    border-radius: 12px; overflow: hidden;
+    margin-top: 4px;
+    cursor: pointer;
+    transition: background .18s;
+  }
+  .rec-card:hover { background: rgba(255,255,255,.16); }
+  .rec-card-inner { display: flex; gap: 12px; padding: 12px; align-items: center; }
+  .rec-thumb {
+    width: 52px; height: 52px; border-radius: 8px; flex-shrink: 0; overflow: hidden;
+  }
+  .rec-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .rec-info { flex: 1; min-width: 0; }
+  .rec-loc { font-size: .6rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,200,140,.85); margin-bottom: 3px; }
+  .rec-name { font-family: 'Instrument Serif', serif; font-size: .95rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rec-tag { font-size: .72rem; color: rgba(255,255,255,.55); margin-top: 2px; }
+  .rec-arrow { color: rgba(255,255,255,.4); flex-shrink: 0; }
+
+  /* Input bar */
+  .adv-input-bar {
+    position: relative; z-index: 2;
+    display: flex; align-items: flex-end; gap: 10px;
+    padding: 12px 14px;
+    background: rgba(14,10,5,.65);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .adv-textarea {
+    flex: 1; min-width: 0;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 12px;
+    color: #fff; caret-color: var(--terra);
+    font-family: 'Geist', sans-serif; font-size: .86rem; font-weight: 300;
+    line-height: 1.5; padding: 10px 13px;
+    resize: none; outline: none;
+    max-height: 120px; overflow-y: auto;
+    transition: border-color .18s;
+  }
+  .adv-textarea::placeholder { color: rgba(255,255,255,.32); }
+  .adv-textarea:focus { border-color: rgba(176,88,48,.7); }
+  .adv-send {
+    width: 38px; height: 38px; flex-shrink: 0;
+    border-radius: 50%; border: none; cursor: pointer;
+    background: linear-gradient(135deg, var(--terra), var(--terra-d));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 12px rgba(176,88,48,.35);
+    transition: opacity .15s, transform .15s;
+  }
+  .adv-send:hover { opacity: .9; }
+  .adv-send:active { transform: scale(.92); }
+  .adv-send:disabled { opacity: .4; cursor: not-allowed; }
+
+  .adv-disclaimer {
+    text-align: center; font-size: .66rem; color: var(--mist);
+    padding: 14px 0 44px; line-height: 1.6;
+  }
+
+  @keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ── ICON SYSTEM — luxury weight ── */
+  .stype-icon{display:flex;align-items:center;justify-content:center;margin-bottom:5px;}
+  .stype-icon svg{width:20px;height:20px;}
+
+  .sfield-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .sfield-icon svg{width:17px;height:17px;}
+
+  .prop-heart{position:relative;}
+  .prop-heart svg{width:16px;height:16px;transition:all .2s;}
+  .prop-heart .h-fill{opacity:0;transition:opacity .2s;}
+  .prop-heart.saved .h-stroke{opacity:0;}
+  .prop-heart.saved .h-fill{opacity:1;}
+
+  .w-empty-ico{display:flex;align-items:center;justify-content:center;margin-bottom:16px;opacity:.18;}
+  .w-empty-ico svg{width:48px;height:48px;}
+
+  .see-all{display:inline-flex;align-items:center;gap:5px;}
+  .see-all svg{width:13px;height:13px;}
+
+  .star-ico{display:inline-flex;align-items:center;vertical-align:middle;margin-right:2px;position:relative;top:-0.5px;}
+  .star-ico svg{width:10px;height:10px;}
+
+  .w-del svg{width:11px;height:11px;}
+
+  /* ══ THE ENVOY DRAWER ══ */
+  .ci-fab{position:fixed;bottom:28px;right:24px;z-index:300;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 13px;background:var(--ink,#1e1810);border-radius:100px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:transform .15s,opacity .15s,right .38s cubic-bezier(.32,.72,0,1);}
+  .ci-fab.drawer-open{right:calc(25vw + 28px);}
+  .ci-fab:hover{transform:translateY(-2px);}
+  .ci-fab:active{transform:scale(.97);}
+  .ci-fab-pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;position:relative;}
+  .ci-fab-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(74,222,128,.3);animation:cipulse 2s ease-in-out infinite;}
+  @keyframes cipulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:0;}}
+  .ci-fab-txt{display:flex;flex-direction:column;}
+  .ci-fab-label{font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;line-height:1.2;}
+  .ci-fab-sub{font-size:.6rem;color:rgba(255,255,255,.45);white-space:nowrap;}
+
+  /* Drawer */
+  .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#faf7f1;border-left:1px solid rgba(0,0,0,.08);box-shadow:-8px 0 40px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);}
+  .ci-drawer.open{transform:translateX(0);}
+
+  /* Page push */
+  body.ci-open{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
+  @media(min-width:768px){
+    body.ci-open{margin-right:clamp(320px,25vw,480px);}
+    .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
+  }
+  /* Mobile — just slide over, no reflow */
+  @media(max-width:767px){
+    .ci-drawer{width:88vw;min-width:0;max-width:400px;}
+    .ci-fab.drawer-open{right:calc(88vw + 12px);}
+  }
+
+  /* Drawer header */
+  .ci-head{padding:16px 18px 12px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;background:linear-gradient(135deg,#1e1810,#2e200c);}
+  .ci-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ci-avatar svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
+  .ci-head-txt{flex:1;}
+  .ci-name{font-size:.84rem;font-weight:500;color:#fff;font-family:'Geist',sans-serif;}
+  .ci-status{font-size:.64rem;color:rgba(120,220,140,.85);display:flex;align-items:center;gap:4px;margin-top:2px;}
+  .ci-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .15s;}
+  .ci-close:hover{background:rgba(255,255,255,.18);}
+  .ci-close svg{width:11px;height:11px;stroke:#fff;stroke-width:1.8;fill:none;stroke-linecap:round;}
+
+  /* Context pill — shows which page you're on */
+  .ci-context{padding:8px 16px;background:rgba(176,88,48,.08);border-bottom:1px solid rgba(176,88,48,.1);display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .ci-context-dot{width:5px;height:5px;border-radius:50%;background:var(--terra,#b05830);flex-shrink:0;}
+  .ci-context-txt{font-size:.64rem;color:var(--terra,#b05830);font-weight:500;font-family:'Geist',sans-serif;}
+
+  /* Messages */
+  .ci-messages{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:10px;}
+  .ci-msg{max-width:88%;padding:10px 13px;border-radius:16px;font-size:.8rem;line-height:1.58;font-family:'Geist',sans-serif;}
+  .ci-msg p{margin:0;}
+  .ci-msg p+p{margin-top:5px;}
+  .ci-msg.ai{background:#ece5d8;color:#1e1810;border-radius:4px 16px 16px 16px;align-self:flex-start;}
+  .ci-msg.user{background:#1e1810;color:#fff;border-radius:16px 4px 16px 16px;align-self:flex-end;}
+  .ci-typing-msg{display:flex;align-items:center;gap:4px;padding:10px 13px;background:#ece5d8;border-radius:4px 16px 16px 16px;align-self:flex-start;width:fit-content;}
+  .ci-typing-msg span{width:6px;height:6px;border-radius:50%;background:#9a8e80;animation:ciDot 1.2s ease-in-out infinite;}
+  .ci-typing-msg span:nth-child(2){animation-delay:.2s;}
+  .ci-typing-msg span:nth-child(3){animation-delay:.4s;}
+  @keyframes ciDot{0%,80%,100%{transform:scale(.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+
+  /* Suggestions */
+  .ci-sugs{padding:0 16px 10px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+  .ci-sug{padding:10px 14px;background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:10px;font-size:.76rem;color:#5a4e40;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;font-family:'Geist',sans-serif;line-height:1.4;}
+  .ci-sug:hover{border-color:#b05830;background:#fdf6f0;}
+
+  /* Input */
+  .ci-input-row{padding:10px 16px 20px;display:flex;gap:8px;flex-shrink:0;border-top:1px solid rgba(0,0,0,.07);}
+  .ci-input{flex:1;padding:11px 14px;border:1px solid rgba(0,0,0,.12);border-radius:22px;font-family:'Geist',sans-serif;font-size:.82rem;color:#1e1810;outline:none;background:#fff;transition:border-color .18s;}
+  .ci-input:focus{border-color:#b05830;box-shadow:0 0 0 3px rgba(176,88,48,.08);}
+  .ci-send{width:38px;height:38px;border-radius:50%;background:#1e1810;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+  .ci-send:hover{background:#b05830;}
+  .ci-send svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+40%{transform:scale(1);opacity:1;}}
+/* ════════════════════════════════════════
+   DESKTOP RESPONSIVE — min-width: 768px
+   ════════════════════════════════════════ */
+  /* ── Nav desktop links ── */
+
+  /* Dropdown */
+  .nav-dropdown-wrap { position:relative; }
+  .nav-dropdown-trigger { display:flex; align-items:center; cursor:pointer; user-select:none; }
+  .nav-dropdown { position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%); background:var(--cream); border:1px solid var(--border-hi); border-radius:var(--r-lg); box-shadow:0 8px 32px rgba(80,55,25,.14); min-width:200px; padding:6px 0; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; transform:translateX(-50%) translateY(-6px); z-index:200; }
+  .nav-dropdown-wrap:hover .nav-dropdown { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+  .nav-dropdown::before { content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--cream); border-left:1px solid var(--border-hi); border-top:1px solid var(--border-hi); rotate:45deg; }
+  .nav-dropdown-item { display:block; width:100%; padding:9px 18px; font-size:.78rem; color:var(--bark); background:none; border:none; text-align:left; cursor:pointer; font-family:'Geist',sans-serif; transition:background .15s,color .15s; text-decoration:none; }
+  .nav-dropdown-item:hover { background:var(--linen); color:var(--ink); }
+
+@media (min-width: 768px) {
+
+  /* ── Nav ── */
+  .nav-menu-btn { display:none !important; }
+
+  /* ── Hero ── */
+  .hero { min-height: 100dvh; }
+  .hero-content {
+    padding: 0 60px 64px;
+    max-width: 680px;
+  }
+  .hero-h1 { font-size: clamp(3.2rem,5vw,5.5rem); }
+  .hero-sub { max-width: 440px; font-size: 1rem; }
+  .search-panel { max-width: 560px; }
+  .stype-row { gap: 12px; }
+
+  /* ── Page wrapper ── */
+  .page { max-width: 1200px; margin: 0 auto; }
+
+  /* ── Trust bar ── */
+  .trust { max-width: 1200px; margin: 0 auto; }
+  .trust-num { font-size: 2rem; }
+  .trust-lbl { font-size: .75rem; }
+
+  /* ── Why The Bearing ── */
+  .page > section { padding: 0 40px 60px; }
+
+  /* Extra breathing room after the differentiator cards and after cruises */
+  .page > section:first-of-type { margin-bottom: 40px; }
+  .module.warm { margin-bottom: 40px; }
+
+  /* Two-column differentiator cards */
+  .page > section > div[style*="border-radius:var(--r-xl)"] + div[style*="border-radius:var(--r-xl)"] {
+    margin-top: 0;
+  }
+
+  /* Direct fix: gap between the two gradient cards */
+  #why-tc > div[style*="border-radius:var(--r-xl)"] {
+    margin-bottom: 20px;
+  }
+  #why-tc > div[style*="border-radius:var(--r-xl)"]:last-of-type {
+    margin-bottom: 0;
+  }
+
+  /* ── Modules (editorial, hotels, cruises) ── */
+  .module-inner { padding: 0 40px; }
+  .mod-title { font-size: 2rem; }
+
+  /* Cards in modules — switch from h-scroll to grid on desktop */
+  .h-scroll {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    overflow-x: visible;
+    padding: 0 40px 4px;
+    scroll-snap-type: none;
+  }
+  .edit-card {
+    width: auto;
+    height: 360px;
+    flex-shrink: unset;
+  }
+  .cruise-card {
+    width: auto;
+    height: 320px;
+    flex-shrink: unset;
+  }
+
+  /* Hotels — grid instead of stacked */
+  .module-inner + div .prop-card,
+  .prop-cards-wrap .prop-card {
+    margin-bottom: 0;
+  }
+  .prop-cards-wrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 0 40px;
+  }
+
+  /* ── Why The Bearing section ── */
+  .page section[style*="padding:0 20px"] {
+    padding: 0 40px 60px !important;
+  }
+
+  /* Differentiator cards — side by side */
+  .page section > div[style*="margin-bottom:14px"] {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 0 !important;
+  }
+  .page section > div[style*="margin-bottom:14px"] > div {
+    margin-bottom: 0 !important;
+  }
+
+  /* ── Bonus experience section ── */
+  .page section + section > div[style*="display:flex;flex-direction:column"] {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* ── Overlay / sheet — centred modal on desktop ── */
+  .overlay { align-items: center; justify-content: center; }
+  .sheet {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: 520px;
+    max-width: 520px;
+    border-radius: 20px !important;
+    max-height: 88vh;
+    transform: scale(.96);
+    opacity: 0;
+    transition: transform .38s cubic-bezier(.32,.72,0,1), opacity .28s;
+  }
+  .overlay.open .sheet {
+    transform: scale(1);
+    opacity: 1;
+  }
+  .sheet-grip { display: none; }
+
+  /* ── The Envoy FAB ── */
+  .ci-fab { bottom: 32px; right: 32px; }
+  .ci-sheet { max-width: 420px; max-height: 70vh; }
+
+  /* ── Footer ── */
+  footer { padding: 40px !important; }
+}
+
+@media (min-width: 1024px) {
+  .hero-h1 { font-size: clamp(4rem,5.5vw,6rem); }
+  .hero-content { max-width: 760px; }
+  .h-scroll { grid-template-columns: repeat(4, 1fr); }
+  .h-scroll .cruise-card { height: 340px; }
+}
+
+
+  /* Account overlay centred modal animation */
+  #account-overlay.open > div { transform:scale(1) !important; opacity:1 !important; }
+  #account-overlay { display:flex !important; align-items:center; justify-content:center; padding:20px; }
+  .acc-pref-btn{padding:7px 14px;border:1px solid var(--border-hi);border-radius:100px;background:#fff;color:var(--bark);font-family:'Geist',sans-serif;font-size:.74rem;cursor:pointer;transition:all .15s;}
+  .acc-pref-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .acc-pref-btn:hover{border-color:var(--terra);color:var(--terra);}
+
+  /* ── CI drawer CSS reset — prevent page styles bleeding in ── */
+  .ci-drawer *{box-sizing:border-box;}
+  .ci-drawer p{margin:0;padding:0;background:none!important;border:none!important;border-radius:0!important;font-size:.8rem;line-height:1.58;color:inherit;font-weight:400;display:block;}
+  .ci-drawer .ci-msg.ai p{color:#1e1810;}
+  .ci-drawer .ci-msg.user p{color:#fff;}
+  .ci-drawer input,.ci-drawer button,.ci-drawer div{box-sizing:border-box;}
+</style>
+</head>
+<body>
+
+<!-- ══ SVG ICON LIBRARY — bespoke luxury icons ══ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+
+  <!--
+    HOTEL: Grand façade with central arched entrance, flanking windows,
+    pediment roofline and two columns. Mixed fill+stroke — columns are
+    solid, glass panes are open, cornice is filled. Feels like the front
+    of a Relais & Châteaux property.
+  -->
+  <symbol id="ico-hotel" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Foundation / ground line -->
+      <line x1="1.5" y1="21.5" x2="22.5" y2="21.5" stroke-width=".9" opacity=".4"/>
+      <!-- Main building body -->
+      <rect x="3" y="9" width="18" height="12.5" rx=".5" stroke-width=".85" fill="currentColor" fill-opacity=".04"/>
+      <!-- Pediment / roofline triangle -->
+      <polyline points="1.5,9 12,3 22.5,9" stroke-width="1" fill="currentColor" fill-opacity=".06"/>
+      <!-- Cornice bar -->
+      <line x1="3" y1="9" x2="21" y2="9" stroke-width="1.1"/>
+      <!-- Left window -->
+      <rect x="5" y="12" width="3.5" height="3" rx=".3" stroke-width=".75" fill="currentColor" fill-opacity=".08"/>
+      <!-- Right window -->
+      <rect x="15.5" y="12" width="3.5" height="3" rx=".3" stroke-width=".75" fill="currentColor" fill-opacity=".08"/>
+      <!-- Central arched door -->
+      <path d="M10 21.5v-6a2 2 0 014 0v6" stroke-width=".85"/>
+      <path d="M10 15.5a2 2 0 014 0" stroke-width=".75" fill="currentColor" fill-opacity=".1"/>
+      <!-- Left column -->
+      <rect x="5.5" y="9" width="1" height="12.5" rx=".2" stroke-width=".6" fill="currentColor" fill-opacity=".15"/>
+      <!-- Right column -->
+      <rect x="17.5" y="9" width="1" height="12.5" rx=".2" stroke-width=".6" fill="currentColor" fill-opacity=".15"/>
+      <!-- Column caps -->
+      <line x1="5" y1="9.5" x2="7" y2="9.5" stroke-width=".9"/>
+      <line x1="17" y1="9.5" x2="19" y2="9.5" stroke-width=".9"/>
+      <!-- Finial / rooftop ornament -->
+      <circle cx="12" cy="3" r=".6" fill="currentColor" stroke-width=".6"/>
+    </g>
+  </symbol>
+
+  <!--
+    CRUISE: Side profile of an elegant yacht — long low hull with a
+    swept bow, single funnel, bridge superstructure, porthole detail,
+    and a gentle wake line. Proportions inspired by superyacht silhouettes.
+  -->
+  <symbol id="ico-cruise" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Hull — long swept profile -->
+      <path d="M1.5 16.5 C3 16.5 4 15 6 15 L20 15 C21.5 15 22.5 16 22.5 17 L4 17 C3 17 2 17 1.5 16.5Z" stroke-width=".9" fill="currentColor" fill-opacity=".07"/>
+      <!-- Hull bottom waterline -->
+      <path d="M2 17 C5 18.5 19 18.5 22 17" stroke-width=".85"/>
+      <!-- Main deck superstructure -->
+      <rect x="8" y="11.5" width="10" height="3.5" rx=".4" stroke-width=".8" fill="currentColor" fill-opacity=".06"/>
+      <!-- Bridge / wheelhouse -->
+      <rect x="14" y="9" width="5" height="2.5" rx=".4" stroke-width=".75" fill="currentColor" fill-opacity=".08"/>
+      <!-- Funnel -->
+      <rect x="17" y="7" width="1.5" height="2" rx=".4" stroke-width=".7" fill="currentColor" fill-opacity=".12"/>
+      <!-- Funnel smoke wisps -->
+      <path d="M17.75 7 C17.5 5.5 18.5 5 18 4" stroke-width=".55" opacity=".5"/>
+      <!-- Bow sweep -->
+      <path d="M6 15 C5 15 3.5 15.5 2 16.5" stroke-width=".85"/>
+      <!-- Porthole row -->
+      <circle cx="10" cy="13.5" r=".7" stroke-width=".65" fill="currentColor" fill-opacity=".1"/>
+      <circle cx="12.5" cy="13.5" r=".7" stroke-width=".65" fill="currentColor" fill-opacity=".1"/>
+      <!-- Anchor line / flagpole at bow -->
+      <line x1="5.5" y1="11.5" x2="5.5" y2="15" stroke-width=".6"/>
+      <path d="M5.5 11.5 L3.5 12.5" stroke-width=".55" opacity=".6"/>
+      <!-- Wake -->
+      <path d="M4 18.5 C7 19 17 19 21 18" stroke-width=".5" opacity=".35" stroke-dasharray="1.5 1.5"/>
+    </g>
+  </symbol>
+
+  <!--
+    VILLA: Mediterranean terrace with an arched loggia, terracotta roof
+    tiles suggested by a layered line, climbing vines hinted by dots,
+    and a balustrade railing. Evokes a Positano or Santorini estate.
+  -->
+  <symbol id="ico-villa" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Roof — low gabled with tile suggestion -->
+      <polyline points="2,10 12,4.5 22,10" stroke-width="1"/>
+      <polyline points="3.5,10 12,5.5 20.5,10" stroke-width=".55" opacity=".35"/>
+      <!-- Left wall -->
+      <line x1="3" y1="10" x2="3" y2="21.5" stroke-width=".85"/>
+      <!-- Right wall -->
+      <line x1="21" y1="10" x2="21" y2="21.5" stroke-width=".85"/>
+      <!-- Main facade fill -->
+      <rect x="3" y="10" width="18" height="11.5" rx=".2" stroke-width=".8" fill="currentColor" fill-opacity=".04"/>
+      <!-- Central arch -->
+      <path d="M9.5 21.5 V16.5 A2.5 2.5 0 0 1 14.5 16.5 V21.5" stroke-width=".85"/>
+      <path d="M9.5 16.5 a2.5 2.5 0 0 1 5 0" stroke-width=".75" fill="currentColor" fill-opacity=".09"/>
+      <!-- Left window with shutter suggestion -->
+      <rect x="4.5" y="12.5" width="3.5" height="3.5" rx=".3" stroke-width=".75" fill="currentColor" fill-opacity=".07"/>
+      <line x1="6.25" y1="12.5" x2="6.25" y2="16" stroke-width=".45" opacity=".5"/>
+      <!-- Right window with shutter suggestion -->
+      <rect x="16" y="12.5" width="3.5" height="3.5" rx=".3" stroke-width=".75" fill="currentColor" fill-opacity=".07"/>
+      <line x1="17.75" y1="12.5" x2="17.75" y2="16" stroke-width=".45" opacity=".5"/>
+      <!-- Terrace balustrade -->
+      <line x1="2" y1="21.5" x2="22" y2="21.5" stroke-width=".9"/>
+      <!-- Chimney -->
+      <rect x="7.5" y="4" width="1.5" height="3.5" rx=".3" stroke-width=".7" fill="currentColor" fill-opacity=".1"/>
+    </g>
+  </symbol>
+
+  <!--
+    PIN: Refined location marker — an elongated teardrop with a subtle
+    inner ring instead of a filled dot, and a very fine pointed tip.
+    The inner ring gives it depth and elegance over a plain circle.
+  -->
+  <symbol id="ico-pin" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Outer teardrop -->
+      <path d="M12 2.5 C7.5 2.5 4.5 6 4.5 9.5 C4.5 14.5 12 21.5 12 21.5 C12 21.5 19.5 14.5 19.5 9.5 C19.5 6 16.5 2.5 12 2.5 Z" stroke-width="1" fill="currentColor" fill-opacity=".06"/>
+      <!-- Inner ring — refined detail -->
+      <circle cx="12" cy="9.5" r="2.5" stroke-width=".85" fill="currentColor" fill-opacity=".1"/>
+      <!-- Centre dot -->
+      <circle cx="12" cy="9.5" r=".8" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+
+  <!--
+    CALENDAR: Elegant datebook — rounded corners, two ribbon-style binding
+    rings at top, a thin header bar in a slightly deeper fill, and
+    three rows of fine date ticks suggesting a full month view.
+  -->
+  <symbol id="ico-calendar" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Book body -->
+      <rect x="3" y="5" width="18" height="16" rx="1.5" stroke-width=".9" fill="currentColor" fill-opacity=".05"/>
+      <!-- Header band -->
+      <path d="M3 5 Q3 5 3 6.5 L21 6.5 Q21 5 21 5 Q21 3.5 19.5 3.5 L4.5 3.5 Q3 3.5 3 5Z" stroke-width=".8" fill="currentColor" fill-opacity=".12"/>
+      <!-- Binding rings -->
+      <path d="M8 3.5 V7" stroke-width="1.1"/>
+      <path d="M16 3.5 V7" stroke-width="1.1"/>
+      <!-- Ring caps -->
+      <circle cx="8" cy="3.5" r=".5" fill="currentColor" stroke-width=".6"/>
+      <circle cx="16" cy="3.5" r=".5" fill="currentColor" stroke-width=".6"/>
+      <!-- Date grid — row 1 -->
+      <circle cx="7" cy="11" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="11" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="13" cy="11" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="16" cy="11" r=".65" fill="currentColor" stroke="none"/>
+      <!-- Date grid — row 2 -->
+      <circle cx="7" cy="14" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="14" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="13" cy="14" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="16" cy="14" r=".65" fill="currentColor" stroke="none"/>
+      <!-- Date grid — row 3 (partial) -->
+      <circle cx="7" cy="17" r=".65" fill="currentColor" stroke="none"/>
+      <circle cx="10" cy="17" r=".65" fill="currentColor" stroke="none"/>
+      <!-- Highlighted date — a ring around one dot -->
+      <circle cx="13" cy="17" r="1.5" stroke-width=".75" fill="currentColor" fill-opacity=".1"/>
+      <circle cx="13" cy="17" r=".65" fill="currentColor" stroke="none"/>
+    </g>
+  </symbol>
+
+  <!--
+    MOON: Full crescent with a star — the classic travel / night motif
+    done with proper astronomical curve. The crescent is formed by two
+    overlapping circles for a geometrically perfect arc, with a single
+    four-pointed star to the upper right.
+  -->
+  <symbol id="ico-moon" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Crescent body — mask technique via path -->
+      <path d="M13 4.5 A8 8 0 1 0 13 19.5 A5.5 5.5 0 0 1 13 4.5 Z" stroke-width=".95" fill="currentColor" fill-opacity=".08"/>
+      <!-- Four-pointed star -->
+      <path d="M18 5 L18.5 6.5 L20 7 L18.5 7.5 L18 9 L17.5 7.5 L16 7 L17.5 6.5 Z" stroke-width=".6" fill="currentColor" fill-opacity=".7"/>
+      <!-- Small accent star -->
+      <path d="M20.5 3.5 L20.75 4.25 L21.5 4.5 L20.75 4.75 L20.5 5.5 L20.25 4.75 L19.5 4.5 L20.25 4.25 Z" stroke-width=".5" fill="currentColor" fill-opacity=".5"/>
+    </g>
+  </symbol>
+
+  <!--
+    HEART: Anatomically inspired — the path curves drop deeper before
+    rising, giving it that characteristic pointed dip at the centre top
+    and a longer, more tapered base. Stroke only; fill added via CSS
+    class for the saved state.
+  -->
+  <symbol id="ico-heart" viewBox="0 0 24 24">
+    <!-- Stroke version (default) -->
+    <path class="h-stroke" d="M12 20.5 C12 20.5 3 14.5 3 8.5 A4.5 4.5 0 0 1 12 6.2 A4.5 4.5 0 0 1 21 8.5 C21 14.5 12 20.5 12 20.5 Z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Fill version (saved state) -->
+    <path class="h-fill" d="M12 20.5 C12 20.5 3 14.5 3 8.5 A4.5 4.5 0 0 1 12 6.2 A4.5 4.5 0 0 1 21 8.5 C21 14.5 12 20.5 12 20.5 Z" fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!--
+    HEART LARGE: Same proportions, larger canvas for the empty-state.
+  -->
+  <symbol id="ico-heart-lg" viewBox="0 0 48 48">
+    <path d="M24 41 C24 41 6 29 6 17 A9 9 0 0 1 24 12.5 A9 9 0 0 1 42 17 C42 29 24 41 24 41 Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!--
+    STAR: Proper five-pointed star with inner pentagon radius at 0.382
+    of the outer, giving the classic proportions. Slightly rotated so
+    one point faces up. Solid fill, no stroke.
+  -->
+  <symbol id="ico-star" viewBox="0 0 24 24">
+    <polygon points="12,2 14.9,9.1 22.5,9.6 16.8,14.7 18.7,22.1 12,18.1 5.3,22.1 7.2,14.7 1.5,9.6 9.1,9.1" fill="currentColor" stroke="none"/>
+  </symbol>
+
+  <!--
+    ARROW: A long, fine em-dash with an arrowhead — more like a
+    typographic dagger than a chunky chevron. Evokes luxury editorial
+    design (think Vogue arrow rather than a UI back button).
+  -->
+  <symbol id="ico-arrow-r" viewBox="0 0 16 16">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2">
+      <line x1="2" y1="8" x2="13" y2="8"/>
+      <polyline points="9.5,4.5 13,8 9.5,11.5"/>
+    </g>
+  </symbol>
+
+  <!--
+    CLOSE: A refined × — the two diagonals are slightly shorter than the
+    container so there's breathing room, and the stroke weight is light.
+  -->
+  <symbol id="ico-close" viewBox="0 0 16 16">
+    <g stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+      <line x1="4" y1="4" x2="12" y2="12"/>
+      <line x1="12" y1="4" x2="4" y2="12"/>
+    </g>
+  </symbol>
+
+  <!--
+    SEARCH: The classic loupe, but with a longer handle angled at 45°
+    and the circle drawn slightly off-centre so the handle exits cleanly.
+    Stroke weight lightened to match the rest of the system.
+  -->
+  <symbol id="ico-search" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.1">
+      <circle cx="10.5" cy="10.5" r="6.5"/>
+      <line x1="15.5" y1="15.5" x2="21" y2="21"/>
+    </g>
+  </symbol>
+
+  <!--
+    COLLECTION / SAVE: A ribbon bookmark with a notched base — the classic
+    "save" metaphor. Two parallel stripes suggest pages or fabric folds
+    inside, adding detail without clutter.
+  -->
+  <symbol id="ico-bookmark" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3 H18 A1 1 0 0 1 19 4 V21 L12 17 L5 21 V4 A1 1 0 0 1 6 3 Z" stroke-width="1"/>
+      <line x1="9" y1="8" x2="15" y2="8" stroke-width=".65" opacity=".5"/>
+      <line x1="9" y1="10.5" x2="15" y2="10.5" stroke-width=".65" opacity=".35"/>
+    </g>
+  </symbol>
+
+</svg>
+
+<nav class="nav">
+  <a class="nav-logo-wrap" href="index.html">
+    <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
+    <div class="nav-tagline">Pointing you to the extraordinary.</div>
+  </a>
+  <div class="nav-links-desktop">
+    <a class="nav-link-d" href="hotels.html">Hotels</a>
+    <a class="nav-link-d" href="cruises.html">Cruises</a>
+    <a class="nav-link-d" href="villas.html">Villas</a>
+    <a class="nav-link-d" href="collections.html">Collections</a>
+    <a class="nav-link-d nav-vibe" href="vibe-search.html">✦ Vibe Search</a>
+    <a class="nav-link-d" href="how-we-choose.html">How we choose</a>
+    <a class="nav-link-d" href="journal.html">Journal</a>
+    <a class="nav-link-d featured" href="the-envoy.html">The Envoy</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="window.location='search.html'" title="Search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    </button>
+    <button class="nav-btn" onclick="window.location='my-account.html'" title="Account">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ══ SLIDE-OVER NAV MENU ══ -->
+<div class="nav-menu" id="nav-menu">
+  <div class="nav-menu-overlay" onclick="closeMenu()"></div>
+  <div class="nav-menu-panel">
+    <div class="menu-header">
+      <div class="menu-logo">The Bearing<span class="dot">.io</span></div>
+      <button class="menu-close" onclick="closeMenu()" aria-label="Close menu">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"><use href="#ico-close"/></svg>
+      </button>
+    </div>
+
+    <div class="menu-links">
+      <div class="menu-section-label">Explore</div>
+
+      <button class="menu-link featured" onclick="closeMenu();openAdvisor()">
+        <span>The Envoy <span style="font-family:'Geist',sans-serif;font-size:.65rem;background:rgba(120,220,140,.15);color:#1a8a4a;padding:2px 7px;border-radius:100px;vertical-align:middle;margin-left:6px;font-weight:600;">AI</span></span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="search.html">
+        <span>Hotels</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="cruises.html">
+        <span>Cruises</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="search.html">
+        <span>Villas</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <div class="menu-divider"></div>
+      <div class="menu-section-label">Collections</div>
+
+      <button class="menu-link" onclick="closeMenu()" href="collections.html">
+        <span>Honeymoon Escapes</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="collections.html">
+        <span>Adults Only</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu();toast('Wilderness & Adventure coming soon')">
+        <span>Wilderness & Adventure</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="collections.html">
+        <span>Design Hotels</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <div class="menu-divider"></div>
+      <div class="menu-section-label">Learn</div>
+
+      <button class="menu-link" onclick="closeMenu()" href="journal.html">
+        <span>Journal</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="how-we-choose.html">
+        <span>How we choose</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+
+      <button class="menu-link" onclick="closeMenu()" href="about.html">
+        <span>Contact</span>
+        <span class="menu-link-arr">›</span>
+      </button>
+    </div>
+
+    <div class="menu-footer">
+      <div class="menu-footer-txt">Every property visited. Every stay curated. Commission-free to you.</div>
+      <div class="menu-cta-row">
+        <button class="menu-cta primary" onclick="closeMenu();openAdvisor()">The Envoy</button>
+        <button class="menu-cta secondary" onclick="closeMenu();openOverlay('wish-overlay')">Saved</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HERO — Maldives overwater bungalows at golden hour -->
+<section class="hero">
+  <div class="hero-img-wrap">
+    <img src="https://images.prestigeonline.com/wp-content/uploads/sites/5/2024/04/10221200/431313100_17874505356049139_5206131842345222780_n-1-1.jpeg?tr=w-1920"
+         alt="Luxury resort pool with breathtaking ocean view" loading="eager" fetchpriority="high">
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-shimmer"></div>
+  <div class="hero-content">
+    <div class="hero-kicker"><div class="kicker-pip"></div><span class="kicker-txt">Pointing you to the extraordinary.</span></div>
+    <h1 class="hero-h1">Places that feel<br>like <em>yours</em></h1>
+    <p class="hero-sub">We search the world for boutique hideaways and intimate voyages that never appear on mass-market sites.</p>
+    <div class="search-panel">
+      <div class="stype-row">
+        <button class="stype active" onclick="setStype(this)">
+          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-hotel"/></svg></span>Hotels
+        </button>
+        <button class="stype" onclick="setStype(this)">
+          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-cruise"/></svg></span>Cruises
+        </button>
+        <button class="stype" onclick="setStype(this)">
+          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-villa"/></svg></span>Villas
+        </button>
+      </div>
+      <div class="sfields">
+        <div class="sfield" id="home-dest-field" style="position:relative;cursor:text;" onclick="document.getElementById('home-dest-input').focus()">
+          <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-pin"/></svg></span>
+          <div style="flex:1;">
+            <div class="sfield-label">Destination</div>
+            <input id="home-dest-input" type="text" placeholder="Anywhere in the world" autocomplete="off"
+              style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:text;"
+              oninput="homeDestAutocomplete(this.value)"
+              onkeydown="if(event.key==='Enter'){tcSearch(this.value)}"
+              onfocus="this.parentNode.parentNode.style.background='var(--linen)'"
+              onblur="this.parentNode.parentNode.style.background=''">
+          </div>
+          <div id="home-dest-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(80,55,25,.12);z-index:300;max-height:220px;overflow-y:auto;scrollbar-width:none;"></div>
+        </div>
+        <div class="sfield-row">
+          <div class="sfield" onclick="toast('Pick dates')">
+            <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-calendar"/></svg></span>
+            <div><div class="sfield-label">Check in</div><div class="sfield-val">Add date</div></div>
+          </div>
+          <div class="sfield" onclick="toast('Pick dates')">
+            <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-moon"/></svg></span>
+            <div><div class="sfield-label">Check out</div><div class="sfield-val">Add date</div></div>
+          </div>
+        </div>
+      </div>
+      <button class="search-cta" onclick="tcSearch(document.getElementById('home-dest-input').value || 'egypt')">Explore The Bearing</button>
+      <div style="text-align:center;padding:10px 12px 14px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <span style="font-size:.72rem;color:var(--stone);">Don't know where yet?</span>
+        <a href="vibe-search.html" style="font-size:.72rem;font-weight:600;color:var(--terra);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+          Search by vibe instead →
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- sticky advisor bar removed -->
+
+<div class="page">
+  <div class="trust">
+    <div class="trust-cell"><div class="trust-num">214<em>+</em></div><div class="trust-lbl">Curated Hotels</div></div>
+    <div class="trust-cell"><div class="trust-num">17<em>+</em></div><div class="trust-lbl">Boutique Cruises</div></div>
+    <div class="trust-cell"><div class="trust-num">0<em>%</em></div><div class="trust-lbl">Extra Cost</div></div>
+  </div>
+
+  <!-- ══ WHY THE BEARING — DIFFERENTIATORS ══ -->
+  <section id="why-tc" style="padding:52px 20px 44px;">
+
+    <div style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">Why The Bearing</div>
+    <h2 style="font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--ink);margin-bottom:6px;line-height:1.2;">Three things no other <em>travel site offers.</em></h2>
+    <p style="font-size:.84rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">We built The Bearing around ideas that didn't exist anywhere else.</p>
+
+    <!-- Card 1: Reserve Credits -->
+    <div style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#7a2e0a 0%,#a04020 40%,#6a3060 100%);"></div>
+      <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.1;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,45 C80,15 180,70 280,40 C350,18 380,58 400,40 L400,80 L0,80Z" fill="#fff"/><path d="M0,58 C70,35 160,72 260,52 C340,35 375,62 400,52 L400,80 L0,80Z" fill="#60a5fa" opacity=".4"/></svg>
+      <div style="position:relative;padding:20px 20px 18px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:10px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#60a5fa;"></div>
+          <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">Reserve Credits</span>
+        </div>
+        <!-- Text left, photo right — both start at same top level -->
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">Every booking gets you one step closer to sailing one of the world's greatest cruises.</div>
+            <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;">Nour El Nil sails 250km of the ancient Nile aboard intimate 24-guest dahabiyas — named one of <em style="color:rgba(255,255,255,.85);">National Geographic's best cruises in the world</em>. Earn 10% of every The Bearing booking as Reserve Credits. Reach $3,500 and your cabin is on us.</div>
+          </div>
+          <div style="width:200px;flex-shrink:0;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.35);border:1.5px solid rgba(255,255,255,.15);align-self:stretch;min-height:120px;">
+            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;">
+          </div>
+        </div>
+
+        <!-- NatGeo callout -->
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;margin-bottom:12px;">
+          <div style="width:28px;height:28px;border-radius:6px;background:#ffcc00;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="#000"><rect x="0" y="0" width="20" height="20" rx="2"/><text x="3" y="15" font-size="13" font-weight="700" fill="#ffcc00" font-family="serif">N</text></svg>
+          </div>
+          <div style="font-size:.75rem;color:rgba(255,255,255,.8);line-height:1.4;"><span style="font-weight:600;color:#fff;">National Geographic</span> — named Nour El Nil one of the world's best cruise experiences</div>
+        </div>
+
+        <!-- Mini progress bar -->
+        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:.75rem;color:rgba(255,255,255,.75);font-weight:500;">Example · $14,200 booked</span>
+              <span style="font-size:.65rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#2e6a8a,#60a5fa);padding:3px 10px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 2px 8px rgba(96,165,250,.4);">10% back</span>
+            </div>
+            <span style="font-size:.75rem;color:#93c5fd;font-weight:700;">$1,420 credits</span>
+          </div>
+          <div style="background:rgba(255,255,255,.12);border-radius:100px;height:7px;overflow:hidden;margin-bottom:7px;">
+            <div style="width:40.6%;height:100%;background:linear-gradient(90deg,#2e6a8a,#60a5fa);border-radius:100px;position:relative;">
+              <div style="position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35));border-radius:100px;"></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;">
+            <span style="font-size:.65rem;color:rgba(255,255,255,.45);">$0</span>
+            <span style="font-size:.65rem;color:rgba(255,255,255,.45);">$3,500 · free cabin 🎉</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Card 2: The Lens -->
+    <div style="border-radius:var(--r-xl);overflow:hidden;margin-bottom:20px;position:relative;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0d4a52 0%,#1a3a6e 55%,#2d1a5e 100%);"></div>
+      <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.12;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,40 C80,10 160,70 240,40 C320,10 360,60 400,40 L400,80 L0,80Z" fill="#fff"/><path d="M0,55 C60,30 140,75 220,50 C300,25 360,65 400,50 L400,80 L0,80Z" fill="#ffd060" opacity=".4"/></svg>
+      <div style="position:relative;padding:20px 20px 16px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#7dd3c8;"></div>
+          <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">Insider Intelligence</span>
+        </div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">The Lens — see every property through an expert's eyes.</div>
+        <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;">Not TripAdvisor. Not Top 10 lists. The Lens gives you real insider perspectives — an Egyptologist, a chef, a textile designer, a travel writer — each showing you what the guidebooks miss.</div>
+        <div style="display:flex;align-items:center;gap:0;background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;">
+          <div style="display:flex;margin-right:10px;">
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#9a7230,#7a5820);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.75rem;margin-right:-6px;z-index:4;">A</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#2e6a8a,#1a4a6a);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.75rem;margin-right:-6px;z-index:3;">J</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3a7055,#2a5040);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.75rem;margin-right:-6px;z-index:2;">S</div>
+            <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#8c4422,#6a3218);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.75rem;z-index:1;">R</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:.75rem;font-weight:500;color:#fff;">4 specialists per property</div>
+            <div style="font-size:.65rem;color:rgba(255,255,255,.5);">Included when you book</div>
+          </div>
+          <div style="font-size:.68rem;color:#7dd3c8;font-weight:600;white-space:nowrap;">Unlock →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Exclusive Experience -->
+    <div style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0d1f2e 0%,#0a1a28 60%,#0d2a1a 100%);"></div>
+      <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.12;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,35 C100,5 200,65 300,35 C360,15 380,55 400,35 L400,80 L0,80Z" fill="#fff"/><path d="M0,50 C80,25 180,70 280,48 C350,30 380,60 400,48 L400,80 L0,80Z" fill="#ffd060" opacity=".35"/></svg>
+      <div style="position:relative;padding:20px 20px 18px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#ffd060;"></div>
+          <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">The Private Access</span>
+        </div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">An exclusive experience, included with every booking.</div>
+        <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;">Every property in our collection comes with a private experience arranged exclusively through The Bearing. A temple at sunrise before it opens. A chef's table in a rice field. A dawn trek with a conservation ranger. Things money alone cannot book.</div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;">
+          <div style="width:5px;height:5px;border-radius:50%;background:#ffd060;flex-shrink:0;"></div>
+          <div style="font-size:.75rem;color:rgba(255,255,255,.8);font-weight:500;">Same price as booking direct. No hidden fees.</div>
+        </div>
+      </div>
+    </div>
+
+
+  </section>
+
+
+
+  <!-- ══ THE ENVOY FAB ══ -->
+
+  <!-- EDITORIAL -->
+  <div class="module warm">
+    <div class="module-inner">
+      <div class="mod-head">
+        <div class="mod-row"><span class="eyebrow">From the collection</span><button class="see-all" onclick="toast('All guides coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <h2 class="mod-title">Our <em>editors</em> have been</h2>
+      </div>
+    </div>
+    <div class="h-scroll">
+      <div class="edit-card" onclick="toast('Opening: Mount Gahinga Lodge')">
+        <div class="edit-img">
+          <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/28/0e/8d/b9/mount-gahinga-lodge.jpg" alt="Mount Gahinga Lodge, Uganda" loading="lazy">
+        </div>
+        <div class="edit-grad"></div>
+        <div class="edit-chip">Editor's Pick</div>
+        <div class="edit-body"><div class="edit-region">Uganda · Wilderness</div><div class="edit-title">Mount Gahinga Lodge</div><div class="edit-meta">8 min · Gorilla trekking & volcano views</div></div>
+      </div>
+      <div class="edit-card" onclick="toast('Opening: Cempedak Private Island')">
+        <div class="edit-img">
+          <img src="https://media.cntraveler.com/photos/692ba231ae74e66b0abc0cae/master/w_1600,c_limit/Capella%20Singapore_Capella%20Manor_Pool%20(Lifestyle%201).jpg" alt="Cempedak Private Island" loading="lazy">
+        </div>
+        <div class="edit-grad"></div>
+        <div class="edit-chip">Private Island</div>
+        <div class="edit-body"><div class="edit-region">Indonesia · Islands</div><div class="edit-title">Cempedak Private Island</div><div class="edit-meta">9 min · Barefoot luxury, no crowds</div></div>
+      </div>
+      <div class="edit-card" onclick="toast('Opening: Island Shangri-La')">
+        <div class="edit-img">
+          <img src="https://media.cntraveler.com/photos/692ba0e384e6d483a8a113be/master/w_1600,c_limit/Nautilus-food-3.jpg" alt="Island Shangri-La dining" loading="lazy">
+        </div>
+        <div class="edit-grad"></div>
+        <div class="edit-chip">Insider</div>
+        <div class="edit-body"><div class="edit-region">Hong Kong · Hotels</div><div class="edit-title">Island Shangri-La</div><div class="edit-meta">7 min · The city stay that redefines luxury</div></div>
+      </div>
+      <div class="edit-card" onclick="toast('Opening: Nautilus Maldives')">
+        <div class="edit-img">
+          <img src="https://media.cntraveler.com/photos/6948dd9a4ea92d93ba388fba/master/w_1600,c_limit/Perlah%20Villa%20View%20by%20Michael%20Poliza.jpg" alt="Nautilus Maldives villa" loading="lazy">
+        </div>
+        <div class="edit-grad"></div>
+        <div class="edit-chip">Hotels</div>
+        <div class="edit-body"><div class="edit-region">Maldives · Overwater</div><div class="edit-title">Nautilus Maldives</div><div class="edit-meta">10 min · The most private atoll in the archipelago</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOTELS -->
+  <div class="module">
+    <div class="module-inner">
+      <div class="mod-head">
+        <div class="mod-row"><span class="eyebrow">Rare hotels</span><button class="see-all" onclick="toast('All hotels coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <h2 class="mod-title">Places worth <em>lingering</em></h2>
+      </div>
+      <div class="filters">
+        <button class="fpill active" onclick="setFilter(this)">All</button>
+        <button class="fpill" onclick="setFilter(this)">Under 20 rooms</button>
+        <button class="fpill" onclick="setFilter(this)">Beachfront</button>
+        <button class="fpill" onclick="setFilter(this)">Mountain</button>
+        <button class="fpill" onclick="setFilter(this)">Design</button>
+        <button class="fpill" onclick="setFilter(this)">Wellness</button>
+      </div>
+
+      <!-- Four Seasons Seychelles -->
+      <div class="prop-cards-wrap">
+      <div class="prop-card" onclick="toast('Four Seasons Resort Seychelles — property page coming soon')">
+        <div class="prop-img-wrap">
+          <img src="https://static.prod.r53.tablethotels.com/media/hotels/slideshow_images_staged/large/1099841.jpg" alt="Four Seasons Resort Seychelles" loading="lazy">
+          <div class="prop-overlay"></div>
+          <div class="prop-bottom">
+            <div><div class="prop-photo-name">Four Seasons Resort Seychelles</div><div class="prop-photo-loc">Mahé, Seychelles</div></div>
+            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Four Seasons Resort Seychelles','Mahé, Seychelles','https://static.prod.r53.tablethotels.com/media/hotels/slideshow_images_staged/large/1099841.jpg')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="prop-body">
+          <div class="prop-tags"><span class="tag sea-d">Overwater</span><span class="tag dark">Beachfront</span></div>
+          <p class="prop-desc">Hillside infinity villas tumbling toward a private bay. Each has its own plunge pool and sweeping views of the Indian Ocean.</p>
+          <div class="prop-data">
+            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">67</div></div>
+            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.9</div></div>
+            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
+          </div>
+          <div class="prop-foot">
+            <div><div class="prop-from">From</div><div class="prop-price">$1,850 <span class="per">/ night</span></div></div>
+            <button class="prop-btn" onclick="event.stopPropagation();openInquiry('Four Seasons Resort Seychelles','Mahé, Seychelles')">Inquire</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chablé Yucatan -->
+      <div class="prop-card" onclick="toast('Chablé Yucatan — property page coming soon')">
+        <div class="prop-img-wrap">
+          <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/2e/50/a7/casita-terrace-each-casita.jpg?w=1200&h=-1&s=1" alt="Chablé Yucatan casita terrace" loading="lazy">
+          <div class="prop-overlay"></div>
+          <div class="prop-bottom">
+            <div><div class="prop-photo-name">Chablé Yucatan</div><div class="prop-photo-loc">Chocholá, Mexico</div></div>
+            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Chablé Yucatan','Chocholá, Mexico','https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/2e/50/a7/casita-terrace-each-casita.jpg?w=1200&h=-1&s=1')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="prop-body">
+          <div class="prop-tags"><span class="tag gold-d">Wellness</span><span class="tag dark">Jungle</span></div>
+          <p class="prop-desc">Private casitas lost in the jungle around a 17th-century hacienda. A cenote-fed spa, Mayan ceremony rituals, and zero reason to leave.</p>
+          <div class="prop-data">
+            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">38</div></div>
+            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.9</div></div>
+            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
+          </div>
+          <div class="prop-foot">
+            <div><div class="prop-from">From</div><div class="prop-price">$980 <span class="per">/ night</span></div></div>
+            <button class="prop-btn" onclick="event.stopPropagation();openInquiry('Chablé Yucatan','Chocholá, Mexico')">Inquire</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zuri Zanzibar -->
+      <div class="prop-card" onclick="toast('Zuri Zanzibar — property page coming soon')">
+        <div class="prop-img-wrap">
+          <img src="https://cdn.prod.website-files.com/607e99bffc9a6042b332722c/65b3a4b24c8cd6786dd70200_Zuri-Zanzibar-4.webp" alt="Zuri Zanzibar" loading="lazy">
+          <div class="prop-overlay"></div>
+          <div class="prop-bottom">
+            <div><div class="prop-photo-name">Zuri Zanzibar</div><div class="prop-photo-loc">Kendwa, Zanzibar</div></div>
+            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Zuri Zanzibar','Kendwa, Zanzibar','https://cdn.prod.website-files.com/607e99bffc9a6042b332722c/65b3a4b24c8cd6786dd70200_Zuri-Zanzibar-4.webp')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="prop-body">
+          <div class="prop-tags"><span class="tag moss-d">Eco</span><span class="tag dark">Beachfront</span></div>
+          <p class="prop-desc">Sculpted from coral stone and driftwood on a remote northern beach. Sustainably built, wildly beautiful, and entirely off the tourist trail.</p>
+          <div class="prop-data">
+            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">50</div></div>
+            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.8</div></div>
+            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
+          </div>
+          <div class="prop-foot">
+            <div><div class="prop-from">From</div><div class="prop-price">$620 <span class="per">/ night</span></div></div>
+            <button class="prop-btn moss" onclick="event.stopPropagation();openInquiry('Zuri Zanzibar','Kendwa, Zanzibar')">Inquire</button>
+          </div>
+        </div>
+      </div>
+      </div><!-- end prop-cards-wrap -->
+    </div>
+  </div>
+
+
+  <!-- CRUISES -->
+  <div class="module warm">
+    <div class="module-inner">
+      <div class="mod-head">
+        <div class="mod-row"><span class="eyebrow">Boutique cruises</span><button class="see-all" onclick="toast('All cruises coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <h2 class="mod-title"><em>Small ships.</em> Big worlds.</h2>
+      </div>
+    </div>
+    <div class="h-scroll">
+      <!-- Nour El Nil -->
+      <div class="cruise-card" href='nour-el-nil.html'>
+        <div class="cruise-img">
+          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil dahabiya cabin" loading="lazy">
+        </div>
+        <div class="cruise-grad"></div>
+        <div class="cruise-nights">7 nights</div>
+        <div class="cruise-body">
+          <div class="cruise-line">Nour El Nil · max 24 guests</div>
+          <div class="cruise-name">Sailing the Nile by Dahabiya</div>
+          <div class="cruise-route">Luxor → Aswan · under sail</div>
+          <div class="cruise-foot">
+            <div class="cruise-price">$4,200 <small>pp</small></div>
+            <button class="cruise-btn" onclick="event.stopPropagation();window.location='nour-el-nil.html'">View</button>
+          </div>
+        </div>
+      </div>
+      <!-- Aqua Nera -->
+      <div class="cruise-card" onclick="toast('Aqua Nera — property page coming soon')">
+        <div class="cruise-img">
+          <img src="https://d20knvk822eu5a.cloudfront.net/s3fs-public-optimized/static-assets/ships/aqua-nera/suites/suite-with-daybed.webp.webp?format=auto&width=2560&quality=80" alt="Aqua Nera suite Amazon" loading="lazy">
+        </div>
+        <div class="cruise-grad"></div>
+        <div class="cruise-nights">4 nights</div>
+        <div class="cruise-body">
+          <div class="cruise-line">Aqua Expeditions · 20 guests</div>
+          <div class="cruise-name">Amazon Rainforest Expedition</div>
+          <div class="cruise-route">Iquitos → Pacaya Samiria Reserve</div>
+          <div class="cruise-foot">
+            <div class="cruise-price">$6,800 <small>pp</small></div>
+            <button class="cruise-btn" onclick="event.stopPropagation();toast('Aqua Nera — coming soon')">View</button>
+          </div>
+        </div>
+      </div>
+      <!-- Gypsy by Mekong Kingdoms -->
+      <div class="cruise-card" onclick="toast('Mekong River — property page coming soon')">
+        <div class="cruise-img">
+          <img src="https://d1jxe9bpbkcsev.cloudfront.net/2024/07/Gypsy-gallery-11.jpg" alt="Gypsy Mekong Kingdoms river cruise" loading="lazy">
+        </div>
+        <div class="cruise-grad"></div>
+        <div class="cruise-nights">8 nights</div>
+        <div class="cruise-body">
+          <div class="cruise-line">Mekong Kingdoms · 16 guests</div>
+          <div class="cruise-name">Mekong River: Slow Through Indochina</div>
+          <div class="cruise-route">Chiang Rai → Luang Prabang</div>
+          <div class="cruise-foot">
+            <div class="cruise-price">$5,400 <small>pp</small></div>
+            <button class="cruise-btn" onclick="event.stopPropagation();toast('Mekong River — coming soon')">View</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- ══ BONUS EXPERIENCE ══ -->
+
+  <section style="padding:0 20px 60px;">
+    <div style="font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">Only with The Bearing</div>
+    <h2 style="font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--ink);margin-bottom:6px;line-height:1.2;">Book with us. <em>Get something you can't book anywhere else.</em></h2>
+    <p style="font-size:.85rem;color:var(--stone);line-height:1.65;margin-bottom:24px;">Every The Bearing booking includes an exclusive experience — arranged privately through our relationship with each property. Not a voucher. Not a discount. Something you couldn't organise yourself.</p>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+
+      <div style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;display:grid;grid-template-columns:90px 1fr;">
+        <div style="background:var(--sand);overflow:hidden;">
+          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Edfu" style="width:90px;height:100%;object-fit:cover;">
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:3px;">Nour El Nil · Egypt</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px;">Private sunrise at Edfu Temple</div>
+          <div style="font-size:.74rem;color:var(--stone);line-height:1.45;">45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests.</div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;display:grid;grid-template-columns:90px 1fr;">
+        <div style="background:var(--sand);overflow:hidden;">
+          <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=200&q=80&fit=crop" alt="Bali" style="width:90px;height:100%;object-fit:cover;">
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:3px;">Coming soon · Bali</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px;">A private rice field dinner at dusk</div>
+          <div style="font-size:.74rem;color:var(--stone);line-height:1.45;">Seven courses, lantern light, a chef who grew up in the valley. No other guests.</div>
+        </div>
+      </div>
+
+      <div style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;display:grid;grid-template-columns:90px 1fr;">
+        <div style="background:var(--sand);overflow:hidden;">
+          <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&q=80&fit=crop" alt="Rwanda" style="width:90px;height:100%;object-fit:cover;">
+        </div>
+        <div style="padding:14px 16px;">
+          <div style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:3px;">Coming soon · Rwanda</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);margin-bottom:4px;">Dawn gorilla trek with a conservation ranger</div>
+          <div style="font-size:.74rem;color:var(--stone);line-height:1.45;">A private morning with the research team — before the standard trekking groups begin.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:16px;padding:14px 16px;background:var(--linen);border-radius:var(--r-md);border:1px solid var(--border);">
+      <div style="font-size:.76rem;color:var(--bark);line-height:1.55;"><strong style="color:var(--ink);font-weight:500;">Every booking. No extra charge.</strong> The Bearing negotiates exclusive experiences directly with each property. You pay the same price as booking direct — and get something money can't otherwise buy.</div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="foot-logo">The Bearing<span class="dot">.io</span></div>
+    <p class="foot-tag">Rare hotels & boutique cruises,<br>curated by people who travel for a living.</p>
+    <div class="foot-links"><a href="#">How it works</a><a href="#">About us</a><a href="#">For hotels</a><a href="#">Privacy</a></div>
+    <div class="commission-badge"><span class="com-dot"></span>We earn a referral commission at no extra cost to you</div>
+    <div style="margin-bottom:10px;"><a href="pp-login.html" style="font-size:.72rem;color:rgba(255,255,255,.25);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.5)'" onmouseout="this.style.color='rgba(255,255,255,.25)'">Property partner? Sign in</a></div>
+    <p class="foot-copy">© 2026 TheBearing.io · Photos: Unsplash (free to use)</p>
+  </footer>
+</div>
+
+<!-- WISHLIST -->
+<div class="overlay" id="wish-overlay" onclick="closeOverlay('wish-overlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-grip" onclick="closeOverlay('wish-overlay')"></div>
+    <div class="sheet-kicker">Your Collection</div>
+    <div class="sheet-title" style="margin-bottom:20px">Saved Properties</div>
+    <div id="wish-list"><div class="w-empty"><div class="w-empty-ico"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart-lg"/></svg></div><div class="w-empty-txt">Tap the heart on any property<br>to save it here.</div></div></div>
+  </div>
+</div>
+
+<!-- INQUIRY -->
+<div class="overlay" id="inq-overlay" onclick="closeOverlay('inq-overlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-grip" onclick="closeOverlay('inq-overlay')"></div>
+    <div class="sheet-kicker">Direct Inquiry</div>
+    <div class="sheet-title">Reserve your stay</div>
+    <div class="sheet-sub" id="inq-name">Property</div>
+    <div class="sf">
+      <div class="f-row">
+        <div><label class="f-lbl">First name</label><input class="f-inp" type="text" placeholder="Jane"></div>
+        <div><label class="f-lbl">Last name</label><input class="f-inp" type="text" placeholder="Smith"></div>
+      </div>
+      <div><label class="f-lbl">Email</label><input class="f-inp" type="email" placeholder="jane@example.com"></div>
+      <div class="f-row">
+        <div><label class="f-lbl">Arrival</label><input class="f-inp" type="date"></div>
+        <div><label class="f-lbl">Departure</label><input class="f-inp" type="date"></div>
+      </div>
+      <div><label class="f-lbl">Guests</label><input class="f-inp" type="text" placeholder="2 adults"></div>
+      <div><label class="f-lbl">Special requests</label><textarea class="f-inp f-ta" placeholder="Celebrations, dietary needs, room preferences…"></textarea></div>
+      <button class="f-submit" onclick="submitInquiry()">Send Inquiry</button>
+      <p class="f-note">We confirm availability within 24 hours. No payment required at this stage.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+  /* ══ SITE GLOBALS ══ */
+  let wishlist = [];
+
+  /* sticky advisor bar removed */
+
+  function toggleWish(btn,name,loc,thumb){
+    const i=wishlist.findIndex(w=>w.name===name);
+    if(i===-1){wishlist.push({name,loc,thumb});btn.classList.add('saved');toast('Saved to wishlist');}
+    else{wishlist.splice(i,1);btn.classList.remove('saved');toast('Removed from wishlist');}
+    renderWish();updateBadge();
+  }
+  function updateBadge(){const el=document.getElementById('wcount');el.textContent=wishlist.length;el.classList.toggle('show',wishlist.length>0);}
+  function renderWish(){
+    const el=document.getElementById('wish-list');
+    if(!wishlist.length){el.innerHTML='<div class="w-empty"><div class="w-empty-ico"><svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart-lg"/></svg></div><div class="w-empty-txt">Tap the heart on any property<br>to save it here.</div></div>';return;}
+    el.innerHTML=wishlist.map((w,i)=>`<div class="w-item"><div class="w-thumb"><img src="${w.thumb}" alt="${w.name}" style="width:100%;height:100%;object-fit:cover;"></div><div class="w-info"><div class="w-name">${w.name}</div><div class="w-loc">${w.loc}</div></div><button class="w-del" onclick="removeWish(${i})"><svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor"><use href="#ico-close"/></svg></button></div>`).join('');
+  }
+  function removeWish(i){
+    const{name}=wishlist[i];wishlist.splice(i,1);
+    document.querySelectorAll('.prop-heart.saved').forEach(btn=>{if(btn.getAttribute('onclick').includes(name)){btn.classList.remove('saved');}});
+    renderWish();updateBadge();
+  }
+  function openInquiry(name,loc){document.getElementById('inq-name').textContent=`${name} · ${loc}`;openOverlay('inq-overlay');}
+  function submitInquiry(){closeOverlay('inq-overlay');toast('Inquiry sent — we'll reply within 24 hours ✉️');}
+
+  /* ══ AI TRAVEL ADVISOR ══ */
+  const PROPERTIES = [
+    { name:"Aman Jiwo, Borobudur", location:"Java, Indonesia", price:1240,
+      vibes:["spiritual","wellness","cultural","remote","jungle","temple","meditation","adults","peaceful"],
+      desc:"Eight stone-and-teak suites perched above the world's largest Buddhist temple. No clocks on property. Sunrise temple tours, forest spa, total stillness.",
+      img:"https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=80&fit=crop" },
+    { name:"Il Pellicano, Porto Ercole", location:"Tuscany Coast, Italy", price:890,
+      vibes:["romantic","michelin","cliffside","adults","mediterranean","food","wine","couples","coastal","italy"],
+      desc:"Five clifftop suites originally built for a love affair. One Michelin-star kitchen, a pool that floats above the Tyrrhenian Sea, and a rare sense of old-world Europe.",
+      img:"https://images.unsplash.com/photo-1555990793-da11153b2473?w=400&q=80&fit=crop" },
+    { name:"Explora Patagonia", location:"Torres del Paine, Chile", price:2100,
+      vibes:["adventure","remote","hiking","wilderness","nature","mountain","epic","horses","all-inclusive","dramatic"],
+      desc:"Eleven rooms facing the granite Paine massif. All-inclusive hiking, horses, and guides with twenty years in this wilderness. The edge of the world, comfortably.",
+      img:"https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=400&q=80&fit=crop" },
+    { name:"Laucala Island Resort", location:"Cakaudrove, Fiji", price:4200,
+      vibes:["private island","beach","tropical","surf","overwater","paradise","exclusive","remote","honeymoon","escape"],
+      desc:"A private island with 25 scattered villas, a working farm, and an 18-hole golf course. One of the most discreetly private addresses on Earth.",
+      img:"https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=80&fit=crop" },
+    { name:"Adrère Amellal", location:"Siwa Oasis, Egypt", price:480,
+      vibes:["remote","desert","off-grid","stars","oasis","ancient","history","culture","unusual","africa"],
+      desc:"Built from salt rock and mud at the edge of the Sahara. No electricity — only candlelight and the darkest skies you've ever seen. Ancient and genuinely remote.",
+      img:"https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400&q=80&fit=crop" },
+    { name:"Fogo Island Inn", location:"Newfoundland, Canada", price:2600,
+      vibes:["design","art","ocean","dramatic","cold","remote","architecture","community","unusual","unique"],
+      desc:"A contemporary icon cantilevered over a remote North Atlantic island where the internet arrived in 2009. Resident artists, extraordinary food, and an architecture that stops you cold.",
+      img:"https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400&q=80&fit=crop" },
+    { name:"Bisate Lodge", location:"Volcanoes National Park, Rwanda", price:1800,
+      vibes:["wildlife","gorillas","africa","conservation","nature","unique","once-in-a-lifetime","remote","adventure"],
+      desc:"Six forest villas inside a collapsed volcano, at the border of gorilla territory. Conservation-first, ethically rigorous, and completely unlike anywhere else.",
+      img:"https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&q=80&fit=crop" },
+    { name:"Amanyara", location:"Turks & Caicos", price:3100,
+      vibes:["beach","snorkeling","tropical","water","privacy","couples","honeymoon","turquoise","relaxation","minimal"],
+      desc:"On the edge of a protected marine sanctuary with the clearest water in the Caribbean. Minimal, meditative, completely unhurried — the definition of restorative.",
+      img:"https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=400&q=80&fit=crop" }
+  ];
+
+  const CRUISES = [
+    { name:"Ponant — Arctic Svalbard & North Pole", nights:12, price:18400,
+      vibes:["arctic","polar","ice","adventure","remote","dramatic","expedition","wildlife","once-in-a-lifetime"],
+      desc:"Svalbard to 90°N on a polar-class vessel. Polar bears, midnight sun, the geographic North Pole." },
+    { name:"SeaDream — Adriatic Hidden Harbours", nights:7, price:7200,
+      vibes:["mediterranean","sailing","culture","food","wine","adriatic","italy","croatia","social"],
+      desc:"Dubrovnik to Venice on a 112-guest yacht. Hidden coves, baroque harbours, long dinners on deck." },
+    { name:"Scenic Eclipse — Amazon Deep Jungle", nights:10, price:9600,
+      vibes:["wildlife","jungle","river","nature","remote","expedition","amazon","unusual","adventure"],
+      desc:"Manaus to Belém through the Amazon. River dolphins, jungle excursions, extraordinary biodiversity." }
+  ];
+
+  const SYSTEM_PROMPT = `You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable concierge helping guests find the perfect rare hotel or boutique cruise.
+
+Your voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places — not a booking engine. Short, evocative sentences. No bullet points or lists. Never sound like a brochure.
+
+Our hotel collection:
+${PROPERTIES.map(p => `• ${p.name} (${p.location}, from $${p.price.toLocaleString()}/night): ${p.desc} Best for: ${p.vibes.slice(0,6).join(', ')}.`).join('\n')}
+
+Our boutique cruises:
+${CRUISES.map(c => `• ${c.name} (${c.nights} nights, from $${c.price.toLocaleString()}pp): ${c.desc} Best for: ${c.vibes.slice(0,5).join(', ')}.`).join('\n')}
+
+Rules:
+- Ask at most ONE clarifying question per reply. Never multiple questions.
+- Recommend 1 or 2 properties maximum. Explain specifically why it matches their mood or desire.
+- When recommending, embed the tag [RECOMMEND: Exact Property Name] in your reply so the UI can render a visual card. The name must match exactly.
+- Keep responses to 3-5 sentences unless they ask for detail.
+- Invite them to inquire or ask more at the end.
+- If they want something outside our collection, gently redirect to the closest match we have.`;
+
+  let aiMessages = [];
+  let aibusy = false;
+
+  function useSuggestion(btn) {
+    const chips = document.getElementById('ai-chips');
+    if (chips) chips.style.display = 'none';
+    document.getElementById('ai-input').value = btn.textContent.trim();
+    sendAI();
+  }
+
+  async function sendAI() {
+    const inp = document.getElementById('ai-input');
+    const text = inp.value.trim();
+    if (!text || aibusy) return;
+
+    const chips = document.getElementById('ai-chips');
+    if (chips) chips.style.display = 'none';
+
+    appendMsg('user', text);
+    inp.value = '';
+    aiMessages.push({ role:'user', content:text });
+
+    aibusy = true;
+    const typingEl = appendTyping();
+
+    try {
+      const res = await fetch('/api/chat', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:800,
+          system:SYSTEM_PROMPT,
+          messages:aiMessages
+        })
+      });
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || 'I lost my connection for a moment — please try again.';
+      typingEl.remove();
+      aibusy = false;
+
+      const { clean, recs } = parseRecs(raw);
+      appendMsg('ai', clean, recs);
+      aiMessages.push({ role:'assistant', content:raw });
+
+    } catch(e) {
+      typingEl.remove();
+      aibusy = false;
+      appendMsg('ai', 'I seem to have lost my connection. Please try again.');
+    }
+  }
+
+  function parseRecs(text) {
+    const recs = [];
+    const clean = text.replace(/\[RECOMMEND:\s*([^\]]+)\]/gi, (_,n) => {
+      const name = n.trim();
+      const prop = PROPERTIES.find(p => p.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(p.name.split(',')[0].toLowerCase()));
+      const cruise = !prop && CRUISES.find(c => c.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(c.name.split('—')[0].trim().toLowerCase()));
+      if (prop) recs.push({type:'hotel',...prop});
+      else if (cruise) recs.push({type:'cruise',...cruise});
+      return '';
+    }).trim();
+    return { clean, recs };
+  }
+
+  function appendMsg(role, text, recs=[]) {
+    const thread = document.getElementById('ai-thread');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg' + (role==='user' ? ' user' : '');
+
+    const av = document.createElement('div');
+    av.className = 'msg-avatar ' + role;
+    av.textContent = role==='ai' ? 'H' : 'You';
+
+    const bub = document.createElement('div');
+    bub.className = 'msg-bubble';
+
+    text.split('\n').filter(p=>p.trim()).forEach((p,i)=>{
+      const el=document.createElement('p');
+      el.textContent=p.trim();
+      if(i>0) el.style.marginTop='8px';
+      bub.appendChild(el);
+    });
+
+    recs.forEach(r => bub.appendChild(buildCard(r)));
+
+    wrap.appendChild(av);
+    wrap.appendChild(bub);
+    thread.appendChild(wrap);
+    thread.scrollTo({top:thread.scrollHeight,behavior:'smooth'});
+  }
+
+  function buildCard(r) {
+    const card = document.createElement('div');
+    card.className = 'msg-prop-card';
+    card.onclick = () => openInquiry(r.name, r.location || '');
+    const price = r.price ? `$${r.price.toLocaleString()}` : '';
+    const sub = r.type==='cruise' ? `${r.nights} nights · from ${price}pp` : `from ${price}/night`;
+    card.innerHTML = `
+      <div class="msg-prop-img"><img src="${r.img || ''}" alt="${r.name}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>
+      <div class="msg-prop-body">
+        <div class="msg-prop-loc">${r.location || r.type}</div>
+        <div class="msg-prop-name">${r.name}</div>
+        <div class="msg-prop-footer">
+          <div class="msg-prop-price">${sub}</div>
+          <button class="msg-prop-cta">Inquire <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button>
+        </div>
+      </div>`;
+    return card;
+  }
+
+  function appendTyping() {
+    const thread = document.getElementById('ai-thread');
+    const wrap = document.createElement('div');
+    wrap.className = 'typing-wrap';
+    wrap.innerHTML = `<div class="msg-avatar ai">CI</div><div class="typing"><span></span><span></span><span></span></div>`;
+    thread.appendChild(wrap);
+    thread.scrollTo({top:thread.scrollHeight,behavior:'smooth'});
+    return wrap;
+  }
+</script>
+
+
+<!-- ══ THE ENVOY FAB ══ -->
+<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-txt">
+    <div class="ci-fab-label">The Envoy</div>
+    <div class="ci-fab-sub">Your Resident Expert</div>
+  </div>
+</button>
+
+<!-- ══ THE ENVOY DRAWER ══ -->
+<div class="ci-drawer" id="ci-drawer">
+
+  <div class="ci-head">
+    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+    <div class="ci-head-txt">
+      <div class="ci-name">The Envoy</div>
+      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    </div>
+    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+  </div>
+
+  <div class="ci-context" id="ci-context">
+    <div class="ci-context-dot"></div>
+    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
+  </div>
+
+  <div class="ci-messages" id="ci-messages"></div>
+
+  <div class="ci-sugs" id="ci-sugs">
+    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
+  </div>
+
+  <div class="ci-input-row">
+    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
+    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
+  </div>
+
+</div>
+
+
+<script>
+/* ══ THE ENVOY — PERSISTENT DRAWER ══ */
+
+var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable travel concierge helping guests find the perfect rare hotel or boutique cruise from the The Bearing collection.\n\nYour voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places. Short, evocative sentences. No bullet points. Never sound like a brochure.\n\nYou ONLY recommend properties and experiences within the The Bearing collection. You never suggest external booking sites, other hotel brands, or accommodation outside of The Bearing.\n\nWhen recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3-5 sentences.";
+
+var ciOpen = false;
+var ciBusy = false;
+
+// Persist history across pages via sessionStorage
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+function ciClearOnFresh() {
+  // Only clear if no history exists yet (first visit)
+}
+
+var ciHistory = ciLoadHistory();
+
+function openEnvoy() {
+  ciOpen = true;
+  document.getElementById('ci-drawer').classList.add('open');
+  var _fab = document.getElementById('ci-fab');
+  if(_fab){ _fab.style.opacity='0'; _fab.style.transform='translateY(16px)'; setTimeout(function(){ _fab.style.display='none'; }, 280); }
+  document.body.classList.add('ci-open');
+  // Restore messages from history
+  ciRestoreMessages();
+  setTimeout(function(){ document.getElementById('ci-input').focus(); }, 400);
+}
+
+function closeEnvoy() {
+  ciOpen = false;
+  document.getElementById('ci-drawer').classList.remove('open');
+  var _fab2 = document.getElementById('ci-fab');
+  if(_fab2){ _fab2.style.display='flex'; setTimeout(function(){ _fab2.style.opacity='1'; _fab2.style.transform=''; }, 20); }
+  document.body.classList.remove('ci-open');
+}
+
+function ciRestoreMessages() {
+  var msgs = document.getElementById('ci-messages');
+  msgs.innerHTML = '';
+  if (ciHistory.length === 0) {
+    // First time — show welcome
+    ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
+  } else {
+    // Restore previous conversation
+    ciHistory.forEach(function(m) {
+      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+    });
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Update context pill based on current page
+(function() {
+  var path = window.location.pathname;
+  var ctx = 'Browsing The Bearing';
+  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
+  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
+  var el = document.getElementById('ci-context-txt');
+  if (el) el.textContent = ctx;
+})();
+
+function ciAsk(btn) {
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(btn.textContent.trim());
+}
+
+function ciSend() {
+  var inp = document.getElementById('ci-input');
+  var q = inp.value.trim();
+  if (!q || ciBusy) return;
+  inp.value = '';
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(q);
+}
+
+async function ciSendMsg(text) {
+  ciAddMsg(text, 'user');
+  ciHistory.push({ role: 'user', content: text });
+  ciSaveHistory(ciHistory);
+
+  ciBusy = true;
+  var t = ciShowTyping();
+
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+    });
+    var data = await res.json();
+    var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
+    t.remove();
+    ciBusy = false;
+    ciAddMsg(reply, 'ai');
+    ciHistory.push({ role: 'assistant', content: reply });
+    ciSaveHistory(ciHistory);
+  } catch(e) {
+    t.remove();
+    ciBusy = false;
+    ciAddMsg('Something went wrong — please try again.', 'ai');
+  }
+}
+
+function ciAddMsg(text, type) {
+  var msgs = document.getElementById('ci-messages');
+  var div = document.createElement('div');
+  div.className = 'ci-msg ' + type;
+  text.split('\n').filter(function(p){ return p.trim(); }).forEach(function(p, i) {
+    var el = document.createElement('p');
+    el.textContent = p.trim();
+    if (i > 0) el.style.marginTop = '5px';
+    div.appendChild(el);
+  });
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function ciShowTyping() {
+  var msgs = document.getElementById('ci-messages');
+  var d = document.createElement('div');
+  d.className = 'ci-typing-msg';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+// Restore open state if user navigated while drawer was open
+if (sessionStorage.getItem('ci_was_open') === '1') {
+  // Small delay to let page render
+  setTimeout(openEnvoy, 100);
+}
+window.addEventListener('beforeunload', function() {
+  sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
+});
+
+function togglePref(btn){ btn.classList.toggle('active'); }
+function submitAccount(){
+  var name  = document.getElementById('acc-name') && document.getElementById('acc-name').value;
+  var email = document.getElementById('acc-email') && document.getElementById('acc-email').value;
+  closeOverlay('account-overlay');
+  toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
+}
+</script>
+
+
+
+<!-- ══ ACCOUNT OVERLAY ══ -->
+<div class="overlay" id="account-overlay" onclick="if(event.target===this)closeOverlay('account-overlay')" style="display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div onclick="event.stopPropagation()" style="background:linear-gradient(160deg,#faf7f1 0%,#f4efe4 100%);border-radius:24px;width:92vw;max-width:460px;max-height:92dvh;overflow-y:auto;box-shadow:0 24px 80px rgba(30,20,10,.25),0 0 0 1px rgba(176,88,48,.1);transform:scale(.96);opacity:0;transition:transform .38s cubic-bezier(.32,.72,0,1),opacity .3s;position:relative;">
+    <!-- Grip -->
+    <div style="width:36px;height:4px;border-radius:100px;background:var(--border-hi);margin:14px auto 0;"></div>
+    <!-- Close -->
+    <button onclick="closeOverlay('account-overlay')" style="position:absolute;top:14px;right:16px;width:28px;height:28px;border-radius:50%;background:var(--sand);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+    </button>
+    <div style="padding:20px 24px 36px;">
+
+      <div class="inq-kicker">The Bearing</div>
+      <div class="inq-title">Create your account</div>
+      <div class="inq-sub">Save properties, track your inquiries, and get personalised recommendations from your The Envoy.</div>
+
+      <div class="f-field">
+        <label class="f-lbl">Full name</label>
+        <input class="f-inp" id="acc-name" type="text" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Email address</label>
+        <input class="f-inp" id="acc-email" type="email" placeholder="you@email.com" autocomplete="email">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Phone (optional)</label>
+        <input class="f-inp" id="acc-phone" type="tel" placeholder="+1 (000) 000-0000" autocomplete="tel">
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label class="f-lbl" style="margin-bottom:8px;display:block;">Travel style</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="acc-pref-btn" onclick="togglePref(this)">Remote &amp; untouched</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Beach &amp; privacy</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Cultural &amp; historic</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Wilderness</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Luxury cruises</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Design hotels</button>
+        </div>
+      </div>
+
+      <button onclick="submitAccount()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:14px;font-family:'Geist',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;letter-spacing:.01em;transition:opacity .15s;margin-bottom:12px;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">Create my account →</button>
+      <p class="f-note">Already have an account? <a href="my-account.html" style="color:var(--terra);text-decoration:underline;font-weight:500;">Sign in</a></p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function tcSearch(val) {
+  var q = (val || 'egypt').trim();
+  if (!q) q = 'egypt';
+  window.location = 'search.html';
+}
+function tcSearchFromInput(inputId) {
+  var el = document.getElementById(inputId);
+  tcSearch(el ? el.value : 'egypt');
+}
+
+var HOME_COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belgium","Bhutan","Bolivia","Brazil","Cambodia","Canada","Chile","China","Colombia","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Ecuador","Egypt","Estonia","Ethiopia","Fiji","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Laos","Latvia","Lebanon","Libya","Lithuania","Luxembourg","Malaysia","Maldives","Malta","Mexico","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nepal","Netherlands","New Zealand","Nicaragua","Nigeria","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Saudi Arabia","Senegal","Serbia","Seychelles","Singapore","Slovakia","Slovenia","South Africa","South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan","Tanzania","Thailand","Tunisia","Turkey","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+var homeDestActive = 0;
+var homeDestMatches = [];
+
+function homeDestAutocomplete(val) {
+  var dd = document.getElementById('home-dest-dropdown');
+  if (!val.trim()) { dd.style.display = 'none'; return; }
+  var q = val.toLowerCase();
+  homeDestMatches = HOME_COUNTRIES.filter(function(c){ return c.toLowerCase().indexOf(q) === 0; })
+    .concat(HOME_COUNTRIES.filter(function(c){ return c.toLowerCase().indexOf(q) > 0; }))
+    .slice(0, 7);
+  if (!homeDestMatches.length) { dd.style.display = 'none'; return; }
+  homeDestActive = 0;
+  dd.innerHTML = homeDestMatches.map(function(c, i){
+    var bold = c.substring(0, val.length);
+    var rest = c.substring(val.length);
+    return '<div style="padding:10px 16px;font-size:.85rem;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border);background:#fff;transition:background .1s;" onmousedown="homeDestSelect(''+c+'')" onmouseover="this.style.background='var(--linen)'" onmouseout="this.style.background='#fff'"><strong>'+bold+'</strong>'+rest+'</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function homeDestSelect(val) {
+  document.getElementById('home-dest-input').value = val;
+  document.getElementById('home-dest-dropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e){
+  var field = document.getElementById('home-dest-field');
+  if (field && !field.contains(e.target)) {
+    document.getElementById('home-dest-dropdown').style.display = 'none';
+  }
+});
+</script>
+<script>
+// The Bearing 404 intercept — catches dead links and missing pages
+(function(){
+  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
+    'collections.html','journal.html','how-we-choose.html','founding-member.html',
+    'about.html','my-account.html','bookings.html','channels.html',
+    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+  function fname(href){
+    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href]');
+    if(!a) return;
+    var href = a.getAttribute('href');
+    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
+    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
+    var f = fname(href);
+    if(f && VALID.indexOf(f) === -1){
+      e.preventDefault();
+      window.location = '404.html';
+    }
+  });
+  // Also intercept window.location assignments by watching for navigation errors
+  window.addEventListener('error', function(e){
+    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
+  }, true);
+})();
+</script>
+
+<!-- ══ QUICK ENQUIRY MODAL ══ -->
+<div id="quick-enquiry-overlay" onclick="if(event.target===this)closeQuickEnquiry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:#fff;border-radius:20px;width:480px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:fadeUp .25s ease;">
+    <div style="padding:28px 28px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="eq-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--ink);margin-bottom:2px;">Send an enquiry</div>
+          <div style="font-size:.8rem;color:var(--stone);">No payment. The property replies within 24 hours.</div>
+        </div>
+        <button onclick="closeQuickEnquiry()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Full name</label>
+          <input type="text" placeholder="Your name" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Email</label>
+          <input type="email" placeholder="you@email.com" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label>
+          <input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label>
+          <select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>Family (2+kids)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Your message</label>
+        <textarea placeholder="Tell us what you're looking for — dates, cabin type, any special requests or questions. The property will reply directly." style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;resize:none;min-height:90px;line-height:1.55;"></textarea>
+      </div>
+
+      <button onclick="submitQuickEnquiry()" style="width:100%;padding:13px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send enquiry
+      </button>
+      <div style="font-size:.68rem;color:var(--stone);text-align:center;padding-bottom:24px;">No payment · No obligation · Property replies within 24 hours</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openQuickEnquiry(propertyName) {
+  var label = document.getElementById('eq-property-label');
+  if (label && propertyName) label.textContent = propertyName;
+  var el = document.getElementById('quick-enquiry-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeQuickEnquiry() {
+  document.getElementById('quick-enquiry-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function submitQuickEnquiry() {
+  closeQuickEnquiry();
+  // Show confirmation toast
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);animation:fadeUp .25s ease;display:flex;align-items:center;gap:8px;';
+  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+</script>
+
+
+<!-- ══ THEBEARING CHECKOUT MODAL ══════════════════════════════════════
+     Stripe integration: replace STRIPE_PUBLISHABLE_KEY with live key
+     Everything else is ready to go.
+     Commission collected = 10% of total booking value (configurable)
+     Guest pays remainder directly to property.
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="tb-checkout-overlay" onclick="if(event.target===this)tbCloseCheckout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+  <div id="tb-checkout-sheet" style="background:#fff;border-radius:24px;width:520px;max-width:94vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:tbSlideUp .3s cubic-bezier(.32,.72,0,1);">
+
+    <!-- Header -->
+    <div style="padding:28px 28px 0;position:sticky;top:0;background:#fff;z-index:1;border-radius:24px 24px 0 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+        <div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:5px;" id="tb-co-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;line-height:1.15;" id="tb-co-title">Book your stay</div>
+        </div>
+        <button onclick="tbCloseCheckout()" style="width:34px;height:34px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:background .15s;" onmouseover="this.style.background='#f5f0e8'" onmouseout="this.style.background='#fff'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Step indicator -->
+      <div style="display:flex;gap:6px;padding:16px 0 14px;border-bottom:1px solid #f0ebe0;">
+        <div class="tb-step-pip" id="tb-pip-1" style="height:3px;flex:1;border-radius:100px;background:var(--terra,#b05830);transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-2" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-3" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Trip details -->
+    <div id="tb-step-1" style="padding:20px 28px 28px;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 1 of 3 — Trip details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
+          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>2 adults, 1 child</option>
+            <option>2 adults, 2 children</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;" id="tb-co-room-label">Room / cabin type</label>
+          <select id="tb-co-room" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <!-- Populated dynamically per property -->
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Special requests or questions (optional)</label>
+        <textarea id="tb-co-notes" placeholder="Dietary requirements, anniversary celebration, arrival time, anything you'd like the property to know..." style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;resize:none;min-height:80px;line-height:1.55;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'"></textarea>
+      </div>
+
+      <!-- Price summary -->
+      <div id="tb-price-summary" style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;" id="tb-line-room">Select dates and room</span>
+          <span style="font-weight:600;" id="tb-line-total">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;">TheBearing.io fee</span>
+          <span style="font-weight:600;color:#3a7055;">$0</span>
+        </div>
+        <div style="height:1px;background:#e5e0d8;margin:8px 0;"></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:.85rem;font-weight:700;">Booking deposit (10%)</span>
+          <span style="font-size:.85rem;font-weight:700;color:#b05830;" id="tb-deposit-amount">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:.75rem;color:#9a8e80;">Balance paid direct to property</span>
+          <span style="font-size:.75rem;color:#9a8e80;" id="tb-balance-amount">—</span>
+        </div>
+      </div>
+
+      <!-- How it works callout -->
+      <div style="background:#f0f7f4;border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <div style="font-size:.75rem;color:#2a5040;line-height:1.6;"><strong>How this works:</strong> You pay a 10% deposit to TheBearing.io now to secure your booking. The property will contact you directly within 24 hours to confirm and arrange the remaining 90% in their preferred way.</div>
+      </div>
+
+      <button onclick="tbGoStep(2)" id="tb-step1-btn" style="width:100%;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+        Continue to your details
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 2: Guest details -->
+    <div id="tb-step-2" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 2 of 3 — Your details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">First name</label>
+          <input type="text" id="tb-co-firstname" placeholder="Your first name" autocomplete="given-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Last name</label>
+          <input type="text" id="tb-co-lastname" placeholder="Your last name" autocomplete="family-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Email address</label>
+        <input type="email" id="tb-co-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;">Your booking confirmation and the property's contact details will be sent here.</div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Phone number (optional)</label>
+        <input type="tel" id="tb-co-phone" placeholder="+1 (000) 000-0000" autocomplete="tel" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+      </div>
+
+      <!-- Booking summary recap -->
+      <div style="background:#faf7f1;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Booking summary</div>
+        <div style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:4px;" id="tb-step2-summary"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(1)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbGoStep(3)" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          Continue to payment
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div id="tb-step-3" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 3 of 3 — Secure payment</div>
+
+      <!-- Stripe card element container -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:8px;">Card details</label>
+        <!-- In production: <div id="stripe-card-element"></div> -->
+        <!-- Demo UI that matches Stripe Elements styling -->
+        <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="tb-co-card" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;letter-spacing:.05em;" oninput="tbFormatCard(this)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="MM / YY" maxlength="7" id="tb-co-expiry" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;" oninput="tbFormatExpiry(this)">
+          </div>
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="CVV" maxlength="4" id="tb-co-cvv" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:#9a8e80;margin-top:6px;display:flex;align-items:center;gap:4px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Secured by Stripe · 256-bit SSL · PCI DSS compliant
+        </div>
+      </div>
+
+      <!-- Final charge summary -->
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:8px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Charge summary</div>
+        <div id="tb-step3-summary" style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;"></div>
+        <div style="height:1px;background:#e5e0d8;margin-bottom:10px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.9rem;font-weight:700;color:#1e1810;">Charged now</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:1.4rem;font-weight:600;color:#b05830;" id="tb-final-charge">—</span>
+        </div>
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;" id="tb-balance-note">—</div>
+      </div>
+
+      <!-- What happens next -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:.68rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens next</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+            <span>You'll receive an email confirmation with your booking reference and the property's direct contact details.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+            <span>The property contacts you directly within 24 hours to confirm your stay and arrange the balance.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+            <span>Your deposit is fully refundable if the property cannot confirm your dates.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(2)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbSubmitBooking()" id="tb-pay-btn" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <span id="tb-pay-btn-text">Pay deposit now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div id="tb-step-4" style="padding:40px 28px;display:none;text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:#f0f7f4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;margin-bottom:8px;">Booking confirmed</div>
+      <div style="font-size:.82rem;color:#5a4e40;line-height:1.65;margin-bottom:6px;" id="tb-confirm-msg">Your deposit has been received.</div>
+      <div style="font-family:monospace;font-size:.78rem;color:#9a8e80;background:#faf7f1;padding:8px 16px;border-radius:100px;display:inline-block;margin-bottom:24px;" id="tb-confirm-ref">TB-2025-XXXX</div>
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;text-align:left;margin-bottom:24px;">
+        <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens now</div>
+        <div style="font-size:.78rem;color:#5a4e40;line-height:1.7;">
+          ✓ Confirmation email sent to <strong id="tb-confirm-email"></strong><br>
+          ✓ Property's direct contact details included<br>
+          ✓ The property will reach out within 24 hours<br>
+          ✓ Balance arranged directly with the property
+        </div>
+      </div>
+      <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:#1e1810;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes tbSlideUp { from { opacity:0; transform:translateY(20px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+</style>
+
+<script>
+// ── THEBEARING CHECKOUT ENGINE ────────────────────────────────────────
+// STRIPE INTEGRATION POINT:
+// 1. Add <script src="https://js.stripe.com/v3/"></script> to <head>
+// 2. Replace 'STRIPE_PUBLISHABLE_KEY' with your live key
+// 3. In tbSubmitBooking(), uncomment the Stripe PaymentIntent call
+// 4. Replace the demo card inputs with: stripe.elements().create('card')
+// Everything else is wired and ready.
+// const stripe = Stripe('STRIPE_PUBLISHABLE_KEY');
+// ─────────────────────────────────────────────────────────────────────
+
+var tbCheckout = {
+  property: '',
+  pricePerNight: 0,
+  rooms: [],
+  currentStep: 1,
+  totalAmount: 0,
+  depositAmount: 0,
+  commissionRate: 0.10  // 10% — configurable per property
+};
+
+function tbOpenCheckout(config) {
+  // config = { property, label, rooms, pricePerNight, roomLabel }
+  tbCheckout.property    = config.property    || 'this property';
+  tbCheckout.pricePerNight = config.pricePerNight || 0;
+  tbCheckout.rooms       = config.rooms       || [{ name:'Standard', price:0 }];
+  tbCheckout.commissionRate = config.commissionRate || 0.10;
+
+  // Set property label and title
+  document.getElementById('tb-co-property-label').textContent = config.property;
+  document.getElementById('tb-co-title').textContent = config.title || 'Book your stay';
+
+  // Set room label
+  var roomLbl = document.getElementById('tb-co-room-label');
+  if (roomLbl) roomLbl.textContent = config.roomLabel || 'Room / cabin type';
+
+  // Populate room select
+  var sel = document.getElementById('tb-co-room');
+  sel.innerHTML = tbCheckout.rooms.map(r =>
+    '<option value="'+r.price+'">'+r.name+' — from $'+r.price.toLocaleString()+'/pp</option>'
+  ).join('');
+
+  tbGoStep(1);
+  tbUpdateSummary();
+
+  var el = document.getElementById('tb-checkout-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function tbCloseCheckout() {
+  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function tbGoStep(n) {
+  [1,2,3,4].forEach(i => {
+    var s = document.getElementById('tb-step-'+i);
+    var p = document.getElementById('tb-pip-'+i);
+    if (s) s.style.display = (i===n) ? 'block' : 'none';
+    if (p) p.style.background = (i<=n) ? 'var(--terra,#b05830)' : '#e5e0d8';
+  });
+  tbCheckout.currentStep = n;
+  if (n===2) tbBuildStep2Summary();
+  if (n===3) tbBuildStep3Summary();
+  document.getElementById('tb-checkout-sheet').scrollTop = 0;
+}
+
+function tbUpdateSummary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
+  var guestsSel = document.getElementById('tb-co-guests');
+  var guests    = guestsSel ? (guestsSel.value.match(/\d+/) || [2])[0] : 2;
+
+  var nights = 0;
+  if (arrival && departure) {
+    nights = Math.round((new Date(departure)-new Date(arrival))/(1000*60*60*24));
+    if (nights < 0) nights = 0;
+  }
+
+  var total   = roomPrice * parseInt(guests) * (nights || 1);
+  var deposit = Math.round(total * tbCheckout.commissionRate);
+  var balance = total - deposit;
+  tbCheckout.totalAmount   = total;
+  tbCheckout.depositAmount = deposit;
+
+  var lineRoom = document.getElementById('tb-line-room');
+  var lineTotal = document.getElementById('tb-line-total');
+  var depEl    = document.getElementById('tb-deposit-amount');
+  var balEl    = document.getElementById('tb-balance-amount');
+
+  if (lineRoom && total > 0) {
+    lineRoom.textContent  = (roomSel ? roomSel.options[roomSel.selectedIndex].text.split('—')[0].trim() : '') + (nights > 0 ? ' · '+nights+' night'+(nights>1?'s':'') : '');
+    lineTotal.textContent = '$'+total.toLocaleString();
+    depEl.textContent     = '$'+deposit.toLocaleString();
+    balEl.textContent     = '$'+balance.toLocaleString()+' paid to property';
+  } else if (lineRoom) {
+    lineRoom.textContent  = 'Select dates and room type';
+    lineTotal.textContent = '—';
+    depEl.textContent     = '—';
+    balEl.textContent     = '—';
+  }
+
+  // Update pay button
+  var payBtn = document.getElementById('tb-pay-btn-text');
+  if (payBtn) payBtn.textContent = deposit > 0 ? 'Pay $'+deposit.toLocaleString()+' deposit' : 'Pay deposit now';
+}
+
+function tbBuildStep2Summary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var guests    = document.getElementById('tb-co-guests').value;
+  var nights    = (arrival && departure) ? Math.round((new Date(departure)-new Date(arrival))/(86400000)) : 0;
+  var s = document.getElementById('tb-step2-summary');
+  if (s) s.innerHTML = [
+    '<div><strong>'+tbCheckout.property+'</strong></div>',
+    arrival ? '<div>'+new Date(arrival).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+' → '+new Date(departure).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>' : '',
+    nights > 0 ? '<div>'+nights+' night'+(nights>1?'s':'')+' · '+guests+'</div>' : '',
+    roomName ? '<div>'+roomName+'</div>' : '',
+    tbCheckout.depositAmount > 0 ? '<div style="margin-top:6px;font-weight:600;color:#b05830;">Deposit: $'+tbCheckout.depositAmount.toLocaleString()+'</div>' : ''
+  ].join('');
+}
+
+function tbBuildStep3Summary() {
+  tbBuildStep2Summary();
+  var s3 = document.getElementById('tb-step3-summary');
+  var fc = document.getElementById('tb-final-charge');
+  var bn = document.getElementById('tb-balance-note');
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var balance   = tbCheckout.totalAmount - tbCheckout.depositAmount;
+
+  if (s3) s3.innerHTML = [
+    '<div style="display:flex;justify-content:space-between;"><span>'+tbCheckout.property+'</span><span style="font-weight:600;">$'+tbCheckout.totalAmount.toLocaleString()+'</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">TheBearing.io fee</span><span style="color:#3a7055;font-weight:600;">$0</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">Balance to property</span><span style="color:#9a8e80;">$'+balance.toLocaleString()+'</span></div>',
+  ].join('');
+  if (fc) fc.textContent = tbCheckout.depositAmount > 0 ? '$'+tbCheckout.depositAmount.toLocaleString() : '—';
+  if (bn) bn.textContent = 'Remaining $'+balance.toLocaleString()+' arranged directly with '+tbCheckout.property;
+}
+
+function tbFormatCard(el) {
+  var v = el.value.replace(/\D/g,'').substring(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function tbFormatExpiry(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.substring(0,2)+' / '+v.substring(2,4);
+  el.value = v;
+}
+
+function tbSubmitBooking() {
+  var btn = document.getElementById('tb-pay-btn');
+  var btnText = document.getElementById('tb-pay-btn-text');
+
+  // Validation
+  var card = document.getElementById('tb-co-card').value.replace(/\s/g,'');
+  var expiry = document.getElementById('tb-co-expiry').value;
+  var cvv = document.getElementById('tb-co-cvv').value;
+  var email = document.getElementById('tb-co-email').value;
+  var firstname = document.getElementById('tb-co-firstname').value;
+
+  if (!firstname || !email || card.length < 15 || !expiry || !cvv) {
+    alert('Please fill in all required fields before proceeding.');
+    return;
+  }
+
+  // Loading state
+  btnText.textContent = 'Processing…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  // ── STRIPE INTEGRATION POINT ──────────────────────────────────────
+  // In production, replace this setTimeout with:
+  //
+  // const { paymentMethod, error } = await stripe.createPaymentMethod({
+  //   type: 'card',
+  //   card: cardElement,  // stripe.elements().create('card')
+  //   billing_details: { name: firstname + ' ' + lastname, email }
+  // });
+  // if (error) { show error; return; }
+  //
+  // const response = await fetch('/api/create-payment-intent', {
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     paymentMethodId: paymentMethod.id,
+  //     amount: tbCheckout.depositAmount * 100, // cents
+  //     currency: 'usd',
+  //     description: 'TheBearing deposit — ' + tbCheckout.property,
+  //     metadata: { booking_ref: ref, property: tbCheckout.property }
+  //   })
+  // });
+  // const { clientSecret } = await response.json();
+  // const result = await stripe.confirmCardPayment(clientSecret);
+  // ─────────────────────────────────────────────────────────────────
+
+  // Demo: simulate payment processing
+  setTimeout(function() {
+    var ref = 'TB-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*9000);
+    document.getElementById('tb-confirm-ref').textContent = ref;
+    document.getElementById('tb-confirm-msg').textContent =
+      'Your $'+tbCheckout.depositAmount.toLocaleString()+' deposit for '+tbCheckout.property+' has been received. The property will contact you directly within 24 hours.';
+    document.getElementById('tb-confirm-email').textContent = email;
+    tbGoStep(4);
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btnText.textContent = 'Pay deposit now';
+  }, 1800);
+}
+</script>
+
+</body>

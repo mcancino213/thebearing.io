@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — The Bearing</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── CANONICAL NAV ── */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+  .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
+  .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1;}
+  .nav-logo .dot{color:var(--terra);font-family:'Geist',sans-serif;font-size:.75em;font-weight:400;}
+  .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
+  .nav-links-desktop{display:flex;align-items:center;gap:22px;}
+  .nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
+  .nav-link-d:hover{color:var(--ink);}
+  .nav-link-d.featured{color:var(--terra);}
+  .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
+  .nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .nav-btn{background:none;border:none;cursor:pointer;color:var(--stone);padding:4px;display:flex;align-items:center;transition:color .15s;}
+  .nav-btn:hover{color:var(--ink);}
+  .nav-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--terra),var(--terra-d));display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Instrument Serif',serif;font-style:italic;font-size:.9rem;cursor:pointer;}
+
+:root {
+  --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
+  --border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);
+  --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
+  --terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);
+  --gold:#9a7230;--sea:#2e6a8a;--moss:#3a7055;
+  --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;
+  --nav-h:66px;--sidebar:280px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+/* ── NAV ── */
+
+/* ── SEARCH HERO ── */
+.search-hero{padding:calc(var(--nav-h) + 28px) 28px 0;max-width:1400px;margin:0 auto;}
+.search-hero-top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;}
+.search-hero-title{font-family:'Instrument Serif',serif;font-size:2.4rem;color:var(--ink);line-height:1.05;}
+.search-hero-sub{font-size:.82rem;color:var(--stone);margin-top:4px;}
+.result-count{font-size:.78rem;color:var(--stone);text-align:right;}
+.result-count strong{color:var(--ink);font-size:1.2rem;font-family:'Instrument Serif',serif;display:block;line-height:1;}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;align-items:center;gap:0;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;box-shadow:0 4px 32px rgba(80,55,25,.08);margin-bottom:0;}
+.sbar-field{display:flex;align-items:center;gap:10px;padding:14px 20px;flex:1;border-right:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.sbar-field:last-of-type{border-right:none;}
+.sbar-field:hover{background:var(--linen);}
+.sbar-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);display:block;margin-bottom:2px;}
+.sbar-val{font-size:.88rem;color:var(--ink);font-weight:500;}
+.sbar-val.placeholder{color:var(--mist);font-weight:400;}
+.sbar-icon{color:var(--mist);flex-shrink:0;}
+.sbar-btn{padding:12px 28px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:0 var(--r-xl) var(--r-xl) 0;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:opacity .15s;}
+.sbar-btn:hover{opacity:.9;}
+
+/* ── DESTINATION FIELD FOCUS ── */
+#dest-field{transition:background .2s;}
+#dest-field.focused{background:var(--linen);}
+#dest-input{caret-color:var(--terra);caret-shape:bar;}
+#dest-input:focus{outline:none;}
+.search-bar.bar-focused{
+  border-color:var(--terra);
+  box-shadow:0 4px 32px rgba(80,55,25,.08), 0 0 0 2px rgba(176,88,48,.15);
+}
+#dest-field.focused .sbar-label{color:var(--terra);}
+/* Animated cursor blink hint on the placeholder */
+@keyframes caretPulse{0%,100%{opacity:1;}50%{opacity:0;}}
+
+/* ── LAYOUT ── */
+.page-body{display:flex;gap:0;max-width:1400px;margin:0 auto;padding:0 28px 80px;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;padding:28px 0;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto;scrollbar-width:none;padding-right:24px;}
+.sidebar::-webkit-scrollbar{display:none;}
+.filter-section{margin-bottom:28px;}
+.filter-title{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--stone);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.filter-clear{font-size:.68rem;color:var(--terra);cursor:pointer;font-weight:400;letter-spacing:0;text-transform:none;}
+
+/* Filter pills */
+.filter-pills{display:flex;flex-direction:column;gap:4px;}
+.filter-pill{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:var(--r-md);cursor:pointer;transition:all .15s;border:1px solid transparent;}
+.filter-pill:hover{background:var(--linen);}
+.filter-pill.active{background:var(--terra-dim);border-color:rgba(176,88,48,.2);}
+.filter-pill-label{font-size:.8rem;color:var(--bark);display:flex;align-items:center;gap:8px;}
+.filter-pill.active .filter-pill-label{color:var(--terra);font-weight:500;}
+.filter-pill-count{font-size:.68rem;color:var(--mist);}
+.filter-pill.active .filter-pill-count{color:rgba(176,88,48,.5);}
+.filter-check{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--border-hi);background:#fff;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+.filter-pill.active .filter-check{background:var(--terra);border-color:var(--terra);}
+
+/* Range slider */
+.price-range{padding:4px 0;}
+.price-range input[type=range]{width:100%;accent-color:var(--terra);height:4px;}
+.price-labels{display:flex;justify-content:space-between;font-size:.72rem;color:var(--stone);margin-top:6px;}
+
+/* Sort bar */
+.sort-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:0;}
+.sort-label{font-size:.78rem;color:var(--stone);}
+.sort-options{display:flex;gap:4px;}
+.sort-btn{padding:5px 12px;border-radius:100px;border:1px solid var(--border-hi);background:#fff;font-size:.74rem;color:var(--bark);cursor:pointer;transition:all .15s;font-family:'Geist',sans-serif;}
+.sort-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.sort-btn:hover:not(.active){background:var(--linen);}
+
+/* Active filters strip */
+.active-filters{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0;min-height:0;}
+.af-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;background:var(--terra-dim);border:1px solid rgba(176,88,48,.2);border-radius:100px;font-size:.72rem;color:var(--terra);font-weight:500;cursor:pointer;}
+.af-chip:hover{background:rgba(176,88,48,.12);}
+
+/* ── RESULTS ── */
+.results{flex:1;min-width:0;padding-top:28px;}
+
+/* ── PROPERTY CARD ── */
+.prop-card{background:#fff;border:1px solid var(--border);border-radius:22px;overflow:hidden;margin-bottom:24px;cursor:pointer;transition:box-shadow .3s,transform .3s;position:relative;}
+.prop-card:hover{box-shadow:0 12px 60px rgba(80,55,25,.12);transform:translateY(-2px);}
+
+/* Photo carousel */
+.card-photos{position:relative;height:280px;overflow:hidden;background:var(--sand);}
+.photo-track{display:flex;height:100%;transition:transform .5s cubic-bezier(.4,0,.2,1);will-change:transform;}
+.photo-slide{flex:0 0 100%;width:100%;height:100%;overflow:hidden;}
+.photo-slide img{width:100%;height:100%;object-fit:cover;display:block;object-position:center 66%;}
+#track-4 .photo-slide img{object-position:center 33%;}
+.photo-nav{position:absolute;bottom:14px;right:14px;display:flex;gap:6px;z-index:10;}
+.photo-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.3);cursor:pointer;transition:all .2s;}
+.photo-dot.active{background:#fff;transform:scale(1.2);}
+.photo-arrow{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.88);backdrop-filter:blur(6px);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s,transform .2s;z-index:10;}
+.prop-card:hover .photo-arrow{opacity:1;}
+.photo-arrow:hover{background:#fff;transform:translateY(-50%) scale(1.05);}
+.photo-arrow.prev{left:12px;}
+.photo-arrow.next{right:12px;}
+
+/* Card overlays */
+.card-top-badges{position:absolute;top:14px;left:14px;display:flex;gap:6px;z-index:5;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:.6rem;font-weight:600;letter-spacing:.06em;backdrop-filter:blur(8px);}
+.badge-new{background:rgba(58,112,85,.85);color:#fff;}
+.badge-exclusive{background:rgba(154,114,48,.88);color:#fff;}
+.badge-natgeo{background:#ffcc00;color:#000;}
+.photo-count{position:absolute;top:14px;right:14px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px);border-radius:100px;padding:4px 10px;font-size:.65rem;color:#fff;font-weight:500;z-index:5;}
+
+/* Card body */
+.card-body{padding:20px 22px 22px;display:flex;gap:20px;}
+.card-main{flex:1;min-width:0;}
+.card-region{font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:5px;}
+.card-name{font-family:'Instrument Serif',serif;font-size:1.4rem;color:var(--ink);margin-bottom:4px;line-height:1.15;}
+.card-loc{font-size:.76rem;color:var(--stone);margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.card-desc{font-size:.8rem;color:var(--bark);line-height:1.65;margin-bottom:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.card-tag{font-size:.62rem;padding:3px 10px;border-radius:100px;background:var(--sand);color:var(--bark);}
+.card-tag.highlight{background:var(--terra-dim);color:var(--terra);border:1px solid rgba(176,88,48,.15);}
+
+/* Private Access callout */
+.private-access{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:linear-gradient(135deg,rgba(154,114,48,.07),rgba(154,114,48,.03));border:1px solid rgba(154,114,48,.18);border-radius:var(--r-md);margin-bottom:0;}
+.pa-icon{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,var(--gold),#7a5820);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pa-label{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;}
+.pa-text{font-size:.74rem;color:var(--bark);line-height:1.4;}
+
+/* Card sidebar */
+.card-side{width:180px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;}
+.card-price-wrap{text-align:right;}
+.card-price-from{font-size:.6rem;color:var(--mist);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px;}
+.card-price{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--ink);line-height:1;}
+.card-price-unit{font-size:.7rem;color:var(--stone);margin-top:2px;}
+.card-price-note{font-size:.62rem;color:var(--moss);margin-top:4px;display:flex;align-items:center;gap:4px;}
+.card-cta{width:100%;padding:11px 0;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;transition:opacity .15s;text-align:center;}
+.card-cta:hover{opacity:.88;}
+.card-save{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border-hi);background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--stone);}
+.card-save:hover,.card-save.saved{border-color:var(--terra);color:var(--terra);background:var(--terra-dim);}
+
+/* Hover reveal bottom bar */
+.card-hover-bar{height:0;overflow:hidden;transition:height .3s cubic-bezier(.4,0,.2,1);background:var(--linen);border-top:1px solid var(--border);}
+.prop-card:hover .card-hover-bar{height:52px;}
+.card-hover-inner{display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:52px;}
+.card-hover-stat{text-align:center;}
+.card-hover-stat-val{font-size:.82rem;font-weight:600;color:var(--ink);}
+.card-hover-stat-lbl{font-size:.58rem;color:var(--stone);text-transform:uppercase;letter-spacing:.08em;}
+.card-hover-sep{width:1px;height:28px;background:var(--border);}
+
+/* ── FEATURED CARD (wider, more visual) ── */
+.prop-card
+.prop-card
+
+/* ── LOAD MORE ── */
+.load-more-wrap{text-align:center;padding:20px 0 0;}
+.load-more{padding:13px 40px;border:1.5px solid var(--border-hi);border-radius:100px;background:#fff;font-family:'Geist',sans-serif;font-size:.85rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .2s;}
+.load-more:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+/* ── ENTRY ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.prop-card{animation:fadeUp .5s ease both;}
+.prop-card:nth-child(1){animation-delay:.05s}
+.prop-card:nth-child(2){animation-delay:.12s}
+.prop-card:nth-child(3){animation-delay:.19s}
+.prop-card:nth-child(4){animation-delay:.26s}
+.prop-card:nth-child(5){animation-delay:.33s}
+.prop-card:nth-child(6){animation-delay:.40s}
+
+/* ── SEPARATOR ── */
+hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;}
+
+/* ── TOAST ── */
+#toast-el{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.82rem;padding:10px 22px;border-radius:100px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap;}
+#toast-el.show{opacity:1;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .search-hero-top{flex-direction:column;align-items:flex-start;gap:8px;}
+  .card-body{flex-direction:column;gap:14px;}
+  .card-side{width:100%;flex-direction:row;align-items:center;justify-content:space-between;}
+  .card-side .card-cta{width:auto;padding:11px 20px;}
+}
+
+  /* The Envoy */
+  .ci-fab{position:fixed;bottom:28px;right:24px;z-index:300;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 13px;background:var(--ink,#1e1810);border-radius:100px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:transform .15s,opacity .15s,right .38s cubic-bezier(.32,.72,0,1);}
+  .ci-fab.drawer-open{right:calc(25vw + 28px);}
+  .ci-fab:hover{transform:translateY(-2px);}
+  .ci-fab:active{transform:scale(.97);}
+  .ci-fab-pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;position:relative;}
+  .ci-fab-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(74,222,128,.3);animation:cipulse 2s ease-in-out infinite;}
+  @keyframes cipulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:0;}}
+  .ci-fab-txt{display:flex;flex-direction:column;}
+  .ci-fab-label{font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;line-height:1.2;}
+  .ci-fab-sub{font-size:.6rem;color:rgba(255,255,255,.45);white-space:nowrap;}
+
+  /* Drawer */
+  .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#faf7f1;border-left:1px solid rgba(0,0,0,.08);box-shadow:-8px 0 40px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);}
+  .ci-drawer.open{transform:translateX(0);}
+
+  /* Page push */
+  body.ci-open{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
+  @media(min-width:768px){
+    body.ci-open{margin-right:clamp(320px,25vw,480px);}
+    .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
+  }
+  /* Mobile — just slide over, no reflow */
+  @media(max-width:767px){
+    .ci-drawer{width:88vw;min-width:0;max-width:400px;}
+    .ci-fab.drawer-open{right:calc(88vw + 12px);}
+  }
+
+  /* Drawer header */
+  .ci-head{padding:16px 18px 12px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;background:linear-gradient(135deg,#1e1810,#2e200c);}
+  .ci-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ci-avatar svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
+  .ci-head-txt{flex:1;}
+  .ci-name{font-size:.84rem;font-weight:500;color:#fff;font-family:'Geist',sans-serif;}
+  .ci-status{font-size:.64rem;color:rgba(120,220,140,.85);display:flex;align-items:center;gap:4px;margin-top:2px;}
+  .ci-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .15s;}
+
+  /* ── CI drawer CSS reset — prevent page styles bleeding in ── */
+  .ci-drawer *{box-sizing:border-box;}
+  .ci-drawer p{margin:0;padding:0;background:none!important;border:none!important;border-radius:0!important;font-size:.8rem;line-height:1.58;color:inherit;font-weight:400;display:block;}
+  .ci-drawer .ci-msg.ai p{color:#1e1810;}
+  .ci-drawer .ci-msg.user p{color:#fff;}
+  .ci-drawer input,.ci-drawer button,.ci-drawer div{box-sizing:border-box;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo-wrap" href="index.html">
+    <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
+    <div class="nav-tagline">Pointing you to the extraordinary.</div>
+  </a>
+  <div class="nav-links-desktop">
+    <a class="nav-link-d" href="hotels.html">Hotels</a>
+    <a class="nav-link-d" href="cruises.html">Cruises</a>
+    <a class="nav-link-d" href="villas.html">Villas</a>
+    <a class="nav-link-d" href="collections.html">Collections</a>
+    <a class="nav-link-d nav-vibe" href="vibe-search.html">✦ Vibe Search</a>
+    <a class="nav-link-d" href="how-we-choose.html">How we choose</a>
+    <a class="nav-link-d" href="journal.html">Journal</a>
+    <a class="nav-link-d featured" href="the-envoy.html">The Envoy</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="window.location='search.html'" title="Search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    </button>
+    <button class="nav-btn" onclick="window.location='my-account.html'" title="Account">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- SEARCH HERO -->
+<div class="search-hero">
+  <div class="search-hero-top">
+    <div>
+      <h1 class="search-hero-title">Find your next journey</h1>
+      <p class="search-hero-sub">Boutique hotels, intimate cruises and private villas — curated, visited, 0% fees.</p>
+    </div>
+    <div class="result-count">
+      <strong>214</strong>
+      properties
+    </div>
+  </div>
+
+  <!-- Search bar -->
+  <div class="search-bar" style="margin-bottom:16px;">
+    <div class="sbar-field" style="position:relative;flex:2;cursor:text;" id="dest-field" onclick="document.getElementById('dest-input').focus()">
+      <svg class="sbar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+      <div style="flex:1;">
+        <span class="sbar-label">Destination</span>
+        <input id="dest-input" type="text" value="Egypt" autocomplete="off"
+          style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);font-weight:500;width:100%;padding:0;cursor:text;"
+          oninput="destAutocomplete(this.value)"
+          onkeydown="destKeydown(event)"
+          onfocus="destFocus()"
+          onblur="destBlur()"
+          placeholder="Country or destination…">
+      </div>
+      <!-- Autocomplete dropdown -->
+      <div id="dest-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(80,55,25,.12);z-index:300;max-height:240px;overflow-y:auto;scrollbar-width:none;"></div>
+    </div>
+    <div class="sbar-field">
+      <svg class="sbar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div>
+        <span class="sbar-label">Dates</span>
+        <span class="sbar-val placeholder">Add dates</span>
+      </div>
+    </div>
+    <div class="sbar-field">
+      <svg class="sbar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
+      <div>
+        <span class="sbar-label">Guests</span>
+        <span class="sbar-val">2 adults</span>
+      </div>
+    </div>
+    <button class="sbar-btn" onclick="tcSearch(document.getElementById('dest-input').value)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+      Search
+    </button>
+  </div>
+
+  <!-- Active filters -->
+  <div class="active-filters">
+    <div class="af-chip" onclick="removeFilter(this)">Egypt <span style="opacity:.5;">✕</span></div>
+    <div class="af-chip" onclick="removeFilter(this)">River Cruise <span style="opacity:.5;">✕</span></div>
+    <div class="af-chip" onclick="removeFilter(this)">Adults only <span style="opacity:.5;">✕</span></div>
+  </div>
+</div>
+
+<!-- PAGE BODY -->
+<div class="page-body">
+
+  <!-- SIDEBAR FILTERS -->
+  <aside class="sidebar">
+
+    <div class="sort-bar">
+      <span class="sort-label">Sort by</span>
+      <div class="sort-options">
+        <button class="sort-btn active" onclick="setSort(this)">Recommended</button>
+        <button class="sort-btn" onclick="setSort(this)">Price</button>
+        <button class="sort-btn" onclick="setSort(this)">New</button>
+      </div>
+    </div>
+
+    <hr class="section-sep">
+
+    <div class="filter-section">
+      <div class="filter-title">Type <span class="filter-clear" onclick="clearSection(this)">Clear</span></div>
+      <div class="filter-pills">
+        <div class="filter-pill active" onclick="toggleFilter(this)">
+          <span class="filter-pill-label">
+            <span class="filter-check"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></span>
+            River Cruise
+          </span>
+          <span class="filter-pill-count">8</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Boutique Hotel</span>
+          <span class="filter-pill-count">94</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Safari Lodge</span>
+          <span class="filter-pill-count">22</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Ocean Cruise</span>
+          <span class="filter-pill-count">12</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Private Villa</span>
+          <span class="filter-pill-count">38</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Desert Lodge</span>
+          <span class="filter-pill-count">14</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-title">Region</div>
+      <div class="filter-pills">
+        <div class="filter-pill active" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></span>Middle East &amp; Africa</span>
+          <span class="filter-pill-count">42</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Indian Ocean</span>
+          <span class="filter-pill-count">28</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Southeast Asia</span>
+          <span class="filter-pill-count">36</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Americas</span>
+          <span class="filter-pill-count">31</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Europe</span>
+          <span class="filter-pill-count">48</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Arctic &amp; Antarctic</span>
+          <span class="filter-pill-count">7</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-title">Style</div>
+      <div class="filter-pills">
+        <div class="filter-pill active" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"><svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="1.5,5 4,7.5 8.5,2"/></svg></span>Adults only</span>
+          <span class="filter-pill-count">88</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Remote &amp; untouched</span>
+          <span class="filter-pill-count">44</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Cultural &amp; historic</span>
+          <span class="filter-pill-count">62</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Wilderness</span>
+          <span class="filter-pill-count">39</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Design &amp; architecture</span>
+          <span class="filter-pill-count">31</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Wellness &amp; retreat</span>
+          <span class="filter-pill-count">22</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-title">Price per night (pp)</div>
+      <div class="price-range">
+        <input type="range" min="0" max="10000" value="6000" step="100" oninput="updatePrice(this.value)">
+        <div class="price-labels">
+          <span>$0</span>
+          <span id="price-max">Up to $6,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-title">Max guests per property</div>
+      <div class="filter-pills">
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Under 20 guests</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Under 50 guests</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Under 100 guests</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-title">The Bearing features</div>
+      <div class="filter-pills">
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>The Lens available</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Private Access included</span>
+        </div>
+        <div class="filter-pill" onclick="toggleFilter(this)">
+          <span class="filter-pill-label"><span class="filter-check"></span>Earns Reserve Credits</span>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- RESULTS -->
+  <div class="results">
+
+    <!-- Card 1: Nour El Nil (FEATURED) -->
+    <div class="prop-card featured" onclick="navTo(event,'nour-el-nil.html')">
+      <div class="card-photos">
+        <div class="photo-track" id="track-1">
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nile"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Egypt"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Cabin"></div>
+        </div>
+        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-1','dots-1')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
+        </button>
+        <button class="photo-arrow next" onclick="nextPhoto(event,'track-1','dots-1')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
+        </button>
+        <div class="card-top-badges">
+          <span class="badge badge-natgeo">⭐ Nat Geo pick</span>
+          <span class="badge badge-exclusive">The Bearing exclusive</span>
+        </div>
+        <span class="photo-count">4 photos</span>
+        <div class="photo-nav" id="dots-1">
+          <div class="photo-dot active" onclick="goToPhoto(event,'track-1','dots-1',0)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-1','dots-1',1)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-1','dots-1',2)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-1','dots-1',3)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="card-region">River Cruise · Dahabiya Fleet</div>
+          <div class="card-name">Nour El Nil</div>
+          <div class="card-loc">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+            Esna → Aswan · Nile, Egypt · 6 days
+          </div>
+          <div class="card-desc">Ten intimate dahabiyas carrying just 24 guests each through 250 kilometres of ancient Egypt. Sail past temples the pharaohs built, through villages unchanged in centuries. Named one of the world's best cruise experiences by National Geographic.</div>
+          <div class="card-tags">
+            <span class="card-tag">River cruise</span>
+            <span class="card-tag">Adults only</span>
+            <span class="card-tag">Cultural</span>
+            <span class="card-tag">Max 24 guests</span>
+            <span class="card-tag highlight">🔭 The Lens</span>
+            <span class="card-tag highlight">✦ Reserve Credits</span>
+          </div>
+          <div class="private-access">
+            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
+            <div>
+              <div class="pa-label">Private Access included</div>
+              <div class="pa-text">45 minutes alone at Edfu Temple before the gates open — arranged exclusively for The Bearing guests.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-side">
+          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
+            <button class="card-save" onclick="saveCard(event,this)" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="card-price-wrap" style="margin-bottom:14px;">
+            <div class="card-price-from">From</div>
+            <div class="card-price">$4,200</div>
+            <div class="card-price-unit">per person · 6 nights</div>
+            <div class="card-price-note">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
+              Same price as direct
+            </div>
+          </div>
+          <button class="card-cta">View journey →</button>
+          <button onclick="event.stopPropagation();tbOpenCheckout({property:'this property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard room',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="padding:9px 16px;background:var(--terra,#b05830);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button>
+          <button onclick="event.stopPropagation();openQuickEnquiry()" style="padding:9px 16px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.8rem;color:var(--bark);cursor:pointer;white-space:nowrap;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
+        </div>
+      </div>
+      <div class="card-hover-bar">
+        <div class="card-hover-inner">
+          <div class="card-hover-stat"><div class="card-hover-stat-val">24</div><div class="card-hover-stat-lbl">Max guests</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">6</div><div class="card-hover-stat-lbl">Nights</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">10</div><div class="card-hover-stat-lbl">Dahabiyas</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">250km</div><div class="card-hover-stat-lbl">Of Nile</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">$420</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Al Moudira -->
+    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
+      <div class="card-photos">
+        <div class="photo-track" id="track-2">
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Al Moudira suite" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira pool" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira exterior" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira courtyard" style="object-position:center 66%;"></div>
+        </div>
+        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-2','dots-2')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
+        </button>
+        <button class="photo-arrow next" onclick="nextPhoto(event,'track-2','dots-2')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
+        </button>
+        <div class="card-top-badges">
+          <span class="badge badge-exclusive">Relais &amp; Châteaux</span>
+        </div>
+        <span class="photo-count">4 photos</span>
+        <div class="photo-nav" id="dots-2">
+          <div class="photo-dot active" onclick="goToPhoto(event,'track-2','dots-2',0)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',1)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',2)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',3)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="card-region">Palace Hotel · Egypt</div>
+          <div class="card-name">Al Moudira</div>
+          <div class="card-loc">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+            West Bank of the Nile · Luxor, Egypt
+          </div>
+          <div class="card-desc">A honeycomb of ten courtyards built like an oriental palace, with vaulted ceilings, hand-painted Pharaonic murals, and antiques sourced from souks across the Arab world. Surrounded by ten hectares of palm groves, 4km from the Valley of the Kings.</div>
+          <div class="card-tags">
+            <span class="card-tag">Palace hotel</span>
+            <span class="card-tag">Cultural</span>
+            <span class="card-tag">54 rooms</span>
+            <span class="card-tag">West Bank</span>
+            <span class="card-tag highlight">🔭 The Lens</span>
+            <span class="card-tag highlight">✦ Reserve Credits</span>
+          </div>
+          <div class="private-access">
+            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
+            <div>
+              <div class="pa-label">Private Access included</div>
+              <div class="pa-text">A private sunrise visit to Medinet Habu — Ramesses III's mortuary temple — before the coach parties arrive, arranged through Al Moudira's West Bank connections.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-side">
+          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
+            <button class="card-save" onclick="saveCard(event,this)" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="card-price-wrap" style="margin-bottom:14px;">
+            <div class="card-price-from">From</div>
+            <div class="card-price">$420</div>
+            <div class="card-price-unit">per night · 2 guests</div>
+            <div class="card-price-note">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
+              Same price as direct
+            </div>
+          </div>
+          <button class="card-cta">View property →</button>
+          <button onclick="event.stopPropagation();tbOpenCheckout({property:'this property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard room',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="padding:9px 16px;background:var(--terra,#b05830);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button>
+        </div>
+      </div>
+      <div class="card-hover-bar">
+        <div class="card-hover-inner">
+          <div class="card-hover-stat"><div class="card-hover-stat-val">54</div><div class="card-hover-stat-lbl">Rooms</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">10</div><div class="card-hover-stat-lbl">Courtyards</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">4km</div><div class="card-hover-stat-lbl">To Valley of Kings</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">$42</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
+        </div>
+      </div>
+    </div>
+
+<!-- Card 3: Casa Cook El Gouna -->
+    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
+      <div class="card-photos">
+        <div class="photo-track" id="track-3">
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna lobby" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna pool" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna room" style="object-position:center 66%;"></div>
+        </div>
+        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-3','dots-3')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
+        </button>
+        <button class="photo-arrow next" onclick="nextPhoto(event,'track-3','dots-3')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
+        </button>
+        <div class="card-top-badges">
+          <span class="badge badge-new">Adults only</span>
+        </div>
+        <span class="photo-count">3 photos</span>
+        <div class="photo-nav" id="dots-3">
+          <div class="photo-dot active" onclick="goToPhoto(event,'track-3','dots-3',0)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-3','dots-3',1)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-3','dots-3',2)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="card-region">Boutique Hotel · Red Sea</div>
+          <div class="card-name">Casa Cook El Gouna</div>
+          <div class="card-loc">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+            El Gouna · Red Sea, Egypt · 42km from Hurghada
+          </div>
+          <div class="card-desc">A modernist desert sanctuary where Bedouin aesthetics meet the Red Sea. Earthy tones, raw wood and linen, three pools, a private beach, and an onsite kitesurfing centre — set between golden dunes and crystal-clear water.</div>
+          <div class="card-tags">
+            <span class="card-tag">Boutique hotel</span>
+            <span class="card-tag">Beachfront</span>
+            <span class="card-tag">Adults only</span>
+            <span class="card-tag">Kitesurfing</span>
+            <span class="card-tag highlight">🔭 The Lens</span>
+            <span class="card-tag highlight">✦ Reserve Credits</span>
+          </div>
+          <div class="private-access">
+            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
+            <div>
+              <div class="pa-label">Private Access included</div>
+              <div class="pa-text">A pre-dawn snorkelling session at Sha'ab Abu Nuhas coral garden with Casa Cook's resident Red Sea marine guide — before the dive boats arrive.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-side">
+          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
+            <button class="card-save" onclick="saveCard(event,this)" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="card-price-wrap" style="margin-bottom:14px;">
+            <div class="card-price-from">From</div>
+            <div class="card-price">$320</div>
+            <div class="card-price-unit">per night · 2 guests</div>
+            <div class="card-price-note">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
+              Same price as direct
+            </div>
+          </div>
+          <button class="card-cta">View property →</button>
+          <button onclick="event.stopPropagation();tbOpenCheckout({property:'this property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard room',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="padding:9px 16px;background:var(--terra,#b05830);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button>
+        </div>
+      </div>
+      <div class="card-hover-bar">
+        <div class="card-hover-inner">
+          <div class="card-hover-stat"><div class="card-hover-stat-val">100</div><div class="card-hover-stat-lbl">Rooms</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">3</div><div class="card-hover-stat-lbl">Pools</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">$32</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
+        </div>
+      </div>
+    </div>
+
+<!-- Card 4: La Maison Bleue -->
+    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
+      <div class="card-photos">
+        <div class="photo-track" id="track-4">
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue night" style="object-position:center 33%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue pool" style="object-position:center 33%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue pool loungers" style="object-position:center 33%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="La Maison Bleue suite" style="object-position:center 33%;"></div>
+        </div>
+        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-4','dots-4')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
+        </button>
+        <button class="photo-arrow next" onclick="nextPhoto(event,'track-4','dots-4')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
+        </button>
+        <div class="card-top-badges">
+          <span class="badge badge-exclusive">Relais &amp; Châteaux</span>
+          <span class="badge badge-new">Adults only</span>
+        </div>
+        <span class="photo-count">4 photos</span>
+        <div class="photo-nav" id="dots-4">
+          <div class="photo-dot active" onclick="goToPhoto(event,'track-4','dots-4',0)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',1)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',2)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',3)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="card-region">Boutique Mansion · Red Sea</div>
+          <div class="card-name">La Maison Bleue</div>
+          <div class="card-loc">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+            El Gouna · Red Sea, Egypt · Private lagoon
+          </div>
+          <div class="card-desc">Thirteen individually designed suites in a palatial Red Sea mansion — European antiques, domed ceilings, hand-painted murals and parquet floors. Built as a private home, it still feels like one. A Relais & Châteaux property with its own private beach, lagoon and chef's kitchen garden.</div>
+          <div class="card-tags">
+            <span class="card-tag">Boutique mansion</span>
+            <span class="card-tag">Beachfront</span>
+            <span class="card-tag">Adults only</span>
+            <span class="card-tag">13 suites only</span>
+            <span class="card-tag highlight">🔭 The Lens</span>
+            <span class="card-tag highlight">✦ Reserve Credits</span>
+          </div>
+          <div class="private-access">
+            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
+            <div>
+              <div class="pa-label">Private Access included</div>
+              <div class="pa-text">A private dinner in the on-site hydroponic greenhouse with Chef Vincent Guillou — a table set among the herbs and greens that appear on your plate.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-side">
+          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
+            <button class="card-save" onclick="saveCard(event,this)" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="card-price-wrap" style="margin-bottom:14px;">
+            <div class="card-price-from">From</div>
+            <div class="card-price">$680</div>
+            <div class="card-price-unit">per night · 2 guests</div>
+            <div class="card-price-note">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
+              Same price as direct
+            </div>
+          </div>
+          <button class="card-cta">View property →</button>
+        </div>
+      </div>
+      <div class="card-hover-bar">
+        <div class="card-hover-inner">
+          <div class="card-hover-stat"><div class="card-hover-stat-val">13</div><div class="card-hover-stat-lbl">Suites only</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach & lagoon</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">R&amp;C</div><div class="card-hover-stat-lbl">Member</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">$68</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
+        </div>
+      </div>
+    </div>
+
+<!-- Card 5: Casa Cook North Coast -->
+    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
+      <div class="card-photos">
+        <div class="photo-track" id="track-5">
+                    <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook North Coast suite" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook North Coast room" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook North Coast pool" style="object-position:center 66%;"></div>
+          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook North Coast beach bar" style="object-position:center 66%;"></div>
+          
+        </div>
+        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-5','dots-5')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
+        </button>
+        <button class="photo-arrow next" onclick="nextPhoto(event,'track-5','dots-5')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
+        </button>
+        <div class="card-top-badges">
+          <span class="badge badge-new">Adults only</span>
+        </div>
+        <span class="photo-count">4 photos</span>
+        <div class="photo-nav" id="dots-5">
+          <div class="photo-dot active" onclick="goToPhoto(event,'track-5','dots-5',0)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',1)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',2)"></div>
+          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',3)"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-main">
+          <div class="card-region">Boutique Hotel · Mediterranean</div>
+          <div class="card-name">Casa Cook North Coast</div>
+          <div class="card-loc">
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
+            El Alamein · North Coast, Egypt · Mediterranean Sea
+          </div>
+          <div class="card-desc">Only 37 rooms on one of North Africa's longest untouched coastlines. Earthy plaster walls, saltwater lagoon, private white-sand beach — a barefoot retreat where the Mediterranean meets the Egyptian desert. The antidote to every resort you've ever stayed in.</div>
+          <div class="card-tags">
+            <span class="card-tag">Boutique hotel</span>
+            <span class="card-tag">Mediterranean</span>
+            <span class="card-tag">Adults only</span>
+            <span class="card-tag">37 rooms only</span>
+            <span class="card-tag highlight">🔭 The Lens</span>
+            <span class="card-tag highlight">✦ Reserve Credits</span>
+          </div>
+          <div class="private-access">
+            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
+            <div>
+              <div class="pa-label">Private Access included</div>
+              <div class="pa-text">A private sunset visit to El Alamein's WWII battlefield with a military historian — a side of Egypt almost no tourist ever sees.</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-side">
+          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
+            <button class="card-save" onclick="saveCard(event,this)" title="Save">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            </button>
+          </div>
+          <div class="card-price-wrap" style="margin-bottom:14px;">
+            <div class="card-price-from">From</div>
+            <div class="card-price">$280</div>
+            <div class="card-price-unit">per night · 2 guests</div>
+            <div class="card-price-note">
+              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
+              Same price as direct
+            </div>
+          </div>
+          <button class="card-cta">View property →</button>
+        </div>
+      </div>
+      <div class="card-hover-bar">
+        <div class="card-hover-inner">
+          <div class="card-hover-stat"><div class="card-hover-stat-val">37</div><div class="card-hover-stat-lbl">Rooms only</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach & lagoon</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">Med</div><div class="card-hover-stat-lbl">Coastline</div></div>
+          <div class="card-hover-sep"></div>
+          <div class="card-hover-stat"><div class="card-hover-stat-val">$28</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
+        </div>
+      </div>
+    </div>
+
+<div class="load-more-wrap">
+      <button class="load-more" onclick="toast('Loading more properties…')">Show more properties</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-el"></div>
+
+<script>
+// Photo carousel — index stored on element, never parsed from transform
+var carouselIndex = {};
+
+function goToPhoto(e, trackId, dotsId, idx) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  var track = document.getElementById(trackId);
+  var count = track.children.length;
+  idx = ((idx % count) + count) % count;
+  carouselIndex[trackId] = idx;
+  track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+  var dots = document.getElementById(dotsId).children;
+  for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('active', i === idx);
+}
+function nextPhoto(e, trackId, dotsId) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  var cur = carouselIndex[trackId] || 0;
+  goToPhoto(e, trackId, dotsId, cur + 1);
+}
+function prevPhoto(e, trackId, dotsId) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  var cur = carouselIndex[trackId] || 0;
+  goToPhoto(e, trackId, dotsId, cur - 1);
+}
+
+// Nav
+function navTo(e, url) {
+  if (e.target.closest('button')) return;
+  window.location = url;
+}
+
+// Save
+function saveCard(e, btn) {
+  e.stopPropagation();
+  btn.classList.toggle('saved');
+  toast(btn.classList.contains('saved') ? 'Saved to your wishlist ♥' : 'Removed from wishlist');
+}
+
+// Filters
+function toggleFilter(pill) {
+  pill.classList.toggle('active');
+  var check = pill.querySelector('.filter-check');
+  if (pill.classList.contains('active')) {
+    check.innerHTML = '<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><polyline points="1.5,5 4,7.5 8.5,2"/></svg>';
+  } else {
+    check.innerHTML = '';
+  }
+}
+function clearSection(btn) {
+  btn.closest('.filter-section').querySelectorAll('.filter-pill.active').forEach(function(p) { toggleFilter(p); });
+}
+function setSort(btn) {
+  btn.closest('.sort-options').querySelectorAll('.sort-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+}
+function removeFilter(chip) { chip.style.opacity = '0'; chip.style.transform = 'scale(.9)'; chip.style.transition = 'all .2s'; setTimeout(function() { chip.remove(); }, 200); }
+function updatePrice(val) { document.getElementById('price-max').textContent = 'Up to $' + Number(val).toLocaleString(); }
+
+// Toast
+var toastT;
+function toast(msg) {
+  var el = document.getElementById('toast-el');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(function() { el.classList.remove('show'); }, 2600);
+}
+
+// Keyboard navigation for carousels
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowLeft') prevPhoto({stopPropagation:function(){}}, 'track-1', 'dots-1');
+  if (e.key === 'ArrowRight') nextPhoto({stopPropagation:function(){}}, 'track-1', 'dots-1');
+});
+</script>
+
+<script>
+function tcSearch(val) {
+  var q = (val || '').trim();
+  if (!q) return;
+  // Already on search.html — just update the active filter chip and close dropdown
+  var chip = document.querySelector('.af-chip');
+  if (chip) chip.childNodes[0].textContent = q + ' ';
+  document.getElementById('dest-dropdown').style.display = 'none';
+  // Scroll to results
+  var results = document.querySelector('.results');
+  if (results) results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function tcSearchFromInput(inputId) {
+  var el = document.getElementById(inputId);
+  tcSearch(el ? el.value : 'Egypt');
+}
+</script>
+<script>
+var COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic","Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Palestine","Panama","Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia","Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland","Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga","Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];
+
+var destActive = 0;
+var destMatches = [];
+
+function destAutocomplete(val) {
+  var dd = document.getElementById('dest-dropdown');
+  if (!val.trim()) { dd.style.display = 'none'; return; }
+  var q = val.toLowerCase();
+  destMatches = COUNTRIES.filter(function(c){ return c.toLowerCase().indexOf(q) === 0; })
+    .concat(COUNTRIES.filter(function(c){ return c.toLowerCase().indexOf(q) > 0; }))
+    .slice(0, 8);
+  if (!destMatches.length) { dd.style.display = 'none'; return; }
+  destActive = 0;
+  dd.innerHTML = destMatches.map(function(c, i){
+    var bold = c.substring(0, val.length);
+    var rest = c.substring(val.length);
+    return '<div class="dd-item" data-i="'+i+'" onmousedown="destSelect(''+c+'')" style="padding:10px 16px;font-size:.85rem;color:var(--ink);cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;">'
+      +'<strong>'+bold+'</strong>'+rest+'</div>';
+  }).join('');
+  dd.style.display = 'block';
+  highlightDest();
+}
+
+function highlightDest() {
+  var items = document.querySelectorAll('.dd-item');
+  items.forEach(function(el, i){
+    el.style.background = i === destActive ? 'var(--linen)' : '#fff';
+  });
+}
+
+function destSelect(val) {
+  document.getElementById('dest-input').value = val;
+  document.getElementById('dest-dropdown').style.display = 'none';
+}
+
+function destKeydown(e) {
+  var dd = document.getElementById('dest-dropdown');
+  if (dd.style.display === 'none') {
+    if (e.key === 'Enter') { tcSearch(document.getElementById('dest-input').value); }
+    return;
+  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); destActive = Math.min(destActive+1, destMatches.length-1); highlightDest(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); destActive = Math.max(destActive-1, 0); highlightDest(); }
+  else if (e.key === 'Enter') { e.preventDefault(); if(destMatches[destActive]) destSelect(destMatches[destActive]); tcSearch(document.getElementById('dest-input').value); }
+  else if (e.key === 'Escape') { dd.style.display = 'none'; }
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e){
+  if (!document.getElementById('dest-field').contains(e.target)) {
+    document.getElementById('dest-dropdown').style.display = 'none';
+    destBlur();
+  }
+});
+
+function destFocus(){
+  document.getElementById('dest-field').classList.add('focused');
+  document.querySelector('.search-bar').classList.add('bar-focused');
+  // Select all text so user can type straight away
+  var inp = document.getElementById('dest-input');
+  inp.select();
+}
+function destBlur(){
+  document.getElementById('dest-field').classList.remove('focused');
+  document.querySelector('.search-bar').classList.remove('bar-focused');
+}
+</script>
+<script>
+// The Bearing 404 intercept — catches dead links and missing pages
+(function(){
+  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
+    'collections.html','journal.html','how-we-choose.html','founding-member.html',
+    'about.html','my-account.html','bookings.html','channels.html',
+    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+  function fname(href){
+    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
+  }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest('a[href]');
+    if(!a) return;
+    var href = a.getAttribute('href');
+    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
+    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
+    var f = fname(href);
+    if(f && VALID.indexOf(f) === -1){
+      e.preventDefault();
+      window.location = '404.html';
+    }
+  });
+  // Also intercept window.location assignments by watching for navigation errors
+  window.addEventListener('error', function(e){
+    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
+  }, true);
+})();
+</script>
+
+<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-txt">
+    <div class="ci-fab-label">The Envoy</div>
+    <div class="ci-fab-sub">Your Resident Expert</div>
+  </div>
+</button>
+<div class="ci-drawer" id="ci-drawer">
+
+  <div class="ci-head">
+    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+    <div class="ci-head-txt">
+      <div class="ci-name">The Envoy</div>
+      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    </div>
+    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+  </div>
+
+  <div class="ci-context" id="ci-context">
+    <div class="ci-context-dot"></div>
+    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
+  </div>
+
+  <div class="ci-messages" id="ci-messages"></div>
+
+  <div class="ci-sugs" id="ci-sugs">
+    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
+  </div>
+
+  <div class="ci-input-row">
+    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
+    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
+  </div>
+
+</div>
+
+<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-txt">
+    <div class="ci-fab-label">The Envoy</div>
+    <div class="ci-fab-sub">Your Resident Expert</div>
+  </div>
+</button>
+<div class="ci-drawer" id="ci-drawer">
+
+  <div class="ci-head">
+    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+    <div class="ci-head-txt">
+      <div class="ci-name">The Envoy</div>
+      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    </div>
+    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+  </div>
+
+  <div class="ci-context" id="ci-context">
+    <div class="ci-context-dot"></div>
+    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
+  </div>
+
+  <div class="ci-messages" id="ci-messages"></div>
+
+  <div class="ci-sugs" id="ci-sugs">
+    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
+  </div>
+
+  <div class="ci-input-row">
+    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
+    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
+  </div>
+
+</div>
+<script>
+function openEnvoy() {
+  ciOpen = true;
+  document.getElementById('ci-drawer').classList.add('open');
+  var _fab = document.getElementById('ci-fab');
+  if(_fab){ _fab.style.opacity='0'; _fab.style.transform='translateY(16px)'; setTimeout(function(){ _fab.style.display='none'; }, 280); }
+  document.body.classList.add('ci-open');
+  // Restore messages from history
+  ciRestoreMessages();
+  setTimeout(function(){ document.getElementById('ci-input').focus(); }, 400);
+}
+
+function closeEnvoy() {
+  ciOpen = false;
+  document.getElementById('ci-drawer').classList.remove('open');
+  var _fab2 = document.getElementById('ci-fab');
+  if(_fab2){ _fab2.style.display='flex'; setTimeout(function(){ _fab2.style.opacity='1'; _fab2.style.transform=''; }, 20); }
+  document.body.classList.remove('ci-open');
+}
+
+function ciRestoreMessages() {
+  var msgs = document.getElementById('ci-messages');
+  msgs.innerHTML = '';
+  if (ciHistory.length === 0) {
+    // First time — show welcome
+    ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
+  } else {
+    // Restore previous conversation
+    ciHistory.forEach(function(m) {
+      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+    });
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Update context pill based on current page
+(function() {
+  var path = window.location.pathname;
+  var ctx = 'Browsing The Bearing';
+  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
+  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
+  var el = document.getElementById('ci-context-txt');
+  if (el) el.textContent = ctx;
+})();
+
+function ciAsk(btn) {
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(btn.textContent.trim());
+}
+
+function ciSend() {
+  var inp = document.getElementById('ci-input');
+  var q = inp.value.trim();
+  if (!q || ciBusy) return;
+  inp.value = '';
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(q);
+}
+
+async function ciSendMsg(text) {
+  ciAddMsg(text, 'user');
+  ciHistory.push({ role: 'user', content: text });
+  ciSaveHistory(ciHistory);
+
+  ciBusy = true;
+  var t = ciShowTyping();
+
+  try {
+    var res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+    });
+    var data = await res.json();
+    var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
+    t.remove();
+    ciBusy = false;
+    ciAddMsg(reply, 'ai');
+    ciHistory.push({ role: 'assistant', content: reply });
+    ciSaveHistory(ciHistory);
+  } catch(e) {
+    t.remove();
+    ciBusy = false;
+    ciAddMsg('Something went wrong — please try again.', 'ai');
+  }
+}
+
+function ciAddMsg(text, type) {
+  var msgs = document.getElementById('ci-messages');
+  var div = document.createElement('div');
+  div.className = 'ci-msg ' + type;
+  text.split('\n').filter(function(p){ return p.trim(); }).forEach(function(p, i) {
+    var el = document.createElement('p');
+    el.textContent = p.trim();
+    if (i > 0) el.style.marginTop = '5px';
+    div.appendChild(el);
+  });
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function ciShowTyping() {
+  var msgs = document.getElementById('ci-messages');
+  var d = document.createElement('div');
+  d.className = 'ci-typing-msg';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+// Restore open state if user navigated while drawer was open
+if (sessionStorage.getItem('ci_was_open') === '1') {
+  // Small delay to let page render
+  setTimeout(openEnvoy, 100);
+}
+window.addEventListener('beforeunload', function() {
+  sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
+});
+
+function togglePref(btn){ btn.classList.toggle('active'); }
+function submitAccount(){
+  var name  = document.getElementById('acc-name') && document.getElementById('acc-name').value;
+  var email = document.getElementById('acc-email') && document.getElementById('acc-email').value;
+  closeOverlay('account-overlay');
+  toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
+}
+</script>
+
+<!-- ══ QUICK ENQUIRY MODAL ══ -->
+<div id="quick-enquiry-overlay" onclick="if(event.target===this)closeQuickEnquiry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:#fff;border-radius:20px;width:480px;max-width:92vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:fadeUp .25s ease;">
+    <div style="padding:28px 28px 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="eq-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--ink);margin-bottom:2px;">Send an enquiry</div>
+          <div style="font-size:.8rem;color:var(--stone);">No payment. The property replies within 24 hours.</div>
+        </div>
+        <button onclick="closeQuickEnquiry()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Full name</label>
+          <input type="text" placeholder="Your name" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Email</label>
+          <input type="email" placeholder="you@email.com" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label>
+          <input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label>
+          <select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>Family (2+kids)</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Your message</label>
+        <textarea placeholder="Tell us what you're looking for — dates, cabin type, any special requests or questions. The property will reply directly." style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;resize:none;min-height:90px;line-height:1.55;"></textarea>
+      </div>
+
+      <button onclick="submitQuickEnquiry()" style="width:100%;padding:13px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Send enquiry
+      </button>
+      <div style="font-size:.68rem;color:var(--stone);text-align:center;padding-bottom:24px;">No payment · No obligation · Property replies within 24 hours</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openQuickEnquiry(propertyName) {
+  var label = document.getElementById('eq-property-label');
+  if (label && propertyName) label.textContent = propertyName;
+  var el = document.getElementById('quick-enquiry-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeQuickEnquiry() {
+  document.getElementById('quick-enquiry-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+function submitQuickEnquiry() {
+  closeQuickEnquiry();
+  // Show confirmation toast
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);animation:fadeUp .25s ease;display:flex;align-items:center;gap:8px;';
+  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+</script>
+
+
+
+<div style="background:#1a1510;border-top:1px solid rgba(255,255,255,.06);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
+  <div style="font-size:.68rem;color:rgba(255,255,255,.2);">© 2026 TheBearing.io</div>
+  <a href="pp-login.html" style="font-size:.68rem;color:rgba(255,255,255,.22);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.45)'" onmouseout="this.style.color='rgba(255,255,255,.22)'">Property partner? Sign in</a>
+</div>
+<!-- ══ THEBEARING CHECKOUT MODAL ══════════════════════════════════════
+     Stripe integration: replace STRIPE_PUBLISHABLE_KEY with live key
+     Everything else is ready to go.
+     Commission collected = 10% of total booking value (configurable)
+     Guest pays remainder directly to property.
+═══════════════════════════════════════════════════════════════════════ -->
+<div id="tb-checkout-overlay" onclick="if(event.target===this)tbCloseCheckout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+  <div id="tb-checkout-sheet" style="background:#fff;border-radius:24px;width:520px;max-width:94vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:tbSlideUp .3s cubic-bezier(.32,.72,0,1);">
+
+    <!-- Header -->
+    <div style="padding:28px 28px 0;position:sticky;top:0;background:#fff;z-index:1;border-radius:24px 24px 0 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+        <div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:5px;" id="tb-co-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;line-height:1.15;" id="tb-co-title">Book your stay</div>
+        </div>
+        <button onclick="tbCloseCheckout()" style="width:34px;height:34px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:background .15s;" onmouseover="this.style.background='#f5f0e8'" onmouseout="this.style.background='#fff'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Step indicator -->
+      <div style="display:flex;gap:6px;padding:16px 0 14px;border-bottom:1px solid #f0ebe0;">
+        <div class="tb-step-pip" id="tb-pip-1" style="height:3px;flex:1;border-radius:100px;background:var(--terra,#b05830);transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-2" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-3" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Trip details -->
+    <div id="tb-step-1" style="padding:20px 28px 28px;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 1 of 3 — Trip details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
+          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>2 adults, 1 child</option>
+            <option>2 adults, 2 children</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;" id="tb-co-room-label">Room / cabin type</label>
+          <select id="tb-co-room" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <!-- Populated dynamically per property -->
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Special requests or questions (optional)</label>
+        <textarea id="tb-co-notes" placeholder="Dietary requirements, anniversary celebration, arrival time, anything you'd like the property to know..." style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;resize:none;min-height:80px;line-height:1.55;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'"></textarea>
+      </div>
+
+      <!-- Price summary -->
+      <div id="tb-price-summary" style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;" id="tb-line-room">Select dates and room</span>
+          <span style="font-weight:600;" id="tb-line-total">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;">TheBearing.io fee</span>
+          <span style="font-weight:600;color:#3a7055;">$0</span>
+        </div>
+        <div style="height:1px;background:#e5e0d8;margin:8px 0;"></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:.85rem;font-weight:700;">Booking deposit (10%)</span>
+          <span style="font-size:.85rem;font-weight:700;color:#b05830;" id="tb-deposit-amount">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:.75rem;color:#9a8e80;">Balance paid direct to property</span>
+          <span style="font-size:.75rem;color:#9a8e80;" id="tb-balance-amount">—</span>
+        </div>
+      </div>
+
+      <!-- How it works callout -->
+      <div style="background:#f0f7f4;border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <div style="font-size:.75rem;color:#2a5040;line-height:1.6;"><strong>How this works:</strong> You pay a 10% deposit to TheBearing.io now to secure your booking. The property will contact you directly within 24 hours to confirm and arrange the remaining 90% in their preferred way.</div>
+      </div>
+
+      <button onclick="tbGoStep(2)" id="tb-step1-btn" style="width:100%;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+        Continue to your details
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 2: Guest details -->
+    <div id="tb-step-2" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 2 of 3 — Your details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">First name</label>
+          <input type="text" id="tb-co-firstname" placeholder="Your first name" autocomplete="given-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Last name</label>
+          <input type="text" id="tb-co-lastname" placeholder="Your last name" autocomplete="family-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Email address</label>
+        <input type="email" id="tb-co-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;">Your booking confirmation and the property's contact details will be sent here.</div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Phone number (optional)</label>
+        <input type="tel" id="tb-co-phone" placeholder="+1 (000) 000-0000" autocomplete="tel" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+      </div>
+
+      <!-- Booking summary recap -->
+      <div style="background:#faf7f1;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Booking summary</div>
+        <div style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:4px;" id="tb-step2-summary"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(1)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbGoStep(3)" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          Continue to payment
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div id="tb-step-3" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 3 of 3 — Secure payment</div>
+
+      <!-- Stripe card element container -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:8px;">Card details</label>
+        <!-- In production: <div id="stripe-card-element"></div> -->
+        <!-- Demo UI that matches Stripe Elements styling -->
+        <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="tb-co-card" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;letter-spacing:.05em;" oninput="tbFormatCard(this)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="MM / YY" maxlength="7" id="tb-co-expiry" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;" oninput="tbFormatExpiry(this)">
+          </div>
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="CVV" maxlength="4" id="tb-co-cvv" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:#9a8e80;margin-top:6px;display:flex;align-items:center;gap:4px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Secured by Stripe · 256-bit SSL · PCI DSS compliant
+        </div>
+      </div>
+
+      <!-- Final charge summary -->
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:8px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Charge summary</div>
+        <div id="tb-step3-summary" style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;"></div>
+        <div style="height:1px;background:#e5e0d8;margin-bottom:10px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.9rem;font-weight:700;color:#1e1810;">Charged now</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:1.4rem;font-weight:600;color:#b05830;" id="tb-final-charge">—</span>
+        </div>
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;" id="tb-balance-note">—</div>
+      </div>
+
+      <!-- What happens next -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:.68rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens next</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+            <span>You'll receive an email confirmation with your booking reference and the property's direct contact details.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+            <span>The property contacts you directly within 24 hours to confirm your stay and arrange the balance.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+            <span>Your deposit is fully refundable if the property cannot confirm your dates.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(2)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbSubmitBooking()" id="tb-pay-btn" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <span id="tb-pay-btn-text">Pay deposit now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div id="tb-step-4" style="padding:40px 28px;display:none;text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:#f0f7f4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;margin-bottom:8px;">Booking confirmed</div>
+      <div style="font-size:.82rem;color:#5a4e40;line-height:1.65;margin-bottom:6px;" id="tb-confirm-msg">Your deposit has been received.</div>
+      <div style="font-family:monospace;font-size:.78rem;color:#9a8e80;background:#faf7f1;padding:8px 16px;border-radius:100px;display:inline-block;margin-bottom:24px;" id="tb-confirm-ref">TB-2025-XXXX</div>
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;text-align:left;margin-bottom:24px;">
+        <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens now</div>
+        <div style="font-size:.78rem;color:#5a4e40;line-height:1.7;">
+          ✓ Confirmation email sent to <strong id="tb-confirm-email"></strong><br>
+          ✓ Property's direct contact details included<br>
+          ✓ The property will reach out within 24 hours<br>
+          ✓ Balance arranged directly with the property
+        </div>
+      </div>
+      <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:#1e1810;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes tbSlideUp { from { opacity:0; transform:translateY(20px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+</style>
+
+<script>
+// ── THEBEARING CHECKOUT ENGINE ────────────────────────────────────────
+// STRIPE INTEGRATION POINT:
+// 1. Add <script src="https://js.stripe.com/v3/"></script> to <head>
+// 2. Replace 'STRIPE_PUBLISHABLE_KEY' with your live key
+// 3. In tbSubmitBooking(), uncomment the Stripe PaymentIntent call
+// 4. Replace the demo card inputs with: stripe.elements().create('card')
+// Everything else is wired and ready.
+// const stripe = Stripe('STRIPE_PUBLISHABLE_KEY');
+// ─────────────────────────────────────────────────────────────────────
+
+var tbCheckout = {
+  property: '',
+  pricePerNight: 0,
+  rooms: [],
+  currentStep: 1,
+  totalAmount: 0,
+  depositAmount: 0,
+  commissionRate: 0.10  // 10% — configurable per property
+};
+
+function tbOpenCheckout(config) {
+  // config = { property, label, rooms, pricePerNight, roomLabel }
+  tbCheckout.property    = config.property    || 'this property';
+  tbCheckout.pricePerNight = config.pricePerNight || 0;
+  tbCheckout.rooms       = config.rooms       || [{ name:'Standard', price:0 }];
+  tbCheckout.commissionRate = config.commissionRate || 0.10;
+
+  // Set property label and title
+  document.getElementById('tb-co-property-label').textContent = config.property;
+  document.getElementById('tb-co-title').textContent = config.title || 'Book your stay';
+
+  // Set room label
+  var roomLbl = document.getElementById('tb-co-room-label');
+  if (roomLbl) roomLbl.textContent = config.roomLabel || 'Room / cabin type';
+
+  // Populate room select
+  var sel = document.getElementById('tb-co-room');
+  sel.innerHTML = tbCheckout.rooms.map(r =>
+    '<option value="'+r.price+'">'+r.name+' — from $'+r.price.toLocaleString()+'/pp</option>'
+  ).join('');
+
+  tbGoStep(1);
+  tbUpdateSummary();
+
+  var el = document.getElementById('tb-checkout-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function tbCloseCheckout() {
+  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function tbGoStep(n) {
+  [1,2,3,4].forEach(i => {
+    var s = document.getElementById('tb-step-'+i);
+    var p = document.getElementById('tb-pip-'+i);
+    if (s) s.style.display = (i===n) ? 'block' : 'none';
+    if (p) p.style.background = (i<=n) ? 'var(--terra,#b05830)' : '#e5e0d8';
+  });
+  tbCheckout.currentStep = n;
+  if (n===2) tbBuildStep2Summary();
+  if (n===3) tbBuildStep3Summary();
+  document.getElementById('tb-checkout-sheet').scrollTop = 0;
+}
+
+function tbUpdateSummary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
+  var guestsSel = document.getElementById('tb-co-guests');
+  var guests    = guestsSel ? (guestsSel.value.match(/\d+/) || [2])[0] : 2;
+
+  var nights = 0;
+  if (arrival && departure) {
+    nights = Math.round((new Date(departure)-new Date(arrival))/(1000*60*60*24));
+    if (nights < 0) nights = 0;
+  }
+
+  var total   = roomPrice * parseInt(guests) * (nights || 1);
+  var deposit = Math.round(total * tbCheckout.commissionRate);
+  var balance = total - deposit;
+  tbCheckout.totalAmount   = total;
+  tbCheckout.depositAmount = deposit;
+
+  var lineRoom = document.getElementById('tb-line-room');
+  var lineTotal = document.getElementById('tb-line-total');
+  var depEl    = document.getElementById('tb-deposit-amount');
+  var balEl    = document.getElementById('tb-balance-amount');
+
+  if (lineRoom && total > 0) {
+    lineRoom.textContent  = (roomSel ? roomSel.options[roomSel.selectedIndex].text.split('—')[0].trim() : '') + (nights > 0 ? ' · '+nights+' night'+(nights>1?'s':'') : '');
+    lineTotal.textContent = '$'+total.toLocaleString();
+    depEl.textContent     = '$'+deposit.toLocaleString();
+    balEl.textContent     = '$'+balance.toLocaleString()+' paid to property';
+  } else if (lineRoom) {
+    lineRoom.textContent  = 'Select dates and room type';
+    lineTotal.textContent = '—';
+    depEl.textContent     = '—';
+    balEl.textContent     = '—';
+  }
+
+  // Update pay button
+  var payBtn = document.getElementById('tb-pay-btn-text');
+  if (payBtn) payBtn.textContent = deposit > 0 ? 'Pay $'+deposit.toLocaleString()+' deposit' : 'Pay deposit now';
+}
+
+function tbBuildStep2Summary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var guests    = document.getElementById('tb-co-guests').value;
+  var nights    = (arrival && departure) ? Math.round((new Date(departure)-new Date(arrival))/(86400000)) : 0;
+  var s = document.getElementById('tb-step2-summary');
+  if (s) s.innerHTML = [
+    '<div><strong>'+tbCheckout.property+'</strong></div>',
+    arrival ? '<div>'+new Date(arrival).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+' → '+new Date(departure).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>' : '',
+    nights > 0 ? '<div>'+nights+' night'+(nights>1?'s':'')+' · '+guests+'</div>' : '',
+    roomName ? '<div>'+roomName+'</div>' : '',
+    tbCheckout.depositAmount > 0 ? '<div style="margin-top:6px;font-weight:600;color:#b05830;">Deposit: $'+tbCheckout.depositAmount.toLocaleString()+'</div>' : ''
+  ].join('');
+}
+
+function tbBuildStep3Summary() {
+  tbBuildStep2Summary();
+  var s3 = document.getElementById('tb-step3-summary');
+  var fc = document.getElementById('tb-final-charge');
+  var bn = document.getElementById('tb-balance-note');
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var balance   = tbCheckout.totalAmount - tbCheckout.depositAmount;
+
+  if (s3) s3.innerHTML = [
+    '<div style="display:flex;justify-content:space-between;"><span>'+tbCheckout.property+'</span><span style="font-weight:600;">$'+tbCheckout.totalAmount.toLocaleString()+'</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">TheBearing.io fee</span><span style="color:#3a7055;font-weight:600;">$0</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">Balance to property</span><span style="color:#9a8e80;">$'+balance.toLocaleString()+'</span></div>',
+  ].join('');
+  if (fc) fc.textContent = tbCheckout.depositAmount > 0 ? '$'+tbCheckout.depositAmount.toLocaleString() : '—';
+  if (bn) bn.textContent = 'Remaining $'+balance.toLocaleString()+' arranged directly with '+tbCheckout.property;
+}
+
+function tbFormatCard(el) {
+  var v = el.value.replace(/\D/g,'').substring(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function tbFormatExpiry(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.substring(0,2)+' / '+v.substring(2,4);
+  el.value = v;
+}
+
+function tbSubmitBooking() {
+  var btn = document.getElementById('tb-pay-btn');
+  var btnText = document.getElementById('tb-pay-btn-text');
+
+  // Validation
+  var card = document.getElementById('tb-co-card').value.replace(/\s/g,'');
+  var expiry = document.getElementById('tb-co-expiry').value;
+  var cvv = document.getElementById('tb-co-cvv').value;
+  var email = document.getElementById('tb-co-email').value;
+  var firstname = document.getElementById('tb-co-firstname').value;
+
+  if (!firstname || !email || card.length < 15 || !expiry || !cvv) {
+    alert('Please fill in all required fields before proceeding.');
+    return;
+  }
+
+  // Loading state
+  btnText.textContent = 'Processing…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  // ── STRIPE INTEGRATION POINT ──────────────────────────────────────
+  // In production, replace this setTimeout with:
+  //
+  // const { paymentMethod, error } = await stripe.createPaymentMethod({
+  //   type: 'card',
+  //   card: cardElement,  // stripe.elements().create('card')
+  //   billing_details: { name: firstname + ' ' + lastname, email }
+  // });
+  // if (error) { show error; return; }
+  //
+  // const response = await fetch('/api/create-payment-intent', {
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     paymentMethodId: paymentMethod.id,
+  //     amount: tbCheckout.depositAmount * 100, // cents
+  //     currency: 'usd',
+  //     description: 'TheBearing deposit — ' + tbCheckout.property,
+  //     metadata: { booking_ref: ref, property: tbCheckout.property }
+  //   })
+  // });
+  // const { clientSecret } = await response.json();
+  // const result = await stripe.confirmCardPayment(clientSecret);
+  // ─────────────────────────────────────────────────────────────────
+
+  // Demo: simulate payment processing
+  setTimeout(function() {
+    var ref = 'TB-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*9000);
+    document.getElementById('tb-confirm-ref').textContent = ref;
+    document.getElementById('tb-confirm-msg').textContent =
+      'Your $'+tbCheckout.depositAmount.toLocaleString()+' deposit for '+tbCheckout.property+' has been received. The property will contact you directly within 24 hours.';
+    document.getElementById('tb-confirm-email').textContent = email;
+    tbGoStep(4);
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btnText.textContent = 'Pay deposit now';
+  }, 1800);
+}
+</script>
+
+</body>
+</html>
