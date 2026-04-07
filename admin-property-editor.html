@@ -54,7 +54,7 @@
   --shadow-md:   0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
   --shadow-lg:   0 12px 32px rgba(0,0,0,.1),0 4px 8px rgba(0,0,0,.06);
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font-family:'DM Sans',sans-serif;cursor:pointer}
 input,select,textarea{font-family:'DM Sans',sans-serif}
@@ -72,12 +72,12 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 .main{margin-left:var(--sb-w);flex:1;min-width:0;display:flex;flex-direction:column;}
 .topbar{
   height:52px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 24px;
+  display:flex;align-items:center;padding:0 28px;
   gap:16px;background:var(--surface);
   position:sticky;top:0;z-index:50;
   box-shadow:var(--shadow-sm);
 }
-.page-body{padding:24px;flex:1;}
+.page-body{padding:28px;flex:1;}
 
 /* ── SIDEBAR ── */
 .sb-brand{
@@ -93,17 +93,17 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   color:#fff;letter-spacing:.02em;flex-shrink:0;
 }
 .sb-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:#fff;letter-spacing:.01em;}
-.sb-sub{font-size:.65rem;color:rgba(255,255,255,.3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;}
+.sb-sub{font-size:.75rem;color:rgba(255,255,255,.3);letter-spacing:.04em;text-transform:uppercase;margin-top:1px;}
 .sb-section{
-  font-size:.6rem;font-weight:600;letter-spacing:.1em;
+  font-size:.9rem;font-weight:600;letter-spacing:.1em;
   text-transform:uppercase;color:rgba(255,255,255,.25);
-  padding:16px 18px 6px;
+  padding:18px 22px 6px;
 }
 .sb-nav{padding:8px;flex:1;}
 .sb-link{
   display:flex;align-items:center;gap:9px;
-  padding:7px 10px;border-radius:var(--r);
-  font-size:.82rem;font-weight:500;color:var(--sb-text);
+  padding:8px 12px;border-radius:var(--r);
+  font-size:.92rem;font-weight:500;color:var(--sb-text);
   transition:all .15s;position:relative;
   margin-bottom:1px;
 }
@@ -118,7 +118,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 .sb-link.active svg,.sb-link:hover svg{opacity:1;}
 .sb-badge{
   margin-left:auto;padding:2px 7px;border-radius:100px;
-  font-size:.62rem;font-weight:600;font-family:'JetBrains Mono',monospace;
+  font-size:.92rem;font-weight:600;font-family:'JetBrains Mono',monospace;
   background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);
 }
 .sb-badge.alert{background:rgba(220,38,38,.2);color:#fca5a5;}
@@ -131,31 +131,31 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
   width:28px;height:28px;border-radius:6px;
   background:rgba(255,255,255,.08);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;color:rgba(255,255,255,.6);
+  font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6);
   flex-shrink:0;
 }
-.sb-user-name{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.7);}
-.sb-user-role{font-size:.62rem;color:rgba(255,255,255,.3);}
+.sb-user-name{font-size:.88rem;font-weight:500;color:rgba(255,255,255,.7);}
+.sb-user-role{font-size:.92rem;color:rgba(255,255,255,.3);}
 
 /* ── TOPBAR ── */
 .topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:.01em;color:var(--text);flex:1;}
-.topbar-crumb{font-size:.78rem;color:var(--text3);display:flex;align-items:center;gap:6px;}
+.topbar-crumb{font-size:.88rem;color:var(--text3);display:flex;align-items:center;gap:6px;}
 .topbar-crumb span{color:var(--text2);}
 .tb-actions{display:flex;align-items:center;gap:8px;margin-left:auto;}
 
 /* ── CARDS ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);}
 .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.card-title{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.01em;color:var(--text);}
+.card-title{font-family:'Syne',sans-serif;font-size:.92rem;font-weight:700;letter-spacing:.01em;color:var(--text);}
 .card-body{padding:18px;}
 .card-footer{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
 
 /* ── STAT TILES ── */
-.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
-.stat-label{font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 22px;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);}
+.stat-label{font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
 .stat-value{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:6px;}
-.stat-sub{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:5px;}
+.stat-sub{font-size:.92rem;color:var(--text3);display:flex;align-items:center;gap:5px;}
 .stat-trend-up{color:var(--emerald);font-weight:600;}
 .stat-trend-dn{color:var(--red);font-weight:600;}
 .stat-icon{position:absolute;top:14px;right:14px;opacity:.08;}
@@ -163,15 +163,15 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 
 /* ── TABLE ── */
 .tbl{width:100%;border-collapse:collapse;}
-.tbl th{padding:9px 14px;text-align:left;font-size:.63rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2);}
-.tbl td{padding:11px 14px;font-size:.82rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text);}
+.tbl th{padding:9px 14px;text-align:left;font-size:.92rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface2);}
+.tbl td{padding:11px 14px;font-size:.92rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text);}
 .tbl tr:last-child td{border-bottom:none;}
 .tbl tbody tr{transition:background .1s;}
 .tbl tbody tr:hover{background:var(--surface2);}
 .tbl-link{cursor:pointer;}
 
 /* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:.67rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:100px;font-size:.86rem;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
 .badge-green{background:var(--em-dim);color:var(--em-text);}
 .badge-amber{background:var(--am-dim);color:var(--am-text);}
 .badge-red{background:var(--red-dim);color:var(--red-text);}
@@ -182,7 +182,7 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 .badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--r);font-size:.8rem;font-weight:500;border:none;transition:all .15s;cursor:pointer;white-space:nowrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--r);font-size:.9rem;font-weight:500;border:none;transition:all .15s;cursor:pointer;white-space:nowrap;}
 .btn svg{width:13px;height:13px;flex-shrink:0;}
 .btn-primary{background:var(--gold);color:#fff;}
 .btn-primary:hover{background:var(--gold2);}
@@ -192,16 +192,16 @@ input,select,textarea{font-family:'DM Sans',sans-serif}
 .btn-ghost:hover{background:var(--surface2);color:var(--text);}
 .btn-danger{background:var(--red-dim);color:var(--red-text);border:1px solid rgba(220,38,38,.15);}
 .btn-danger:hover{background:#fee2e2;}
-.btn-sm{padding:5px 10px;font-size:.74rem;}
+.btn-sm{padding:6px 12px;font-size:.94rem;}
 .btn-lg{padding:10px 20px;font-size:.86rem;}
 .btn-icon{padding:7px;}
 
 /* ── INPUTS ── */
-.input{width:100%;padding:8px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
+.input{width:100%;padding:10px 14px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:.92rem;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s;}
 .input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(193,127,62,.1);}
 .input::placeholder{color:var(--text3);}
 .select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
-label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;}
+label{font-size:.94rem;font-weight:500;color:var(--text2);display:block;margin-bottom:5px;}
 .field{margin-bottom:14px;}
 .field-row{display:grid;gap:12px;}
 .field-row.cols-2{grid-template-columns:1fr 1fr;}
@@ -209,12 +209,12 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 
 /* ── TABS ── */
 .tabs{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:3px;}
-.tab{padding:6px 14px;border-radius:6px;font-size:.78rem;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;}
+.tab{padding:6px 14px;border-radius:6px;font-size:.88rem;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;border:none;background:transparent;}
 .tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm);}
 .tab:hover:not(.active){color:var(--text);}
 
 /* ── CHIPS ── */
-.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:100px;font-size:.72rem;color:var(--text2);cursor:pointer;transition:all .15s;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:100px;font-size:.92rem;color:var(--text2);cursor:pointer;transition:all .15s;}
 .chip:hover,.chip.active{background:var(--gold-dim);border-color:rgba(193,127,62,.3);color:var(--gold);}
 
 /* ── EMPTY STATE ── */
@@ -222,10 +222,10 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .empty-icon{width:48px;height:48px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
 .empty-icon svg{width:22px;height:22px;opacity:.3;}
 .empty-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:6px;color:var(--text);}
-.empty-sub{font-size:.8rem;color:var(--text3);max-width:280px;margin:0 auto;line-height:1.6;}
+.empty-sub{font-size:.9rem;color:var(--text3);max-width:280px;margin:0 auto;line-height:1.6;}
 
 /* ── MISC ── */
-.mono{font-family:'JetBrains Mono',monospace;font-size:.78rem;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.88rem;}
 .text-gold{color:var(--gold);}
 .text-emerald{color:var(--emerald);}
 .text-amber{color:var(--amber);}
@@ -234,7 +234,7 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .text-muted{color:var(--text2);}
 .text-dim{color:var(--text3);}
 .divider{height:1px;background:var(--border);margin:16px 0;}
-.avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:.75rem;font-weight:700;flex-shrink:0;}
 .scroll-x{overflow-x:auto;}
 .flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
 .gap-8{gap:8px;} .gap-12{gap:12px;} .gap-16{gap:16px;}
@@ -252,19 +252,19 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .activity-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);}
 .activity-item:last-child{border-bottom:none;}
 .activity-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px;}
-.activity-text{font-size:.8rem;line-height:1.55;color:var(--text);}
-.activity-time{font-size:.68rem;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
+.activity-text{font-size:.9rem;line-height:1.65;color:var(--text);}
+.activity-time{font-size:.88rem;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace;}
 
 /* ── KANBAN ── */
 .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
 .kanban-col{min-width:210px;width:210px;flex-shrink:0;}
-.kanban-col-head{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:8px;}
-.kanban-col-title{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
-.kanban-count{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--text3);}
+.kanban-col-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:8px;}
+.kanban-col-title{font-size:.9rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;}
+.kanban-count{font-size:.75rem;font-family:'JetBrains Mono',monospace;color:var(--text3);}
 .k-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px;margin-bottom:8px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow-sm);}
 .k-card:hover{border-color:var(--border2);box-shadow:var(--shadow-md);transform:translateY(-1px);}
-.k-card-name{font-size:.82rem;font-weight:600;margin-bottom:3px;color:var(--text);}
-.k-card-sub{font-size:.72rem;color:var(--text2);}
+.k-card-name{font-size:.92rem;font-weight:600;margin-bottom:3px;color:var(--text);}
+.k-card-sub{font-size:.92rem;color:var(--text2);}
 .k-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
 
 /* ── TIMELINE ── */
@@ -273,9 +273,9 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .tl-item{position:relative;padding-bottom:18px;}
 .tl-item:last-child{padding-bottom:0;}
 .tl-dot{position:absolute;left:-20px;top:3px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg);flex-shrink:0;}
-.tl-time{font-size:.68rem;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:2px;}
-.tl-title{font-size:.82rem;font-weight:500;margin-bottom:2px;color:var(--text);}
-.tl-sub{font-size:.76rem;color:var(--text2);line-height:1.5;}
+.tl-time{font-size:.88rem;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-bottom:2px;}
+.tl-title{font-size:.92rem;font-weight:500;margin-bottom:2px;color:var(--text);}
+.tl-sub{font-size:.86rem;color:var(--text2);line-height:1.6;}
 
 /* ── HEALTH SCORE ── */
 .health-bar{height:4px;background:var(--surface3);border-radius:100px;overflow:hidden;margin-top:6px;}
@@ -304,7 +304,7 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 .modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;border-radius:var(--r-lg);padding:11px 15px;display:flex;align-items:center;gap:9px;font-size:.8rem;z-index:300;box-shadow:var(--shadow-lg);animation:fadeIn .25s ease;max-width:320px;}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;border-radius:var(--r-lg);padding:11px 15px;display:flex;align-items:center;gap:9px;font-size:.9rem;z-index:300;box-shadow:var(--shadow-lg);animation:fadeIn .25s ease;max-width:320px;}
 
 /* ── SPLIT PANEL ── */
 .split-panel{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 52px);}
@@ -318,16 +318,109 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
       <div class="sb-avatar">MR</div>
       <div><div class="sb-user-name">Miguel</div><div class="sb-user-role">Founder</div></div>
     </div></aside><div class="main">
+<style>
+/* ── PROPERTY EDITOR OVERRIDES — larger, more spacious ── */
+.pe-shell { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+.pe-form { display: flex; flex-direction: column; gap: 20px; }
+.pe-sidebar { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 68px; }
+
+/* Section cards */
+.pe-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+.pe-section-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.pe-section-left { display: flex; align-items: center; gap: 12px; }
+.pe-section-num { width: 28px; height: 28px; border-radius: 8px; background: var(--gold-dim); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+.pe-section-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--text); }
+.pe-section-sub { font-size: 12px; color: var(--text3); }
+.pe-section-body { padding: 24px; }
+
+/* Fields */
+.pe-field { margin-bottom: 18px; }
+.pe-field:last-child { margin-bottom: 0; }
+.pe-label { font-size: 13px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 7px; }
+.pe-label-req { color: var(--red); margin-left: 2px; }
+.pe-label-hint { font-weight: 400; color: var(--text3); margin-left: 4px; }
+.pe-input { width: 100%; padding: 11px 14px; background: var(--surface); border: 1.5px solid var(--border2); border-radius: 9px; color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color .15s, box-shadow .15s; }
+.pe-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(193,127,62,.1); }
+.pe-input::placeholder { color: var(--text3); }
+.pe-textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.pe-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.pe-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* Photo fields */
+.pe-photo-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.pe-photo-num { width: 24px; height: 24px; border-radius: 6px; background: var(--surface3); display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-top: 10px; }
+.pe-photo-preview { width: 56px; height: 44px; border-radius: 8px; background: var(--surface3); overflow: hidden; flex-shrink: 0; margin-top: 6px; display: none; }
+.pe-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.pe-hero-preview { width: 100%; height: 160px; border-radius: 10px; background: var(--surface3); overflow: hidden; margin-top: 8px; display: none; }
+.pe-hero-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Cloudflare callout */
+.pe-cf-tip { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start; }
+.pe-cf-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.pe-cf-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.pe-cf-link { color: var(--gold); text-decoration: none; font-weight: 500; }
+
+/* Tags */
+.pe-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.pe-tag { padding: 6px 13px; border-radius: 100px; border: 1.5px solid var(--border2); background: var(--surface); font-size: 12px; color: var(--text2); cursor: pointer; transition: all .15s; }
+.pe-tag:hover, .pe-tag.on { background: var(--gold-dim); border-color: rgba(193,127,62,.35); color: var(--gold); }
+
+/* Private access callout */
+.pe-access-notice { background: linear-gradient(135deg, rgba(193,127,62,.06), rgba(193,127,62,.02)); border: 1px solid rgba(193,127,62,.2); border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; font-size: 13px; color: var(--text2); line-height: 1.65; }
+
+/* Room rows */
+.pe-room-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.pe-room-grid { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 12px; align-items: flex-end; margin-bottom: 10px; }
+
+/* Completeness bar */
+.pe-progress-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 24px; margin-bottom: 4px; }
+.pe-progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.pe-progress-label { font-size: 13px; font-weight: 600; color: var(--text); }
+.pe-progress-pct { font-size: 14px; font-weight: 700; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+.pe-progress-track { height: 6px; background: var(--surface3); border-radius: 100px; overflow: hidden; }
+.pe-progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--emerald)); border-radius: 100px; transition: width .4s ease; }
+
+/* Sidebar card preview */
+.pe-preview-img { height: 140px; background: var(--surface3); position: relative; overflow: hidden; }
+.pe-preview-img-placeholder { height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 6px; }
+.pe-preview-body { padding: 14px; }
+.pe-preview-type { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+.pe-preview-name { font-family: 'Instrument Serif', serif; font-size: 17px; color: var(--text); margin-bottom: 3px; }
+.pe-preview-hook { font-size: 12px; color: var(--text2); font-style: italic; line-height: 1.5; margin-bottom: 10px; }
+.pe-preview-foot { display: flex; align-items: center; justify-content: space-between; }
+.pe-preview-price { font-size: 13px; font-weight: 600; color: var(--gold); }
+.pe-preview-btns { display: flex; gap: 6px; }
+.pe-preview-btn-e { padding: 5px 10px; border-radius: 100px; border: 1px solid var(--border2); background: transparent; font-size: 11px; color: var(--text2); }
+.pe-preview-btn-b { padding: 5px 12px; border-radius: 100px; border: none; background: #b05830; font-size: 11px; color: #fff; font-weight: 600; }
+
+/* Checklist */
+.pe-chk-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.pe-chk-item:last-child { border-bottom: none; }
+.pe-chk-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.pe-chk-dot.done { border-color: var(--emerald); background: var(--em-dim); }
+.pe-chk-dot.done svg { opacity: 1 !important; }
+.pe-chk-label { font-size: 13px; color: var(--text3); }
+.pe-chk-item.done .pe-chk-label { color: var(--text); }
+
+/* JSON panel */
+.pe-json-pre { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); overflow: auto; max-height: 180px; line-height: 1.6; white-space: pre-wrap; background: var(--bg); padding: 12px; border-radius: 0 0 12px 12px; }
+
+/* Status bar */
+.pe-status-bar { display: none; padding: 14px 18px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
 <div class="topbar fade-in">
   <div class="topbar-crumb">
     <a href="admin-properties.html" style="color:var(--text3);">Properties</a>
-    <span style="color:var(--border3);">/</span>
+    <span style="color:var(--border2);">/</span>
     <span>New property</span>
   </div>
   <div class="tb-actions">
     <button class="btn btn-ghost" onclick="saveDraft()">Save draft</button>
-    <button class="btn btn-secondary" onclick="previewProperty()">Preview →</button>
-    <button class="btn btn-primary" id="publish-btn" onclick="publishProperty()">
+    <button class="btn btn-secondary" onclick="previewProperty()">Preview</button>
+    <button class="btn btn-primary" onclick="publishProperty()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       Publish live
     </button>
@@ -335,441 +428,395 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 </div>
 
 <div class="page-body">
+  <div id="pe-status" style="display:none;padding:14px 18px;border-radius:10px;margin-bottom:16px;align-items:center;gap:10px;font-size:13px;"></div>
 
-  <!-- Status bar -->
-  <div id="status-bar" style="display:none;padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.82rem;" class="fade-in">
+  <!-- Progress -->
+  <div class="pe-progress-wrap fade-in">
+    <div class="pe-progress-top">
+      <div class="pe-progress-label">Listing completeness</div>
+      <div class="pe-progress-pct" id="comp-pct">0%</div>
+    </div>
+    <div class="pe-progress-track"><div class="pe-progress-fill" id="comp-bar" style="width:0%;"></div></div>
   </div>
 
-  <!-- Progress indicator -->
-  <div class="card fade-in" style="margin-bottom:20px;padding:16px 20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-      <div style="font-size:.78rem;font-weight:600;">Listing completeness</div>
-      <div id="completeness-pct" style="font-size:.78rem;font-family:'JetBrains Mono',monospace;color:var(--gold);">0%</div>
-    </div>
-    <div style="height:5px;background:var(--surface3);border-radius:100px;overflow:hidden;">
-      <div id="completeness-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),var(--emerald));border-radius:100px;transition:width .4s ease;"></div>
-    </div>
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;" id="completeness-chips"></div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;" class="fade-in-2">
-
-    <!-- LEFT COLUMN — all the fields -->
-    <div style="display:flex;flex-direction:column;gap:16px;">
+  <div class="pe-shell fade-in-2">
+    <div class="pe-form">
 
       <!-- 1. CORE IDENTITY -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">1</div>
-            <div class="card-title">Core identity</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">1</div>
+            <div class="pe-section-title">Core identity</div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Property name <span style="color:var(--red);">*</span></label>
-              <input class="input" id="f-name" placeholder="e.g. Singita Grumeti" oninput="updateCompleteness()">
+        <div class="pe-section-body">
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Property name<span class="pe-label-req">*</span></label>
+              <input class="pe-input" id="f-name" placeholder="e.g. Singita Grumeti" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>Property type <span style="color:var(--red);">*</span></label>
-              <select class="input select" id="f-type" onchange="updateCompleteness()">
+            <div>
+              <label class="pe-label">Property type<span class="pe-label-req">*</span></label>
+              <select class="pe-input" id="f-type" onchange="updateAll()" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
                 <option value="">Select type...</option>
-                <option>Boutique hotel</option>
-                <option>Safari lodge</option>
-                <option>Desert resort</option>
-                <option>River cruise</option>
-                <option>Expedition cruise</option>
-                <option>Private island</option>
-                <option>Villa</option>
-                <option>Ryokan</option>
-                <option>Mountain lodge</option>
-                <option>Overwater bungalow</option>
-                <option>Treehouse / Tented camp</option>
-                <option>Heritage hotel</option>
+                <option>Boutique hotel</option><option>Safari lodge</option><option>Desert resort</option>
+                <option>River cruise</option><option>Expedition cruise</option><option>Private island</option>
+                <option>Villa</option><option>Ryokan</option><option>Mountain lodge</option>
+                <option>Tented camp</option><option>Heritage hotel</option>
               </select>
             </div>
           </div>
-          <div class="field-row cols-3">
-            <div class="field">
-              <label>Country <span style="color:var(--red);">*</span></label>
-              <input class="input" id="f-country" placeholder="e.g. Tanzania" oninput="updateCompleteness()">
+          <div class="pe-grid-3 pe-field">
+            <div>
+              <label class="pe-label">Country<span class="pe-label-req">*</span></label>
+              <input class="pe-input" id="f-country" placeholder="e.g. Tanzania" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>Region / area</label>
-              <input class="input" id="f-region" placeholder="e.g. Serengeti, Grumeti">
+            <div>
+              <label class="pe-label">Region / area</label>
+              <input class="pe-input" id="f-region" placeholder="e.g. Serengeti, Grumeti" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>Nearest airport / city</label>
-              <input class="input" id="f-airport" placeholder="e.g. JRO · Kilimanjaro">
+            <div>
+              <label class="pe-label">Nearest airport</label>
+              <input class="pe-input" id="f-airport" placeholder="e.g. JRO · Kilimanjaro">
             </div>
           </div>
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Display tag <span style="color:var(--text3);font-weight:400;">(shown on card)</span></label>
-              <input class="input" id="f-tag" placeholder="e.g. Wilderness · Nat Geo pick">
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Display tag<span class="pe-label-hint">(shown on card)</span></label>
+              <input class="pe-input" id="f-tag" placeholder="e.g. Wilderness · Nat Geo pick" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>Status</label>
-              <select class="input select" id="f-status" onchange="updateCompleteness()">
-                <option value="draft">Draft</option>
-                <option value="live">Live</option>
-                <option value="coming-soon">Coming soon</option>
-                <option value="paused">Paused</option>
+            <div>
+              <label class="pe-label">Status</label>
+              <select class="pe-input" id="f-status" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option value="draft">Draft</option><option value="live">Live</option>
+                <option value="coming-soon">Coming soon</option><option value="paused">Paused</option>
               </select>
             </div>
           </div>
-          <div class="field">
-            <label>One-line hook <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(shown on card — make it memorable)</span></label>
-            <input class="input" id="f-hook" placeholder="e.g. &quot;350,000 private acres. The migration passes through here. Almost nowhere else can say that.&quot;" oninput="updateCompleteness()">
-            <div id="hook-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          <div class="pe-field">
+            <label class="pe-label">One-line hook<span class="pe-label-req">*</span><span class="pe-label-hint">(shown on card — make it memorable)</span></label>
+            <input class="pe-input" id="f-hook" placeholder='e.g. "350,000 private acres. The migration passes through here. Almost nowhere else can say that."' oninput="updateAll()">
+            <div id="hook-count" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
           </div>
         </div>
       </div>
 
       <!-- 2. DESCRIPTION -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">2</div>
-            <div class="card-title">Description</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">2</div>
+            <div class="pe-section-title">Description</div>
           </div>
-          <div style="font-size:.72rem;color:var(--text3);">Shown on the property page</div>
+          <div class="pe-section-sub">Shown on the property page</div>
         </div>
-        <div class="card-body">
-          <div class="field">
-            <label>Short description <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(2–3 sentences · shown above the fold)</span></label>
-            <textarea class="input" id="f-desc-short" rows="3" style="resize:none;" placeholder="The opening paragraph a guest reads first. Should answer: what makes this place impossible to forget?" oninput="updateCompleteness();countWords(this,'desc-short-count')"></textarea>
-            <div id="desc-short-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+        <div class="pe-section-body">
+          <div class="pe-field">
+            <label class="pe-label">Short description<span class="pe-label-req">*</span><span class="pe-label-hint">(2–3 sentences · shown above the fold)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-desc-short" placeholder="The opening paragraph a guest reads first. Should answer: what makes this place impossible to forget?" oninput="updateAll();wc(this,'dsc-wc')"></textarea>
+            <div id="dsc-wc" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
           </div>
-          <div class="field">
-            <label>Full description <span style="color:var(--text3);font-weight:400;">(4–6 paragraphs · shown on property page)</span></label>
-            <textarea class="input" id="f-desc-long" rows="8" style="resize:vertical;min-height:160px;" placeholder="The full story of the property. What it feels like to be there. What makes it different. What the guest will remember." oninput="countWords(this,'desc-long-count')"></textarea>
-            <div id="desc-long-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          <div class="pe-field">
+            <label class="pe-label">Full description<span class="pe-label-hint">(4–6 paragraphs · shown on property page)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-desc-long" style="min-height:140px;" placeholder="The full story of the property. What it feels like to be there. What makes it different. What the guest will remember." oninput="wc(this,'dlg-wc')"></textarea>
+            <div id="dlg-wc" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
           </div>
-          <div class="field">
-            <label>The Bearing verdict <span style="color:var(--text3);font-weight:400;">(our editorial voice · 1–2 sentences)</span></label>
-            <textarea class="input" id="f-verdict" rows="2" style="resize:none;" placeholder="e.g. &quot;We added this because nowhere else in the Serengeti gives you access to a private concession during the migration at this price point.&quot;"></textarea>
+          <div class="pe-field">
+            <label class="pe-label">The Bearing verdict<span class="pe-label-hint">(our editorial voice · 1–2 sentences)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-verdict" style="min-height:70px;" placeholder='e.g. "We added this because nowhere else in the Serengeti gives you access to a private concession during the migration at this price point."'></textarea>
           </div>
         </div>
       </div>
 
       <!-- 3. PHOTOS -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">3</div>
-            <div class="card-title">Photos</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">3</div>
+            <div class="pe-section-title">Photos</div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-ghost btn-sm">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
-              Cloudflare Images →
-            </a>
-            <div style="font-size:.7rem;color:var(--text3);">Upload there, paste URL here</div>
-          </div>
+          <a href="https://dash.cloudflare.com" target="_blank" class="btn btn-ghost btn-sm">
+            Open Cloudflare Images →
+          </a>
         </div>
-        <div class="card-body">
-          <div style="background:var(--surface2);border:1px dashed var(--border2);border-radius:var(--r);padding:12px 14px;margin-bottom:14px;font-size:.76rem;color:var(--text3);line-height:1.6;">
-            <strong style="color:var(--text2);">How to add photos:</strong> Upload your images to Cloudflare Images at dash.cloudflare.com → Images. Copy the delivery URL (looks like <span class="mono" style="font-size:.72rem;">https://imagedelivery.net/xxx/image-id/public</span>) and paste it below.
+        <div class="pe-section-body">
+          <div class="pe-cf-tip">
+            <div class="pe-cf-icon">☁</div>
+            <div class="pe-cf-text">Upload photos to <a href="https://dash.cloudflare.com" target="_blank" class="pe-cf-link">Cloudflare Images</a>, then paste the delivery URL here. Format: <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px;">https://imagedelivery.net/xxx/image-id/public</code></div>
           </div>
-
-          <!-- Hero photo -->
-          <div class="field">
-            <label>Hero photo URL <span style="color:var(--red);">*</span> <span style="color:var(--text3);font-weight:400;">(main full-screen image)</span></label>
+          <div class="pe-field">
+            <label class="pe-label">Hero photo<span class="pe-label-req">*</span><span class="pe-label-hint">(main full-screen image)</span></label>
             <div style="display:flex;gap:8px;">
-              <input class="input" id="f-photo-hero" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-hero');updateCompleteness()" style="flex:1;">
-              <button class="btn btn-ghost btn-sm" onclick="testPhoto('f-photo-hero')">Test</button>
+              <input class="pe-input" id="f-hero" placeholder="https://imagedelivery.net/..." oninput="prevHero(this)" style="flex:1;">
+              <button class="btn btn-ghost" onclick="testImg('f-hero')">Test</button>
             </div>
-            <div id="prev-hero" style="margin-top:8px;height:120px;border-radius:var(--r);overflow:hidden;background:var(--surface3);display:none;">
-              <img style="width:100%;height:100%;object-fit:cover;" alt="Hero preview">
+            <div class="pe-hero-preview" id="prev-hero"><img alt="Hero"></div>
+          </div>
+          <label class="pe-label" style="margin-bottom:12px;display:block;">Gallery photos<span class="pe-label-hint">(min 6 recommended)</span></label>
+          <div id="gallery-wrap" style="display:flex;flex-direction:column;gap:8px;">
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">1</div>
+              <input class="pe-input" id="f-g1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg1')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg1"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">2</div>
+              <input class="pe-input" id="f-g2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg2')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg2"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">3</div>
+              <input class="pe-input" id="f-g3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg3')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg3"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">4</div>
+              <input class="pe-input" id="f-g4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg4')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg4"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">5</div>
+              <input class="pe-input" id="f-g5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg5')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg5"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">6</div>
+              <input class="pe-input" id="f-g6" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg6')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg6"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">7</div>
+              <input class="pe-input" id="f-g7" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg7')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg7"><img alt=""></div>
+            </div>
+            <div class="pe-photo-row">
+              <div class="pe-photo-num">8</div>
+              <input class="pe-input" id="f-g8" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg8')" style="flex:1;">
+              <div class="pe-photo-preview" id="pg8"><img alt=""></div>
             </div>
           </div>
-
-          <!-- Gallery photos -->
-          <div style="margin-bottom:8px;">
-            <label>Gallery photos <span style="color:var(--text3);font-weight:400;">(min 6 recommended)</span></label>
-          </div>
-          <div id="gallery-fields" style="display:flex;flex-direction:column;gap:8px;">
-            
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">1</div>
-              <input class="input" id="f-photo-1" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-1');updateCompleteness()" style="flex:1;">
-              <div id="prev-1" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">2</div>
-              <input class="input" id="f-photo-2" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-2');updateCompleteness()" style="flex:1;">
-              <div id="prev-2" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">3</div>
-              <input class="input" id="f-photo-3" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-3');updateCompleteness()" style="flex:1;">
-              <div id="prev-3" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">4</div>
-              <input class="input" id="f-photo-4" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-4');updateCompleteness()" style="flex:1;">
-              <div id="prev-4" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">5</div>
-              <input class="input" id="f-photo-5" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-5');updateCompleteness()" style="flex:1;">
-              <div id="prev-5" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">6</div>
-              <input class="input" id="f-photo-6" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-6');updateCompleteness()" style="flex:1;">
-              <div id="prev-6" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">7</div>
-              <input class="input" id="f-photo-7" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-7');updateCompleteness()" style="flex:1;">
-              <div id="prev-7" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">8</div>
-              <input class="input" id="f-photo-8" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-8');updateCompleteness()" style="flex:1;">
-              <div id="prev-8" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
-            </div>
-          </div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addGalleryField()">+ Add another photo</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="addPhoto()">+ Add another photo</button>
         </div>
       </div>
 
       <!-- 4. DETAILS & TAGS -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">4</div>
-            <div class="card-title">Details & tags</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">4</div>
+            <div class="pe-section-title">Details & tags</div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="field-row cols-3">
-            <div class="field">
-              <label>Total rooms / units</label>
-              <input class="input" id="f-rooms-total" type="number" placeholder="e.g. 15">
+        <div class="pe-section-body">
+          <div class="pe-grid-3 pe-field">
+            <div>
+              <label class="pe-label">Total rooms / units</label>
+              <input class="pe-input" id="f-rcount" type="number" placeholder="e.g. 15">
             </div>
-            <div class="field">
-              <label>Max guests</label>
-              <input class="input" id="f-max-guests" type="number" placeholder="e.g. 30">
+            <div>
+              <label class="pe-label">Max guests</label>
+              <input class="pe-input" id="f-maxg" type="number" placeholder="e.g. 30">
             </div>
-            <div class="field">
-              <label>Year opened / renovated</label>
-              <input class="input" id="f-year" placeholder="e.g. 2018 / 2023">
-            </div>
-          </div>
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Awards / recognition</label>
-              <input class="input" id="f-awards" placeholder="e.g. Nat Geo pick · Relais & Châteaux">
-            </div>
-            <div class="field">
-              <label>Sustainability rating</label>
-              <select class="input select" id="f-sustainability">
-                <option value="">Not assessed</option>
-                <option>Gold — leading standard</option>
-                <option>Silver — strong practices</option>
-                <option>Bronze — improving</option>
-              </select>
+            <div>
+              <label class="pe-label">Year opened / renovated</label>
+              <input class="pe-input" id="f-year" placeholder="e.g. 2018 / 2023">
             </div>
           </div>
-          <div class="field">
-            <label>Tags <span style="color:var(--text3);font-weight:400;">(click to toggle)</span></label>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;" id="tags-container"><button class="chip" onclick="toggleTag(this)">Adults only</button><button class="chip" onclick="toggleTag(this)">Family-friendly</button><button class="chip" onclick="toggleTag(this)">Remote</button><button class="chip" onclick="toggleTag(this)">No Wi-Fi</button><button class="chip" onclick="toggleTag(this)">Private chef</button><button class="chip" onclick="toggleTag(this)">Butler service</button><button class="chip" onclick="toggleTag(this)">Diving</button><button class="chip" onclick="toggleTag(this)">Wellness</button><button class="chip" onclick="toggleTag(this)">Wildlife</button><button class="chip" onclick="toggleTag(this)">Cultural</button><button class="chip" onclick="toggleTag(this)">Design</button><button class="chip" onclick="toggleTag(this)">Wilderness</button><button class="chip" onclick="toggleTag(this)">Beachfront</button><button class="chip" onclick="toggleTag(this)">Mountain</button><button class="chip" onclick="toggleTag(this)">Desert</button><button class="chip" onclick="toggleTag(this)">Overwater</button><button class="chip" onclick="toggleTag(this)">Architecture</button><button class="chip" onclick="toggleTag(this)">Eco / Sustainable</button><button class="chip" onclick="toggleTag(this)">Under 20 rooms</button><button class="chip" onclick="toggleTag(this)">Private pool</button><button class="chip" onclick="toggleTag(this)">All-inclusive</button><button class="chip" onclick="toggleTag(this)">Safari</button><button class="chip" onclick="toggleTag(this)">Fishing</button><button class="chip" onclick="toggleTag(this)">Helicopter access</button>
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Awards / recognition</label>
+              <input class="pe-input" id="f-awards" placeholder="e.g. Nat Geo pick · Relais & Châteaux">
+            </div>
+            <div>
+              <label class="pe-label">Best season to visit</label>
+              <input class="pe-input" id="f-season" placeholder="e.g. October – April">
             </div>
           </div>
-          <div class="field" style="margin-top:4px;">
-            <label>Best season to visit</label>
-            <input class="input" id="f-season" placeholder="e.g. October – April (avoid summer monsoon)">
+          <div class="pe-field">
+            <label class="pe-label">How to get there</label>
+            <textarea class="pe-input pe-textarea" id="f-getting-there" style="min-height:70px;" placeholder="e.g. Fly to Kilimanjaro (JRO), charter flight to Grumeti airstrip (~1hr). We arrange transfers."></textarea>
           </div>
-          <div class="field">
-            <label>How to get there</label>
-            <textarea class="input" id="f-getting-there" rows="2" style="resize:none;" placeholder="e.g. Fly to Kilimanjaro (JRO), then charter flight to Grumeti airstrip (~1hr). We arrange transfers."></textarea>
+          <div class="pe-field">
+            <label class="pe-label">Tags<span class="pe-label-hint">(click to toggle)</span></label>
+            <div class="pe-tags" id="tags-wrap"><button class="pe-tag" onclick="toggleTag(this)">Adults only</button><button class="pe-tag" onclick="toggleTag(this)">Family-friendly</button><button class="pe-tag" onclick="toggleTag(this)">Remote</button><button class="pe-tag" onclick="toggleTag(this)">No Wi-Fi</button><button class="pe-tag" onclick="toggleTag(this)">Private chef</button><button class="pe-tag" onclick="toggleTag(this)">Butler service</button><button class="pe-tag" onclick="toggleTag(this)">Diving</button><button class="pe-tag" onclick="toggleTag(this)">Wellness</button><button class="pe-tag" onclick="toggleTag(this)">Wildlife</button><button class="pe-tag" onclick="toggleTag(this)">Cultural</button><button class="pe-tag" onclick="toggleTag(this)">Design</button><button class="pe-tag" onclick="toggleTag(this)">Wilderness</button><button class="pe-tag" onclick="toggleTag(this)">Beachfront</button><button class="pe-tag" onclick="toggleTag(this)">Mountain</button><button class="pe-tag" onclick="toggleTag(this)">Desert</button><button class="pe-tag" onclick="toggleTag(this)">Overwater</button><button class="pe-tag" onclick="toggleTag(this)">Architecture</button><button class="pe-tag" onclick="toggleTag(this)">Eco / Sustainable</button><button class="pe-tag" onclick="toggleTag(this)">Under 20 rooms</button><button class="pe-tag" onclick="toggleTag(this)">Private pool</button><button class="pe-tag" onclick="toggleTag(this)">All-inclusive</button><button class="pe-tag" onclick="toggleTag(this)">Safari</button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 5. ROOMS & PRICING -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">5</div>
-            <div class="card-title">Rooms & pricing</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">5</div>
+            <div class="pe-section-title">Rooms & pricing</div>
           </div>
           <button class="btn btn-ghost btn-sm" onclick="addRoom()">+ Add room type</button>
         </div>
-        <div class="card-body">
-          <div id="rooms-container" style="display:flex;flex-direction:column;gap:12px;">
-            <!-- Room rows added dynamically -->
+        <div class="pe-section-body">
+          <div id="rooms-wrap" style="margin-bottom:14px;"></div>
+          <div style="padding:14px;background:var(--surface2);border-radius:9px;font-size:13px;color:var(--text2);line-height:1.6;">
+            <strong style="color:var(--text);">Commission:</strong> TheBearing collects the selected rate as a deposit. The property collects the remaining balance directly from the guest.
           </div>
-          <div style="margin-top:14px;padding:12px 14px;background:var(--surface2);border-radius:var(--r);font-size:.76rem;color:var(--text3);line-height:1.6;">
-            <strong style="color:var(--text2);">Commission:</strong> TheBearing collects 10% of the booking total as a deposit. The property collects the remaining 90% directly from the guest.
-          </div>
-          <div class="field-row cols-2" style="margin-top:12px;">
-            <div class="field">
-              <label>Commission rate</label>
-              <select class="input select" id="f-commission">
-                <option value="10">10% (standard)</option>
-                <option value="12">12%</option>
-                <option value="15">15%</option>
-                <option value="8">8% (negotiated)</option>
+          <div class="pe-grid-2" style="margin-top:14px;">
+            <div>
+              <label class="pe-label">Commission rate</label>
+              <select class="pe-input" id="f-commission" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option value="10">10% (standard)</option><option value="12">12%</option>
+                <option value="15">15%</option><option value="8">8% (negotiated)</option>
               </select>
             </div>
-            <div class="field">
-              <label>Cancellation policy</label>
-              <select class="input select" id="f-cancellation">
+            <div>
+              <label class="pe-label">Cancellation policy</label>
+              <select class="pe-input" id="f-cancel" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
                 <option>Free cancellation up to 30 days</option>
                 <option>Free cancellation up to 14 days</option>
-                <option>Free cancellation up to 7 days</option>
                 <option>Non-refundable</option>
-                <option>Custom — specify in notes</option>
               </select>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 6. PRIVATE ACCESS EXPERIENCE -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">6</div>
-            <div class="card-title">The Bearing Private Access</div>
+      <!-- 6. PRIVATE ACCESS -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">6</div>
+            <div class="pe-section-title">The Bearing Private Access</div>
           </div>
-          <span class="badge badge-gold">Exclusive · required</span>
+          <span class="badge badge-gold">Required</span>
         </div>
-        <div class="card-body">
-          <div style="padding:12px 14px;background:var(--gold-dim);border-radius:var(--r);border:1px solid rgba(200,133,63,.2);margin-bottom:14px;font-size:.78rem;color:var(--text2);line-height:1.6;">
+        <div class="pe-section-body">
+          <div class="pe-access-notice">
             Every property on TheBearing must include at least one exclusive experience — something a guest cannot book anywhere else. This is our core differentiator. Work with the property to define something real.
           </div>
-          <div class="field">
-            <label>Experience name <span style="color:var(--red);">*</span></label>
-            <input class="input" id="f-access-name" placeholder="e.g. Private sunrise at Edfu Temple" oninput="updateCompleteness()">
+          <div class="pe-field">
+            <label class="pe-label">Experience name<span class="pe-label-req">*</span></label>
+            <input class="pe-input" id="f-access-name" placeholder="e.g. Private sunrise at Edfu Temple" oninput="updateAll()">
           </div>
-          <div class="field">
-            <label>Description <span style="color:var(--red);">*</span></label>
-            <textarea class="input" id="f-access-desc" rows="3" style="resize:none;" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateCompleteness()"></textarea>
+          <div class="pe-field">
+            <label class="pe-label">Description<span class="pe-label-req">*</span></label>
+            <textarea class="pe-input pe-textarea" id="f-access-desc" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateAll()"></textarea>
           </div>
-          <div class="field">
-            <label>Photo URL <span style="color:var(--text3);font-weight:400;">(Cloudflare Images)</span></label>
+          <div class="pe-field">
+            <label class="pe-label">Photo URL<span class="pe-label-hint">(Cloudflare Images)</span></label>
             <div style="display:flex;gap:8px;">
-              <input class="input" id="f-access-photo" placeholder="https://imagedelivery.net/..." oninput="previewPhoto(this,'prev-access')" style="flex:1;">
-              <button class="btn btn-ghost btn-sm" onclick="testPhoto('f-access-photo')">Test</button>
+              <input class="pe-input" id="f-access-photo" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pa-prev')" style="flex:1;">
+              <button class="btn btn-ghost" onclick="testImg('f-access-photo')">Test</button>
             </div>
-            <div id="prev-access" style="margin-top:8px;height:80px;border-radius:var(--r);overflow:hidden;background:var(--surface3);display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>
+            <div class="pe-photo-preview" id="pa-prev" style="width:100%;height:80px;margin-top:8px;"><img alt=""></div>
           </div>
         </div>
       </div>
 
-      <!-- 7. CONTACT & OPERATIONS -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">7</div>
-            <div class="card-title">Contact & operations</div>
+      <!-- 7. CONTACT -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">7</div>
+            <div class="pe-section-title">Contact & operations</div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Primary contact name <span style="color:var(--red);">*</span></label>
-              <input class="input" id="f-contact-name" placeholder="General Manager name" oninput="updateCompleteness()">
+        <div class="pe-section-body">
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Primary contact name<span class="pe-label-req">*</span></label>
+              <input class="pe-input" id="f-cname" placeholder="General Manager name" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>Title / role</label>
-              <input class="input" id="f-contact-title" placeholder="e.g. General Manager">
-            </div>
-          </div>
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Email <span style="color:var(--red);">*</span></label>
-              <input class="input" id="f-contact-email" type="email" placeholder="gm@property.com" oninput="updateCompleteness()">
-            </div>
-            <div class="field">
-              <label>WhatsApp / phone</label>
-              <input class="input" id="f-contact-phone" placeholder="+1 (000) 000-0000">
+            <div>
+              <label class="pe-label">Title / role</label>
+              <input class="pe-input" id="f-ctitle" placeholder="e.g. General Manager">
             </div>
           </div>
-          <div class="field-row cols-2">
-            <div class="field">
-              <label>Property website</label>
-              <input class="input" id="f-website" placeholder="https://www.property.com">
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Email<span class="pe-label-req">*</span></label>
+              <input class="pe-input" id="f-cemail" type="email" placeholder="gm@property.com" oninput="updateAll()">
             </div>
-            <div class="field">
-              <label>iCal availability URL</label>
-              <input class="input" id="f-ical" placeholder="webcal://...">
+            <div>
+              <label class="pe-label">WhatsApp / phone</label>
+              <input class="pe-input" id="f-cphone" placeholder="+1 (000) 000-0000">
             </div>
           </div>
-          <div class="field">
-            <label>Internal notes <span style="color:var(--text3);font-weight:400;">(not shown publicly)</span></label>
-            <textarea class="input" id="f-notes" rows="3" style="resize:none;" placeholder="Relationship notes, commission negotiations, anything the team needs to know..."></textarea>
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Property website</label>
+              <input class="pe-input" id="f-website" placeholder="https://www.property.com">
+            </div>
+            <div>
+              <label class="pe-label">iCal availability URL</label>
+              <input class="pe-input" id="f-ical" placeholder="webcal://...">
+            </div>
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Internal notes<span class="pe-label-hint">(not shown publicly)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-notes" style="min-height:80px;" placeholder="Relationship notes, commission negotiations, anything the team needs to know..."></textarea>
           </div>
         </div>
       </div>
 
       <!-- 8. SEO -->
-      <div class="card">
-        <div class="card-header">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="width:22px;height:22px;border-radius:6px;background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--gold);">8</div>
-            <div class="card-title">SEO</div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">8</div>
+            <div class="pe-section-title">SEO</div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="field">
-            <label>Page URL slug</label>
-            <div style="display:flex;align-items:center;gap:0;">
-              <div style="padding:8px 12px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.78rem;color:var(--text3);white-space:nowrap;">thebearing.io/</div>
-              <input class="input" id="f-slug" placeholder="property-name" style="border-radius:0 var(--r) var(--r) 0;" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')">
+        <div class="pe-section-body">
+          <div class="pe-field">
+            <label class="pe-label">Page URL slug</label>
+            <div style="display:flex;align-items:center;">
+              <div style="padding:11px 13px;background:var(--surface2);border:1.5px solid var(--border2);border-right:none;border-radius:9px 0 0 9px;font-size:13px;color:var(--text3);white-space:nowrap;">thebearing.io/</div>
+              <input class="pe-input" id="f-slug" placeholder="property-name" style="border-radius:0 9px 9px 0;border-left-color:var(--border2);" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'-')">
             </div>
           </div>
-          <div class="field">
-            <label>Meta title <span style="color:var(--text3);font-weight:400;">(60 chars max)</span></label>
-            <input class="input" id="f-meta-title" placeholder="e.g. Singita Grumeti — Safari Lodge · Serengeti, Tanzania · TheBearing" oninput="countChars(this,'meta-title-count',60)">
-            <div id="meta-title-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          <div class="pe-field">
+            <label class="pe-label">Meta title<span class="pe-label-hint">(60 chars max)</span></label>
+            <input class="pe-input" id="f-meta-title" placeholder="e.g. Singita Grumeti — Safari Lodge · Serengeti · TheBearing" oninput="cc(this,'mt-count',60)">
+            <div id="mt-count" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
           </div>
-          <div class="field">
-            <label>Meta description <span style="color:var(--text3);font-weight:400;">(160 chars max)</span></label>
-            <textarea class="input" id="f-meta-desc" rows="2" style="resize:none;" placeholder="350,000 private acres in the Serengeti. Book Singita Grumeti through TheBearing for exclusive access and no booking fees." oninput="countChars(this,'meta-desc-count',160)"></textarea>
-            <div id="meta-desc-count" style="font-size:.68rem;color:var(--text3);margin-top:3px;"></div>
+          <div class="pe-field">
+            <label class="pe-label">Meta description<span class="pe-label-hint">(160 chars max)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-meta-desc" style="min-height:70px;" placeholder="350,000 private acres in the Serengeti..." oninput="cc(this,'md-count',160)"></textarea>
+            <div id="md-count" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
           </div>
         </div>
       </div>
 
-    </div>
+    </div><!-- end pe-form -->
 
-    <!-- RIGHT COLUMN — live preview card + publish checklist -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    <!-- RIGHT SIDEBAR -->
+    <div class="pe-sidebar fade-in-3">
 
-      <!-- Live card preview -->
-      <div class="card" style="position:sticky;top:68px;">
-        <div class="card-header"><div class="card-title">Card preview</div><span class="badge badge-neutral">Live preview</span></div>
-        <div style="margin:0 -1px -1px;border-radius:0 0 var(--r-lg) var(--r-lg);overflow:hidden;">
-          <div id="preview-card" style="background:var(--surface2);">
-            <!-- Card image -->
-            <div style="height:160px;position:relative;overflow:hidden;background:var(--surface3);">
-              <img id="preview-img" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="">
-              <div id="preview-img-placeholder" style="height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <div style="font-size:.68rem;color:var(--text3);">Add hero photo</div>
-              </div>
-              <div style="position:absolute;top:10px;left:10px;" id="preview-badge"></div>
+      <!-- Card preview -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left" style="gap:8px;">
+            <div class="pe-section-title" style="font-size:13px;">Card preview</div>
+          </div>
+          <span class="badge badge-neutral" style="font-size:11px;">Live</span>
+        </div>
+        <div style="margin:-1px;">
+          <div class="pe-preview-img">
+            <img id="prev-card-img" src="" style="width:100%;height:100%;object-fit:cover;display:none;" alt="">
+            <div id="prev-card-placeholder" class="pe-preview-img-placeholder">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <div style="font-size:11px;color:var(--text3);">Add hero photo</div>
             </div>
-            <!-- Card body -->
-            <div style="padding:14px;">
-              <div id="preview-region" style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;">Region · Type</div>
-              <div id="preview-name" style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:2px;">Property name</div>
-              <div id="preview-loc" style="font-size:.72rem;color:var(--text3);margin-bottom:8px;">Location</div>
-              <div id="preview-hook" style="font-size:.74rem;color:var(--text2);line-height:1.5;font-style:italic;margin-bottom:10px;">"Your hook line will appear here..."</div>
-              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;" id="preview-tags"></div>
-              <div style="display:flex;align-items:center;justify-content:space-between;">
-                <div id="preview-price" style="font-size:.8rem;color:var(--gold);font-weight:600;">From —</div>
-                <div style="display:flex;gap:6px;">
-                  <div style="padding:5px 10px;background:var(--surface3);border-radius:100px;font-size:.68rem;color:var(--text2);">Enquire</div>
-                  <div style="padding:5px 10px;background:var(--gold);border-radius:100px;font-size:.68rem;color:#fff;font-weight:600;">Book now</div>
-                </div>
+          </div>
+          <div class="pe-preview-body">
+            <div class="pe-preview-type" id="prev-type">Property type</div>
+            <div class="pe-preview-name" id="prev-name">Property name</div>
+            <div class="pe-preview-hook" id="prev-hook">"Your hook line will appear here..."</div>
+            <div id="prev-tags" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;"></div>
+            <div class="pe-preview-foot">
+              <div class="pe-preview-price" id="prev-price">From —</div>
+              <div class="pe-preview-btns">
+                <div class="pe-preview-btn-e">Enquire</div>
+                <div class="pe-preview-btn-b">Book now</div>
               </div>
             </div>
           </div>
@@ -777,71 +824,83 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
       </div>
 
       <!-- Publish checklist -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">Publish checklist</div></div>
-        <div class="card-body" style="padding:12px 16px;">
-          <div style="display:flex;flex-direction:column;gap:6px;" id="checklist">
-            <div class="check-item" id="chk-name" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Property name</span>
-            </div><div class="check-item" id="chk-type" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Property type</span>
-            </div><div class="check-item" id="chk-hook" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Hook line</span>
-            </div><div class="check-item" id="chk-hero" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Hero photo</span>
-            </div><div class="check-item" id="chk-desc" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Short description</span>
-            </div><div class="check-item" id="chk-access" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Private Access experience</span>
-            </div><div class="check-item" id="chk-contact" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">Contact details</span>
-            </div><div class="check-item" id="chk-rooms" style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;" class="chk-dot">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <span style="font-size:.76rem;color:var(--text3);">At least one room / price</span>
-            </div>
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left" style="gap:8px;">
+            <div class="pe-section-title" style="font-size:13px;">Publish checklist</div>
           </div>
-          <div class="divider" style="margin:10px 0;"></div>
-          <button class="btn btn-primary" style="width:100%;" id="publish-btn-2" onclick="publishProperty()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            Publish live
-          </button>
-          <div style="font-size:.68rem;color:var(--text3);text-align:center;margin-top:6px;line-height:1.6;">Publishing exports a JSON payload ready for your backend to create the property page.</div>
+        </div>
+        <div style="padding:12px 16px;">
+          <div id="checklist">
+          <div class="pe-chk-item" id="ci-name">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Property name</div>
+          </div>
+          <div class="pe-chk-item" id="ci-type">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Property type</div>
+          </div>
+          <div class="pe-chk-item" id="ci-hook">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Hook line</div>
+          </div>
+          <div class="pe-chk-item" id="ci-hero">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Hero photo</div>
+          </div>
+          <div class="pe-chk-item" id="ci-desc">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Short description</div>
+          </div>
+          <div class="pe-chk-item" id="ci-access">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Private Access</div>
+          </div>
+          <div class="pe-chk-item" id="ci-contact">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Contact details</div>
+          </div>
+          <div class="pe-chk-item" id="ci-rooms">
+            <div class="pe-chk-dot">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pe-chk-label">Room / pricing</div>
+          </div>
+          </div>
+          <div style="margin-top:12px;">
+            <button class="btn btn-primary" style="width:100%;padding:11px;" onclick="publishProperty()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              Publish live
+            </button>
+            <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.6;">Exports JSON payload ready for your backend.</div>
+          </div>
         </div>
       </div>
 
-      <!-- JSON export preview -->
-      <div class="card">
-        <div class="card-header"><div class="card-title">JSON export</div><button class="btn btn-ghost btn-sm" onclick="copyJSON()">Copy</button></div>
-        <div style="padding:12px;background:var(--bg);border-radius:0 0 var(--r-lg) var(--r-lg);">
-          <pre id="json-preview" style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);overflow:auto;max-height:200px;line-height:1.6;white-space:pre-wrap;">{
+      <!-- JSON export -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left" style="gap:8px;"><div class="pe-section-title" style="font-size:13px;">JSON export</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="copyJSON()">Copy</button>
+        </div>
+        <pre class="pe-json-pre" id="json-out">{
   "name": "",
-  "type": "",
   ...
 }</pre>
-        </div>
       </div>
 
     </div>
@@ -849,6 +908,10 @@ label{font-size:.74rem;font-weight:500;color:var(--text2);display:block;margin-b
 </div>
 
 <script>
+var roomCount = 0;
+var photoCount = 8;
+
+
 var roomCount = 0;
 var galleryCount = 8;
 
@@ -858,14 +921,14 @@ function addRoom() {
   var rc = document.getElementById('rooms-container');
   var div = document.createElement('div');
   div.id = 'room-' + roomCount;
-  div.style.cssText = 'background:var(--surface2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border);position:relative;';
+  div.style.cssText = 'background:var(--surface2);border-radius:var(--r);padding:14px 18px;border:1px solid var(--border);position:relative;';
   div.innerHTML = '<div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:flex-end;">' +
-    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Room / cabin type</label><input class="input" id="room-name-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updatePreview();updateJSON()"></div>' +
-    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Price per person</label><div style="display:flex;align-items:center;gap:0;"><div style="padding:8px 10px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.75rem;color:var(--text3);">$</div><input class="input" type="number" id="room-price-'+roomCount+'" placeholder="0" style="border-radius:0 var(--r) var(--r) 0;" oninput="updatePreview();updateJSON();updateCompleteness()"></div></div>' +
-    '<div><label style="font-size:.7rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Per</label><select class="input select" id="room-per-'+roomCount+'"><option>night</option><option>person</option><option>voyage</option><option>week</option></select></div>' +
+    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Room / cabin type</label><input class="input" id="room-name-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updatePreview();updateJSON()"></div>' +
+    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Price per person</label><div style="display:flex;align-items:center;gap:0;"><div style="padding:8px 10px;background:var(--surface3);border:1px solid var(--border2);border-right:none;border-radius:var(--r) 0 0 var(--r);font-size:.75rem;color:var(--text3);">$</div><input class="input" type="number" id="room-price-'+roomCount+'" placeholder="0" style="border-radius:0 var(--r) var(--r) 0;" oninput="updatePreview();updateJSON();updateCompleteness()"></div></div>' +
+    '<div><label style="font-size:.9rem;font-weight:500;color:var(--text2);display:block;margin-bottom:4px;">Per</label><select class="input select" id="room-per-'+roomCount+'"><option>night</option><option>person</option><option>voyage</option><option>week</option></select></div>' +
     '<button onclick="removeRoom('+roomCount+')" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>' +
     '</div>' +
-    '<div style="margin-top:8px;"><input class="input" id="room-desc-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="font-size:.76rem;"></div>';
+    '<div style="margin-top:8px;"><input class="input" id="room-desc-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="font-size:.86rem;"></div>';
   rc.appendChild(div);
   updateCompleteness();
   updateJSON();
@@ -922,7 +985,7 @@ function addGalleryField() {
   var div = document.createElement('div');
   div.style.cssText = 'display:flex;gap:8px;align-items:center;';
   var n = galleryCount;
-  div.innerHTML = '<div style="width:22px;text-align:center;font-size:.68rem;color:var(--text3);">'+n+'</div>' +
+  div.innerHTML = '<div style="width:22px;text-align:center;font-size:.88rem;color:var(--text3);">'+n+'</div>' +
     '<input class="input" id="f-photo-'+n+'" placeholder="https://imagedelivery.net/..." style="flex:1;" oninput="previewPhoto(this,&apos;prev-'+n+'&apos;);updateJSON()">' +
     '<div id="prev-'+n+'" style="width:48px;height:36px;border-radius:5px;overflow:hidden;background:var(--surface3);flex-shrink:0;display:none;"><img style="width:100%;height:100%;object-fit:cover;" alt=""></div>';
   container.appendChild(div);
@@ -1039,11 +1102,11 @@ function updatePreview() {
   document.getElementById('preview-price').textContent = priceText;
   
   var tagsEl = document.getElementById('preview-tags');
-  tagsEl.innerHTML = tags.slice(0,4).map(t => '<span style="font-size:.6rem;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
+  tagsEl.innerHTML = tags.slice(0,4).map(t => '<span style="font-size:.9rem;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
   
   var tag = document.getElementById('f-tag').value;
   var badgeEl = document.getElementById('preview-badge');
-  badgeEl.innerHTML = tag ? '<span style="font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);background:rgba(200,133,63,.85);color:#fff;">'+tag+'</span>' : '';
+  badgeEl.innerHTML = tag ? '<span style="font-size:.88rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);background:rgba(200,133,63,.85);color:#fff;">'+tag+'</span>' : '';
 }
 
 // ── JSON EXPORT ───────────────────────────────────────────────────
@@ -1164,21 +1227,234 @@ function publishProperty() {
   
   // Show status bar
   var bar = document.getElementById('status-bar');
-  bar.style.cssText = 'padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.82rem;background:var(--em-dim);border:1px solid rgba(16,185,129,.2);color:var(--emerald);';
+  bar.style.cssText = 'padding:12px 16px;border-radius:var(--r);margin-bottom:20px;display:flex;align-items:center;gap:10px;font-size:.92rem;background:var(--em-dim);border:1px solid rgba(16,185,129,.2);color:var(--emerald);';
   bar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>' + name + '</strong> is ready to publish. JSON payload copied to clipboard — pass to your backend endpoint to create the live page.';
 }
 
 // Init — add first room
 addRoom();
 updateCompleteness();
+
+
+// Override/add the new field IDs to match new HTML
+function getFieldVal(id) {
+  var el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+var REQUIRED = [
+  {id:'f-name',    key:'name',    label:'Property name'},
+  {id:'f-type',    key:'type',    label:'Property type'},
+  {id:'f-hook',    key:'hook',    label:'Hook line'},
+  {id:'f-hero',    key:'hero',    label:'Hero photo'},
+  {id:'f-desc-short', key:'desc', label:'Short description'},
+  {id:'f-access-name', key:'access', label:'Private Access'},
+  {id:'f-cname',   key:'contact', label:'Contact details'},
+];
+
+function updateAll() {
+  updateCompleteness();
+  updatePreviewCard();
+  updateJSON();
+  // hook counter
+  var hook = getFieldVal('f-hook');
+  var hc = document.getElementById('hook-count');
+  if(hc) hc.textContent = hook.length + ' chars' + (hook.length < 60 ? ' · aim for 60–120' : hook.length > 150 ? ' · getting long' : ' ✓');
+}
+
+function updateCompleteness() {
+  var filled = 0;
+  REQUIRED.forEach(function(f) {
+    var val = getFieldVal(f.id);
+    var hasVal = val.length > 0;
+    var ci = document.getElementById('ci-'+f.key);
+    if (ci) {
+      var dot = ci.querySelector('.pe-chk-dot');
+      var svg = ci.querySelector('svg');
+      var lbl = ci.querySelector('.pe-chk-label');
+      if (hasVal) {
+        dot.style.borderColor = 'var(--emerald)'; dot.style.background = 'var(--em-dim)';
+        svg.style.opacity = '1'; ci.classList.add('done'); lbl.style.color = 'var(--text)';
+      } else {
+        dot.style.borderColor = 'var(--border2)'; dot.style.background = 'transparent';
+        svg.style.opacity = '0'; ci.classList.remove('done'); lbl.style.color = 'var(--text3)';
+      }
+      if (hasVal) filled++;
+    }
+  });
+  var hasRoom = roomCount > 0 && document.getElementById('rn-1') && document.getElementById('rn-1').value;
+  var ci = document.getElementById('ci-rooms');
+  if (ci) {
+    var dot = ci.querySelector('.pe-chk-dot'); var svg = ci.querySelector('svg'); var lbl = ci.querySelector('.pe-chk-label');
+    if (hasRoom) { dot.style.borderColor='var(--emerald)';dot.style.background='var(--em-dim)';svg.style.opacity='1';ci.classList.add('done');lbl.style.color='var(--text)';filled++; }
+    else { dot.style.borderColor='var(--border2)';dot.style.background='transparent';svg.style.opacity='0';ci.classList.remove('done');lbl.style.color='var(--text3)'; }
+  }
+  var total = REQUIRED.length + 1;
+  var pct = Math.round((filled/total)*100);
+  var bar = document.getElementById('comp-bar'); var pctEl = document.getElementById('comp-pct');
+  if (bar) bar.style.width = pct + '%';
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+function updatePreviewCard() {
+  var name = getFieldVal('f-name') || 'Property name';
+  var type = getFieldVal('f-type') || 'Property type';
+  var country = getFieldVal('f-country');
+  var region = getFieldVal('f-region');
+  var hook = getFieldVal('f-hook') || 'Your hook line will appear here...';
+  var tag = getFieldVal('f-tag');
+  var loc = [region, country].filter(Boolean).join(' · ');
+  document.getElementById('prev-name').textContent = name;
+  document.getElementById('prev-type').textContent = (loc || type);
+  document.getElementById('prev-hook').textContent = '"' + hook.replace(/^["']|["']$/g,'') + '"';
+  // Price from first room
+  var priceText = 'From —';
+  for (var i=1;i<=roomCount;i++) {
+    var pe = document.getElementById('rp-'+i);
+    var pu = document.getElementById('ru-'+i);
+    if(pe && pe.value) { priceText = 'From $'+parseInt(pe.value).toLocaleString()+' / '+(pu?pu.value:'night'); break; }
+  }
+  document.getElementById('prev-price').textContent = priceText;
+  // Tags
+  var tags = Array.from(document.querySelectorAll('.pe-tag.on')).map(t=>t.textContent);
+  var tEl = document.getElementById('prev-tags');
+  tEl.innerHTML = tags.slice(0,4).map(t=>'<span style="font-size:10px;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
+  // Badge
+  if (tag) {
+    var existing = document.querySelector('.pe-preview-img .prev-badge');
+    if (!existing) { var b=document.createElement('div'); b.className='prev-badge'; b.style.cssText='position:absolute;top:10px;left:10px;font-size:9px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:100px;background:rgba(193,127,62,.85);color:#fff;'; document.querySelector('.pe-preview-img').appendChild(b); }
+    document.querySelector('.prev-badge').textContent = tag;
+  }
+}
+
+function prevHero(input) {
+  var url = input.value.trim();
+  var prev = document.getElementById('prev-hero');
+  var img = document.getElementById('prev-card-img');
+  var ph = document.getElementById('prev-card-placeholder');
+  if(url) {
+    prev.style.display='block'; prev.querySelector('img').src=url;
+    if(img){ img.src=url; img.style.display='block'; }
+    if(ph) ph.style.display='none';
+  } else {
+    prev.style.display='none';
+    if(img) img.style.display='none';
+    if(ph) ph.style.display='flex';
+  }
+  updateJSON();
+}
+
+function prevGallery(input, prevId) {
+  var url = input.value.trim();
+  var prev = document.getElementById(prevId);
+  if(!prev) return;
+  if(url){ prev.style.display='block'; prev.querySelector('img').src=url; }
+  else prev.style.display='none';
+  updateJSON();
+}
+
+function testImg(id) {
+  var url = document.getElementById(id).value.trim();
+  if(url) window.open(url,'_blank');
+  else showToast('Enter a URL first','warn');
+}
+
+function toggleTag(btn) {
+  btn.classList.toggle('on');
+  updateAll();
+}
+
+function addPhoto() {
+  photoCount++;
+  var wrap = document.getElementById('gallery-wrap');
+  var div = document.createElement('div');
+  div.className = 'pe-photo-row';
+  div.innerHTML = '<div class="pe-photo-num">'+photoCount+'</div><input class="pe-input" id="f-g'+photoCount+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg'+photoCount+'')" style="flex:1;"><div class="pe-photo-preview" id="pg'+photoCount+'"><img alt=""></div>';
+  wrap.appendChild(div);
+}
+
+function addRoom() {
+  roomCount++;
+  var wrap = document.getElementById('rooms-wrap');
+  var div = document.createElement('div');
+  div.className = 'pe-room-row';
+  div.id = 'room-'+roomCount;
+  div.innerHTML = '<div class="pe-room-grid"><div><label class="pe-label">Room / cabin type</label><input class="pe-input" id="rn-'+roomCount+'" placeholder="e.g. Deluxe Suite" oninput="updateAll()"></div><div><label class="pe-label">Price</label><div style="display:flex;"><div style="padding:11px 11px;background:var(--surface2);border:1.5px solid var(--border2);border-right:none;border-radius:9px 0 0 9px;font-size:13px;color:var(--text3);">$</div><input class="pe-input" type="number" id="rp-'+roomCount+'" placeholder="0" style="border-radius:0 9px 9px 0;border-left:none;" oninput="updateAll()"></div></div><div><label class="pe-label">Per</label><select class="pe-input" id="ru-'+roomCount+'" style="appearance:none;"><option>night</option><option>person</option><option>voyage</option></select></div><button onclick="document.getElementById('room-'+roomCount+'').remove();updateAll();" style="width:28px;height:28px;border-radius:50%;background:var(--red-dim);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:22px;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><input class="pe-input" id="rd-'+roomCount+'" placeholder="Brief description — size, view, standout feature..." style="margin-top:8px;font-size:13px;">';
+  wrap.appendChild(div);
+  updateAll();
+}
+
+function wc(el, id) {
+  var words = el.value.trim().split(/\s+/).filter(w=>w).length;
+  var out = document.getElementById(id);
+  if(out) out.textContent = words + ' words' + (words < 30 ? ' · aim for 50+' : ' ✓');
+}
+
+function cc(el, id, max) {
+  var len = el.value.length;
+  var out = document.getElementById(id);
+  if(out){ out.textContent=len+' / '+max+' chars'; out.style.color=len>max?'var(--red)':len>max*.9?'var(--amber)':'var(--text3)'; }
+}
+
+function updateJSON() {
+  var photos = [];
+  for(var i=1;i<=photoCount;i++){ var e=document.getElementById('f-g'+i); if(e&&e.value.trim()) photos.push(e.value.trim()); }
+  var rooms = [];
+  for(var i=1;i<=roomCount;i++){ var n=document.getElementById('rn-'+i),p=document.getElementById('rp-'+i),u=document.getElementById('ru-'+i),d=document.getElementById('rd-'+i); if(n&&n.value) rooms.push({name:n.value,price:parseInt(p&&p.value)||0,per:u?u.value:'night',description:d?d.value:''}); }
+  var json = {
+    name:getFieldVal('f-name'),slug:getFieldVal('f-slug'),type:getFieldVal('f-type'),
+    status:getFieldVal('f-status'),country:getFieldVal('f-country'),region:getFieldVal('f-region'),
+    airport:getFieldVal('f-airport'),tag:getFieldVal('f-tag'),hook:getFieldVal('f-hook'),
+    description_short:getFieldVal('f-desc-short'),description_long:getFieldVal('f-desc-long'),
+    verdict:getFieldVal('f-verdict'),
+    photos:{hero:getFieldVal('f-hero'),gallery:photos},
+    details:{total_rooms:getFieldVal('f-rcount'),max_guests:getFieldVal('f-maxg'),year:getFieldVal('f-year'),awards:getFieldVal('f-awards'),season:getFieldVal('f-season'),getting_there:getFieldVal('f-getting-there'),tags:Array.from(document.querySelectorAll('.pe-tag.on')).map(t=>t.textContent)},
+    rooms:rooms,commission_rate:getFieldVal('f-commission'),cancellation:getFieldVal('f-cancel'),
+    private_access:{name:getFieldVal('f-access-name'),description:getFieldVal('f-access-desc'),photo:getFieldVal('f-access-photo')},
+    contact:{name:getFieldVal('f-cname'),title:getFieldVal('f-ctitle'),email:getFieldVal('f-cemail'),phone:getFieldVal('f-cphone'),website:getFieldVal('f-website'),ical:getFieldVal('f-ical')},
+    seo:{meta_title:getFieldVal('f-meta-title'),meta_description:getFieldVal('f-meta-desc')},
+    notes:getFieldVal('f-notes'),created_at:new Date().toISOString()
+  };
+  var el = document.getElementById('json-out');
+  if(el) el.textContent = JSON.stringify(json, null, 2);
+}
+
+function copyJSON() {
+  var el = document.getElementById('json-out');
+  if(el) navigator.clipboard.writeText(el.textContent).then(()=>showToast('JSON copied','success'));
+}
+
+function saveDraft() {
+  showToast('Draft saved','success');
+}
+
+function previewProperty() {
+  showToast('Preview: connect backend to render live','warn');
+}
+
+function publishProperty() {
+  var name = getFieldVal('f-name'), hero = getFieldVal('f-hero'), email = getFieldVal('f-cemail');
+  if(!name||!hero||!email){ showToast('Complete required fields before publishing','warn'); return; }
+  var el = document.getElementById('json-out');
+  if(el) navigator.clipboard.writeText(el.textContent).then(()=>{
+    var bar = document.getElementById('pe-status');
+    bar.style.cssText='padding:14px 18px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;background:var(--em-dim);border:1px solid rgba(5,150,105,.2);color:var(--em-text);';
+    bar.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>'+name+'</strong> is ready to publish. JSON copied — send to your backend.';
+    showToast('Published! JSON copied to clipboard','success');
+  });
+}
+
+// Init
+addRoom();
+updateAll();
 </script>
 
 <script>
 function showToast(msg, type) {
   var t = document.createElement('div');
   t.className = 'toast';
-  var color = type==='success' ? '#10b981' : type==='warn' ? '#f59e0b' : '#f87171';
-  t.innerHTML = '<div class="toast-icon" style="background:'+color+'20"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>'+msg+'</span>';
+  var color = type==='success' ? '#059669' : type==='warn' ? '#d97706' : '#dc2626';
+  t.innerHTML = '<div style="width:18px;height:18px;border-radius:50%;background:'+color+'30;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>'+msg+'</span>';
   document.body.appendChild(t);
   setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
 }
