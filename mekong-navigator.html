@@ -104,25 +104,25 @@ button{font-family:inherit;cursor:pointer;}
 <body>
 
 <nav class="nav">
-  <a class="nav-logo-wrap" href="index.html">
+  <a class="nav-logo-wrap" href="/index.html">
     <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
     <div class="nav-tagline">Pointing you to the extraordinary.</div>
   </a>
   <div class="nav-links-desktop">
-    <a class="nav-link-d" href="hotels.html" style="font-weight:600;color:var(--ink);">Hotels</a>
-    <a class="nav-link-d" href="cruises.html">Cruises</a>
-    <a class="nav-link-d" href="villas.html">Villas</a>
-    <a class="nav-link-d" href="collections.html">Collections</a>
-    <a class="nav-link-d nav-vibe" href="vibe-search.html">✦ Vibe Search</a>
-    <a class="nav-link-d" href="how-we-choose.html">How we choose</a>
-    <a class="nav-link-d" href="journal.html">Journal</a>
-    <a class="nav-link-d featured" href="the-envoy.html">The Envoy</a>
+    <a class="nav-link-d" href="/hotels.html" style="font-weight:600;color:var(--ink);">Hotels</a>
+    <a class="nav-link-d" href="/cruises.html">Cruises</a>
+    <a class="nav-link-d" href="/villas.html">Villas</a>
+    <a class="nav-link-d" href="/collections.html">Collections</a>
+    <a class="nav-link-d nav-vibe" href="/vibe-search.html">✦ Vibe Search</a>
+    <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
+    <a class="nav-link-d" href="/journal.html">Journal</a>
+    <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
   </div>
   <div class="nav-right">
-    <button class="nav-btn" onclick="window.location='search.html'" title="Search">
+    <button class="nav-btn" onclick="window.location='/search.html'" title="Search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
     </button>
-    <button class="nav-btn" onclick="window.location='my-account.html'" title="Account">
+    <button class="nav-btn" onclick="window.location='/my-account.html'" title="Account">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </button>
   </div>
@@ -238,7 +238,7 @@ button{font-family:inherit;cursor:pointer;}
 
       <!-- Back to listing -->
       <div style="text-align:center;">
-        <a href="hotels.html" style="font-size:.75rem;color:var(--stone);display:inline-flex;align-items:center;gap:5px;">
+        <a href="/hotels.html" style="font-size:.75rem;color:var(--stone);display:inline-flex;align-items:center;gap:5px;">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
           Back to all properties
         </a>
@@ -1078,7 +1078,7 @@ function tcSearchFromInput(inputId) {
     if(!h||h[0]==='#'||h.indexOf('mailto:')===0)return;
     if(h.indexOf('http')===0||h.indexOf('//')===0)return;
     var n=f(h);
-    if(n&&V.indexOf(n)===-1){e.preventDefault();window.location='404.html';}
+    if(n&&V.indexOf(n)===-1){e.preventDefault();window.location='/404.html';}
   });
 })();
 </script>
