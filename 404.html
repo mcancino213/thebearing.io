@@ -2,643 +2,85 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lost at Sea — The Bearing</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Page not found — The Bearing</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
-    --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
-    --terra:#b05830;--terra-d:#8c4422;
-    --gold:#9a7230;--sea:#2e6a8a;
-  }
 
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;}
-  body{
-    font-family:'Geist',sans-serif;
-    background:var(--ink);
-    color:#fff;
-    overflow:hidden;
-    -webkit-font-smoothing:antialiased;
-  }
+:root {
+  --ink:#1a1208; --bark:#5c4a2a; --stone:#8a7660; --mist:#b5a898;
+  --linen:#faf7f1; --cream:#f5f0e8; --sand:#ede5d8; --border:#ddd5c8;
+  --border-hi:#c8bfb0; --terra:#b05830; --terra-d:#8a4020; --terra-dim:rgba(176,88,48,.08);
+  --gold:#c8972a; --nav-h:64px;
+  --shadow-sm:0 1px 3px rgba(26,18,8,.06);
+  --shadow-md:0 4px 16px rgba(26,18,8,.1);
+  --shadow-lg:0 12px 40px rgba(26,18,8,.14);
+}
 
-  /* ── STARS ── */
-  .stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
-  .star{
-    position:absolute;border-radius:50%;
-    background:#fff;animation:twinkle var(--d) ease-in-out infinite;
-    animation-delay:var(--delay);
-  }
-  @keyframes twinkle{
-    0%,100%{opacity:var(--min);transform:scale(1);}
-    50%{opacity:1;transform:scale(1.4);}
-  }
 
-  /* ── HORIZON ── */
-  .horizon{
-    position:fixed;bottom:0;left:0;right:0;height:36vh;
-    background:linear-gradient(to bottom,#0d1a2a 0%,#0a2540 40%,#0d3558 70%,#0f4070 100%);
-    z-index:1;overflow:hidden;
-  }
-  .horizon::before{
-    content:'';position:absolute;top:-1px;left:-5%;right:-5%;height:3px;
-    background:linear-gradient(90deg,transparent,rgba(255,200,100,.15),rgba(255,180,60,.35),rgba(255,200,100,.15),transparent);
-    box-shadow:0 0 40px 8px rgba(255,170,50,.1);
-  }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{overflow-x:hidden;scroll-behavior:smooth;}
+body{font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;background:var(--linen);color:var(--ink);-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+img{display:block;max-width:100%;}
 
-  /* ── WATER ── */
-  .water{position:absolute;bottom:0;left:0;right:0;height:70%;overflow:hidden;}
-  .wave{
-    position:absolute;left:-5%;right:-5%;height:60px;
-    border-radius:50%;opacity:.18;
-    animation:waveMove var(--ws) ease-in-out infinite;
-    animation-delay:var(--wd);
-  }
-  @keyframes waveMove{
-    0%,100%{transform:translateX(0) translateY(0);}
-    25%{transform:translateX(2%) translateY(-6px);}
-    75%{transform:translateX(-2%) translateY(4px);}
-  }
 
-  /* ── MOON ── */
-  .moon{
-    position:fixed;top:12vh;right:14vw;z-index:2;
-    width:80px;height:80px;border-radius:50%;
-    background:radial-gradient(circle at 35% 35%,#fff8e8,#f0d090 50%,#c8a040 100%);
-    box-shadow:0 0 0 1px rgba(240,200,80,.3),0 0 40px 8px rgba(240,200,80,.15),0 0 100px 30px rgba(240,180,40,.06);
-    animation:moonFloat 8s ease-in-out infinite;
-  }
-  @keyframes moonFloat{
-    0%,100%{transform:translateY(0);}
-    50%{transform:translateY(-8px);}
-  }
-  .moon-path{
-    position:fixed;top:calc(12vh + 40px);right:calc(14vw + 40px);z-index:1;
-    width:2px;height:30vh;
-    background:linear-gradient(to bottom,rgba(240,200,80,.25),transparent);
-    transform-origin:top center;transform:rotate(8deg);
-    animation:moonFloat 8s ease-in-out infinite;
-  }
-
-  /* ── BOAT ── */
-  .boat-wrap{
-    position:fixed;bottom:22vh;left:50%;transform:translateX(-50%);
-    z-index:10;animation:boatRock 5s ease-in-out infinite;
-    transform-origin:bottom center;
-  }
-  @keyframes boatRock{
-    0%,100%{transform:translateX(-50%) rotate(-1.5deg) translateY(0);}
-    25%{transform:translateX(-50%) rotate(1deg) translateY(-4px);}
-    50%{transform:translateX(-50%) rotate(-0.5deg) translateY(-2px);}
-    75%{transform:translateX(-50%) rotate(1.5deg) translateY(-5px);}
-  }
-
-  /* ── CONTENT ── */
-  .content{
-    position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;
-    display:flex;flex-direction:column;align-items:center;
-    justify-content:space-between;
-    padding:5vh 20px 4vh;text-align:center;
-    pointer-events:none;
-  }
-  .content-sky{display:flex;flex-direction:column;align-items:center;pointer-events:auto;}
-  .content-below{display:flex;flex-direction:column;align-items:center;pointer-events:auto;}
-
-  .tc-logo{
-    font-family:'Instrument Serif',serif;font-size:1.1rem;
-    color:rgba(255,255,255,.5);letter-spacing:.02em;
-    margin-bottom:6vh;animation:fadeUp .8s .1s both;
-  }
-  .tc-logo .dot{color:var(--terra);font-family:'Geist',sans-serif;font-size:.78em;}
-
-  .error-num{
-    font-family:'Instrument Serif',serif;
-    font-size:clamp(7rem,18vw,14rem);
-    line-height:.9;color:transparent;
-    background:linear-gradient(160deg,rgba(255,255,255,.9) 0%,rgba(255,200,100,.7) 40%,rgba(176,88,48,.5) 100%);
-    -webkit-background-clip:text;background-clip:text;
-    animation:fadeUp .7s .2s both;
-    letter-spacing:-.02em;
-    filter:drop-shadow(0 4px 32px rgba(240,180,60,.2));
-  }
-
-  .tagline{
-    font-family:'Instrument Serif',serif;font-style:italic;
-    font-size:clamp(1.1rem,3vw,1.6rem);
-    color:rgba(255,255,255,.85);
-    margin-top:-.5rem;margin-bottom:1rem;
-    animation:fadeUp .7s .35s both;
-  }
-
-  .subtext{
-    font-size:.88rem;color:rgba(255,255,255,.45);
-    line-height:1.7;max-width:480px;
-    animation:fadeUp .7s .45s both;
-    padding:0 20px;
-  }
-  .subtext em{color:rgba(255,200,100,.7);font-style:normal;}
-
-  .divider{
-    width:40px;height:1px;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
-    margin:20px auto;animation:fadeUp .7s .5s both;
-  }
-
-  .suggestions{
-    display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
-    margin-top:4px;padding:0 20px;
-    animation:fadeUp .7s .6s both;
-  }
-  .sug-pill{
-    padding:6px 14px;border-radius:100px;font-size:.74rem;font-weight:500;
-    border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.55);
-    background:rgba(255,255,255,.04);cursor:pointer;
-    transition:all .2s;text-decoration:none;
-  }
-  .sug-pill:hover{border-color:rgba(255,200,100,.4);color:rgba(255,200,100,.9);background:rgba(255,200,100,.06);}
-
-  .home-btn{
-    margin-top:22px;
-    padding:13px 36px;
-    background:linear-gradient(135deg,var(--terra),var(--terra-d));
-    color:#fff;border:none;border-radius:100px;
-    font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;
-    cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;
-    box-shadow:0 4px 24px rgba(176,88,48,.35);
-    transition:all .2s;animation:fadeUp .7s .7s both;
-    position:relative;overflow:hidden;
-  }
-  .home-btn::before{
-    content:'';position:absolute;inset:0;
-    background:linear-gradient(135deg,rgba(255,255,255,.15),transparent);
-    opacity:0;transition:opacity .2s;
-  }
-  .home-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(176,88,48,.45);}
-  .home-btn:hover::before{opacity:1;}
-
-  .compass{
-    position:fixed;bottom:3vh;right:3vw;z-index:20;
-    width:52px;height:52px;opacity:.25;
-    animation:compassSpin 20s linear infinite;
-  }
-  @keyframes compassSpin{to{transform:rotate(360deg);}}
-
-  @keyframes fadeUp{
-    from{opacity:0;transform:translateY(18px);}
-    to{opacity:1;transform:translateY(0);}
-  }
-
-  /* Shooting star */
-  .shoot{
-    position:fixed;top:8vh;left:20vw;z-index:2;
-    width:2px;height:2px;border-radius:50%;background:#fff;
-    box-shadow:0 0 4px 1px rgba(255,255,255,.8);
-    animation:shoot 6s 2s ease-in infinite;
-  }
-  @keyframes shoot{
-    0%{transform:translate(0,0) rotate(35deg);opacity:1;}
-    5%{transform:translate(140px,80px) rotate(35deg);opacity:0;}
-    6%,100%{transform:translate(-10px,-5px);opacity:0;}
-  }
-  .shoot::after{
-    content:'';position:absolute;right:2px;top:0;
-    width:60px;height:1px;
-    background:linear-gradient(to left,rgba(255,255,255,.8),transparent);
-    transform:rotate(0deg);transform-origin:right center;
-  }
-
-  /* The Envoy */
-  .ci-fab{position:fixed;bottom:28px;right:24px;z-index:300;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 13px;background:var(--ink,#1e1810);border-radius:100px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:transform .15s,opacity .15s,right .38s cubic-bezier(.32,.72,0,1);}
-  .ci-fab.drawer-open{right:calc(25vw + 28px);}
-  .ci-fab:hover{transform:translateY(-2px);}
-  .ci-fab:active{transform:scale(.97);}
-  .ci-fab-pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;position:relative;}
-  .ci-fab-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(74,222,128,.3);animation:cipulse 2s ease-in-out infinite;}
-  @keyframes cipulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:0;}}
-  .ci-fab-txt{display:flex;flex-direction:column;}
-  .ci-fab-label{font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;line-height:1.2;}
-  .ci-fab-sub{font-size:.6rem;color:rgba(255,255,255,.45);white-space:nowrap;}
-
-  /* Drawer */
-  .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#faf7f1;border-left:1px solid rgba(0,0,0,.08);box-shadow:-8px 0 40px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);}
-  .ci-drawer.open{transform:translateX(0);}
-
-  /* Page push */
-  body.ci-open{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
-  @media(min-width:768px){
-    body.ci-open{margin-right:clamp(320px,25vw,480px);}
-    .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
-  }
-  /* Mobile — just slide over, no reflow */
-  @media(max-width:767px){
-    .ci-drawer{width:88vw;min-width:0;max-width:400px;}
-    .ci-fab.drawer-open{right:calc(88vw + 12px);}
-  }
-
-  /* Drawer header */
-  .ci-head{padding:16px 18px 12px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;background:linear-gradient(135deg,#1e1810,#2e200c);}
-  .ci-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .ci-avatar svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
-  .ci-head-txt{flex:1;}
-  .ci-name{font-size:.84rem;font-weight:500;color:#fff;font-family:'Geist',sans-serif;}
-  .ci-status{font-size:.64rem;color:rgba(120,220,140,.85);display:flex;align-items:center;gap:4px;margin-top:2px;}
-  .ci-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .15s;}
-
-  /* ── CI drawer CSS reset — prevent page styles bleeding in ── */
-  .ci-drawer *{box-sizing:border-box;}
-  .ci-drawer p{margin:0;padding:0;background:none!important;border:none!important;border-radius:0!important;font-size:.8rem;line-height:1.58;color:inherit;font-weight:400;display:block;}
-  .ci-drawer .ci-msg.ai p{color:#1e1810;}
-  .ci-drawer .ci-msg.user p{color:#fff;}
-  .ci-drawer input,.ci-drawer button,.ci-drawer div{box-sizing:border-box;}
 </style>
 </head>
 <body>
-<nav class="nav">
-  <a class="nav-logo-wrap" href="/index.html">
-    <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
-    <div class="nav-tagline">Pointing you to the extraordinary.</div>
-  </a>
-  <div class="nav-links-desktop">
-    <a class="nav-link-d" href="/hotels.html">Hotels</a>
-    <a class="nav-link-d" href="/cruises.html">Cruises</a>
-    <a class="nav-link-d" href="/villas.html">Villas</a>
-    <a class="nav-link-d" href="/collections.html" style="font-weight:600;color:var(--ink);">Collections</a>
-    <a class="nav-link-d nav-vibe" href="/vibe-search.html">✦ Vibe Search</a>
-    <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
-    <a class="nav-link-d" href="/journal.html">Journal</a>
-    <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
-  </div>
-  <div class="nav-right">
-    <button class="nav-btn" onclick="window.location='/search.html'" title="Search">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-    </button>
-    <button class="nav-btn" onclick="window.location='/my-account.html'" title="Account">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    </button>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:200;height:var(--nav-h);display:flex;align-items:center;justify-content:space-between;padding:0 36px;background:rgba(250,247,241,.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);">
+  <a href="index.html" style="font-family:'Instrument Serif',serif;font-size:19px;color:var(--ink);letter-spacing:-.01em;">The <em style="color:var(--terra);font-style:italic;">Bearing</em></a>
+  <div style="display:flex;align-items:center;gap:28px;"><a href="hotels.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">Hotels</a><a href="cruises.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">Cruises</a><a href="villas.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">Villas</a><a href="collections.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">Collections</a><a href="journal.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">Journal</a><a href="how-we-choose.html" style="font-size:14px;color:var(--stone);font-weight:400;transition:color .15s;" onmouseover="this.style.color='var(--ink)'" onmouseout="this.style.color='var(--stone)'">How we choose</a></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="vibe-search.html" style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--bark);padding:7px 14px;border:1px solid var(--border-hi);border-radius:100px;transition:all .15s;" onmouseover="this.style.background='var(--sand)'" onmouseout="this.style.background='transparent'">✦ Vibe search</a>
+    <a href="my-account.html" style="width:34px;height:34px;border-radius:50%;background:var(--sand);border:1px solid var(--border-hi);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--bark);">S</a>
   </div>
 </nav>
-
-<!-- Stars -->
-<div class="stars" id="stars"></div>
-
-<!-- Shooting star -->
-<div class="shoot"></div>
-
-<!-- Moon -->
-<div class="moon"></div>
-<div class="moon-path"></div>
-
-<!-- Horizon + Water -->
-<div class="horizon">
-  <div class="water">
-    <div class="wave" style="bottom:55%;background:radial-gradient(ellipse,#1a5a8a 0%,transparent 70%);width:140%;--ws:7s;--wd:0s;"></div>
-    <div class="wave" style="bottom:40%;background:radial-gradient(ellipse,#1a4a7a 0%,transparent 70%);width:120%;--ws:9s;--wd:-2s;"></div>
-    <div class="wave" style="bottom:25%;background:radial-gradient(ellipse,#15406a 0%,transparent 70%);width:150%;--ws:11s;--wd:-4s;"></div>
-    <div class="wave" style="bottom:10%;background:radial-gradient(ellipse,#0f3560 0%,transparent 70%);width:130%;--ws:8s;--wd:-1s;"></div>
-    <!-- Moon reflection -->
-    <div style="position:absolute;bottom:0;right:18vw;width:4px;height:65%;background:linear-gradient(to bottom,rgba(240,200,80,.25),transparent);border-radius:2px;animation:boatRock 5s ease-in-out infinite;"></div>
-  </div>
+<div style="padding-top:var(--nav-h);">
+<div style="text-align:center;padding:120px 52px;"><div style="font-family:Instrument Serif,serif;font-size:6rem;color:var(--sand);line-height:1;">404</div><div style="font-family:Instrument Serif,serif;font-size:1.8rem;color:var(--ink);margin-bottom:12px;font-style:italic;">This page does not exist.</div><div style="font-size:15px;color:var(--stone);margin-bottom:32px;">It may have moved, or never existed at all.</div><a href="index.html"><button style="padding:14px 32px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-size:14px;font-weight:600;cursor:pointer;">Back to The Bearing</button></a></div>
 </div>
-
-<!-- Boat SVG -->
-<div class="boat-wrap">
-  <svg width="200" height="120" viewBox="0 0 200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Mast -->
-    <line x1="100" y1="10" x2="100" y2="82" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
-    <!-- Sail — red & white striped like Nour El Nil -->
-    <path d="M100 14 Q130 38 118 78 L100 78 Z" fill="rgba(176,88,48,.85)" opacity=".9"/>
-    <path d="M100 14 Q118 38 118 78 L100 78 Z" fill="rgba(250,247,241,.85)" opacity=".9"/>
-    <path d="M100 28 Q126 44 117 64" stroke="rgba(176,88,48,.3)" stroke-width="1" fill="none"/>
-    <!-- Boom -->
-    <line x1="82" y1="78" x2="122" y2="78" stroke="rgba(255,255,255,.5)" stroke-width="1.5"/>
-    <!-- Hull -->
-    <path d="M60 82 Q62 95 100 98 Q138 95 140 82 Z" fill="rgba(255,247,235,.95)"/>
-    <path d="M62 88 Q100 96 138 88" stroke="rgba(154,114,48,.6)" stroke-width="1.5" fill="none"/>
-    <!-- Deck rail -->
-    <line x1="70" y1="82" x2="130" y2="82" stroke="rgba(255,255,255,.4)" stroke-width="1"/>
-    <!-- Tiny figure at helm -->
-    <circle cx="108" cy="77" r="3" fill="rgba(255,255,255,.6)"/>
-    <line x1="108" y1="80" x2="108" y2="86" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>
-    <!-- Flag -->
-    <path d="M100 10 L114 16 L100 22 Z" fill="var(--terra)" opacity=".9"/>
-    <!-- Wake lines -->
-    <path d="M58 100 Q45 98 30 102" stroke="rgba(255,255,255,.12)" stroke-width="1.5" fill="none"/>
-    <path d="M142 100 Q155 98 170 102" stroke="rgba(255,255,255,.12)" stroke-width="1.5" fill="none"/>
-    <path d="M56 104 Q38 102 18 107" stroke="rgba(255,255,255,.07)" stroke-width="1" fill="none"/>
-    <path d="M144 104 Q162 102 182 107" stroke="rgba(255,255,255,.07)" stroke-width="1" fill="none"/>
-  </svg>
-</div>
-
-<!-- Main content -->
-<div class="content">
-  <!-- SKY: logo + 404 + tagline + subtext -->
-  <div class="content-sky">
-    <div class="tc-logo">The Bearing<span class="dot">.io</span></div>
-    <div class="error-num">404</div>
-    <div class="tagline">You've sailed off the map.</div>
-    <div class="divider"></div>
-    <p class="subtext">
-      Even the best navigators end up somewhere unexpected.<br>
-      This page doesn't exist — but <em>Luxor at sunrise</em> does,<br>
-      and we know exactly how to get you there.
-    </p>
-  </div>
-
-  <!-- BELOW: buttons sit below the boat in the water section -->
-  <div class="content-below">
-    <div class="suggestions">
-      <a href="/index.html" class="sug-pill">← Home</a>
-      <a href="/the-envoy.html" class="sug-pill" style="color:var(--terra);">✦ The Envoy</a>
-      <a href="/search.html" class="sug-pill">Browse properties</a>
-      <a href="/cruises.html" class="sug-pill">Cruises</a>
-      <a href="/collections.html" class="sug-pill">Collections</a>
-      <a href="/nour-el-nil.html" class="sug-pill">Nour El Nil</a>
+<footer style="background:var(--ink);color:rgba(255,255,255,.5);padding:56px 52px 36px;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px;">
+      <div>
+        <div style="font-family:'Instrument Serif',serif;font-size:22px;color:#fff;margin-bottom:8px;">The <em style="color:var(--terra);font-style:italic;">Bearing</em></div>
+        <div style="font-size:13px;line-height:1.7;max-width:280px;">A curated collection of the world's most exceptional travel experiences. Hand-picked, deeply known, honestly recommended.</div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:14px;">Discover</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <a href="hotels.html" style="font-size:13px;color:rgba(255,255,255,.5);">Hotels</a>
+          <a href="cruises.html" style="font-size:13px;color:rgba(255,255,255,.5);">Cruises</a>
+          <a href="villas.html" style="font-size:13px;color:rgba(255,255,255,.5);">Villas</a>
+          <a href="collections.html" style="font-size:13px;color:rgba(255,255,255,.5);">Collections</a>
+          <a href="vibe-search.html" style="font-size:13px;color:rgba(255,255,255,.5);">✦ Vibe search</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:14px;">The Bearing</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <a href="how-we-choose.html" style="font-size:13px;color:rgba(255,255,255,.5);">How we choose</a>
+          <a href="journal.html" style="font-size:13px;color:rgba(255,255,255,.5);">Journal</a>
+          <a href="about.html" style="font-size:13px;color:rgba(255,255,255,.5);">About</a>
+          <a href="founding-member.html" style="font-size:13px;color:rgba(255,255,255,.5);">Founding members</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.25);margin-bottom:14px;">Account</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <a href="my-account.html" style="font-size:13px;color:rgba(255,255,255,.5);">Your Cove</a>
+          <a href="bookings.html" style="font-size:13px;color:rgba(255,255,255,.5);">Bookings</a>
+          <a href="channels.html" style="font-size:13px;color:rgba(255,255,255,.5);">Conversations</a>
+          <a href="saved.html" style="font-size:13px;color:rgba(255,255,255,.5);">Saved</a>
+        </div>
+      </div>
     </div>
-    <a href="/index.html" class="home-btn">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      Return to shore
-    </a>
-  </div>
-</div>
-
-<!-- Compass rose decoration -->
-<svg class="compass" viewBox="0 0 52 52" fill="none">
-  <circle cx="26" cy="26" r="24" stroke="rgba(255,255,255,.6)" stroke-width="1"/>
-  <circle cx="26" cy="26" r="18" stroke="rgba(255,255,255,.3)" stroke-width=".5"/>
-  <path d="M26 4 L29 22 L26 26 L23 22 Z" fill="rgba(255,255,255,.9)"/>
-  <path d="M26 48 L29 30 L26 26 L23 30 Z" fill="rgba(255,255,255,.4)"/>
-  <path d="M4 26 L22 23 L26 26 L22 29 Z" fill="rgba(255,255,255,.4)"/>
-  <path d="M48 26 L30 23 L26 26 L30 29 Z" fill="rgba(255,255,255,.4)"/>
-  <path d="M26 4 L27.5 13 L26 14.5 L24.5 13 Z" fill="rgba(176,88,48,.9)"/>
-  <circle cx="26" cy="26" r="3" fill="rgba(255,255,255,.8)"/>
-  <text x="26" y="3" text-anchor="middle" font-size="4" fill="rgba(255,255,255,.7)" font-family="Geist,sans-serif" font-weight="600">N</text>
-  <text x="26" y="52" text-anchor="middle" font-size="4" fill="rgba(255,255,255,.4)" font-family="Geist,sans-serif">S</text>
-  <text x="1" y="27.5" text-anchor="middle" font-size="4" fill="rgba(255,255,255,.4)" font-family="Geist,sans-serif">W</text>
-  <text x="51" y="27.5" text-anchor="middle" font-size="4" fill="rgba(255,255,255,.4)" font-family="Geist,sans-serif">E</text>
-</svg>
-
-<script>
-// Generate random stars
-var starsEl = document.getElementById('stars');
-var frag = document.createDocumentFragment();
-for (var i = 0; i < 180; i++) {
-  var s = document.createElement('div');
-  s.className = 'star';
-  var size = Math.random() < 0.15 ? (Math.random() * 2 + 1.5) : (Math.random() * 1.2 + 0.4);
-  var minOp = (0.1 + Math.random() * 0.3).toFixed(2);
-  s.style.cssText = [
-    'width:' + size + 'px',
-    'height:' + size + 'px',
-    'top:' + (Math.random() * 58) + '%',
-    'left:' + (Math.random() * 100) + '%',
-    '--d:' + (2 + Math.random() * 5).toFixed(1) + 's',
-    '--delay:-' + (Math.random() * 5).toFixed(1) + 's',
-    '--min:' + minOp,
-    'opacity:' + minOp
-  ].join(';');
-  frag.appendChild(s);
-}
-starsEl.appendChild(frag);
-</script>
-<script>
-// The Bearing 404 intercept — catches dead links and missing pages
-(function(){
-  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','cruises.html','hotels.html','villas.html','vibe-search.html','the-envoy.html',
-    'collections.html','journal.html','how-we-choose.html','founding-member.html',
-    'about.html','my-account.html','bookings.html','channels.html',
-    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
-  function fname(href){
-    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
-  }
-  document.addEventListener('click', function(e){
-    var a = e.target.closest('a[href]');
-    if(!a) return;
-    var href = a.getAttribute('href');
-    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
-    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
-    var f = fname(href);
-    if(f && VALID.indexOf(f) === -1){
-      e.preventDefault();
-      window.location = '404.html';
-    }
-  });
-  // Also intercept window.location assignments by watching for navigation errors
-  window.addEventListener('error', function(e){
-    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
-  }, true);
-})();
-</script>
-
-<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
-  <div class="ci-fab-pulse"></div>
-  <div class="ci-fab-txt">
-    <div class="ci-fab-label">The Envoy</div>
-    <div class="ci-fab-sub">Your Resident Expert</div>
-  </div>
-</button>
-<div class="ci-drawer" id="ci-drawer">
-
-  <div class="ci-head">
-    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
-    <div class="ci-head-txt">
-      <div class="ci-name">The Envoy</div>
-      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    <div style="border-top:1px solid rgba(255,255,255,.07);padding-top:24px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:12px;">© 2025 The Bearing. All rights reserved.</div>
+      <div style="font-size:12px;">thebearing.io</div>
     </div>
-    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
   </div>
-
-  <div class="ci-context" id="ci-context">
-    <div class="ci-context-dot"></div>
-    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
-  </div>
-
-  <div class="ci-messages" id="ci-messages"></div>
-
-  <div class="ci-sugs" id="ci-sugs">
-    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
-  </div>
-
-  <div class="ci-input-row">
-    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
-    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
-  </div>
-
-</div>
-
-<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
-  <div class="ci-fab-pulse"></div>
-  <div class="ci-fab-txt">
-    <div class="ci-fab-label">The Envoy</div>
-    <div class="ci-fab-sub">Your Resident Expert</div>
-  </div>
-</button>
-<div class="ci-drawer" id="ci-drawer">
-
-  <div class="ci-head">
-    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
-    <div class="ci-head-txt">
-      <div class="ci-name">The Envoy</div>
-      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
-    </div>
-    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
-  </div>
-
-  <div class="ci-context" id="ci-context">
-    <div class="ci-context-dot"></div>
-    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
-  </div>
-
-  <div class="ci-messages" id="ci-messages"></div>
-
-  <div class="ci-sugs" id="ci-sugs">
-    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
-    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
-  </div>
-
-  <div class="ci-input-row">
-    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
-    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
-  </div>
-
-</div>
-<script>
-function openEnvoy() {
-  ciOpen = true;
-  document.getElementById('ci-drawer').classList.add('open');
-  var _fab = document.getElementById('ci-fab');
-  if(_fab){ _fab.style.opacity='0'; _fab.style.transform='translateY(16px)'; setTimeout(function(){ _fab.style.display='none'; }, 280); }
-  document.body.classList.add('ci-open');
-  // Restore messages from history
-  ciRestoreMessages();
-  setTimeout(function(){ document.getElementById('ci-input').focus(); }, 400);
-}
-
-function closeEnvoy() {
-  ciOpen = false;
-  document.getElementById('ci-drawer').classList.remove('open');
-  var _fab2 = document.getElementById('ci-fab');
-  if(_fab2){ _fab2.style.display='flex'; setTimeout(function(){ _fab2.style.opacity='1'; _fab2.style.transform=''; }, 20); }
-  document.body.classList.remove('ci-open');
-}
-
-function ciRestoreMessages() {
-  var msgs = document.getElementById('ci-messages');
-  msgs.innerHTML = '';
-  if (ciHistory.length === 0) {
-    // First time — show welcome
-    ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
-  } else {
-    // Restore previous conversation
-    ciHistory.forEach(function(m) {
-      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
-    });
-  }
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-// Update context pill based on current page
-(function() {
-  var path = window.location.pathname;
-  var ctx = 'Browsing The Bearing';
-  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
-  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
-  var el = document.getElementById('ci-context-txt');
-  if (el) el.textContent = ctx;
-})();
-
-function ciAsk(btn) {
-  document.getElementById('ci-sugs').style.display = 'none';
-  ciSendMsg(btn.textContent.trim());
-}
-
-function ciSend() {
-  var inp = document.getElementById('ci-input');
-  var q = inp.value.trim();
-  if (!q || ciBusy) return;
-  inp.value = '';
-  document.getElementById('ci-sugs').style.display = 'none';
-  ciSendMsg(q);
-}
-
-async function ciSendMsg(text) {
-  ciAddMsg(text, 'user');
-  ciHistory.push({ role: 'user', content: text });
-  ciSaveHistory(ciHistory);
-
-  ciBusy = true;
-  var t = ciShowTyping();
-
-  try {
-    var res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
-    });
-    var data = await res.json();
-    var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
-    t.remove();
-    ciBusy = false;
-    ciAddMsg(reply, 'ai');
-    ciHistory.push({ role: 'assistant', content: reply });
-    ciSaveHistory(ciHistory);
-  } catch(e) {
-    t.remove();
-    ciBusy = false;
-    ciAddMsg('Something went wrong — please try again.', 'ai');
-  }
-}
-
-function ciAddMsg(text, type) {
-  var msgs = document.getElementById('ci-messages');
-  var div = document.createElement('div');
-  div.className = 'ci-msg ' + type;
-  text.split('\n').filter(function(p){ return p.trim(); }).forEach(function(p, i) {
-    var el = document.createElement('p');
-    el.textContent = p.trim();
-    if (i > 0) el.style.marginTop = '5px';
-    div.appendChild(el);
-  });
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-}
-
-function ciShowTyping() {
-  var msgs = document.getElementById('ci-messages');
-  var d = document.createElement('div');
-  d.className = 'ci-typing-msg';
-  d.innerHTML = '<span></span><span></span><span></span>';
-  msgs.appendChild(d);
-  msgs.scrollTop = msgs.scrollHeight;
-  return d;
-}
-
-// Restore open state if user navigated while drawer was open
-if (sessionStorage.getItem('ci_was_open') === '1') {
-  // Small delay to let page render
-  setTimeout(openEnvoy, 100);
-}
-window.addEventListener('beforeunload', function() {
-  sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
-});
-
-function togglePref(btn){ btn.classList.toggle('active'); }
-function submitAccount(){
-  var name  = document.getElementById('acc-name') && document.getElementById('acc-name').value;
-  var email = document.getElementById('acc-email') && document.getElementById('acc-email').value;
-  closeOverlay('account-overlay');
-  toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
-}
-</script>
-
-<div style="background:#1a1510;border-top:1px solid rgba(255,255,255,.06);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
-  <div style="font-size:.68rem;color:rgba(255,255,255,.2);">© 2026 TheBearing.io</div>
-  <a href="pp-login.html" style="font-size:.68rem;color:rgba(255,255,255,.22);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.45)'" onmouseout="this.style.color='rgba(255,255,255,.22)'">Property partner? Sign in</a>
-</div>
+</footer>
 </body>
 </html>

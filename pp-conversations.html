@@ -1,23 +1,26 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Login — The Bearing</title><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Conversations — The Bearing</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+
 :root{
-  --sidebar-bg:#0b0e14;--sidebar-w:248px;
-  --sidebar-border:rgba(255,255,255,.06);
+  --sidebar-bg:#0f1117;--sidebar-w:248px;
+  --sidebar-border:rgba(255,255,255,.07);
   --sidebar-active:rgba(193,127,62,.15);
   --accent:#c17f3e;--accent-hover:#d4924f;--accent-bg:rgba(193,127,62,.1);
-  --bg:#f4f6f8;--surface:#ffffff;
+  --bg:#f8f9fb;--surface:#ffffff;
   --border:#e5e7eb;--border-hi:#d1d5db;
   --text:#0f1117;--text2:#4b5563;--text3:#9ca3af;
   --emerald:#059669;--emerald-bg:#ecfdf5;
   --amber:#d97706;--amber-bg:#fffbeb;
   --red:#dc2626;--red-bg:#fef2f2;
   --blue:#2563eb;--blue-bg:#eff6ff;
-  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08);
 }
+
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{overflow-x:hidden;-webkit-font-smoothing:antialiased;}
@@ -163,21 +166,132 @@ tbody tr:hover{background:var(--bg);}
 .empty-desc{font-size:13px;color:var(--text2);}
 .tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 
-body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#07090d;}
-.login-card{background:var(--surface);border-radius:20px;padding:48px;width:420px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
-.login-brand{font-family:'Fraunces',serif;font-size:22px;color:var(--text);margin-bottom:4px;}
-.login-brand em{color:var(--accent);font-style:normal;}
-.login-tag{font-size:11px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:36px;}
-.login-label{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:7px;display:block;}
-.login-input{width:100%;padding:11px 14px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;margin-bottom:18px;font-family:inherit;color:var(--text);}
-.login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
-</style></head><body>
-<div class="login-card">
-  <div class="login-brand">The <em>Bearing</em></div>
-  <div class="login-tag">Admin Portal — team access only</div>
-  <label class="login-label">Email</label>
-  <input class="login-input" type="email" placeholder="you@thebearing.io">
-  <label class="login-label">Password</label>
-  <input class="login-input" type="password" placeholder="••••••••">
-  <a href="admin-dashboard.html"><button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;">Sign in</button></a>
-</div></body></html>
+
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-brand-name">The <em>Bearing</em></div>
+    <div class="sb-brand-tag">Partner Portal</div>
+  </div>
+  <div class="sb-context">
+    <div class="sb-context-avatar">NG</div>
+    <div>
+      <div class="sb-context-name">Nour El Nil</div>
+      <div class="sb-context-role">River Cruise · Egypt</div>
+    </div>
+  </div>
+  <div class="sb-section">Manage</div>
+  <a href="pp-dashboard.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>Dashboard</a><a href="pp-listing.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="12" rx="1.5"/><path d="M5 6h2M9 6h2M5 9h2M9 9h2M6 15v-4h4v4"/></svg>My listing</a><a href="pp-photos.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.5"/><path d="M1.5 11l3-3 3 3 2.5-3 3.5 3"/></svg>Photos</a><a href="pp-rooms.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1.5 11V6a3 3 0 0 1 3-3h7a3 3 0 0 1 3 3v5"/><path d="M1 8h14"/><path d="M1 13h14"/></svg>Rooms & pricing</a><a href="pp-experiences.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1l2 5h5l-4 3 1.5 5L8 11l-4.5 3L5 9 1 6h5z"/></svg>Private Access</a><div style="height:1px;background:rgba(255,255,255,.06);margin:8px 12px;"></div><a href="pp-bookings.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13M5 1v3M11 1v3"/></svg>Bookings<span class="sb-badge">3</span></a><a href="pp-conversations.html" class="sb-item active"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2h12v9H9l-3 3v-3H2z" rx="1.5"/></svg>Conversations<span class="sb-badge gray">7</span></a><a href="pp-availability.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13M5 1v3M11 1v3"/></svg>Availability</a><div style="height:1px;background:rgba(255,255,255,.06);margin:8px 12px;"></div><a href="pp-analytics.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12 6 7l3 3 5-6"/><path d="M2 14h12"/></svg>Analytics</a><a href="pp-team.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="4.5" r="2"/><circle cx="11" cy="4.5" r="2"/><path d="M1 13c0-2.5 1.8-4 4-4s4 1.5 4 4"/><path d="M9.5 9.5c.5-.3 1-.5 1.5-.5 2.2 0 4 1.5 4 4"/></svg>Team</a><a href="pp-notifications.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5a5 5 0 0 1 5 5v3l1.5 2h-13L3 9.5v-3a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>Notifications</a><a href="pp-settings.html" class="sb-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.2 3.2l1 1M11.8 11.8l1 1M3.2 12.8l1-1M11.8 4.2l1-1"/></svg>Settings</a>
+  <div class="sb-footer">
+    <div class="sb-footer-user">
+      <div class="sb-footer-avatar">MH</div>
+      <div>
+        <div class="sb-footer-name">Mohamed Hassan</div>
+        <div class="sb-footer-role">Property Manager</div>
+      </div>
+    </div>
+  </div>
+</aside>
+<div class="main-area">
+<div class="topbar">
+  <div><div class="topbar-title">Conversations</div><div class=topbar-sub>3 unread threads</div></div>
+  <div class="topbar-right"></div>
+</div>
+<div class="page-body">
+
+<div class="page-header">
+  <div class="page-eyebrow">Guest communications</div>
+  <div class="page-title">Conversations</div>
+  <div class="page-subtitle">All guest message threads for Nour El Nil.</div>
+</div>
+
+<div style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:600px;">
+  <!-- Thread list -->
+  <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
+    <div style="padding:16px;border-bottom:1px solid var(--border);">
+      <input class="filter-input" style="width:100%;" placeholder="Search conversations…">
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <!-- Active thread -->
+      <div style="padding:16px;border-bottom:1px solid var(--border);background:var(--accent-bg);cursor:pointer;border-left:3px solid var(--accent);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div class="avatar avatar-sm">SA</div>
+          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Sarah Alderton</div><div style="font-size:11px;color:var(--text2);">TB-2025-0847 · Apr 15–21</div></div>
+          <div style="font-size:11px;color:var(--text3);">2h ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Could we arrange the private Edfu sunrise you mentioned?</div>
+        <div style="margin-top:8px;"><span class="badge badge-accent">2 unread</span></div>
+      </div>
+      <div style="padding:16px;border-bottom:1px solid var(--border);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div>
+          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Thomas Müller</div><div style="font-size:11px;color:var(--text2);">TB-2025-0901 · May 3–9</div></div>
+          <div style="font-size:11px;color:var(--text3);">1d ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Question about dietary requirements for our group</div>
+      </div>
+      <div style="padding:16px;border-bottom:1px solid var(--border);cursor:pointer;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">PC</div>
+          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Patricia Chen</div><div style="font-size:11px;color:var(--text2);">TB-2025-0912 · May 18–24</div></div>
+          <div style="font-size:11px;color:var(--text3);">3d ago</div>
+        </div>
+        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Wonderful, we're so excited for this journey!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message thread -->
+  <div style="display:flex;flex-direction:column;">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+      <div class="avatar">SA</div>
+      <div>
+        <div style="font-size:15px;font-weight:600;">Sarah Alderton</div>
+        <div style="font-size:12px;color:var(--text2);">London, UK · Founding Member · Booking TB-2025-0847</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <a href="pp-booking-detail.html" class="btn btn-ghost btn-sm">View booking</a>
+      </div>
+    </div>
+    <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;background:#fafafa;">
+      <div style="display:flex;gap:12px;">
+        <div class="avatar avatar-sm">SA</div>
+        <div style="max-width:70%;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Sarah Alderton · 12 Mar, 10:22 AM</div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Hello, thank you for your inquiry through The Bearing. We're delighted to welcome you aboard. We have availability October 15–21 in our Panoramic Suite on Poppee. Shall I hold this for you?</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <div style="max-width:70%;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;text-align:right;">You (Nour El Nil) · 12 Mar, 2:45 PM</div>
+          <div style="background:var(--accent);color:#fff;border-radius:12px 0 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Yes please — please hold those dates. We're very excited. Can we also arrange the private Edfu sunrise that The Bearing mentioned?</div>
+        </div>
+        <div class="avatar avatar-sm" style="background:var(--accent);">NG</div>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <div class="avatar avatar-sm">SA</div>
+        <div style="max-width:70%;">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Sarah Alderton · Today, 9:14 AM</div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Could we arrange the private Edfu sunrise you mentioned? It would mean so much to us. Also, my husband has a nut allergy — is that something you can accommodate?</div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;">
+      <textarea style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:none;min-height:80px;outline:none;background:var(--bg);" placeholder="Reply to Sarah…"></textarea>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary">Send</button>
+        <button class="btn btn-ghost btn-sm" style="font-size:12px;">Template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+</div>
+
+</body>
+</html>

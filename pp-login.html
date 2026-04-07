@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Login — The Bearing</title><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Partner Login — The Bearing</title><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --sidebar-bg:#0b0e14;--sidebar-w:248px;
-  --sidebar-border:rgba(255,255,255,.06);
+  --sidebar-bg:#0f1117;--sidebar-w:248px;
+  --sidebar-border:rgba(255,255,255,.07);
   --sidebar-active:rgba(193,127,62,.15);
   --accent:#c17f3e;--accent-hover:#d4924f;--accent-bg:rgba(193,127,62,.1);
-  --bg:#f4f6f8;--surface:#ffffff;
+  --bg:#f8f9fb;--surface:#ffffff;
   --border:#e5e7eb;--border-hi:#d1d5db;
   --text:#0f1117;--text2:#4b5563;--text3:#9ca3af;
   --emerald:#059669;--emerald-bg:#ecfdf5;
   --amber:#d97706;--amber-bg:#fffbeb;
   --red:#dc2626;--red-bg:#fef2f2;
   --blue:#2563eb;--blue-bg:#eff6ff;
-  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;
-  --shadow-sm:0 1px 3px rgba(0,0,0,.06);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -163,21 +160,22 @@ tbody tr:hover{background:var(--bg);}
 .empty-desc{font-size:13px;color:var(--text2);}
 .tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 
-body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#07090d;}
-.login-card{background:var(--surface);border-radius:20px;padding:48px;width:420px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
-.login-brand{font-family:'Fraunces',serif;font-size:22px;color:var(--text);margin-bottom:4px;}
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--sidebar-bg);}
+.login-card{background:var(--surface);border-radius:20px;padding:48px;width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3);}
+.login-brand{font-family:'Fraunces',serif;font-size:22px;color:var(--text);margin-bottom:6px;}
 .login-brand em{color:var(--accent);font-style:normal;}
-.login-tag{font-size:11px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:36px;}
+.login-sub{font-size:13px;color:var(--text2);margin-bottom:36px;}
 .login-label{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:7px;display:block;}
-.login-input{width:100%;padding:11px 14px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;margin-bottom:18px;font-family:inherit;color:var(--text);}
+.login-input{width:100%;padding:11px 14px;font-size:15px;border:1.5px solid var(--border);border-radius:8px;outline:none;margin-bottom:18px;font-family:inherit;}
 .login-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
 </style></head><body>
 <div class="login-card">
   <div class="login-brand">The <em>Bearing</em></div>
-  <div class="login-tag">Admin Portal — team access only</div>
-  <label class="login-label">Email</label>
-  <input class="login-input" type="email" placeholder="you@thebearing.io">
+  <div class="login-sub">Partner Portal — sign in to manage your listing</div>
+  <label class="login-label">Email address</label>
+  <input class="login-input" type="email" placeholder="you@property.com">
   <label class="login-label">Password</label>
   <input class="login-input" type="password" placeholder="••••••••">
-  <a href="admin-dashboard.html"><button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;">Sign in</button></a>
+  <a href="pp-dashboard.html"><button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;margin-top:4px;">Sign in to portal</button></a>
+  <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--text2);">Forgot password? <a href="#" style="color:var(--accent);">Reset it here</a></div>
 </div></body></html>
