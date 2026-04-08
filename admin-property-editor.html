@@ -215,6 +215,50 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .pe-ai-regen-link:hover{color:#f5f5f5;}
 .pe-ai-error{margin-top:14px;padding:12px 16px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:9px;font-size:12px;color:#fca5a5;display:none;}
 .pe-ai-error.show{display:block;}
+
+/* DOSSIER INTERVIEW PANEL — Layers 2 & 3 of Envoy roadmap */
+.pe-dossier-panel{background:#fdfcf7;border:1px solid #e8e3d4;border-radius:14px;padding:24px 26px;margin-bottom:24px;position:relative;overflow:hidden;}
+.pe-dossier-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#c17f3e,transparent);}
+.pe-dossier-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:6px;}
+.pe-dossier-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(193,127,62,.1);border:1px solid rgba(193,127,62,.3);border-radius:100px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a5a2b;margin-bottom:8px;}
+.pe-dossier-title{font-family:'Fraunces',serif;font-size:18px;font-weight:400;color:#2a2520;line-height:1.2;}
+.pe-dossier-sub{font-size:13px;color:#6a635a;margin-top:4px;margin-bottom:18px;line-height:1.5;}
+.pe-dossier-status{display:inline-block;padding:3px 9px;border-radius:100px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
+.pe-dossier-status.empty{background:#f0ebd9;color:#8a7a4a;}
+.pe-dossier-status.partial{background:#fde9c4;color:#8a5a2b;}
+.pe-dossier-status.complete{background:#d4f0d4;color:#2d6a2d;}
+.pe-dossier-actions{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+.pe-dossier-btn{background:#c17f3e;color:#fff;border:none;border-radius:9px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s;}
+.pe-dossier-btn:hover{background:#a86a31;}
+.pe-dossier-btn:disabled{background:#c4bdac;cursor:not-allowed;}
+.pe-dossier-btn-secondary{background:transparent;color:#8a5a2b;border:1px solid #c17f3e;}
+.pe-dossier-btn-secondary:hover{background:rgba(193,127,62,.08);}
+.pe-dossier-btn-ghost{background:transparent;color:#6a635a;border:1px solid #d4cdb8;}
+.pe-dossier-btn-ghost:hover{background:rgba(193,127,62,.04);color:#2a2520;}
+.pe-dossier-loading{display:none;align-items:center;gap:10px;color:#8a5a2b;font-size:13px;margin-bottom:14px;padding:12px 16px;background:rgba(193,127,62,.06);border:1px solid rgba(193,127,62,.2);border-radius:9px;}
+.pe-dossier-loading.show{display:flex;}
+.pe-dossier-loading .pe-ai-spinner{border-color:rgba(193,127,62,.2);border-top-color:#c17f3e;}
+.pe-dossier-msg{display:none;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;padding:12px 16px;border-radius:9px;}
+.pe-dossier-msg.show{display:flex;}
+.pe-dossier-msg.success{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.25);color:#2d6a2d;}
+.pe-dossier-msg.error{background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#a02020;}
+.pe-dossier-categories{display:flex;flex-direction:column;gap:14px;}
+.pe-dossier-cat{background:#fff;border:1px solid #e8e3d4;border-radius:10px;overflow:hidden;}
+.pe-dossier-cat-head{padding:14px 18px;background:#f7f3e8;border-bottom:1px solid #e8e3d4;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.pe-dossier-cat-head:hover{background:#f4efe0;}
+.pe-dossier-cat-title{font-family:'Fraunces',serif;font-size:15px;font-weight:400;color:#2a2520;display:flex;align-items:center;gap:10px;}
+.pe-dossier-cat-num{width:22px;height:22px;border-radius:50%;background:#c17f3e;color:#fff;font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pe-dossier-cat-meta{font-size:11px;color:#8a7a4a;display:flex;align-items:center;gap:10px;}
+.pe-dossier-cat-chevron{transition:transform .2s;color:#8a7a4a;}
+.pe-dossier-cat.collapsed .pe-dossier-cat-chevron{transform:rotate(-90deg);}
+.pe-dossier-cat-body{padding:18px;display:flex;flex-direction:column;gap:16px;}
+.pe-dossier-cat.collapsed .pe-dossier-cat-body{display:none;}
+.pe-dossier-q{display:flex;flex-direction:column;gap:6px;}
+.pe-dossier-q-label{font-size:13px;color:#3a342a;font-weight:500;line-height:1.4;}
+.pe-dossier-q-hint{font-size:11px;color:#8a7a4a;font-style:italic;margin-top:-2px;}
+.pe-dossier-q-input{background:#fdfcf7;border:1px solid #d4cdb8;color:#2a2520;border-radius:7px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;width:100%;line-height:1.5;}
+.pe-dossier-q-input:focus{border-color:#c17f3e;background:#fff;}
+.pe-dossier-q-input.textarea{min-height:60px;resize:vertical;font-family:'DM Sans',sans-serif;}
 .pe-hero-preview{width:100%;height:180px;border-radius:10px;background:var(--bg);overflow:hidden;margin-top:10px;display:none;border:1px solid var(--border);}
 .pe-hero-preview img{width:100%;height:100%;object-fit:cover;}
 
@@ -366,6 +410,40 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
           <div class="pe-ai-result-actions">
             <button class="pe-ai-regen-link" onclick="aiRegenerateOverwrite()">Regenerate all (overwrite)</button>
           </div>
+        </div>
+      </div>
+
+      <!-- DOSSIER INTERVIEW PANEL — Layers 2 & 3 -->
+      <div class="pe-dossier-panel">
+        <div class="pe-dossier-head">
+          <div>
+            <span class="pe-dossier-badge">⌁ Envoy Dossier</span>
+            <div class="pe-dossier-title">Build the Envoy's knowledge of this property</div>
+            <div class="pe-dossier-sub">The Envoy reads this dossier whenever a guest is on this property's page. The more specific and insider-driven your answers, the smarter the Envoy sounds. Empty answers are fine — leave anything you don't know.</div>
+          </div>
+          <span class="pe-dossier-status empty" id="dos-status">Not started</span>
+        </div>
+        <div class="pe-dossier-actions">
+          <button class="pe-dossier-btn" onclick="dosSave()" id="dos-save-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save dossier
+          </button>
+          <button class="pe-dossier-btn pe-dossier-btn-secondary" onclick="dosDraftWithAI()" id="dos-draft-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            Draft with AI
+          </button>
+          <button class="pe-dossier-btn pe-dossier-btn-ghost" onclick="dosLoad()" id="dos-load-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/><path d="M12 8v4l3 3"/></svg>
+            Load existing
+          </button>
+        </div>
+        <div class="pe-dossier-loading" id="dos-loading">
+          <div class="pe-ai-spinner"></div>
+          <span id="dos-loading-msg">Working...</span>
+        </div>
+        <div class="pe-dossier-msg" id="dos-msg"></div>
+        <div class="pe-dossier-categories" id="dos-categories">
+          <!-- Categories injected by JS -->
         </div>
       </div>
 
@@ -1346,6 +1424,325 @@ function aiRegenerateOverwrite() {
   document.getElementById('ai-confirm').classList.add('show');
   aiGenerateFull({ overwrite: true });
 }
+
+// ── DOSSIER INTERVIEW (Layers 2 & 3) ─────────────────────────────────
+// Structured 35-question interview to build per-property dossiers for The Envoy.
+// Saves to /api/dossier (KV-backed via Cloudflare Worker).
+// "Draft with AI" pre-fills answers via the existing /api/envoy proxy with web search.
+
+var DOSSIER_QUESTIONS = [
+  { cat: 'Hard facts', icon: '01', desc: 'Verifiable. AI can fill most of these from web search.', questions: [
+    { id: 'hf-name', label: 'Full official property name', hint: '' },
+    { id: 'hf-location', label: 'Location (city/region/country)', hint: '' },
+    { id: 'hf-type', label: 'Property type', hint: 'hotel · villa · cruise · estate' },
+    { id: 'hf-year', label: 'Year built and/or renovated', hint: '' },
+    { id: 'hf-architect', label: 'Architect or designer if notable', hint: '' },
+    { id: 'hf-rooms', label: 'Total room/cabin/villa count and max guest capacity', hint: '' },
+    { id: 'hf-season', label: 'Open season vs closed season', hint: '' },
+    { id: 'hf-airport', label: 'Closest airport (IATA + drive/flight time)', hint: '' },
+    { id: 'hf-awards', label: 'Awards, recognitions, notable affiliations', hint: '' }
+  ]},
+  { cat: 'Sensory & architectural detail', icon: '02', desc: 'How the place feels. AI can rough-draft, you refine with what only an in-person visit reveals.', questions: [
+    { id: 'sd-materials', label: 'What materials define this place?', hint: 'e.g. raw teak, brutalist concrete, Egyptian limestone, hand-stitched cotton' },
+    { id: 'sd-light', label: 'What does the light do here?', hint: 'morning vs evening, seasonal differences, defining moments' },
+    { id: 'sd-sound', label: 'What does it sound like?', hint: 'ocean, jungle, silence, river current, no AC hum' },
+    { id: 'sd-smell', label: 'What does it smell like?', hint: 'lobby, spa, rooms, kitchen' },
+    { id: 'sd-temp', label: 'Temperature/climate quality at key moments', hint: '' },
+    { id: 'sd-feature', label: 'A single architectural feature that defines the property visually', hint: '' }
+  ]},
+  { cat: 'Operational rhythm', icon: '03', desc: 'Insider knowledge — AI cannot easily find this from public sources.', questions: [
+    { id: 'or-day', label: 'What does a typical day look like, hour by hour?', hint: '', textarea: true },
+    { id: 'or-meals', label: 'When do meals happen, and what is the format?', hint: 'set menu, à la carte, communal table?' },
+    { id: 'or-optional', label: 'What is optional vs scheduled?', hint: '' },
+    { id: 'or-weather', label: 'What happens if weather is bad?', hint: '' },
+    { id: 'or-staff', label: 'Staff:guest ratio and how visible the staff is', hint: '' },
+    { id: 'or-arrival', label: 'How does check-in/arrival actually work?', hint: 'cocktail? guide? silence? ritual?' }
+  ]},
+  { cat: 'Insider tips — Envoy moat', icon: '04', desc: 'Pure human knowledge. THIS IS THE MOAT. The more specific, the smarter The Envoy sounds.', questions: [
+    { id: 'it-best-room', label: 'Which specific room/cabin/villa is the best, and why?', hint: '' },
+    { id: 'it-worst-room', label: 'Which is the worst, or which to avoid?', hint: '' },
+    { id: 'it-secret-dish', label: 'One dish/drink/experience to ask for that is not on any menu', hint: '' },
+    { id: 'it-best-time', label: 'Best time of day for the property\'s signature view/experience', hint: '' },
+    { id: 'it-bring', label: 'What should guests bring that is not mentioned anywhere?', hint: '' },
+    { id: 'it-mistake', label: 'What is a common mistake first-time guests make?', hint: '' },
+    { id: 'it-staff-name', label: 'A staff member by name a guest should ask for', hint: '' },
+    { id: 'it-unmarked', label: 'The unmarked, undocumented, "if you know, you know" detail', hint: '', textarea: true }
+  ]},
+  { cat: 'Voice & positioning', icon: '05', desc: 'Calibrates how The Envoy talks about this place — tone, comparisons, words to avoid.', questions: [
+    { id: 'vp-outcome', label: 'In one sentence: the OUTCOME of staying here', hint: 'the brand-voice "Outcome" line — what changes about the guest after this stay' },
+    { id: 'vp-better', label: 'What this property does better than any other', hint: '' },
+    { id: 'vp-compare-yes', label: 'A property to compare this to favorably', hint: '' },
+    { id: 'vp-compare-no', label: 'A property to NEVER compare this to, and why', hint: '' },
+    { id: 'vp-avoid-words', label: 'Words The Envoy should avoid when describing this place', hint: '' },
+    { id: 'vp-tone', label: 'Tone The Envoy should use', hint: 'reverent, playful, hushed, confident, discreet, etc.' }
+  ]},
+  { cat: 'Logistics & practical', icon: '06', desc: 'Mix of AI-fillable facts and human nuance.', questions: [
+    { id: 'lp-getting-there', label: 'Full transfer story — how guests actually get there', hint: 'not just "fly to X"', textarea: true },
+    { id: 'lp-included', label: 'What is included in the rate?', hint: '' },
+    { id: 'lp-not-included', label: 'What is NOT included that guests should expect to pay for?', hint: '' },
+    { id: 'lp-tipping', label: 'Tipping norms?', hint: '' },
+    { id: 'lp-connectivity', label: 'Connectivity', hint: 'Wi-Fi, cell, intentional disconnection?' },
+    { id: 'lp-dress', label: 'Dress code expectations', hint: '' }
+  ]}
+];
+
+function dosCurrentSlug() {
+  var v = (document.getElementById('f-slug') && document.getElementById('f-slug').value) || '';
+  if (!v) v = (document.getElementById('f-name') && document.getElementById('f-name').value || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return v;
+}
+
+function dosRender() {
+  var wrap = document.getElementById('dos-categories');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  DOSSIER_QUESTIONS.forEach(function(cat, ci) {
+    var catEl = document.createElement('div');
+    catEl.className = 'pe-dossier-cat' + (ci === 0 ? '' : ' collapsed');
+    var qCount = cat.questions.length;
+    catEl.innerHTML =
+      '<div class="pe-dossier-cat-head" onclick="this.parentElement.classList.toggle(\'collapsed\')">' +
+        '<div class="pe-dossier-cat-title"><div class="pe-dossier-cat-num">' + cat.icon + '</div>' + cat.cat + '</div>' +
+        '<div class="pe-dossier-cat-meta">' +
+          '<span id="dos-cat-fill-' + ci + '">0 / ' + qCount + '</span>' +
+          '<svg class="pe-dossier-cat-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pe-dossier-cat-body">' +
+        '<div style="font-size:12px;color:#6a635a;font-style:italic;margin-bottom:4px;">' + cat.desc + '</div>' +
+        cat.questions.map(function(q) {
+          var input = q.textarea
+            ? '<textarea class="pe-dossier-q-input textarea" id="dos-' + q.id + '" oninput="dosUpdateProgress()"></textarea>'
+            : '<input class="pe-dossier-q-input" id="dos-' + q.id + '" oninput="dosUpdateProgress()">';
+          return '<div class="pe-dossier-q">' +
+            '<label class="pe-dossier-q-label" for="dos-' + q.id + '">' + q.label + '</label>' +
+            (q.hint ? '<div class="pe-dossier-q-hint">' + q.hint + '</div>' : '') +
+            input +
+          '</div>';
+        }).join('') +
+      '</div>';
+    wrap.appendChild(catEl);
+  });
+}
+
+function dosUpdateProgress() {
+  var totalFilled = 0, totalQs = 0;
+  DOSSIER_QUESTIONS.forEach(function(cat, ci) {
+    var filled = 0;
+    cat.questions.forEach(function(q) {
+      var el = document.getElementById('dos-' + q.id);
+      if (el && el.value && el.value.trim()) filled++;
+    });
+    totalFilled += filled;
+    totalQs += cat.questions.length;
+    var meta = document.getElementById('dos-cat-fill-' + ci);
+    if (meta) meta.textContent = filled + ' / ' + cat.questions.length;
+  });
+  var status = document.getElementById('dos-status');
+  if (status) {
+    if (totalFilled === 0) { status.className = 'pe-dossier-status empty'; status.textContent = 'Not started'; }
+    else if (totalFilled < totalQs) { status.className = 'pe-dossier-status partial'; status.textContent = totalFilled + ' / ' + totalQs + ' answered'; }
+    else { status.className = 'pe-dossier-status complete'; status.textContent = 'Complete'; }
+  }
+}
+
+function dosShowMsg(text, type) {
+  var el = document.getElementById('dos-msg');
+  el.className = 'pe-dossier-msg show ' + (type || 'success');
+  el.textContent = text;
+  setTimeout(function() { el.classList.remove('show'); }, 5000);
+}
+function dosShowLoading(msg) {
+  document.getElementById('dos-loading-msg').textContent = msg;
+  document.getElementById('dos-loading').classList.add('show');
+}
+function dosHideLoading() {
+  document.getElementById('dos-loading').classList.remove('show');
+}
+
+// Assemble all answers into a single structured dossier text document
+function dosAssemble() {
+  var out = '';
+  DOSSIER_QUESTIONS.forEach(function(cat) {
+    var section = '=== ' + cat.cat.toUpperCase() + ' ===\n';
+    var hasContent = false;
+    cat.questions.forEach(function(q) {
+      var el = document.getElementById('dos-' + q.id);
+      var val = el && el.value && el.value.trim();
+      if (val) {
+        section += q.label + ': ' + val + '\n';
+        hasContent = true;
+      }
+    });
+    if (hasContent) out += section + '\n';
+  });
+  return out.trim();
+}
+
+function dosDossierApi() {
+  return (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
+}
+
+async function dosSave() {
+  var slug = dosCurrentSlug();
+  if (!slug) { dosShowMsg('Set a property name or slug in section 1 first.', 'error'); return; }
+  var api = dosDossierApi();
+  if (!api) { dosShowMsg('Dossier saving only works on the live site (thebearing.io). Currently in preview env.', 'error'); return; }
+  var dossier = dosAssemble();
+  if (!dossier) { dosShowMsg('Dossier is empty — fill in at least a few answers first.', 'error'); return; }
+  dosShowLoading('Saving dossier for "' + slug + '"...');
+  document.getElementById('dos-save-btn').disabled = true;
+  try {
+    var res = await fetch(api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, dossier: dossier })
+    });
+    if (!res.ok) throw new Error('Server returned ' + res.status);
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    dosShowMsg('✓ Dossier saved (' + data.length + ' characters). The Envoy on /' + slug + '.html will use it on next page load.', 'success');
+  } catch (err) {
+    dosShowMsg('Save failed: ' + err.message, 'error');
+  } finally {
+    dosHideLoading();
+    document.getElementById('dos-save-btn').disabled = false;
+  }
+}
+
+async function dosLoad() {
+  var slug = dosCurrentSlug();
+  if (!slug) { dosShowMsg('Set a property name or slug in section 1 first.', 'error'); return; }
+  var api = dosDossierApi();
+  if (!api) { dosShowMsg('Loading only works on the live site.', 'error'); return; }
+  dosShowLoading('Loading existing dossier for "' + slug + '"...');
+  try {
+    var res = await fetch(api + '?slug=' + encodeURIComponent(slug));
+    var data = await res.json();
+    if (!data.exists || !data.dossier) {
+      dosShowMsg('No existing dossier found for "' + slug + '". Start fresh below.', 'error');
+      return;
+    }
+    // Parse the dossier text back into the form fields
+    var loaded = dosParseIntoFields(data.dossier);
+    dosUpdateProgress();
+    dosShowMsg('✓ Loaded existing dossier (' + loaded + ' fields populated)', 'success');
+  } catch (err) {
+    dosShowMsg('Load failed: ' + err.message, 'error');
+  } finally {
+    dosHideLoading();
+  }
+}
+
+// Parse a saved dossier text back into the input fields by matching question labels
+function dosParseIntoFields(dossierText) {
+  var lines = dossierText.split('\n');
+  var loaded = 0;
+  // Build a map of label -> field id for fast lookup
+  var labelMap = {};
+  DOSSIER_QUESTIONS.forEach(function(cat) {
+    cat.questions.forEach(function(q) {
+      labelMap[q.label.toLowerCase()] = q.id;
+    });
+  });
+  lines.forEach(function(line) {
+    var idx = line.indexOf(': ');
+    if (idx === -1) return;
+    var label = line.substring(0, idx).toLowerCase();
+    var value = line.substring(idx + 2);
+    var fieldId = labelMap[label];
+    if (fieldId) {
+      var el = document.getElementById('dos-' + fieldId);
+      if (el) { el.value = value; loaded++; }
+    }
+  });
+  return loaded;
+}
+
+// LAYER 3: Use AI + web search to draft answers, populate empty fields only
+async function dosDraftWithAI() {
+  var name = (document.getElementById('f-name') && document.getElementById('f-name').value || '').trim();
+  if (!name) { dosShowMsg('Enter the property name in section 1 first.', 'error'); return; }
+  var api = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+  dosShowLoading('Researching ' + name + ' and drafting dossier answers...');
+  document.getElementById('dos-draft-btn').disabled = true;
+
+  // Build the question schema for the AI
+  var schema = {};
+  DOSSIER_QUESTIONS.forEach(function(cat) {
+    cat.questions.forEach(function(q) { schema[q.id] = q.label; });
+  });
+
+  var systemMsg = "You are The Envoy, building an in-depth dossier of a luxury travel property for The Bearing. Use web search aggressively to find specific facts, materials, history, awards, architect names, room counts, season dates, and any verifiable details. For sensory and operational questions where public sources are vague, draft a thoughtful first-pass answer the property's owner can refine. For pure insider questions (best room, secret dish, staff member by name, unmarked details), leave empty rather than fabricate — these require human knowledge.\n\nReturn ONLY a raw JSON object — no markdown, no backticks, no preamble — mapping field IDs to draft answers as strings. Use empty string \"\" for fields you cannot answer confidently. Schema:\n" + JSON.stringify(schema, null, 2) + "\n\nWrite in The Bearing voice: architectural precision, sensory specificity, no marketing fluff, brevity is luxury. Avoid words like 'luxury', 'stunning', 'beautiful', 'nestled'. Use concrete materials, light descriptions, specific sounds.";
+
+  try {
+    var res = await fetch(api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: systemMsg,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: 'Property to research: ' + name }]
+      })
+    });
+    if (!res.ok) throw new Error('API returned ' + res.status);
+    var data = await res.json();
+    var fullText = '';
+    if (data.content && Array.isArray(data.content)) {
+      data.content.forEach(function(b) { if (b.type === 'text' && b.text) fullText += b.text; });
+    }
+    fullText = fullText.replace(/```json|```/g, '').trim();
+    var m = fullText.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Could not parse AI response');
+    var draft = JSON.parse(m[0]);
+    // Populate ONLY empty fields (preserve human input)
+    var filled = 0;
+    Object.keys(draft).forEach(function(fieldId) {
+      var val = draft[fieldId];
+      if (!val || typeof val !== 'string' || !val.trim()) return;
+      var el = document.getElementById('dos-' + fieldId);
+      if (!el) return;
+      if (el.value && el.value.trim()) return; // skip filled
+      el.value = val;
+      filled++;
+    });
+    dosUpdateProgress();
+    dosShowMsg('✓ AI drafted ' + filled + ' empty fields. Refine and add insider knowledge below, then save.', 'success');
+  } catch (err) {
+    dosShowMsg('AI draft failed: ' + err.message, 'error');
+  } finally {
+    dosHideLoading();
+    document.getElementById('dos-draft-btn').disabled = false;
+  }
+}
+
+// Init dossier panel on page load
+setTimeout(function() {
+  dosRender();
+  dosUpdateProgress();
+  // Auto-load existing dossier if a slug is present
+  setTimeout(function() {
+    var slug = dosCurrentSlug();
+    if (slug && dosDossierApi()) {
+      // Silent attempt — failures are fine
+      fetch(dosDossierApi() + '?slug=' + encodeURIComponent(slug))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.exists && data.dossier) {
+            var loaded = dosParseIntoFields(data.dossier);
+            dosUpdateProgress();
+            if (loaded > 0) {
+              var status = document.getElementById('dos-status');
+              if (status) status.title = 'Loaded existing dossier from KV';
+            }
+          }
+        })
+        .catch(function() {});
+    }
+  }, 200);
+}, 100);
 
 // Init
 addRoom();

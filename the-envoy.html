@@ -991,6 +991,28 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);-we
 </section>
 
 <script>
+var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable travel concierge helping guests find the perfect rare hotel or boutique cruise from the The Bearing collection.\n\nYour voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places. Short, evocative sentences. No bullet points. Never sound like a brochure.\n\nYou ONLY recommend properties and experiences within the The Bearing collection. You never suggest external booking sites, other hotel brands, or accommodation outside of The Bearing.\n\nWhen recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3-5 sentences.";
+
+// ── ENVOY LAYER 1: page-aware dossier injection ──
+// On property pages, fetch the property's dossier from KV and prepend
+// it to CI_SYSTEM so The Envoy answers with deep page-specific context.
+(function() {
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
+  if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
+  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
+  if (!DOSSIER_API) return; // running in preview env, skip
+  fetch(DOSSIER_API + '?slug=' + encodeURIComponent(path))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if (!data || !data.dossier) return;
+      CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your complete authoritative dossier — read it carefully and answer questions using this knowledge. Never invent facts not present in the dossier; if something isn't covered, say so plainly.\n\n=== PROPERTY DOSSIER ===\n" + data.dossier + "\n=== END DOSSIER ===\n\n" + CI_SYSTEM;
+      console.log('[Envoy] Loaded dossier for ' + path + ' (' + data.dossier.length + ' chars)');
+    })
+    .catch(function(e){ console.log('[Envoy] No dossier loaded:', e.message); });
+})();
+
+
 // ── Destination tab switching ─────────────────────────────────────────────
 function showDest(id, btn) {
   ['egypt','moudira','amangiri'].forEach(function(d){

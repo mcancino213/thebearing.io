@@ -5,3 +5,15 @@ compatibility_date = "2024-09-01"
 [assets]
 directory = "./"
 not_found_handling = "single-page-application"
+
+[observability]
+enabled = true
+
+# KV binding for property dossiers (Layer 1/2/3 of Envoy roadmap).
+# The id below is filled in automatically by Cloudflare when wrangler
+# detects the matching namespace name. If you ever need it explicitly,
+# go to dash.cloudflare.com → Storage & Databases → KV → click your
+# 'dossiers' namespace → copy the ID.
+[[kv_namespaces]]
+binding = "DOSSIERS"
+id = "aa0c885871474266966e50f0676dd019"

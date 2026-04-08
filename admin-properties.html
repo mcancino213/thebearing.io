@@ -611,7 +611,7 @@ async function generateWithAI(){
   document.getElementById('em-body').value='';
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',max_tokens:1000,
+      model:'claude-sonnet-4-6',max_tokens:1000,
       system:`You write prospecting emails for The Bearing (thebearing.io), a curated luxury travel discovery platform. Tone: warm, direct, sophisticated — never salesy. Value prop: rare properties, high-intent travellers, 12% commission on confirmed stays, no listing fees. Write only the email body. Start "Dear [contact name]," end with Miguel Guerrero, Founder signature.`,
       messages:[{role:'user',content:`Write a prospecting email for: ${card?.name||'this property'} (${card?.type||''}, ${card?.country||''}). Context: ${prompt}`}]
     })});
