@@ -539,11 +539,13 @@ async function callVibeAI(vibe, country, properties) {
 
   conversationHistory.push({ role: 'user', content: userMessage });
 
-  var response = await fetch('https://api.anthropic.com/v1/messages', {
+  var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+
+  var response = await fetch(ENVOY_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: 'You are The Bearing\'s AI vibe matcher. You understand aesthetic language — architecture, interior design, mood, atmosphere, cultural references. You match hotels and cruises to descriptions based on their genuine aesthetic DNA, not just keywords. You write in a confident, editorial voice. Always return valid raw JSON only — no markdown fences.',
       messages: conversationHistory
@@ -783,10 +785,11 @@ async function ciSendMsg(text) {
   var t = ciShowTyping();
 
   try {
-    var res = await fetch('/api/chat', {
+    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var res = await fetch(CI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
     });
     var data = await res.json();
     var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';

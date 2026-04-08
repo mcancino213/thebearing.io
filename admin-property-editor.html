@@ -175,6 +175,46 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .pe-room-photos-card-title{font-family:'Fraunces',serif;font-size:15px;font-weight:400;color:var(--text);}
 .pe-room-photos-card-title .pe-room-photos-empty{color:var(--text3);font-style:italic;font-size:13px;font-family:inherit;}
 .pe-room-photos-empty-msg{padding:18px;background:var(--surface2);border:1px dashed var(--border2);border-radius:10px;font-size:13px;color:var(--text3);text-align:center;}
+
+/* AI GENERATION PANEL */
+.pe-ai-panel{background:linear-gradient(135deg,#1a1d24 0%,#0f1117 100%);border:1px solid #2a2f3a;border-radius:14px;padding:24px 26px;margin-bottom:24px;position:relative;overflow:hidden;}
+.pe-ai-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(193,127,62,.5),transparent);}
+.pe-ai-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.pe-ai-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(193,127,62,.12);border:1px solid rgba(193,127,62,.3);border-radius:100px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#c17f3e;}
+.pe-ai-title{font-family:'Fraunces',serif;font-size:18px;font-weight:400;color:#f5f5f5;line-height:1.2;}
+.pe-ai-sub{font-size:13px;color:#8a8f99;margin-top:2px;margin-bottom:18px;}
+.pe-ai-input-row{display:flex;gap:10px;align-items:stretch;}
+.pe-ai-input{flex:1;background:#0a0c11;border:1px solid #2a2f3a;color:#f5f5f5;border-radius:9px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .15s;}
+.pe-ai-input:focus{border-color:#c17f3e;}
+.pe-ai-input::placeholder{color:#5a5f69;}
+.pe-ai-btn{background:#c17f3e;color:#fff;border:none;border-radius:9px;padding:0 22px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .15s;white-space:nowrap;}
+.pe-ai-btn:hover{background:#a86a31;}
+.pe-ai-btn:disabled{background:#3a3f4a;color:#8a8f99;cursor:not-allowed;}
+.pe-ai-btn-secondary{background:transparent;color:#c17f3e;border:1px solid #c17f3e;}
+.pe-ai-btn-secondary:hover{background:rgba(193,127,62,.1);}
+.pe-ai-loading{display:flex;align-items:center;gap:10px;color:#c17f3e;font-size:13px;margin-top:14px;}
+.pe-ai-spinner{width:14px;height:14px;border:2px solid rgba(193,127,62,.2);border-top-color:#c17f3e;border-radius:50%;animation:peai-spin .8s linear infinite;}
+@keyframes peai-spin{to{transform:rotate(360deg);}}
+.pe-ai-confirm{margin-top:18px;background:#0a0c11;border:1px solid #2a2f3a;border-radius:10px;padding:18px 20px;display:none;}
+.pe-ai-confirm.show{display:block;}
+.pe-ai-confirm-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a8f99;margin-bottom:8px;}
+.pe-ai-confirm-name{font-family:'Fraunces',serif;font-size:18px;color:#f5f5f5;line-height:1.3;margin-bottom:4px;}
+.pe-ai-confirm-loc{font-size:13px;color:#a8adb7;margin-bottom:12px;}
+.pe-ai-confirm-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.pe-ai-confirm-chip{padding:3px 9px;background:rgba(193,127,62,.1);border:1px solid rgba(193,127,62,.25);border-radius:100px;font-size:11px;color:#c17f3e;}
+.pe-ai-confirm-summary{font-size:13px;color:#a8adb7;line-height:1.6;margin-bottom:14px;font-style:italic;border-left:2px solid #2a2f3a;padding-left:12px;}
+.pe-ai-confirm-source{font-size:11px;color:#5a5f69;margin-bottom:14px;}
+.pe-ai-confirm-source a{color:#8a8f99;text-decoration:underline;}
+.pe-ai-confirm-actions{display:flex;gap:10px;align-items:center;}
+.pe-ai-confirm-wrong{background:transparent;color:#8a8f99;border:none;padding:0;font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;}
+.pe-ai-confirm-wrong:hover{color:#f5f5f5;}
+.pe-ai-result{margin-top:18px;display:none;align-items:center;justify-content:space-between;padding:14px 18px;background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.25);border-radius:10px;font-size:13px;color:#34d399;}
+.pe-ai-result.show{display:flex;}
+.pe-ai-result-actions{display:flex;gap:14px;align-items:center;}
+.pe-ai-regen-link{background:transparent;color:#8a8f99;border:none;padding:0;font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;}
+.pe-ai-regen-link:hover{color:#f5f5f5;}
+.pe-ai-error{margin-top:14px;padding:12px 16px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);border-radius:9px;font-size:12px;color:#fca5a5;display:none;}
+.pe-ai-error.show{display:block;}
 .pe-hero-preview{width:100%;height:180px;border-radius:10px;background:var(--bg);overflow:hidden;margin-top:10px;display:none;border:1px solid var(--border);}
 .pe-hero-preview img{width:100%;height:100%;object-fit:cover;}
 
@@ -286,6 +326,48 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
   <div class="pe-shell fade-in-2">
     <div class="pe-form">
+
+      <!-- AI GENERATION PANEL -->
+      <div class="pe-ai-panel">
+        <div class="pe-ai-head">
+          <span class="pe-ai-badge">⌁ The Envoy</span>
+        </div>
+        <div class="pe-ai-title">Generate with AI</div>
+        <div class="pe-ai-sub">Enter a property name. The Envoy researches the web and drafts the page in The Bearing voice. You review before anything is committed.</div>
+        <div class="pe-ai-input-row">
+          <input type="text" class="pe-ai-input" id="ai-prop-name" placeholder="e.g. Aman Tokyo · Six Senses Ibiza · Soneva Jani" onkeydown="if(event.key==='Enter'){aiFindProperty();}">
+          <button class="pe-ai-btn" id="ai-find-btn" onclick="aiFindProperty()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Find property
+          </button>
+        </div>
+        <div class="pe-ai-loading" id="ai-loading" style="display:none;">
+          <div class="pe-ai-spinner"></div>
+          <span id="ai-loading-msg">Searching the web...</span>
+        </div>
+        <div class="pe-ai-error" id="ai-error"></div>
+        <div class="pe-ai-confirm" id="ai-confirm">
+          <div class="pe-ai-confirm-label">Found</div>
+          <div class="pe-ai-confirm-name" id="ai-c-name"></div>
+          <div class="pe-ai-confirm-loc" id="ai-c-loc"></div>
+          <div class="pe-ai-confirm-meta" id="ai-c-meta"></div>
+          <div class="pe-ai-confirm-summary" id="ai-c-summary"></div>
+          <div class="pe-ai-confirm-source" id="ai-c-source"></div>
+          <div class="pe-ai-confirm-actions">
+            <button class="pe-ai-btn" id="ai-gen-btn" onclick="aiGenerateFull()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              Yes, draft the full page
+            </button>
+            <button class="pe-ai-confirm-wrong" onclick="aiResetConfirm()">Wrong property — search again</button>
+          </div>
+        </div>
+        <div class="pe-ai-result" id="ai-result">
+          <span><strong>✓ Drafted.</strong> <span id="ai-result-count"></span> fields populated. Review below before publishing.</span>
+          <div class="pe-ai-result-actions">
+            <button class="pe-ai-regen-link" onclick="aiRegenerateOverwrite()">Regenerate all (overwrite)</button>
+          </div>
+        </div>
+      </div>
 
       <!-- 1. CORE IDENTITY -->
       <div class="pe-section">
@@ -1058,6 +1140,211 @@ function publishProperty() {
     bar.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> <strong>'+name+'</strong> is ready to publish. JSON copied — send to your backend.';
     showToast('Published! JSON copied to clipboard','success');
   });
+}
+
+// ── AI GENERATION (THE ENVOY) ──────────────────────────────────────
+// Brand voice + system prompt — keep in sync with /CLAUDE-HANDOFF.md voice dossier
+var BRAND_VOICE_SYSTEM = "You are The Envoy — the AI specialist of The Bearing, a hyper-curated travel platform for a Global 1% audience. The Bearing focuses on 100 handpicked properties (hotels, boutique cruises, villas) defined by architectural courage, absolute privacy, and slow-travel values.\n\nYOUR PERSONA: 'The Quiet Authority' — a mix of seasoned ship captain, lead architect, and discreet international fixer. Decisive, minimalist, deeply insightful. You direct, you do not sell.\n\nVOICE PILLARS:\n1. Architectural Precision — focus on materials, light, structure. Avoid generic adjectives like 'beautiful' or 'stunning'. Describe WHY a space works ('raw teak', 'brutalist geometry', 'east-facing light').\n2. Radical Candidness — peer voice, not servant. Insider truth. State flaws plainly when relevant.\n3. Sensory Depth — describe how a place feels, sounds, the haptics of luxury (weight of door, temperature of stone).\n4. Nautical Undercurrent — subtle nods only (Vector, Course, Bearing, Port) where natural. Never costume-nautical.\n\nLEXICON — DO NOT USE → USE INSTEAD:\nHotel/Vacation → Property/Site/Sanctuary\nLuxury/High-end → Essential/Precise/Vetted\nExpert/Consultant → Authority/Specialist/Lead\nItinerary/Trip → The Line/The Vector/The Course\nAmenities/Perks → Features/Assets/Utility\nHidden Gem → The Coordinate/An Unmarked Entry\n\nSTYLE: Brevity is luxury. Short punchy sentences. No marketing fluff. No 'nestled in the heart of'. Lead with OUTCOME, not features.\n\nNever fabricate facts. If you cannot verify a detail from your web research, leave the field empty rather than guess.";
+
+var aiState = { stage: 'idle', confirmed: null, lastResult: null };
+
+function aiShowError(msg) {
+  var el = document.getElementById('ai-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function aiClearError() {
+  document.getElementById('ai-error').classList.remove('show');
+}
+function aiShowLoading(msg) {
+  document.getElementById('ai-loading-msg').textContent = msg;
+  document.getElementById('ai-loading').style.display = 'flex';
+}
+function aiHideLoading() {
+  document.getElementById('ai-loading').style.display = 'none';
+}
+function aiResetConfirm() {
+  document.getElementById('ai-confirm').classList.remove('show');
+  aiState.stage = 'idle';
+  aiState.confirmed = null;
+}
+
+// STAGE 1: Find property — quick web search + confirmation card
+async function aiFindProperty() {
+  aiClearError();
+  document.getElementById('ai-result').classList.remove('show');
+  document.getElementById('ai-confirm').classList.remove('show');
+  var name = document.getElementById('ai-prop-name').value.trim();
+  if (!name) { aiShowError('Enter a property name first.'); return; }
+
+  document.getElementById('ai-find-btn').disabled = true;
+  aiShowLoading('Searching the web for "' + name + '"...');
+
+  var systemMsg = "You are a research assistant. The user will give you a property name (a hotel, villa, or boutique cruise). Use web search to find ONE specific property matching the name. Return ONLY a raw JSON object — no markdown, no backticks, no preamble — with this exact shape:\n{\"name\":\"Full official property name\",\"location\":\"City, Country\",\"type\":\"hotel|villa|cruise\",\"year\":\"YYYY or YYYY/YYYY for renovated\",\"rooms\":\"number or null\",\"summary\":\"2 sentence factual summary — what it is and where, no marketing language\",\"source\":\"primary source URL you used\",\"confidence\":\"high|medium|low\"}\nIf multiple properties share the name, pick the most architecturally significant / well-reviewed one. If you genuinely cannot find it, return {\"error\":\"not_found\",\"reason\":\"brief explanation\"}.";
+
+  try {
+    var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var response = await fetch(ENVOY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: systemMsg,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: 'Property name: ' + name }]
+      })
+    });
+    if (!response.ok) throw new Error('API returned ' + response.status);
+    var data = await response.json();
+
+    // Extract text from possibly multi-block response (tool use + text)
+    var fullText = '';
+    if (data.content && Array.isArray(data.content)) {
+      data.content.forEach(function(b) { if (b.type === 'text' && b.text) fullText += b.text; });
+    }
+    fullText = fullText.replace(/```json|```/g, '').trim();
+    // Find first { ... } block in case there's stray prose
+    var m = fullText.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Could not parse Envoy response');
+    var found = JSON.parse(m[0]);
+
+    if (found.error) {
+      aiShowError("Couldn't find that property. " + (found.reason || 'Try a more specific name.'));
+      return;
+    }
+
+    // Render confirmation card
+    aiState.confirmed = found;
+    aiState.stage = 'confirmed';
+    document.getElementById('ai-c-name').textContent = found.name || name;
+    document.getElementById('ai-c-loc').textContent = found.location || '';
+    var meta = document.getElementById('ai-c-meta');
+    meta.innerHTML = '';
+    if (found.type) meta.appendChild(aiChip(found.type));
+    if (found.year) meta.appendChild(aiChip('Est. ' + found.year));
+    if (found.rooms) meta.appendChild(aiChip(found.rooms + ' rooms'));
+    if (found.confidence) meta.appendChild(aiChip(found.confidence + ' confidence'));
+    document.getElementById('ai-c-summary').textContent = found.summary || '';
+    var src = document.getElementById('ai-c-source');
+    src.innerHTML = found.source ? 'Source: <a href="' + found.source + '" target="_blank" rel="noopener">' + found.source.replace(/^https?:\/\//,'').slice(0,60) + '</a>' : '';
+    document.getElementById('ai-confirm').classList.add('show');
+  } catch (err) {
+    aiShowError('Search failed: ' + err.message);
+  } finally {
+    aiHideLoading();
+    document.getElementById('ai-find-btn').disabled = false;
+  }
+}
+
+function aiChip(text) {
+  var c = document.createElement('span');
+  c.className = 'pe-ai-confirm-chip';
+  c.textContent = text;
+  return c;
+}
+
+// STAGE 2: Generate full page in brand voice
+async function aiGenerateFull(opts) {
+  opts = opts || {};
+  var overwrite = !!opts.overwrite;
+  if (!aiState.confirmed) { aiShowError('Find a property first.'); return; }
+  aiClearError();
+  document.getElementById('ai-gen-btn').disabled = true;
+  aiShowLoading('The Envoy is drafting the page...');
+
+  var prop = aiState.confirmed;
+  var availableTags = ['Adults only','Family-friendly','Remote','No Wi-Fi','Private chef','Butler service','Diving','Wellness','Wildlife','Cultural','Design','Wilderness','Beachfront','Mountain','Desert','Overwater','Architecture','Eco / Sustainable','Under 20 rooms','Private pool','All-inclusive','Safari'];
+
+  var fieldSpec = "Return ONLY a raw JSON object with these exact keys (use empty string \"\" or null for any field you cannot confidently fill — never fabricate):\n{\n  \"name\": \"Full official property name\",\n  \"slug\": \"url-safe-lowercase-name\",\n  \"type\": \"hotel | villa | cruise\",\n  \"country\": \"\",\n  \"region\": \"e.g. 'Serengeti, Grumeti' — local region not country\",\n  \"airport\": \"e.g. 'JRO · Kilimanjaro' — IATA + name\",\n  \"tag\": \"3-5 word category tagline e.g. 'Wilderness · Architecture'\",\n  \"hook\": \"60-120 char one-line outcome statement in The Bearing voice — THIS IS THE OUTCOME\",\n  \"description_short\": \"Opening paragraph the guest reads first. 2-3 sentences. The Bearing voice — outcome-led, architectural, no fluff.\",\n  \"description_long\": \"THE SITE — 4-6 sentences. Architectural and sensory summary. Materials, light, structure. How it feels and sounds. The Bearing voice.\",\n  \"verdict\": \"THE ENVOY TIP — 1-2 sentences. A discreet insider secret. Specific and predictive (e.g. 'Room 402 is the only one with a view of the spire — ask for it specifically.')\",\n  \"rcount\": \"total room count as a number string e.g. '15'\",\n  \"maxg\": \"max guests as number string\",\n  \"year\": \"e.g. '2018' or '1995/2021' for renovated\",\n  \"awards\": \"e.g. 'Relais & Châteaux · Nat Geo pick'\",\n  \"season\": \"e.g. 'October – April'\",\n  \"getting_there\": \"2-3 sentences on logistics — flights, transfers, charters\",\n  \"tags\": [\"array of tag names from this exact list — pick all that genuinely apply\"],\n  \"meta_title\": \"SEO title under 60 chars: 'Property — Type · Region · TheBearing'\",\n  \"meta_desc\": \"SEO description under 160 chars\"\n}\n\nAvailable tags (use exact spelling, only pick ones that genuinely apply): " + JSON.stringify(availableTags) + "\n\nWrite EVERY text field in The Bearing voice as defined in the system prompt. The hook is THE OUTCOME. The description_long is THE SITE. The verdict is THE ENVOY TIP. No marketing fluff. Architectural precision. Brevity is luxury.";
+
+  var userMsg = "Property to draft: " + prop.name + " (" + (prop.location || '') + ")\nType: " + (prop.type || '') + "\nFacts I already know: " + JSON.stringify(prop) + "\n\nUse web search to gather any additional facts you need (architect, materials, history, awards, logistics, room counts, season, exact location). Then draft the full property page in The Bearing voice using the spec below.\n\n" + fieldSpec;
+
+  try {
+    var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var response = await fetch(ENVOY_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: BRAND_VOICE_SYSTEM,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+    if (!response.ok) throw new Error('API returned ' + response.status);
+    var data = await response.json();
+    var fullText = '';
+    if (data.content && Array.isArray(data.content)) {
+      data.content.forEach(function(b) { if (b.type === 'text' && b.text) fullText += b.text; });
+    }
+    fullText = fullText.replace(/```json|```/g, '').trim();
+    var m = fullText.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('Could not parse Envoy draft');
+    var draft = JSON.parse(m[0]);
+    aiState.lastResult = draft;
+    var filled = aiPopulateFields(draft, overwrite);
+
+    document.getElementById('ai-result-count').textContent = filled;
+    document.getElementById('ai-result').classList.add('show');
+    document.getElementById('ai-confirm').classList.remove('show');
+    if (typeof updateAll === 'function') updateAll();
+  } catch (err) {
+    aiShowError('Generation failed: ' + err.message);
+  } finally {
+    aiHideLoading();
+    document.getElementById('ai-gen-btn').disabled = false;
+  }
+}
+
+// Field-population helper. Maps the JSON response to form field IDs.
+// Returns count of fields actually populated.
+function aiPopulateFields(draft, overwrite) {
+  var map = {
+    'f-name': draft.name, 'f-slug': draft.slug, 'f-type': draft.type,
+    'f-country': draft.country, 'f-region': draft.region, 'f-airport': draft.airport,
+    'f-tag': draft.tag, 'f-hook': draft.hook,
+    'f-desc-short': draft.description_short, 'f-desc-long': draft.description_long,
+    'f-verdict': draft.verdict,
+    'f-rcount': draft.rcount, 'f-maxg': draft.maxg, 'f-year': draft.year,
+    'f-awards': draft.awards, 'f-season': draft.season, 'f-getting-there': draft.getting_there,
+    'f-meta-title': draft.meta_title, 'f-meta-desc': draft.meta_desc
+  };
+  var filled = 0;
+  Object.keys(map).forEach(function(id) {
+    var val = map[id];
+    if (val == null || val === '') return;
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (!overwrite && el.value && el.value.trim() !== '') return; // skip filled fields
+    el.value = val;
+    filled++;
+    // Trigger any oninput counters/validators wired to the field
+    var ev = new Event('input', { bubbles: true });
+    el.dispatchEvent(ev);
+  });
+  // Tags — toggle matching chips
+  if (Array.isArray(draft.tags)) {
+    var chips = document.querySelectorAll('#tags-wrap .pe-tag');
+    chips.forEach(function(c) {
+      var match = draft.tags.indexOf(c.textContent.trim()) !== -1;
+      if (overwrite) {
+        c.classList.toggle('on', match);
+      } else if (match && !c.classList.contains('on')) {
+        c.classList.add('on');
+      }
+      if (match) filled++;
+    });
+  }
+  return filled;
+}
+
+function aiRegenerateOverwrite() {
+  if (!aiState.confirmed) return;
+  if (!confirm('This will overwrite every AI-fillable field with a fresh draft. Continue?')) return;
+  document.getElementById('ai-confirm').classList.add('show');
+  aiGenerateFull({ overwrite: true });
 }
 
 // Init

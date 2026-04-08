@@ -1069,11 +1069,13 @@ async function sendDemoMsg() {
   addTyping();
 
   try {
-    var response = await fetch('https://api.anthropic.com/v1/messages', {
+    var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+
+    var response = await fetch(ENVOY_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         system: 'You are The Envoy — The Bearing\'s AI travel specialist. You have deep, specific knowledge of Nour El Nil (a fleet of dahabiyas on the Nile between Esna and Aswan, Egypt). You know the individual boats (Najafa, Poppee, Roman), the temples along the route (Edfu, Kom Ombo, Luxor, Karnak, Medinet Habu), the best timing for each site, off-menu food recommendations, secret local spots, and insider knowledge that no guidebook contains. Respond in a warm, expert, confident voice — specific and personal, not generic. Keep responses to 3–5 sentences maximum. Use specific names, times, and details. Never say "I suggest" or "I recommend" — just tell them directly what to do, as a trusted friend who knows Egypt deeply would.',
         messages: [{ role: 'user', content: msg }]
@@ -1216,10 +1218,11 @@ async function ciSendMsg(text) {
   var t = ciShowTyping();
 
   try {
-    var res = await fetch('/api/chat', {
+    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var res = await fetch(CI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
     });
     var data = await res.json();
     var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
