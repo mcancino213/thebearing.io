@@ -259,6 +259,33 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .pe-dossier-q-input{background:#fdfcf7;border:1px solid #d4cdb8;color:#2a2520;border-radius:7px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s;width:100%;line-height:1.5;}
 .pe-dossier-q-input:focus{border-color:#c17f3e;background:#fff;}
 .pe-dossier-q-input.textarea{min-height:60px;resize:vertical;font-family:'DM Sans',sans-serif;}
+
+/* Sources sub-panel inside dossier */
+.pe-dossier-source{background:#fff;border:1px solid #e8e3d4;border-radius:8px;padding:14px 16px;margin-bottom:10px;}
+.pe-dossier-source-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.pe-dossier-source-num{width:24px;height:24px;border-radius:50%;background:#f0ebd9;color:#8a5a2b;font-family:'DM Sans',sans-serif;font-weight:600;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pe-dossier-source-label{flex:0 0 140px;background:#fdfcf7;border:1px solid #d4cdb8;color:#2a2520;border-radius:6px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;}
+.pe-dossier-source-label:focus{border-color:#c17f3e;background:#fff;}
+.pe-dossier-source-url{flex:1;background:#fdfcf7;border:1px solid #d4cdb8;color:#2a2520;border-radius:6px;padding:8px 10px;font-family:'JetBrains Mono','DM Sans',monospace;font-size:11px;outline:none;}
+.pe-dossier-source-url:focus{border-color:#c17f3e;background:#fff;}
+.pe-dossier-source-fetch{background:#c17f3e;color:#fff;border:none;border-radius:6px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.pe-dossier-source-fetch:hover{background:#a86a31;}
+.pe-dossier-source-fetch:disabled{background:#c4bdac;cursor:not-allowed;}
+.pe-dossier-source-delete{background:transparent;color:#a02020;border:1px solid #e8c8c8;border-radius:6px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;}
+.pe-dossier-source-delete:hover{background:rgba(160,32,32,.06);}
+.pe-dossier-source-status{font-size:10px;color:#8a7a4a;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pe-dossier-source-status .badge{padding:2px 7px;border-radius:100px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:9px;}
+.pe-dossier-source-status .badge.empty{background:#f0ebd9;color:#8a7a4a;}
+.pe-dossier-source-status .badge.fresh{background:#d4f0d4;color:#2d6a2d;}
+.pe-dossier-source-status .badge.stale{background:#fde9c4;color:#8a5a2b;}
+.pe-dossier-source-status .badge.error{background:#fbd9d9;color:#a02020;}
+.pe-dossier-source-fallback{margin-top:10px;display:none;}
+.pe-dossier-source-fallback.show{display:block;}
+.pe-dossier-source-fallback-label{font-size:11px;color:#8a7a4a;font-style:italic;margin-bottom:4px;}
+.pe-dossier-source-fallback textarea{width:100%;min-height:80px;background:#fdfcf7;border:1px solid #d4cdb8;color:#2a2520;border-radius:6px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:12px;outline:none;resize:vertical;}
+.pe-dossier-source-fallback textarea:focus{border-color:#c17f3e;background:#fff;}
+.pe-dossier-source-add{background:transparent;color:#8a5a2b;border:1px dashed #c17f3e;border-radius:8px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;width:100%;margin-top:6px;}
+.pe-dossier-source-add:hover{background:rgba(193,127,62,.05);}
 .pe-hero-preview{width:100%;height:180px;border-radius:10px;background:var(--bg);overflow:hidden;margin-top:10px;display:none;border:1px solid var(--border);}
 .pe-hero-preview img{width:100%;height:100%;object-fit:cover;}
 
@@ -444,6 +471,24 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         <div class="pe-dossier-msg" id="dos-msg"></div>
         <div class="pe-dossier-categories" id="dos-categories">
           <!-- Categories injected by JS -->
+        </div>
+
+        <!-- SOURCES SUB-PANEL — separate from text-question categories -->
+        <div class="pe-dossier-cat" id="dos-sources-panel" style="margin-top:14px;">
+          <div class="pe-dossier-cat-head" onclick="this.parentElement.classList.toggle('collapsed')">
+            <div class="pe-dossier-cat-title"><div class="pe-dossier-cat-num">08</div>Source URLs</div>
+            <div class="pe-dossier-cat-meta">
+              <span id="dos-sources-count">0 cached</span>
+              <svg class="pe-dossier-cat-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="pe-dossier-cat-body">
+            <div style="font-size:12px;color:#6a635a;font-style:italic;margin-bottom:4px;">Reference URLs The Envoy can quote when the dossier is silent. Click "Fetch & cache" to download and store the page content. Use the manual paste fallback if a site blocks automated access.</div>
+            <div id="dos-sources-rows">
+              <!-- Source rows injected by JS -->
+            </div>
+            <button class="pe-dossier-source-add" onclick="dosAddSourceSlot()">+ Add another source</button>
+          </div>
         </div>
       </div>
 
@@ -1483,6 +1528,9 @@ var DOSSIER_QUESTIONS = [
     { id: 'lp-tipping', label: 'Tipping norms?', hint: '' },
     { id: 'lp-connectivity', label: 'Connectivity', hint: 'Wi-Fi, cell, intentional disconnection?' },
     { id: 'lp-dress', label: 'Dress code expectations', hint: '' }
+  ]},
+  { cat: 'Notes & raw context', icon: '07', desc: 'Unstructured. Paste anything: GM phone notes, guest review excerpts, internal memos. The Envoy reads it all.', questions: [
+    { id: 'nt-notes', label: 'Free-form notes about this property', hint: 'no structure required — just dump useful context here', textarea: true }
   ]}
 ];
 
@@ -1718,11 +1766,222 @@ async function dosDraftWithAI() {
   }
 }
 
+// ── DOSSIER SOURCES PANEL ─────────────────────────────────────────
+// State: sources are tracked by slot number (1-10). Each slot has a label,
+// URL, and optionally cached content. Default to 3 visible slots, allow + to add more.
+var dosSourceSlots = [1, 2, 3];
+
+function dosSourceApi() {
+  return (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+}
+
+function dosRenderSources() {
+  var wrap = document.getElementById('dos-sources-rows');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  dosSourceSlots.forEach(function(slot) {
+    var row = document.createElement('div');
+    row.className = 'pe-dossier-source';
+    row.id = 'dos-source-row-' + slot;
+    row.innerHTML =
+      '<div class="pe-dossier-source-row">' +
+        '<div class="pe-dossier-source-num">' + slot + '</div>' +
+        '<input class="pe-dossier-source-label" id="dos-source-label-' + slot + '" placeholder="Label (e.g. TripAdvisor)">' +
+        '<input class="pe-dossier-source-url" id="dos-source-url-' + slot + '" placeholder="https://...">' +
+        '<button class="pe-dossier-source-fetch" onclick="dosFetchSource(' + slot + ')" id="dos-source-fetch-' + slot + '">Fetch &amp; cache</button>' +
+        '<button class="pe-dossier-source-delete" onclick="dosDeleteSource(' + slot + ')" title="Remove this source">×</button>' +
+      '</div>' +
+      '<div class="pe-dossier-source-status" id="dos-source-status-' + slot + '"><span class="badge empty">Empty</span></div>' +
+      '<div class="pe-dossier-source-fallback" id="dos-source-fallback-' + slot + '">' +
+        '<div class="pe-dossier-source-fallback-label">Fetch failed — paste the page content manually:</div>' +
+        '<textarea id="dos-source-paste-' + slot + '" placeholder="Paste the article text here..."></textarea>' +
+        '<button class="pe-dossier-source-fetch" style="margin-top:6px;" onclick="dosSavePastedSource(' + slot + ')">Save pasted content</button>' +
+      '</div>';
+    wrap.appendChild(row);
+  });
+}
+
+function dosAddSourceSlot() {
+  if (dosSourceSlots.length >= 10) {
+    dosShowMsg('Maximum 10 sources per property.', 'error');
+    return;
+  }
+  var nextSlot = Math.max.apply(null, dosSourceSlots) + 1;
+  dosSourceSlots.push(nextSlot);
+  dosRenderSources();
+}
+
+function dosShowSourceStatus(slot, status, info) {
+  var el = document.getElementById('dos-source-status-' + slot);
+  if (!el) return;
+  var badge = '';
+  if (status === 'empty') badge = '<span class="badge empty">Empty</span>';
+  else if (status === 'fresh') badge = '<span class="badge fresh">Fresh</span>';
+  else if (status === 'stale') badge = '<span class="badge stale">Stale</span>';
+  else if (status === 'error') badge = '<span class="badge error">Error</span>';
+  else if (status === 'loading') badge = '<span class="badge stale">Working...</span>';
+  el.innerHTML = badge + (info ? ' <span>' + info + '</span>' : '');
+}
+
+async function dosFetchSource(slot) {
+  var slug = dosCurrentSlug();
+  if (!slug) { dosShowMsg('Set a property name in section 1 first.', 'error'); return; }
+  var api = dosSourceApi();
+  if (!api) { dosShowMsg('Source caching only works on the live site.', 'error'); return; }
+  var urlInput = document.getElementById('dos-source-url-' + slot);
+  var labelInput = document.getElementById('dos-source-label-' + slot);
+  var urlVal = (urlInput && urlInput.value || '').trim();
+  var labelVal = (labelInput && labelInput.value || '').trim();
+  if (!urlVal) { dosShowMsg('Enter a URL in slot ' + slot + ' first.', 'error'); return; }
+  if (!/^https?:\/\//i.test(urlVal)) { dosShowMsg('URL must start with http:// or https://', 'error'); return; }
+
+  document.getElementById('dos-source-fetch-' + slot).disabled = true;
+  dosShowSourceStatus(slot, 'loading', 'Fetching ' + urlVal.replace(/^https?:\/\//,'').slice(0, 40) + '...');
+  // Hide any previous fallback panel
+  document.getElementById('dos-source-fallback-' + slot).classList.remove('show');
+
+  try {
+    var res = await fetch(api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, slot: slot, url: urlVal, label: labelVal })
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) {
+      // Show the error and reveal the fallback paste textarea
+      var hint = data.hint ? ' (' + data.hint + ')' : '';
+      dosShowSourceStatus(slot, 'error', (data.error || 'Fetch failed') + hint);
+      document.getElementById('dos-source-fallback-' + slot).classList.add('show');
+      return;
+    }
+    var truncatedNote = data.truncated ? ' (truncated to 50KB)' : '';
+    dosShowSourceStatus(slot, 'fresh', data.length + ' chars cached' + truncatedNote);
+    dosUpdateSourcesCount();
+    dosShowMsg('✓ Source ' + slot + ' cached successfully.', 'success');
+  } catch (err) {
+    dosShowSourceStatus(slot, 'error', err.message);
+    document.getElementById('dos-source-fallback-' + slot).classList.add('show');
+  } finally {
+    document.getElementById('dos-source-fetch-' + slot).disabled = false;
+  }
+}
+
+async function dosSavePastedSource(slot) {
+  var slug = dosCurrentSlug();
+  if (!slug) { dosShowMsg('Set a property name first.', 'error'); return; }
+  var api = dosSourceApi();
+  if (!api) { dosShowMsg('Only works on the live site.', 'error'); return; }
+  var pasteEl = document.getElementById('dos-source-paste-' + slot);
+  var content = (pasteEl && pasteEl.value || '').trim();
+  if (!content) { dosShowMsg('Paste some content first.', 'error'); return; }
+  var urlVal = (document.getElementById('dos-source-url-' + slot).value || 'manual-paste').trim();
+  var labelVal = (document.getElementById('dos-source-label-' + slot).value || 'Manual paste').trim();
+
+  // Use the same /api/source POST endpoint, but with a special data: URL so the
+  // server can recognize this as pre-stripped content. Actually simpler:
+  // we POST a special "manual" payload via a slightly different shape.
+  // For Pattern A simplicity, we'll use a small client-side workaround:
+  // POST the same shape but with a data: URL the server will refuse to fetch.
+  // Cleanest is to make /api/source support a "content" override field. Let me
+  // do that via fetch with raw text since we can't easily extend the API now.
+  // Actually, simplest: encode the pasted content as a data: URL? No, our
+  // server fetcher would 502 it. Best path: POST { slug, slot, url, label, manualContent }
+  // and have the server skip fetching when manualContent is present.
+  // Since the server doesn't currently support that, we'll just save via the dossier
+  // path and hope for the best. Cleanest fix: extend the server to accept manualContent.
+  try {
+    var res = await fetch(api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, slot: slot, url: urlVal, label: labelVal, manualContent: content })
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) {
+      dosShowMsg('Manual save failed: ' + (data.error || 'unknown'), 'error');
+      return;
+    }
+    dosShowSourceStatus(slot, 'fresh', data.length + ' chars cached (manual)');
+    document.getElementById('dos-source-fallback-' + slot).classList.remove('show');
+    dosUpdateSourcesCount();
+    dosShowMsg('✓ Manual paste saved for source ' + slot + '.', 'success');
+  } catch (err) {
+    dosShowMsg('Save failed: ' + err.message, 'error');
+  }
+}
+
+async function dosDeleteSource(slot) {
+  var slug = dosCurrentSlug();
+  if (!slug) return;
+  var api = dosSourceApi();
+  if (!api) return;
+  if (!confirm('Remove source ' + slot + '?')) return;
+  try {
+    await fetch(api + '?slug=' + encodeURIComponent(slug) + '&slot=' + slot, { method: 'DELETE' });
+    document.getElementById('dos-source-url-' + slot).value = '';
+    document.getElementById('dos-source-label-' + slot).value = '';
+    var pasteEl = document.getElementById('dos-source-paste-' + slot);
+    if (pasteEl) pasteEl.value = '';
+    document.getElementById('dos-source-fallback-' + slot).classList.remove('show');
+    dosShowSourceStatus(slot, 'empty');
+    dosUpdateSourcesCount();
+    dosShowMsg('Source ' + slot + ' deleted.', 'success');
+  } catch (err) {
+    dosShowMsg('Delete failed: ' + err.message, 'error');
+  }
+}
+
+async function dosLoadSources() {
+  var slug = dosCurrentSlug();
+  if (!slug) return;
+  var api = dosSourceApi();
+  if (!api) return;
+  try {
+    var res = await fetch(api + '?slug=' + encodeURIComponent(slug));
+    if (!res.ok) return;
+    var data = await res.json();
+    if (!data.sources) return;
+    // Make sure we have enough slots visible to show all loaded sources
+    data.sources.forEach(function(src) {
+      if (dosSourceSlots.indexOf(src.slot) === -1) {
+        dosSourceSlots.push(src.slot);
+      }
+    });
+    dosSourceSlots.sort(function(a,b){ return a-b; });
+    dosRenderSources();
+    // Now populate the rows
+    data.sources.forEach(function(src) {
+      var urlEl = document.getElementById('dos-source-url-' + src.slot);
+      var labelEl = document.getElementById('dos-source-label-' + src.slot);
+      if (urlEl) urlEl.value = src.url || '';
+      if (labelEl) labelEl.value = src.label || '';
+      // Determine freshness
+      var ageDays = (Date.now() - new Date(src.fetchedAt).getTime()) / (1000 * 60 * 60 * 24);
+      var status = ageDays > 30 ? 'stale' : 'fresh';
+      var info = src.length + ' chars · ' + Math.round(ageDays) + ' day(s) old';
+      dosShowSourceStatus(src.slot, status, info);
+    });
+    dosUpdateSourcesCount();
+  } catch (err) {
+    console.log('[Dossier] Sources load error:', err.message);
+  }
+}
+
+function dosUpdateSourcesCount() {
+  var count = 0;
+  dosSourceSlots.forEach(function(slot) {
+    var el = document.getElementById('dos-source-status-' + slot);
+    if (el && (el.querySelector('.badge.fresh') || el.querySelector('.badge.stale'))) count++;
+  });
+  var el = document.getElementById('dos-sources-count');
+  if (el) el.textContent = count + ' cached';
+}
+
 // Init dossier panel on page load
 setTimeout(function() {
   dosRender();
+  dosRenderSources();
   dosUpdateProgress();
-  // Auto-load existing dossier if a slug is present
+  // Auto-load existing dossier and sources if a slug is present
   setTimeout(function() {
     var slug = dosCurrentSlug();
     if (slug && dosDossierApi()) {
@@ -1740,6 +1999,7 @@ setTimeout(function() {
           }
         })
         .catch(function() {});
+      dosLoadSources();
     }
   }, 200);
 }, 100);

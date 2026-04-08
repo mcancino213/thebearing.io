@@ -297,23 +297,44 @@
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable travel concierge helping guests find the perfect rare hotel or boutique cruise from the The Bearing collection.\n\nYour voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places. Short, evocative sentences. No bullet points. Never sound like a brochure.\n\nYou ONLY recommend properties and experiences within the The Bearing collection. You never suggest external booking sites, other hotel brands, or accommodation outside of The Bearing.\n\nWhen recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3-5 sentences.";
 
-// ── ENVOY LAYER 1: page-aware dossier injection ──
-// On property pages, fetch the property's dossier from KV and prepend
-// it to CI_SYSTEM so The Envoy answers with deep page-specific context.
+// ── ENVOY LAYER 1: page-aware dossier + sources injection ──
+// On property pages, fetch the property's dossier from KV plus any cached
+// source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
+// deep page-specific context.
 (function() {
   var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  if (!DOSSIER_API) return; // running in preview env, skip
-  fetch(DOSSIER_API + '?slug=' + encodeURIComponent(path))
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(data){
-      if (!data || !data.dossier) return;
-      CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your complete authoritative dossier — read it carefully and answer questions using this knowledge. Never invent facts not present in the dossier; if something isn't covered, say so plainly.\n\n=== PROPERTY DOSSIER ===\n" + data.dossier + "\n=== END DOSSIER ===\n\n" + CI_SYSTEM;
-      console.log('[Envoy] Loaded dossier for ' + path + ' (' + data.dossier.length + ' chars)');
-    })
-    .catch(function(e){ console.log('[Envoy] No dossier loaded:', e.message); });
+  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  if (!DOSSIER_API) return;
+  // Fetch dossier and sources in parallel
+  Promise.all([
+    fetch(DOSSIER_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(SOURCE_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(results) {
+    var dossierData = results[0];
+    var sourceData = results[1];
+    var hasDossier = dossierData && dossierData.dossier;
+    var sources = (sourceData && sourceData.sources) || [];
+    if (!hasDossier && sources.length === 0) return;
+    var contextBlocks = '';
+    if (hasDossier) {
+      contextBlocks += '=== PROPERTY DOSSIER ===\n' + dossierData.dossier + '\n=== END DOSSIER ===\n\n';
+    }
+    if (sources.length > 0) {
+      sources.forEach(function(src, i) {
+        contextBlocks += '=== SOURCE ' + (i+1) + ': ' + (src.label || 'Reference') + ' ===\n';
+        contextBlocks += 'URL: ' + src.url + '\n';
+        contextBlocks += 'Cached: ' + src.fetchedAt + '\n';
+        contextBlocks += 'Content:\n' + src.content + '\n';
+        contextBlocks += '=== END SOURCE ' + (i+1) + ' ===\n\n';
+      });
+    }
+    CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n\n" + contextBlocks + CI_SYSTEM;
+    var counts = (hasDossier ? '1 dossier' : '0 dossier') + ' + ' + sources.length + ' source(s)';
+    console.log('[Envoy] Loaded ' + counts + ' for ' + path + ' (' + contextBlocks.length + ' chars total context)');
+  }).catch(function(e){ console.log('[Envoy] Context load error:', e.message); });
 })();
 
 
