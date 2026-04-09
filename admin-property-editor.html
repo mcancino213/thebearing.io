@@ -726,6 +726,30 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
+      <!-- PULL QUOTE -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-icon">❝</div>
+            <div>
+              <div class="pe-section-title">Pull Quote</div>
+              <div class="pe-section-sub">An editor quote shown between the overview and rooms — gives the page a personal, editorial voice.</div>
+            </div>
+          </div>
+        </div>
+        <div class="pe-section-body">
+          <div class="pe-field">
+            <label class="pe-label">Quote text</label>
+            <textarea class="pe-input pe-textarea" id="f-quote-text" style="min-height:80px;" placeholder='e.g. "We anchored at Edfu at dusk. There were no other boats. The temple was ours for an hour before sunrise. Nothing I have seen in thirty years of travel compares."' oninput="wc(this,'qt-wc')"></textarea>
+            <div id="qt-wc" style="font-size:11px;color:var(--text3);margin-top:4px;"></div>
+          </div>
+          <div class="pe-field" style="margin-bottom:0;">
+            <label class="pe-label">Attribution</label>
+            <input class="pe-input" id="f-quote-attr" type="text" placeholder="e.g. — The Bearing Editor, January 2025">
+          </div>
+        </div>
+      </div>
+
       <!-- 3. ROOMS & PRICING -->
       <div class="pe-section">
         <div class="pe-section-head">
@@ -2130,6 +2154,9 @@ function updateJSON() {
     // Verdict
     verdict: getFieldVal('f-verdict'),
 
+    // Pull quote
+    quote: (getFieldVal('f-quote-text') ? { text: getFieldVal('f-quote-text'), attribution: getFieldVal('f-quote-attr') } : null),
+
     // Media
     photos: {
       hero: hero,
@@ -2398,6 +2425,8 @@ function aiPopulateFields(draft, overwrite) {
     'f-desc-p3': draft.description_p3,
     'f-desc-long': draft.description_long,
     'f-verdict': draft.verdict,
+    'f-quote-text': draft.quote_text,
+    'f-quote-attr': draft.quote_attribution,
     'f-rcount': draft.rcount, 'f-maxg': draft.maxg, 'f-year': draft.year,
     'f-awards': draft.awards, 'f-season': draft.season, 'f-getting-there': draft.getting_there,
     'f-meta-title': draft.meta_title, 'f-meta-desc': draft.meta_desc

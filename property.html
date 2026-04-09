@@ -14,7 +14,7 @@ function jumpTo(id){
   window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-chrome,behavior:'smooth'});
 }
 function initScrollSpy(){
-  var secs=['sec-overview','sec-gallery','sec-rooms','sec-itinerary'];
+  var secs=['sec-overview','sec-gallery','sec-rooms','sec-lens','sec-itinerary'];
   var items=document.querySelectorAll('.subnav-item');
   if(!items.length)return;
   function spy(){var y=window.pageYOffset+220,a=0;secs.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=y)a=i;});items.forEach(function(it,i){it.classList.toggle('active',i===a);});}
@@ -155,15 +155,58 @@ button{font-family:inherit;cursor:pointer;}
 .pgal-cta button:hover{background:var(--sand);border-color:var(--bark);}
 
 /* ROOMS / CABINS */
-.rooms-list{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
-.cabin-card{border-radius:var(--r-lg);border:1px solid var(--border);background:#fff;overflow:hidden;}
-.cabin-img{height:160px;overflow:hidden;background:var(--sand);}
-.cabin-img img{width:100%;height:100%;object-fit:cover;}
+.cabin-scroll{display:flex;gap:14px;overflow-x:auto;margin:0 -20px;padding:0 20px 16px;scrollbar-width:none;margin-bottom:8px;}
+.cabin-scroll::-webkit-scrollbar{display:none;}
+.cabin-card{flex-shrink:0;width:220px;border-radius:var(--r-lg);border:1px solid var(--border);background:#fff;overflow:hidden;}
+.cabin-img{height:148px;overflow:hidden;background:var(--sand);cursor:pointer;position:relative;}
+.cabin-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease;}
+.cabin-img:hover img{transform:scale(1.04);}
 .cabin-body{padding:14px;}
 .cabin-name{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;}
 .cabin-detail{font-size:.75rem;color:var(--stone);line-height:1.5;margin-bottom:8px;}
-.cabin-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);}
+.cabin-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);margin-bottom:10px;}
 .cabin-price small{font-family:'Geist',sans-serif;font-size:.68rem;color:var(--stone);font-weight:400;}
+.cabin-btn{width:100%;padding:9px;border:1px solid var(--border-hi);border-radius:var(--r-md);background:#fff;color:var(--ink);font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:background .15s,border-color .15s;}
+.cabin-btn:hover{background:var(--linen);border-color:var(--bark);}
+
+/* PULL QUOTE */
+.pull-quote{border-left:3px solid var(--terra);padding:16px 20px;margin-bottom:28px;background:var(--linen,#f7f3ed);border-radius:0 var(--r-lg) var(--r-lg) 0;}
+.pull-quote p{font-family:'Instrument Serif',serif;font-size:1.1rem;line-height:1.55;color:var(--ink);font-style:italic;margin:0 0 8px;}
+.pull-quote cite{font-size:.7rem;font-style:normal;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--terra);}
+
+/* LENS */
+.xpill{display:flex;align-items:center;gap:9px;padding:8px 14px 8px 8px;border-radius:100px;border:1px solid var(--border-hi);background:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:border-color .18s,background .18s;}
+.xpill-locked{opacity:.7;cursor:pointer;position:relative;}
+.xpill-locked:hover{border-color:var(--border-hi);background:#fff;}
+.xpill-lock{width:20px;height:20px;border-radius:50%;background:var(--sand);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--stone);}
+.lens-gate{position:fixed;inset:0;z-index:250;background:rgba(20,14,7,.5);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
+.lens-gate.open{display:flex;}
+.lens-gate-sheet{width:100%;max-width:400px;background:var(--cream);border-radius:var(--r-xl);padding:0 24px 32px;border:1px solid var(--border-hi);}
+.lens-gate-grip{width:36px;height:4px;background:var(--sand);border-radius:2px;margin:14px auto 24px;}
+.lens-gate-icon{width:48px;height:48px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.lens-gate-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
+.lens-gate-title{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);text-align:center;margin-bottom:6px;}
+.lens-gate-sub{font-size:.8rem;color:var(--stone);text-align:center;line-height:1.6;margin-bottom:24px;}
+.lens-gate-experts{display:flex;gap:8px;justify-content:center;margin-bottom:24px;}
+.lens-gate-face{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:.9rem;font-style:italic;color:#fff;border:2px solid var(--cream);}
+.lens-gate-input{width:100%;padding:13px 16px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.9rem;color:var(--ink);outline:none;background:#fff;transition:border-color .18s;margin-bottom:10px;}
+.lens-gate-input:focus{border-color:var(--terra);}
+.lens-gate-submit{width:100%;padding:14px;border:none;border-radius:var(--r-md);background:var(--ink);color:#fff;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:opacity .15s;margin-bottom:10px;}
+.lens-gate-submit:hover{opacity:.88;}
+.lens-gate-note{font-size:.68rem;color:var(--mist);text-align:center;line-height:1.6;}
+.xpill.active{border-color:var(--terra);background:var(--terra-dim);}
+.xpill-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:.85rem;font-style:italic;color:#fff;flex-shrink:0;}
+.xpill-name{font-size:.75rem;font-weight:500;color:var(--ink);line-height:1.2;}
+.xpill-role{font-size:.62rem;color:var(--stone);}
+.xrec{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:flex-start;cursor:pointer;transition:background .15s;}
+.xrec:last-child{border-bottom:none;}
+.xrec:hover{background:var(--linen);}
+.xrec-img{width:56px;height:56px;border-radius:var(--r-md);overflow:hidden;flex-shrink:0;background:var(--sand);}
+.xrec-img img{width:100%;height:100%;object-fit:cover;}
+.xrec-tag{display:inline-block;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:4px;}
+.xrec-title{font-size:.88rem;font-weight:500;color:var(--ink);margin-bottom:2px;line-height:1.3;}
+.xrec-body{font-size:.75rem;color:var(--stone);line-height:1.5;}
+.xrec-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;color:var(--mist);flex-shrink:0;margin-top:2px;}
 
 /* PRIVATE ACCESS */
 .access-card{position:relative;border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;min-height:200px;background:linear-gradient(135deg,var(--terra-d),var(--terra));}
@@ -354,6 +397,7 @@ button{font-family:inherit;cursor:pointer;}
     <button class="subnav-item active" onclick="jumpTo('sec-overview')">Overview</button>
     <button class="subnav-item" id="sub-gallery" style="display:none;" onclick="jumpTo('sec-gallery')">Gallery</button>
     <button class="subnav-item" id="sub-rooms" style="display:none;" onclick="jumpTo('sec-rooms')">Rooms</button>
+    <button class="subnav-item" id="sub-lens" style="display:none;" onclick="jumpTo('sec-lens')">The Lens</button>
     <button class="subnav-item" id="sub-itin" style="display:none;" onclick="jumpTo('sec-itinerary')">Itinerary</button>
   </nav>
 
@@ -432,22 +476,83 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
 
-    <!-- ROOMS -->
+    <!-- PULL QUOTE -->
+    <div class="pull-quote" id="pull-quote-block" style="display:none;">
+      <p id="pull-quote-text"></p>
+      <cite id="pull-quote-attr"></cite>
+    </div>
+
+    <!-- ROOMS / CABINS -->
     <a name="sec-rooms" id="sec-rooms"></a>
     <div id="rooms-section" style="display:none;">
       <div class="sec-eyebrow" id="rooms-eyebrow">Accommodation</div>
       <h2 class="sec-title" id="rooms-title">The <em>rooms</em></h2>
-      <div class="rooms-list" id="rooms-list"></div>
+      <div class="cabin-scroll" id="rooms-list"></div>
+      <p id="rooms-note" style="font-size:.72rem;color:var(--mist);line-height:1.6;margin-bottom:28px;display:none;"></p>
     </div>
 
     <!-- PRIVATE ACCESS -->
-    <div class="access-card" id="access-card" style="display:none;">
-      <img class="access-card-img" id="access-img" src="" alt="" style="display:none;">
-      <div class="access-card-body">
-        <div class="access-card-label">The Bearing Private Access</div>
-        <div class="access-card-name" id="access-name"></div>
-        <div class="access-card-desc" id="access-desc"></div>
-        <div id="access-bullets" style="display:none;flex-direction:column;gap:7px;margin-top:12px;"></div>
+    <div id="access-card" style="display:none;border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;position:relative;">
+      <div id="access-bg-photo" style="position:absolute;inset:0;background-size:cover;background-position:center;"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(122,46,10,.78) 0%,rgba(160,64,32,.72) 40%,rgba(106,48,96,.78) 100%);"></div>
+      <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.12;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,35 C100,5 200,65 300,35 C360,15 380,55 400,35 L400,80 L0,80Z" fill="#fff"/><path d="M0,50 C80,25 180,70 280,48 C350,30 380,60 400,48 L400,80 L0,80Z" fill="#ffd060" opacity=".35"/></svg>
+      <div style="position:relative;padding:20px 20px 18px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#ffd060;"></div>
+          <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">The Private Access</span>
+        </div>
+        <div id="access-name" style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;"></div>
+        <div id="access-desc" style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;"></div>
+        <div id="access-bullets" style="display:none;flex-direction:column;gap:7px;margin-bottom:18px;"></div>
+        <button onclick="openOverlay('inq-overlay')" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
+          Claim your private access &#8594;
+        </button>
+      </div>
+    </div>
+
+    <!-- THE LENS -->
+    <div id="lens-section" style="display:none;">
+      <a name="sec-lens" id="sec-lens"></a>
+      <div class="sec-eyebrow">The Lens</div>
+      <h2 class="sec-title">A different way of <em>seeing</em></h2>
+      <p id="lens-intro" style="font-size:.82rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">Switch the lens. Local specialists curated for this journey — each one shows you something the guidebooks miss.</p>
+      <div id="expert-pills" style="display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px 16px;scrollbar-width:none;">
+        <style>#expert-pills::-webkit-scrollbar{display:none;}</style>
+      </div>
+      <div id="lens-lock-banner" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--linen);border:1px solid var(--border-hi);border-radius:var(--r-md);margin-bottom:16px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div id="lens-lock-label" style="font-size:.78rem;font-weight:500;color:var(--ink);margin-bottom:1px;">More specialists · members only</div>
+          <div style="font-size:.7rem;color:var(--stone);">Book through The Bearing to unlock — or join as a member for $99/year.</div>
+        </div>
+        <button onclick="openLensGate()" style="flex-shrink:0;padding:8px 14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">Unlock</button>
+      </div>
+      <div id="expert-panel" style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;">
+        <div id="expert-header" style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;">
+          <div id="expert-avatar" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:1.1rem;font-style:italic;color:#fff;background:linear-gradient(135deg,#9a7230,#7a5820);"></div>
+          <div>
+            <div id="expert-name" style="font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);margin-bottom:1px;"></div>
+            <div id="expert-role" style="font-size:.7rem;color:var(--terra);font-weight:500;letter-spacing:.04em;margin-bottom:6px;"></div>
+            <div id="expert-bio" style="font-size:.78rem;color:var(--stone);line-height:1.55;"></div>
+          </div>
+        </div>
+        <div id="expert-recs" style="padding:0;"></div>
+      </div>
+    </div>
+
+    <!-- LENS GATE OVERLAY -->
+    <div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
+      <div class="lens-gate-sheet">
+        <div class="lens-gate-grip"></div>
+        <div class="lens-gate-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <div class="lens-gate-title">Unlock The Lens</div>
+        <div class="lens-gate-sub">Book through The Bearing to unlock all specialists — or join as a member for $99/year.</div>
+        <div class="lens-gate-experts" id="lens-gate-faces"></div>
+        <input class="lens-gate-input" id="lens-gate-email" type="email" placeholder="Your email address">
+        <button class="lens-gate-submit" onclick="submitLensGate()">Unlock all specialists</button>
+        <div class="lens-gate-note">No spam. One email to confirm your access.</div>
       </div>
     </div>
 
@@ -590,7 +695,8 @@ function renderProperty(p,slug){
   var hasRooms=p.rooms&&p.rooms.length;
   var hasItin=p.itinerary&&p.itinerary.days&&p.itinerary.days.length&&p.itinerary.days.some(function(d){return d.title||d.desc;});
   if(galleryUrls.length)show('sub-gallery');
-  if(hasRooms)show('sub-rooms');
+  if(hasRooms){show('sub-rooms');if(ts.includes('cruise'))document.getElementById('sub-rooms').textContent='Cabins';}
+  if(p.lens&&p.lens.experts&&p.lens.experts.length)show('sub-lens');
   if(hasItin)show('sub-itin');
   if(hasRooms&&p.rooms[0].price){
     var r0=p.rooms[0];
@@ -612,6 +718,13 @@ function renderProperty(p,slug){
   // Verdict
   if(p.verdict){setText('verdict-text',p.verdict);show('verdict-block');}
 
+  // Pull quote
+  if(p.quote&&p.quote.text){
+    document.getElementById('pull-quote-text').textContent=p.quote.text;
+    document.getElementById('pull-quote-attr').textContent=p.quote.attribution||'';
+    show('pull-quote-block');
+  }
+
   // Gallery
   if(galleryUrls.length){
     var g=document.getElementById('gallery-grid');
@@ -629,14 +742,19 @@ function renderProperty(p,slug){
   // Rooms
   if(hasRooms){
     var rl=document.getElementById('rooms-list');
-    if(ts.includes('cruise'))document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
+    var isCruise=ts.includes('cruise');
+    if(isCruise)document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
+    // Build checkout rooms config for Select buttons
+    var checkoutRooms=p.rooms.filter(function(rm){return rm.price;}).map(function(rm){return {name:rm.name,price:parseInt(rm.price)};});
     rl.innerHTML=p.rooms.map(function(rm){
       var meta=[rm.size?rm.size+(rm.size_unit==='sqft'?' ft²':' m²'):'',rm.beds||'',rm.max_occupancy?'Max '+rm.max_occupancy:''].filter(Boolean).join(' · ');
       var price=rm.price?'$'+parseInt(rm.price).toLocaleString():'POA';
       var per=rm.per?' / '+rm.per:'';
       var photos=(rm.photos||[]).filter(function(ph){return ph&&(typeof ph==='string'?ph:ph.url);});
-      var img=photos.length?'<div class="cabin-img"><img src="'+esc(cfThumb(typeof photos[0]==='string'?photos[0]:photos[0].url))+'" alt="" loading="lazy"></div>':'';
-      return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(meta?'<div class="cabin-detail">'+esc(meta)+'</div>':'')+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div></div></div>';
+      var imgUrl=photos.length?esc(cfThumb(typeof photos[0]==='string'?photos[0]:photos[0].url)):'';
+      var img=imgUrl?'<div class="cabin-img"><img src="'+imgUrl+'" alt="'+esc(rm.name||'')+'" loading="lazy"></div>':'';
+      var selectBtn='<button class="cabin-btn" onclick="tbOpenCheckout({property:\''+esc(p.name||'')+' · '+esc(p.location||'')+'\',title:\''+(isCruise?'Book your voyage':'Book your stay')+'\',roomLabel:\''+(isCruise?'Cabin type':'Room type')+'\',commissionRate:0.10,rooms:'+JSON.stringify(checkoutRooms)+'})">Select</button>';
+      return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+(meta?'<div class="cabin-detail" style="font-size:.7rem;color:var(--mist);">'+esc(meta)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div>'+selectBtn+'</div></div>';
     }).join('');
     show('rooms-section');
   }
@@ -646,13 +764,44 @@ function renderProperty(p,slug){
     var pa=p.private_access;
     setText('access-name',pa.name);
     setText('access-desc',pa.description);
-    if(pa.photo){var ai=document.getElementById('access-img');ai.src=pa.photo;ai.style.display='block';}
+    if(pa.photo){var bg=document.getElementById('access-bg-photo');bg.style.backgroundImage='url('+pa.photo+')';}
     var be=document.getElementById('access-bullets');
     if(be&&pa.bullets&&pa.bullets.length){
-      be.innerHTML=pa.bullets.map(function(b){return '<div style="display:flex;align-items:flex-start;gap:10px;"><div style="width:5px;height:5px;border-radius:50%;background:#ffd060;flex-shrink:0;margin-top:7px;"></div><div style="font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.55;">'+esc(b)+'</div></div>';}).join('');
+      be.innerHTML=pa.bullets.map(function(b){return '<div style="display:flex;align-items:flex-start;gap:10px;"><div style="width:4px;height:4px;border-radius:50%;background:#ffd060;flex-shrink:0;margin-top:7px;"></div><div style="font-size:.76rem;color:rgba(255,255,255,.75);line-height:1.55;">'+esc(b)+'</div></div>';}).join('');
       be.style.display='flex';be.style.flexDirection='column';
     }
     show('access-card');
+  }
+
+  // The Lens
+  if(p.lens&&p.lens.experts&&p.lens.experts.length){
+    var lexperts=p.lens.experts;
+    window._lexperts=lexperts;
+    if(p.lens.intro)document.getElementById('lens-intro').textContent=p.lens.intro;
+    // Build pills
+    var pillsEl=document.getElementById('expert-pills');
+    pillsEl.innerHTML=lexperts.map(function(ex,i){
+      var locked=i>0;
+      var blurStyle=locked?'filter:blur(3px);':'';
+      var blurText=locked?'filter:blur(4px);user-select:none;':'';
+      var blurRole=locked?'filter:blur(3px);user-select:none;':'';
+      var lockIcon=locked?'<div class="xpill-lock"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg></div>':'';
+      var onclick=locked?'onclick="openLensGate()"':'onclick="selectLensExpert('+i+',this)"';
+      return '<button class="xpill'+(locked?' xpill-locked':'')+(i===0?' active':'')+'" '+onclick+'>'
+        +'<div class="xpill-avatar" style="background:'+esc(ex.color||'linear-gradient(135deg,#9a7230,#7a5820)')+';'+blurStyle+'">'+esc((ex.initial||ex.name||'?')[0])+'</div>'
+        +'<div class="xpill-text"><div class="xpill-name" style="'+blurText+'">'+esc(ex.name||'')+'</div><div class="xpill-role" style="'+blurRole+'">'+esc(ex.role||'')+'</div></div>'
+        +lockIcon+'</button>';
+    }).join('');
+    // Lock banner label
+    var locked_count=lexperts.length-1;
+    if(locked_count>0)document.getElementById('lens-lock-label').textContent=locked_count+' more specialist'+(locked_count>1?'s':'')+' · members only';
+    else document.getElementById('lens-lock-banner').style.display='none';
+    // Gate faces
+    var gf=document.getElementById('lens-gate-faces');
+    if(gf)gf.innerHTML=lexperts.map(function(ex){return '<div class="lens-gate-face" style="background:'+esc(ex.color||'linear-gradient(135deg,#9a7230,#7a5820)')+'">'+esc((ex.initial||ex.name||'?')[0])+'</div>';}).join('');
+    // Init first expert
+    selectLensExpert(0,pillsEl.querySelector('.xpill'));
+    show('lens-section');
   }
 
   // Itinerary
@@ -757,6 +906,45 @@ function lbOpen(i){lbIdx=i;document.getElementById('lb-img').src=galleryUrls[i];
 function lbClose(){document.getElementById('lightbox').classList.remove('open');}
 function lbNav(d){lbIdx=(lbIdx+d+galleryUrls.length)%galleryUrls.length;document.getElementById('lb-img').src=galleryUrls[lbIdx];}
 document.addEventListener('keydown',function(e){if(!document.getElementById('lightbox').classList.contains('open'))return;if(e.key==='Escape')lbClose();if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='ArrowRight')lbNav(1);});
+
+function selectLensExpert(idx,btn){
+  document.querySelectorAll('#expert-pills .xpill').forEach(function(p){p.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  var lexperts=(window._lexperts||[]);
+  if(!lexperts.length)return;
+  var e=lexperts[idx]||lexperts[0];
+  document.getElementById('expert-avatar').style.background=e.color||'linear-gradient(135deg,#9a7230,#7a5820)';
+  document.getElementById('expert-avatar').textContent=(e.initial||e.name||'?')[0];
+  document.getElementById('expert-name').textContent=e.name||'';
+  document.getElementById('expert-role').textContent=e.role||'';
+  document.getElementById('expert-bio').textContent=e.bio||'';
+  var recs=document.getElementById('expert-recs');
+  recs.innerHTML=(e.recommendations||e.recs||[]).map(function(r,i){
+    return '<div class="xrec">'
+      +'<div class="xrec-num">'+(i+1)+'</div>'
+      +'<div style="flex:1;">'
+      +(r.tag?'<span class="xrec-tag" style="color:'+(r.tagColor||'var(--terra)')+';background:'+(r.tagBg||'rgba(176,88,48,.1)')+';border:1px solid '+(r.tagColor||'var(--terra)')+'33;">'+esc(r.tag)+'</span>':'')
+      +'<div class="xrec-title">'+esc(r.title||'')+'</div>'
+      +'<div class="xrec-body">'+esc(r.body||r.description||'')+'</div>'
+      +'</div>'
+      +(r.img?'<div class="xrec-img"><img src="'+esc(r.img)+'" alt="'+esc(r.title||'')+'"></div>':'')
+      +'</div>';
+  }).join('');
+}
+function openLensGate(){document.getElementById('lens-gate').classList.add('open');document.body.style.overflow='hidden';}
+function closeLensGate(){document.getElementById('lens-gate').classList.remove('open');document.body.style.overflow='';}
+function submitLensGate(){
+  var em=document.getElementById('lens-gate-email').value.trim();
+  if(!em||!em.includes('@')){document.getElementById('lens-gate-email').style.borderColor='var(--terra)';return;}
+  closeLensGate();
+  document.querySelectorAll('#expert-pills .xpill-locked').forEach(function(p,i){
+    p.classList.remove('xpill-locked');
+    (function(idx,el){el.onclick=function(){selectLensExpert(idx,el);};})(i+1,p);
+    p.querySelectorAll('[style*="blur"]').forEach(function(el){el.style.filter='';el.style.userSelect='';});
+    var lock=p.querySelector('.xpill-lock');if(lock)lock.remove();
+  });
+  var banner=document.getElementById('lens-lock-banner');if(banner)banner.style.display='none';
+}
 
 loadProperty();
 </script>
