@@ -325,8 +325,8 @@ button{font-family:inherit;cursor:pointer;}
 .inc-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);}
 .inc-dot{width:6px;height:6px;border-radius:50%;background:var(--moss,#3a7055);flex-shrink:0;margin-top:5px;}
 .inc-txt{font-size:.78rem;color:var(--bark);line-height:1.45;}
-.exc-item .inc-dot{background:var(--mist);}
-.exc-item .inc-txt{color:var(--mist);}
+.exc-item .inc-dot{background:#e53935;}
+.exc-item .inc-txt{color:var(--stone);}
 
 /* BEARING PROMISE */
 .promise{background:var(--sand);border-radius:var(--r-xl);padding:24px 20px;margin-bottom:28px;}
@@ -926,8 +926,8 @@ function renderProperty(p,slug){
     var ig=document.getElementById('inclusions-grid');
     if(ig){
       ig.innerHTML=p.inclusions.map(function(item){
-        var isExc=item.excluded||item.startsWith('✗')||item.startsWith('×');
-        var txt=item.replace(/^[✓✗×+\-]\s*/,'');
+        var isExc=item.excluded||/^[xX✗×]/.test(item.trim());
+        var txt=item.replace(/^[xX✓✗×]\s*/,'');
         return '<div class="inc-item'+(isExc?' exc-item':'')+'"><div class="inc-dot"></div><div class="inc-txt">'+esc(txt)+'</div></div>';
       }).join('');
       show('inclusions-section');
