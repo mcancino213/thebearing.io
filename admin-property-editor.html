@@ -2818,11 +2818,20 @@ async function propLoadBySlug() {
 (function() {
   var params = new URLSearchParams(location.search);
   var slug = params.get('slug');
-  if (slug) {
+  if (!slug) return;
+  // Retry until the slug input and propLoad are ready (handles cold edge loads)
+  var attempts = 0;
+  function tryLoad() {
+    attempts++;
     var inp = document.getElementById('prop-slug-input');
-    if (inp) inp.value = slug;
-    setTimeout(propLoad, 400);
+    if (!inp || typeof propLoad !== 'function') {
+      if (attempts < 20) setTimeout(tryLoad, 200);
+      return;
+    }
+    inp.value = slug;
+    propLoad();
   }
+  setTimeout(tryLoad, 600);
 })();
 </script>
 </div></div></body></html>
