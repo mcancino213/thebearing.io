@@ -1032,7 +1032,29 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       </div>
 
       
-<!-- 7. CONTACT -->
+
+      <!-- INCLUSIONS -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-icon">✓</div>
+            <div>
+              <div class="pe-section-title">What's included</div>
+              <div class="pe-section-sub">One item per line. Prefix with ✗ for exclusions (things guests pay extra for). Shown as a 2-column grid on the property page.</div>
+            </div>
+          </div>
+          <button class="pe-section-toggle" onclick="toggleSection(this)">▾</button>
+        </div>
+        <div class="pe-section-body">
+          <div class="pe-field" style="margin-bottom:0;">
+            <label class="pe-label">Inclusions &amp; exclusions</label>
+            <textarea class="pe-input pe-textarea" id="f-inclusions" style="min-height:140px;font-family:monospace;font-size:.8rem;" placeholder="All meals, snacks &amp; non-alcoholic beverages&#10;Entrance fees to all sites&#10;Official guide in your language&#10;✗ Beer &amp; wine (available at own cost)&#10;✗ Tips for crew and guide"></textarea>
+            <div style="font-size:.68rem;color:var(--text3);margin-top:4px;">One item per line. Lines starting with ✗ or × show as greyed-out exclusions.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. CONTACT -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -2313,6 +2335,9 @@ function updateJSON() {
 
     // The Lens
     lens: (getLensExperts().length ? { experts: getLensExperts() } : null),
+
+    // Inclusions (one per line, ✗ prefix = exclusion)
+    inclusions: (getFieldVal('f-inclusions') ? getFieldVal('f-inclusions').split('\n').map(function(l){return l.trim();}).filter(Boolean) : []),
 
     // Media
     photos: {

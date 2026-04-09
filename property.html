@@ -304,6 +304,11 @@ button{font-family:inherit;cursor:pointer;}
   .prop-body > *{grid-column:1;}
   .desktop-book-col{grid-column:2;grid-row:1 / 20;position:sticky;top:200px;padding-top:8px;}
   .pgal-grid{height:460px;}
+
+  .promise-items{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .similar-scroll{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;overflow-x:visible;padding:0;scroll-snap-type:none;margin:0 0 40px;}
+  .sim-card{width:auto;flex-shrink:unset;}
+  .included-grid{grid-template-columns:1fr 1fr;}
 }
 @media(max-width:767px){
   .nav-links-desktop{display:none;}
@@ -314,6 +319,40 @@ button{font-family:inherit;cursor:pointer;}
   .pgal-tile:nth-child(4){border-radius:0 0 0 var(--r-md);}
   .pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;}
 }
+
+/* INCLUSIONS */
+.included-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:28px;}
+.inc-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);}
+.inc-dot{width:6px;height:6px;border-radius:50%;background:var(--moss,#3a7055);flex-shrink:0;margin-top:5px;}
+.inc-txt{font-size:.78rem;color:var(--bark);line-height:1.45;}
+.exc-item .inc-dot{background:var(--mist);}
+.exc-item .inc-txt{color:var(--mist);}
+
+/* BEARING PROMISE */
+.promise{background:var(--sand);border-radius:var(--r-xl);padding:24px 20px;margin-bottom:28px;}
+.promise-head{font-family:'Instrument Serif',serif;font-size:1.2rem;margin-bottom:4px;color:var(--ink);}
+.promise-head em{font-style:italic;color:var(--terra);}
+.promise-sub{font-size:.78rem;color:var(--stone);margin-bottom:16px;line-height:1.5;}
+.promise-items{display:flex;flex-direction:column;gap:10px;}
+.promise-item{display:flex;align-items:flex-start;gap:10px;}
+.promise-pip{width:6px;height:6px;border-radius:50%;background:var(--terra);flex-shrink:0;margin-top:5px;}
+.promise-txt{font-size:.8rem;color:var(--bark);line-height:1.5;}
+.promise-txt strong{color:var(--ink);font-weight:500;}
+.promise-btn{width:100%;margin-top:18px;padding:13px;border:none;border-radius:var(--r-md);background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;font-family:'Geist',sans-serif;font-size:.87rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);transition:opacity .15s;}
+.promise-btn:hover{opacity:.9;}
+
+/* SIMILAR PROPERTIES */
+.similar-scroll{display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:0 20px 4px;scroll-snap-type:x mandatory;margin-bottom:40px;}
+.similar-scroll::-webkit-scrollbar{display:none;}
+.sim-card{flex-shrink:0;width:200px;border-radius:var(--r-lg);border:1px solid var(--border);background:#fff;overflow:hidden;scroll-snap-align:start;cursor:pointer;transition:transform .2s,box-shadow .2s;}
+.sim-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(80,55,25,.1);}
+.sim-img{height:130px;overflow:hidden;background:var(--sand);}
+.sim-img img{width:100%;height:100%;object-fit:cover;}
+.sim-body{padding:12px;}
+.sim-region{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-bottom:3px;}
+.sim-name{font-family:'Instrument Serif',serif;font-size:.9rem;color:var(--ink);margin-bottom:4px;line-height:1.2;}
+.sim-price{font-size:.78rem;color:var(--stone);}
+.sim-price strong{color:var(--ink);font-weight:500;}
 </style>
 </head>
 <body>
@@ -586,13 +625,34 @@ button{font-family:inherit;cursor:pointer;}
 <!-- TAGS -->
     <div id="tags-section" style="display:none;margin-bottom:28px;"></div>
 
-    
-<!-- GETTING THERE -->
-    <div id="getting-there-sec" style="display:none;margin-bottom:40px;">
-      <div class="sec-eyebrow">Getting there</div>
-      <div style="font-size:.88rem;color:var(--bark);line-height:1.75;" id="getting-there-txt"></div>
+
+
+    <!-- INCLUSIONS -->
+    <div id="inclusions-section" style="display:none;">
+      <div class="sec-eyebrow">Inclusions</div>
+      <h2 class="sec-title">What's <em>included</em></h2>
+      <div class="included-grid" id="inclusions-grid"></div>
     </div>
 
+    <!-- BEARING PROMISE -->
+    <div class="promise">
+      <div class="promise-head">The <em>Bearing</em> promise</div>
+      <div class="promise-sub">Why book through us rather than direct</div>
+      <div class="promise-items">
+        <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>Same price, guaranteed.</strong> We never charge more than direct. Often we negotiate extras you won't find elsewhere.</div></div>
+        <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>A human who's been there.</strong> Your Bearing advisor knows this property personally. They'll answer every question before you book.</div></div>
+        <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>If something goes wrong, we fix it.</strong> We're reachable 24/7 during your journey. Our properties know our guests get priority.</div></div>
+        <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>No hidden fees, ever.</strong> 0% commission added to your booking. What you see is what you pay.</div></div>
+      </div>
+      <button class="promise-btn" onclick="openOverlay('inq-overlay')">Start your inquiry — no commitment</button>
+    </div>
+
+    <!-- SIMILAR PROPERTIES -->
+    <div id="similar-section" style="display:none;">
+      <div class="sec-eyebrow">You might also love</div>
+      <h2 class="sec-title">Similar <em>journeys</em></h2>
+      <div class="similar-scroll" id="similar-scroll"></div>
+    </div>
   </div>
 </div>
 <!-- ENQUIRY OVERLAY -->
@@ -842,6 +902,7 @@ function renderProperty(p,slug){
     if(p.details.max_guests)rows.push(['Max guests',p.details.max_guests]);
     if(p.details.year)rows.push(['Opened',p.details.year]);
     if(p.details.season)rows.push(['Best season',p.details.season]);
+    if(p.details.getting_there)rows.push(['Getting there',p.details.getting_there]);
     if(p.details.awards)rows.push(['Awards',p.details.awards]);
   }
   if(p.airport)rows.push(['Nearest airport',p.airport]);
@@ -858,8 +919,37 @@ function renderProperty(p,slug){
     show('tags-section');
   }
 
-  // Getting there
-  if(p.details&&p.details.getting_there){setText('getting-there-txt',p.details.getting_there);show('getting-there-sec');}
+  // Getting there is now a row inside Practical Details (handled above)
+
+  // Inclusions
+  if(p.inclusions&&p.inclusions.length){
+    var ig=document.getElementById('inclusions-grid');
+    if(ig){
+      ig.innerHTML=p.inclusions.map(function(item){
+        var isExc=item.excluded||item.startsWith('✗')||item.startsWith('×');
+        var txt=item.replace(/^[✓✗×+\-]\s*/,'');
+        return '<div class="inc-item'+(isExc?' exc-item':'')+'"><div class="inc-dot"></div><div class="inc-txt">'+esc(txt)+'</div></div>';
+      }).join('');
+      show('inclusions-section');
+    }
+  }
+
+  // Similar properties
+  if(p.similar&&p.similar.length){
+    var ss=document.getElementById('similar-scroll');
+    if(ss){
+      ss.innerHTML=p.similar.map(function(s){
+        return '<div class="sim-card" onclick="window.location=\''+'/property?slug='+esc(s.slug||'')+'\'">'+ 
+          (s.photo?'<div class="sim-img"><img src="'+esc(s.photo)+'" alt="'+esc(s.name||'')+'"></div>':'<div class="sim-img"></div>')+
+          '<div class="sim-body">'+
+          '<div class="sim-region">'+esc(s.region||'')+'</div>'+
+          '<div class="sim-name">'+esc(s.name||'')+'</div>'+
+          (s.price?'<div class="sim-price">From <strong>'+esc(s.price)+'</strong></div>':'')+
+          '</div></div>';
+      }).join('');
+      show('similar-section');
+    }
+  }
 
   // Desktop booking card
   if(hasRooms&&p.rooms[0].price){
