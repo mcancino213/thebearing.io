@@ -3485,6 +3485,13 @@ function propRestore(fields) {
     loadLensExperts(fields['__lensExperts']);
   }
 
+  // 6c. Ensure f-slug is populated from prop-slug-input if the form field is blank
+  var fSlug = document.getElementById('f-slug');
+  var slugInput = document.getElementById('prop-slug-input');
+  if (fSlug && slugInput && !fSlug.value.trim() && slugInput.value.trim()) {
+    fSlug.value = slugInput.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
   // 7. Word count refreshes
   ['f-desc-short','f-desc-p2','f-desc-p3','f-desc-long','f-verdict'].forEach(function(id) {
     var el = document.getElementById(id);
@@ -3505,6 +3512,13 @@ async function propSave() {
 
   // Refresh JSON output with latest state before saving
   if (typeof updateAll === 'function') updateAll();
+
+  // Guarantee f-slug is populated so it ends up in the JSON payload
+  var fSlugEl = document.getElementById('f-slug');
+  var slugInputEl = document.getElementById('prop-slug-input');
+  if (fSlugEl && !fSlugEl.value.trim() && slugInputEl && slugInputEl.value.trim()) {
+    fSlugEl.value = slugInputEl.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
 
   // Build structured payload directly from updateJSON (not from DOM element)
   var structuredData = (typeof updateJSON === 'function') ? updateJSON() : null;
