@@ -134,7 +134,17 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 ::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:10px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--text3);}
 
-/* ========== PROPERTY EDITOR — page-specific overrides ========== */
+/* ── EDITOR TABS ── */
+.pe-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:24px;width:fit-content;}
+.pe-tab{padding:8px 20px;border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);border:none;background:transparent;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;white-space:nowrap;}
+.pe-tab:hover{color:var(--text);background:rgba(0,0,0,.04);}
+.pe-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.pe-tab svg{opacity:.6;}
+.pe-tab.active svg{opacity:1;}
+.pe-tab-badge{font-size:10px;font-weight:600;padding:1px 6px;border-radius:100px;background:var(--accent-bg);color:var(--accent);}
+.pe-tab-panel{display:none;}.pe-tab-panel.active{display:flex;flex-direction:column;gap:20px;}
+
+/* ── PROPERTY EDITOR — page-specific overrides ========== */
 .pe-shell{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
 .pe-form{display:flex;flex-direction:column;gap:20px;}
 .pe-sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:80px;}
@@ -375,11 +385,13 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <span class="cur">New property</span>
   </div>
   <div class="tb-actions">
-    <button class="btn btn-ghost" onclick="saveDraft()">Save draft</button>
-    <button class="btn btn-secondary" onclick="previewProperty()">Preview</button>
-    <button class="btn btn-primary" onclick="publishProperty()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      Publish live
+    <button class="btn btn-ghost btn-sm" onclick="switchTab('dossier')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+      Dossier
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="switchTab('publish');setTimeout(propSave,150)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      Save
     </button>
   </div>
 </div>
@@ -396,7 +408,26 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
   </div>
 
   <div class="pe-shell fade-in-2">
-    <div class="pe-form">
+    <div style="flex:1;min-width:0;">
+
+      <!-- TAB BAR -->
+      <div class="pe-tabs">
+        <button class="pe-tab active" id="tab-listing" onclick="switchTab('listing')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Listing
+        </button>
+        <button class="pe-tab" id="tab-dossier" onclick="switchTab('dossier')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Dossier <span class="pe-tab-badge">Envoy</span>
+        </button>
+        <button class="pe-tab" id="tab-publish" onclick="switchTab('publish')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Save & publish
+        </button>
+      </div>
+
+      <!-- ══ TAB 2: DOSSIER ══ -->
+      <div class="pe-tab-panel" id="panel-dossier">
 
       <!-- AI GENERATION PANEL -->
       <div class="pe-ai-panel">
@@ -492,38 +523,10 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 0. PROPERTY DATA (save/load) -->
-      <div class="pe-section" style="border:2px solid var(--accent);background:#fffdf9;">
-        <div class="pe-section-head" style="background:#fff9f0;border-bottom:1px solid #f0e4cc;">
-          <div class="pe-section-left">
-            <div class="pe-section-num" style="background:#8a5a2b;font-size:16px;">💾</div>
-            <div>
-              <div class="pe-section-title" style="font-size:16px;">Property data</div>
-              <div class="pe-section-sub">Save and load all form fields — persists across sessions</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-            <span id="prop-status" style="font-size:12px;color:var(--text3);">—</span>
-            <button class="btn btn-ghost btn-sm" onclick="propLoad()" id="prop-load-btn">Load</button>
-            <button class="btn btn-primary btn-sm" onclick="propSave()">Save property</button>
-          </div>
-        </div>
-        <div class="pe-section-body" style="padding:16px 24px;">
-          <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:200px;">
-              <label class="pe-label" style="margin-bottom:5px;">Load by slug</label>
-              <div style="display:flex;gap:8px;">
-                <input class="pe-input" id="prop-slug-input" placeholder="e.g. singita-grumeti" style="flex:1;">
-                <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="propLoadBySlug()">Load slug</button>
-              </div>
-            </div>
-            <div style="font-size:12px;color:var(--text3);line-height:1.5;padding-bottom:2px;">
-              Or fill in the property name below, then hit <strong style="color:var(--text2);">Load</strong>.
-            </div>
-          </div>
-        </div>
-      </div>
+      </div><!-- end panel-dossier -->
 
+      <!-- ══ TAB 1: LISTING ══ -->
+      <div class="pe-tab-panel active" id="panel-listing">
       <!-- 1. CORE IDENTITY -->
       <div class="pe-section">
         <div class="pe-section-head">
@@ -1002,9 +1005,48 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-    </div><!-- end pe-form -->
+    </div><!-- end panel-listing -->
 
-    <!-- RIGHT SIDEBAR -->
+      <!-- ══ TAB 3: SAVE & PUBLISH ══ -->
+      <div class="pe-tab-panel" id="panel-publish">
+
+      <!-- 0. PROPERTY DATA (save/load) -->
+      <div class="pe-section" style="border:2px solid var(--accent);background:#fffdf9;">
+        <div class="pe-section-head" style="background:#fff9f0;border-bottom:1px solid #f0e4cc;">
+          <div class="pe-section-left">
+            <div class="pe-section-num" style="background:#8a5a2b;font-size:16px;">💾</div>
+            <div>
+              <div class="pe-section-title" style="font-size:16px;">Property data</div>
+              <div class="pe-section-sub">Save and load all form fields — persists across sessions</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span id="prop-status" style="font-size:12px;color:var(--text3);">—</span>
+            <button class="btn btn-ghost btn-sm" onclick="propLoad()" id="prop-load-btn">Load</button>
+            <button class="btn btn-primary btn-sm" onclick="propSave()">Save property</button>
+          </div>
+        </div>
+        <div class="pe-section-body" style="padding:16px 24px;">
+          <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <label class="pe-label" style="margin-bottom:5px;">Load by slug</label>
+              <div style="display:flex;gap:8px;">
+                <input class="pe-input" id="prop-slug-input" placeholder="e.g. singita-grumeti" style="flex:1;">
+                <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="propLoadBySlug()">Load slug</button>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text3);line-height:1.5;padding-bottom:2px;">
+              Or fill in the property name below, then hit <strong style="color:var(--text2);">Load</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end panel-publish -->
+
+    </div><!-- end tabs wrapper -->
+
+    <!-- RIGHT SIDEBAR — always visible -->
     <div class="pe-sidebar fade-in-3">
 
       <!-- Card preview -->
@@ -1130,6 +1172,21 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 </div>
 
 <script>
+// ── TAB SWITCHING ────────────────────────────────────────────────────
+function switchTab(name) {
+  // Update tab buttons
+  document.querySelectorAll('.pe-tab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.id === 'tab-' + name);
+  });
+  // Update panels
+  document.querySelectorAll('.pe-tab-panel').forEach(function(panel) {
+    panel.classList.toggle('active', panel.id === 'panel-' + name);
+  });
+  // Scroll to top of content area
+  var body = document.querySelector('.page-body');
+  if (body) body.scrollTop = 0;
+}
+
 // ── PROPERTY EDITOR ─────────────────────────────────────────────────
 
 // Counters for dynamically-added rows. Defaults match the static rows
