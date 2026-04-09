@@ -172,7 +172,43 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .pe-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .pe-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
 
-/* Photo fields */
+/* ── PHOTO TILE GRID ── */
+.pe-tile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:10px;}
+.pe-tile{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:var(--bg);border:2px dashed var(--border);cursor:grab;transition:box-shadow .15s,transform .15s;}
+.pe-tile.filled{border:2px solid transparent;box-shadow:var(--shadow-sm);}
+.pe-tile.filled:hover{box-shadow:var(--shadow-md);}
+.pe-tile.drag-src{opacity:.4;transform:scale(.96);}
+.pe-tile.drag-target{border-color:var(--accent);background:var(--accent-bg);}
+.pe-tile-img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
+.pe-tile-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;color:var(--text3);font-size:11px;}
+.pe-tile-empty svg{opacity:.4;}
+.pe-tile-controls{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);display:none;align-items:center;gap:6px;}
+.pe-tile.filled:hover .pe-tile-controls{display:flex;}
+.pe-tile-pos{flex:1;font-size:11px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:5px;padding:3px 6px;cursor:pointer;appearance:none;backdrop-filter:blur(4px);}
+.pe-tile-pos option{background:#1a1d24;color:#fff;}
+.pe-tile-remove{width:22px;height:22px;border-radius:50%;background:rgba(220,38,38,.8);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pe-tile-remove svg{pointer-events:none;}
+.pe-tile-num{position:absolute;top:6px;left:7px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:100px;pointer-events:none;}
+.pe-tile-spinner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
+.pe-tile-spinner-ring{width:22px;height:22px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:peai-spin .7s linear infinite;}
+.pe-tile-hidden-input{display:none;}
+/* Drop zone overlay for batch drop on section */
+.pe-tile-drop-zone{border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;font-size:13px;color:var(--text3);cursor:pointer;transition:all .15s;margin-top:8px;position:relative;}
+.pe-tile-drop-zone:hover,.pe-tile-drop-zone.drag-over{border-color:var(--accent);background:var(--accent-bg);color:var(--accent);}
+.pe-tile-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+
+/* ── PHOTO UPLOAD (drag & drop) ── */
+.pe-photo-row{position:relative;}
+.pe-upload-btn{width:36px;height:36px;border-radius:8px;background:var(--accent-bg);border:1.5px dashed var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:7px;transition:all .15s;position:relative;overflow:hidden;}
+.pe-upload-btn:hover{background:rgba(193,127,62,.2);}
+.pe-upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.pe-upload-btn svg{pointer-events:none;}
+.pe-photo-row.drag-over .pe-input{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg);}
+.pe-upload-spinner{width:14px;height:14px;border:2px solid rgba(193,127,62,.2);border-top-color:var(--accent);border-radius:50%;animation:peai-spin .7s linear infinite;display:none;}
+.pe-photo-row.uploading .pe-upload-spinner{display:block;}
+.pe-photo-row.uploading .pe-upload-icon{display:none;}
+
+/* ── PHOTO ROW ── */
 .pe-photo-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
 .pe-photo-num{width:24px;height:24px;border-radius:6px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3);flex-shrink:0;margin-top:11px;}
 .pe-photo-preview{width:60px;height:46px;border-radius:8px;background:var(--bg);overflow:hidden;flex-shrink:0;margin-top:7px;display:none;}
@@ -773,25 +809,77 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         <div class="pe-section-body">
           <div class="pe-cf-tip">
             <div class="pe-cf-icon">☁</div>
-            <div class="pe-cf-text">Upload photos to <a href="https://dash.cloudflare.com" target="_blank" class="pe-cf-link">Cloudflare Images</a>, then paste the delivery URL here. Format: <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px;">https://imagedelivery.net/xxx/image-id/public</code></div>
+            <div class="pe-cf-text">
+              <strong>Drag &amp; drop</strong> multiple photos onto any section below — they upload in parallel and fill slots automatically. Drag tiles to reorder. Click ✕ to remove.
+              <span style="color:var(--text3);"> · Max 10MB · JPG, PNG, WebP</span>
+            </div>
           </div>
 
           <!-- HERO IMAGES -->
           <div class="pe-photo-group">
             <div class="pe-photo-group-label">
-              <label class="pe-label">Hero images<span class="pe-label-req">*</span><span class="pe-label-hint">(landing-page header rotation — first image = main hero)</span></label>
+              <label class="pe-label">Hero images<span class="pe-label-req">*</span><span class="pe-label-hint">(header rotation — first = main hero · 5–8 recommended)</span></label>
             </div>
-            <div id="hero-wrap" style="display:flex;flex-direction:column;gap:8px;">
-              <div class="pe-photo-row"><div class="pe-photo-num">1</div><input class="pe-input" id="f-h1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph1');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph1"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">2</div><input class="pe-input" id="f-h2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph2');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph2"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">3</div><input class="pe-input" id="f-h3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph3');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph3"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">4</div><input class="pe-input" id="f-h4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph4');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph4"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">5</div><input class="pe-input" id="f-h5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph5');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph5"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">6</div><input class="pe-input" id="f-h6" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph6')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph6"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">7</div><input class="pe-input" id="f-h7" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph7')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph7"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">8</div><input class="pe-input" id="f-h8" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'ph8')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="ph8"><img alt=""></div></div>
+            <div id="hero-tile-grid" class="pe-tile-grid"></div>
+            <div class="pe-tile-drop-zone" id="hero-drop-zone">
+              <input type="file" accept="image/*" multiple onchange="pgBatchUpload('hero', this.files)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:5px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Drop photos here or click to browse — uploads multiple at once</div>
             </div>
-            <div style="font-size:12px;color:var(--text3);margin-top:6px;">Position controls how the image is cropped on hero display. 5–8 photos recommended for best rotation.</div>
+            <!-- Hidden inputs for propSnapshot compatibility -->
+            <div id="hero-inputs" style="display:none;"></div>
+          </div>
+
+          <!-- STATS STRIP -->
+          <div class="pe-photo-group">
+            <div class="pe-photo-group-label">
+              <label class="pe-label">Stats strip<span class="pe-label-hint">(4 highlight stats shown below the hero — e.g. altitude, acreage, year built)</span></label>
+            </div>
+            <div class="pe-grid-2" style="gap:12px;">
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
+                <label class="pe-label" style="font-size:11px;">Stat 1 — Value</label>
+                <input class="pe-input" id="f-stat1-val" placeholder="e.g. 350,000" style="margin-bottom:7px;">
+                <label class="pe-label" style="font-size:11px;">Label</label>
+                <input class="pe-input" id="f-stat1-label" placeholder="e.g. Private acres">
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
+                <label class="pe-label" style="font-size:11px;">Stat 2 — Value</label>
+                <input class="pe-input" id="f-stat2-val" placeholder="e.g. 16" style="margin-bottom:7px;">
+                <label class="pe-label" style="font-size:11px;">Label</label>
+                <input class="pe-input" id="f-stat2-label" placeholder="e.g. Tented suites">
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
+                <label class="pe-label" style="font-size:11px;">Stat 3 — Value</label>
+                <input class="pe-input" id="f-stat3-val" placeholder="e.g. 1995" style="margin-bottom:7px;">
+                <label class="pe-label" style="font-size:11px;">Label</label>
+                <input class="pe-input" id="f-stat3-label" placeholder="e.g. Est.">
+              </div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
+                <label class="pe-label" style="font-size:11px;">Stat 4 — Value</label>
+                <input class="pe-input" id="f-stat4-val" placeholder="e.g. Big Five" style="margin-bottom:7px;">
+                <label class="pe-label" style="font-size:11px;">Label</label>
+                <input class="pe-input" id="f-stat4-label" placeholder="e.g. Wildlife">
+              </div>
+            </div>
+          </div>
+
+          <!-- GALLERY PHOTOS -->
+          <div class="pe-photo-group">
+            <div class="pe-photo-group-label">
+              <label class="pe-label">Gallery photos<span class="pe-label-hint">(editorial grid on the property page — up to 12)</span></label>
+            </div>
+            <div id="gallery-tile-grid" class="pe-tile-grid"></div>
+            <div class="pe-tile-drop-zone" id="gallery-drop-zone">
+              <input type="file" accept="image/*" multiple onchange="pgBatchUpload('gallery', this.files)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:5px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Drop photos here or click to browse</div>
+            </div>
+            <div id="gallery-inputs" style="display:none;"></div>
+          </div>
+
+          <!-- ROOM PHOTOS — inline in section 3 -->
+          <div style="display:none;" id="room-photos-wrap"></div>
+        </div>
           </div>
 
           <!-- STATS STRIP -->
@@ -832,22 +920,7 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
             <div class="pe-photo-group-label">
               <label class="pe-label">Gallery photos<span class="pe-label-hint">(editorial photo grid on the property page — up to 12)</span></label>
             </div>
-            <div id="gallery-wrap" style="display:flex;flex-direction:column;gap:8px;">
-              <div class="pe-photo-row"><div class="pe-photo-num">1</div><input class="pe-input" id="f-g1" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg1');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg1"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">2</div><input class="pe-input" id="f-g2" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg2');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg2"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">3</div><input class="pe-input" id="f-g3" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg3');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg3"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">4</div><input class="pe-input" id="f-g4" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg4');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg4"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">5</div><input class="pe-input" id="f-g5" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg5');updateAll()" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg5"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">6</div><input class="pe-input" id="f-g6" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg6')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg6"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">7</div><input class="pe-input" id="f-g7" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg7')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg7"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">8</div><input class="pe-input" id="f-g8" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg8')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg8"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">9</div><input class="pe-input" id="f-g9" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg9')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg9"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">10</div><input class="pe-input" id="f-g10" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg10')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg10"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">11</div><input class="pe-input" id="f-g11" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg11')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg11"><img alt=""></div></div>
-              <div class="pe-photo-row"><div class="pe-photo-num">12</div><input class="pe-input" id="f-g12" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pg12')" style="flex:1;"><select class="pe-input" style="width:130px;flex-shrink:0;font-size:13px;"><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select><div class="pe-photo-preview" id="pg12"><img alt=""></div></div>
-            </div>
-            <div style="font-size:12px;color:var(--text3);margin-top:6px;">Position controls focal point cropping in the grid layout. Add at least 6 for a full editorial spread.</div>
-          </div>
+</div>
 
           <!-- ROOM PHOTOS — photos are now inline in section 3 -->
           <div style="display:none;" id="room-photos-wrap"></div>
@@ -921,12 +994,19 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
             <textarea class="pe-input pe-textarea" id="f-access-desc" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateAll()"></textarea>
           </div>
           <div class="pe-field">
-            <label class="pe-label">Photo URL<span class="pe-label-hint">(Cloudflare Images)</span></label>
-            <div style="display:flex;gap:8px;">
-              <input class="pe-input" id="f-access-photo" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,'pa-prev')" style="flex:1;">
-              <button class="btn btn-ghost" onclick="testImg('f-access-photo')">Test</button>
+            <label class="pe-label">Photo<span class="pe-label-hint">(Cloudflare Images — drag &amp; drop or paste URL)</span></label>
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div id="access-tile-grid" class="pe-tile-grid" style="width:160px;flex-shrink:0;margin-bottom:0;"></div>
+              <div style="flex:1;">
+                <div class="pe-tile-drop-zone" id="access-drop-zone" style="margin-top:0;">
+                  <input type="file" accept="image/*" onchange="pgBatchUpload('access', this.files)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:4px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div>Drop or click to upload</div>
+                </div>
+                <input class="pe-input" id="f-access-photo" placeholder="Or paste URL: https://imagedelivery.net/..." oninput="pgSyncFromUrl('access', this.value)" style="margin-top:8px;">
+              </div>
             </div>
-            <div class="pe-photo-preview" id="pa-prev" style="width:100%;height:80px;margin-top:8px;"><img alt=""></div>
+            <div id="access-inputs" style="display:none;"></div>
           </div>
         </div>
       </div>
@@ -1156,6 +1236,502 @@ function switchTab(name) {
   if (body) body.scrollTop = 0;
 }
 
+// ── PHOTO TILE GRID ENGINE ───────────────────────────────────────────
+// Each section (hero, gallery, access, room-N) has:
+//   - a tile grid DOM element
+//   - a hidden inputs container (for propSnapshot compat)
+//   - an in-memory array of { url, position }
+
+var pgState = {};  // keyed by section id: 'hero', 'gallery', 'access', 'room-1', etc.
+
+var PG_LIMITS = { hero: 8, gallery: 12, access: 1 };
+var PG_POSITIONS = ['center','top','bottom','left','right'];
+
+function pgInit(id, limit) {
+  if (!pgState[id]) pgState[id] = [];
+  PG_LIMITS[id] = limit || PG_LIMITS[id] || 20;
+  pgRender(id);
+  pgWireDropZone(id);
+}
+
+function pgRender(id) {
+  var grid = document.getElementById(id + '-tile-grid');
+  var inputsWrap = document.getElementById(id + '-inputs');
+  if (!grid) return;
+
+  var items = pgState[id] || [];
+  grid.innerHTML = '';
+  if (inputsWrap) inputsWrap.innerHTML = '';
+
+  items.forEach(function(item, i) {
+    // Tile
+    var tile = document.createElement('div');
+    tile.className = 'pe-tile filled';
+    tile.draggable = true;
+    tile.dataset.idx = i;
+    tile.dataset.section = id;
+
+    var posOpts = PG_POSITIONS.map(function(p) {
+      return '<option value="' + p + '"' + (item.position === p ? ' selected' : '') + '>' + p.charAt(0).toUpperCase() + p.slice(1) + '</option>';
+    }).join('');
+
+    tile.innerHTML =
+      '<img class="pe-tile-img" src="' + item.url + '" alt="">' +
+      '<div class="pe-tile-num">' + (i + 1) + '</div>' +
+      '<div class="pe-tile-controls">' +
+        '<select class="pe-tile-pos" onchange="pgSetPos(\'' + id + '\',' + i + ',this.value)" onclick="event.stopPropagation()">' + posOpts + '</select>' +
+        '<button class="pe-tile-remove" onclick="pgRemove(\'' + id + '\',' + i + ');event.stopPropagation()" title="Remove">' +
+          '<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>' +
+        '</button>' +
+      '</div>';
+
+    pgWireTileDrag(tile, id);
+    grid.appendChild(tile);
+
+    // Hidden inputs for propSnapshot
+    if (inputsWrap) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden';
+      inp.dataset.pgUrl = id + ':' + i;
+      inp.value = item.url;
+      var sel = document.createElement('input');
+      sel.type = 'hidden';
+      sel.dataset.pgPos = id + ':' + i;
+      sel.value = item.position || 'center';
+      inputsWrap.appendChild(inp);
+      inputsWrap.appendChild(sel);
+    }
+  });
+
+  // Update first hero input for card preview / publish checklist
+  if (id === 'hero') {
+    var h1 = document.getElementById('f-h1') || (function() {
+      var inp = document.createElement('input'); inp.id = 'f-h1'; inp.style.display = 'none';
+      document.body.appendChild(inp); return inp;
+    })();
+    h1.value = items.length ? items[0].url : '';
+    if (typeof updateAll === 'function') updateAll();
+  }
+}
+
+function pgSetPos(id, idx, pos) {
+  if (pgState[id] && pgState[id][idx]) {
+    pgState[id][idx].position = pos;
+  }
+}
+
+function pgRemove(id, idx) {
+  if (!pgState[id]) return;
+  pgState[id].splice(idx, 1);
+  pgRender(id);
+  if (typeof updateAll === 'function') updateAll();
+}
+
+function pgAdd(id, url, position) {
+  if (!pgState[id]) pgState[id] = [];
+  var limit = PG_LIMITS[id] || 20;
+  if (pgState[id].length >= limit) {
+    showToast('Maximum ' + limit + ' photos for this section', 'warn');
+    return false;
+  }
+  pgState[id].push({ url: url, position: position || 'center' });
+  pgRender(id);
+  return true;
+}
+
+function pgSyncFromUrl(id, url) {
+  // For single-image sections (access) — sync from manual URL paste
+  if (!pgState[id]) pgState[id] = [];
+  if (url.trim()) {
+    pgState[id] = [{ url: url.trim(), position: 'center' }];
+  } else {
+    pgState[id] = [];
+  }
+  pgRender(id);
+}
+
+// Drag to reorder within a section
+var pgDragSrc = null;
+
+function pgWireTileDrag(tile, id) {
+  tile.addEventListener('dragstart', function(e) {
+    pgDragSrc = { el: tile, id: id, idx: parseInt(tile.dataset.idx) };
+    tile.classList.add('drag-src');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  tile.addEventListener('dragend', function() {
+    tile.classList.remove('drag-src');
+    document.querySelectorAll('.pe-tile').forEach(function(t) { t.classList.remove('drag-target'); });
+    pgDragSrc = null;
+  });
+  tile.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    if (!pgDragSrc || pgDragSrc.id !== id) return;
+    tile.classList.add('drag-target');
+  });
+  tile.addEventListener('dragleave', function() {
+    tile.classList.remove('drag-target');
+  });
+  tile.addEventListener('drop', function(e) {
+    e.preventDefault();
+    tile.classList.remove('drag-target');
+    if (!pgDragSrc || pgDragSrc.id !== id) return;
+    var srcIdx = pgDragSrc.idx;
+    var dstIdx = parseInt(tile.dataset.idx);
+    if (srcIdx === dstIdx) return;
+    var items = pgState[id];
+    var moved = items.splice(srcIdx, 1)[0];
+    items.splice(dstIdx, 0, moved);
+    pgRender(id);
+    if (typeof updateAll === 'function') updateAll();
+  });
+}
+
+// Wire drop zone for batch file drops on a section
+function pgWireDropZone(id) {
+  var zone = document.getElementById(id + '-drop-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', function() {
+    zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
+      pgBatchUpload(id, e.dataTransfer.files);
+    }
+  });
+}
+
+// Upload multiple files to a section in parallel
+async function pgBatchUpload(id, files) {
+  var api = cfUploadApi();
+  if (!api) { showToast('Upload only works on the live site', 'warn'); return; }
+
+  var fileArr = Array.from(files).filter(function(f) {
+    if (!f.type.startsWith('image/')) return false;
+    if (f.size > 50 * 1024 * 1024) {
+      showToast(f.name + ' is over 50MB — too large even after optimization', 'warn');
+      return false;
+    }
+    return true;
+  });
+  if (!fileArr.length) { showToast('No valid image files selected', 'warn'); return; }
+
+  var limit = PG_LIMITS[id] || 20;
+  var remaining = limit - (pgState[id] ? pgState[id].length : 0);
+  if (remaining <= 0) { showToast('Section is full — remove some photos first', 'warn'); return; }
+  fileArr = fileArr.slice(0, remaining);
+
+  showToast('Uploading ' + fileArr.length + ' photo' + (fileArr.length > 1 ? 's' : '') + '…', 'success');
+
+  // Add spinner placeholders
+  var grid = document.getElementById(id + '-tile-grid');
+  var spinners = fileArr.map(function() {
+    var t = document.createElement('div');
+    t.className = 'pe-tile filled';
+    t.innerHTML = '<div class="pe-tile-spinner"><div class="pe-tile-spinner-ring"></div></div>';
+    if (grid) grid.appendChild(t);
+    return t;
+  });
+
+  // Optimize each file before uploading
+  var optimizedFiles = await Promise.all(fileArr.map(imgOptimize));
+
+  // Report any optimizations
+  var optimizedCount = optimizedFiles.filter(function(r) { return r.optimized; }).length;
+  if (optimizedCount > 0) {
+    var totalBefore = optimizedFiles.reduce(function(s, r) { return s + r.originalSize; }, 0);
+    var totalAfter = optimizedFiles.reduce(function(s, r) { return s + r.file.size; }, 0);
+    if (totalBefore > 0) {
+      showToast('Optimized ' + fmtSize(totalBefore) + ' → ' + fmtSize(totalAfter), 'success');
+    }
+  }
+
+  var results = await Promise.all(optimizedFiles.map(function(result) {
+    var form = new FormData();
+    form.append('file', result.file);
+    return fetch(api, { method: 'POST', body: form })
+      .then(function(r) { return r.json(); })
+      .catch(function(e) { return { error: e.message }; });
+  }));
+
+  // Remove spinners
+  spinners.forEach(function(s) { if (s.parentNode) s.parentNode.removeChild(s); });
+
+  var uploaded = 0;
+  results.forEach(function(data) {
+    if (data.ok && data.url) {
+      pgAdd(id, data.url, 'center');
+      uploaded++;
+    }
+  });
+
+  if (uploaded > 0) {
+    showToast('✓ ' + uploaded + ' photo' + (uploaded > 1 ? 's' : '') + ' uploaded', 'success');
+    if (typeof updateAll === 'function') updateAll();
+  }
+  if (uploaded < results.length) {
+    showToast((results.length - uploaded) + ' upload(s) failed', 'error');
+  }
+}
+
+// ── ROOM PHOTO TILE GRIDS (per room) ─────────────────────────────────
+function pgInitRoom(n) {
+  var id = 'room-' + n;
+  pgState[id] = pgState[id] || [];
+  PG_LIMITS[id] = 6;
+
+  // Inject tile grid into the room card (replaces the old pe-photo-row list)
+  var rphWrap = document.getElementById('rph-wrap-' + n);
+  if (!rphWrap) return;
+
+  // Replace contents with tile grid
+  rphWrap.innerHTML =
+    '<div id="' + id + '-tile-grid" class="pe-tile-grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr));"></div>' +
+    '<div class="pe-tile-drop-zone" id="' + id + '-drop-zone" style="margin-top:6px;">' +
+      '<input type="file" accept="image/*" multiple onchange="pgBatchUpload(\'' + id + '\', this.files)">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:3px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+      '<div style="font-size:11px;">Drop room photos</div>' +
+    '</div>' +
+    '<div id="' + id + '-inputs" style="display:none;"></div>';
+
+  pgWireDropZone(id);
+  pgRender(id);
+
+  // Remove the old "+ Add photo" button if it exists right after rph-wrap
+  var addBtn = rphWrap.nextElementSibling;
+  if (addBtn && addBtn.textContent.trim().startsWith('+ Add photo')) {
+    addBtn.remove();
+  }
+}
+
+// ── SNAPSHOT / RESTORE INTEGRATION ───────────────────────────────────
+// Override propSnapshot to include tile grid state
+var _origPropSnapshot = null;
+function pgHookSnapshot() {
+  if (_origPropSnapshot) return; // already hooked
+  _origPropSnapshot = propSnapshot;
+  propSnapshot = function() {
+    var fields = _origPropSnapshot();
+    // Write tile grid state into the snapshot
+    Object.keys(pgState).forEach(function(id) {
+      fields['__pg_' + id] = JSON.stringify(pgState[id]);
+    });
+    return fields;
+  };
+}
+
+function pgRestoreFromSnapshot(fields) {
+  Object.keys(fields).forEach(function(key) {
+    if (!key.startsWith('__pg_')) return;
+    var id = key.replace('__pg_', '');
+    try {
+      var items = JSON.parse(fields[key]);
+      if (Array.isArray(items)) {
+        pgState[id] = items;
+        pgRender(id);
+      }
+    } catch (e) {}
+  });
+}
+
+// Init all sections on load
+setTimeout(function() {
+  pgInit('hero', 8);
+  pgInit('gallery', 12);
+  pgInit('access', 1);
+  pgHookSnapshot();
+
+  // Patch propRestore to also restore tile grids
+  var _origRestore = propRestore;
+  propRestore = function(fields) {
+    _origRestore(fields);
+    pgRestoreFromSnapshot(fields);
+    // Also restore access photo from f-access-photo if present
+    var accessUrl = fields['f-access-photo'];
+    if (accessUrl) {
+      pgState['access'] = [{ url: accessUrl, position: 'center' }];
+      pgRender('access');
+    }
+  };
+}, 200);
+
+// ── IMAGE OPTIMIZER (client-side, before upload) ─────────────────────
+var IMG_MAX_DIMENSION = 3000;  // px on longest edge
+var IMG_QUALITY = 0.85;        // JPEG quality
+var IMG_SIZE_THRESHOLD = 4 * 1024 * 1024; // 4MB — optimize if over this
+
+function imgOptimize(file) {
+  return new Promise(function(resolve) {
+    // If small enough and not huge resolution, skip optimization
+    // We still need to check dimensions, so always run through Image
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function() {
+      URL.revokeObjectURL(url);
+      var w = img.naturalWidth;
+      var h = img.naturalHeight;
+      var needsResize = w > IMG_MAX_DIMENSION || h > IMG_MAX_DIMENSION;
+      var needsCompress = file.size > IMG_SIZE_THRESHOLD;
+
+      if (!needsResize && !needsCompress) {
+        // File is fine as-is
+        resolve({ file: file, optimized: false });
+        return;
+      }
+
+      // Calculate new dimensions
+      var newW = w, newH = h;
+      if (needsResize) {
+        var ratio = Math.min(IMG_MAX_DIMENSION / w, IMG_MAX_DIMENSION / h);
+        newW = Math.round(w * ratio);
+        newH = Math.round(h * ratio);
+      }
+
+      // Draw onto canvas
+      var canvas = document.createElement('canvas');
+      canvas.width = newW;
+      canvas.height = newH;
+      var ctx = canvas.getContext('2d');
+
+      // White background for PNGs with transparency
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, newW, newH);
+      ctx.drawImage(img, 0, 0, newW, newH);
+
+      // Export — use JPEG for photos, PNG only if original was PNG and small
+      var mimeType = (file.type === 'image/png' && !needsResize) ? 'image/png' : 'image/jpeg';
+      var quality = mimeType === 'image/jpeg' ? IMG_QUALITY : undefined;
+
+      canvas.toBlob(function(blob) {
+        if (!blob) { resolve({ file: file, optimized: false }); return; }
+        var ext = mimeType === 'image/jpeg' ? '.jpg' : '.png';
+        var baseName = file.name.replace(/\.[^.]+$/, '') || 'photo';
+        var optimizedFile = new File([blob], baseName + ext, { type: mimeType });
+        resolve({
+          file: optimizedFile,
+          optimized: true,
+          originalSize: file.size,
+          newSize: blob.size,
+          originalDims: w + '×' + h,
+          newDims: newW + '×' + newH
+        });
+      }, mimeType, quality);
+    };
+    img.onerror = function() {
+      URL.revokeObjectURL(url);
+      resolve({ file: file, optimized: false });
+    };
+    img.src = url;
+  });
+}
+
+function fmtSize(bytes) {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
+  return Math.round(bytes / 1024) + 'KB';
+}
+
+// ── CLOUDFLARE IMAGES UPLOAD ─────────────────────────────────────────
+function cfUploadApi() {
+  if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
+  return '/api/upload';
+}
+
+function cfUploadFromInput(fileInput) {
+  if (!fileInput.files || !fileInput.files[0]) return;
+  var row = fileInput.closest('.pe-photo-row');
+  var inp = row ? row.querySelector('input.pe-input[id]') : null;
+  var prev = row ? row.querySelector('.pe-photo-preview') : null;
+  cfUploadFile(fileInput.files[0], inp, prev ? prev.id : null);
+  // Reset file input so same file can be re-selected
+  fileInput.value = '';
+}
+
+async function cfUploadFile(file, inputEl, prevId) {
+  var api = cfUploadApi();
+  if (!api) {
+    showToast('Upload only works on the live site', 'warn');
+    return;
+  }
+
+  // Validate
+  if (!file.type.startsWith('image/')) {
+    showToast('Only image files can be uploaded', 'warn');
+    return;
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('Image must be under 50MB', 'warn');
+    return;
+  }
+
+  // Mark row as uploading
+  var row = inputEl ? inputEl.closest('.pe-photo-row') : null;
+  if (row) row.classList.add('uploading');
+
+  try {
+    // Optimize before upload
+    var optimized = await imgOptimize(file);
+    if (optimized.optimized) {
+      showToast('Optimized ' + fmtSize(optimized.originalSize) + ' → ' + fmtSize(optimized.file.size), 'success');
+    }
+
+    var form = new FormData();
+    form.append('file', optimized.file);
+
+    var res = await fetch(api, { method: 'POST', body: form });
+    var data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      showToast('Upload failed: ' + (data.error || 'unknown'), 'error');
+      return;
+    }
+
+    // Set the URL into the input field and trigger preview
+    inputEl.value = data.url;
+    inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    if (prevId && typeof prevGallery === 'function') prevGallery(inputEl, prevId);
+    if (typeof updateAll === 'function') updateAll();
+    showToast('✓ Uploaded', 'success');
+
+  } catch (err) {
+    showToast('Upload error: ' + err.message, 'error');
+  } finally {
+    if (row) row.classList.remove('uploading');
+  }
+}
+
+// Wire up drag-and-drop on all photo rows
+function initPhotoUpload() {
+  document.querySelectorAll('.pe-photo-row').forEach(function(row) {
+    var input = row.querySelector('input.pe-input[id^="f-"]');
+    var prevEl = input ? input.nextElementSibling : null;
+    // Skip if it's a select (position dropdown)
+    while (prevEl && prevEl.tagName === 'SELECT') prevEl = prevEl.nextElementSibling;
+    var prevId = prevEl && prevEl.classList.contains('pe-photo-preview') ? prevEl.id : null;
+
+    // Drag over highlight
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', function() {
+      row.classList.remove('drag-over');
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (!input) return;
+      var files = e.dataTransfer.files;
+      if (files && files[0]) cfUploadFile(files[0], input, prevId);
+    });
+  });
+}
+
 // ── PROPERTY EDITOR ─────────────────────────────────────────────────
 
 // Counters for dynamically-added rows. Defaults match the static rows
@@ -1173,7 +1749,7 @@ var REQUIRED = [
   {id:'f-name',    key:'name',    label:'Property name'},
   {id:'f-type',    key:'type',    label:'Property type'},
   {id:'f-hook',    key:'hook',    label:'Hook line'},
-  {id:'f-h1',      key:'hero',    label:'Hero photo'},
+  {id:'f-h1',      key:'hero',    label:'Hero photo',    pgCheck: 'hero'},
   {id:'f-desc-short', key:'desc', label:'Intro paragraph 1'},
   {id:'f-verdict', key:'verdict', label:'The Bearing Verdict'},
   {id:'f-access-name', key:'access', label:'Private Access'},
@@ -1224,7 +1800,7 @@ function syncPublishTab() {
 function updateCompleteness() {
   var filled = 0;
   REQUIRED.forEach(function(f) {
-    var val = getFieldVal(f.id);
+    var val = f.pgCheck ? (pgState[f.pgCheck] && pgState[f.pgCheck].length > 0 ? 'yes' : '') : getFieldVal(f.id);
     var hasVal = val.length > 0;
     var ci = document.getElementById('ci-'+f.key);
     if (ci) {
@@ -1330,7 +1906,7 @@ function addHero() {
   var wrap = document.getElementById('hero-wrap');
   var div = document.createElement('div');
   div.className = 'pe-photo-row';
-  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><input class="pe-input" id="f-h'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;ph'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph'+n+'"><img alt=""></div>';
+  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><label class="pe-upload-btn" title="Click to upload or drag &amp; drop"><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="cfUploadFromInput(this)"><span class="pe-upload-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="pe-upload-spinner"></span></label><input class="pe-input" id="f-h'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;ph'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="ph'+n+'"><img alt=""></div>';
   wrap.appendChild(div);
 }
 
@@ -1340,7 +1916,7 @@ function addGallery() {
   var wrap = document.getElementById('gallery-wrap');
   var div = document.createElement('div');
   div.className = 'pe-photo-row';
-  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><input class="pe-input" id="f-g'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;pg'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg'+n+'"><img alt=""></div>';
+  div.innerHTML = '<div class="pe-photo-num">'+n+'</div><label class="pe-upload-btn" title="Click to upload or drag &amp; drop"><input type="file" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" onchange="cfUploadFromInput(this)"><span class="pe-upload-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span><span class="pe-upload-spinner"></span></label><input class="pe-input" id="f-g'+n+'" placeholder="https://imagedelivery.net/..." oninput="prevGallery(this,&#39;pg'+n+'&#39;);updateAll()" style="flex:1;"><div class="pe-photo-preview" id="pg'+n+'"><img alt=""></div>';
   wrap.appendChild(div);
 }
 
@@ -1449,6 +2025,7 @@ function addRoom() {
     '</div>';
   wrap.appendChild(div);
   updateAll();
+  setTimeout(function() { pgInitRoom(roomCount); initPhotoUpload(); }, 50);
 }
 
 function syncRoomTitle(n) {
@@ -1494,31 +2071,15 @@ function cc(el, id, max) {
 }
 
 function updateJSON() {
-  // Hero images with positions
-  var hero = [];
-  (function() {
-    var wrap = document.getElementById('hero-wrap');
-    var selects = wrap ? wrap.querySelectorAll('select') : [];
-    for (var i = 1; i <= heroCount; i++) {
-      var e = document.getElementById('f-h' + i);
-      if (e && e.value.trim()) {
-        hero.push({ url: e.value.trim(), position: selects[i-1] ? selects[i-1].value : 'center' });
-      }
-    }
-  })();
+  // Hero images with positions — read from tile grid state
+  var hero = (pgState['hero'] || []).map(function(item) {
+    return { url: item.url, position: item.position || 'center' };
+  });
 
-  // Gallery images with positions
-  var gallery = [];
-  (function() {
-    var wrap = document.getElementById('gallery-wrap');
-    var selects = wrap ? wrap.querySelectorAll('select') : [];
-    for (var i = 1; i <= galleryCount; i++) {
-      var e = document.getElementById('f-g' + i);
-      if (e && e.value.trim()) {
-        gallery.push({ url: e.value.trim(), position: selects[i-1] ? selects[i-1].value : 'center' });
-      }
-    }
-  })();
+  // Gallery images with positions — read from tile grid state
+  var gallery = (pgState['gallery'] || []).map(function(item) {
+    return { url: item.url, position: item.position || 'center' };
+  });
 
   // Stats strip
   var stats = [];
@@ -1542,16 +2103,10 @@ function updateJSON() {
     var bedEl = document.getElementById('rbed-' + i);
     var occEl = document.getElementById('rocc-' + i);
     var rtEl = document.getElementById('rt-' + i);
-    // Photos with positions
-    var rPhotos = [];
-    var rphWrap = document.getElementById('rph-wrap-' + i);
-    if (rphWrap) {
-      var rInps = rphWrap.querySelectorAll('input.pe-input');
-      var rSels = rphWrap.querySelectorAll('select.pe-input');
-      rInps.forEach(function(inp, idx) {
-        if (inp.value.trim()) rPhotos.push({ url: inp.value.trim(), position: rSels[idx] ? rSels[idx].value : 'center' });
-      });
-    }
+    // Photos with positions — read from tile grid state
+    var rPhotos = (pgState['room-' + i] || []).map(function(item) {
+      return { url: item.url, position: item.position || 'center' };
+    });
     rooms.push({
       name: roomName,
       type: rtEl ? rtEl.value : '',
@@ -2570,6 +3125,7 @@ setTimeout(function() {
 // Init
 addRoom();
 updateAll();
+setTimeout(initPhotoUpload, 300);
 </script>
 
 <script>

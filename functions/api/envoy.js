@@ -7,7 +7,13 @@
 //   /api/source  POST → fetches a URL, strips HTML, caches in KV under {slug}:source:{n}
 //   /api/source  GET  → returns all cached sources for a slug
 //   /api/source  DELETE → removes a cached source
+//   /api/upload  POST → gets a Cloudflare Images direct-upload URL, then browser uploads
+//                       directly; returns { url } delivery URL ready to paste
+//   /api/property GET/POST/DELETE → full property data save/load/delete/list
 // All other paths fall through to static asset serving.
+
+const CF_ACCOUNT_ID = 'd62dd7db798247bb6cc9ff18ff7ee84f';
+const CF_ACCOUNT_HASH = 'YyCqpmHo4EG6ShyDMCRcVQ';
 
 export default {
   async fetch(request, env) {
@@ -20,7 +26,7 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         }
       });
     }
@@ -378,6 +384,66 @@ export default {
       }
 
       return new Response('Method not allowed', { status: 405 });
+    }
+
+    // ── /api/upload — Cloudflare Images direct upload ─────────────
+    // POST with multipart/form-data containing a "file" field.
+    // Worker fetches a one-time upload URL from CF Images, uploads
+    // the file server-side, and returns { ok, url, id }.
+    if (url.pathname === '/api/upload') {
+      if (request.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405 });
+      }
+
+      const token = env.CF_IMAGES_TOKEN;
+      if (!token) {
+        return jsonResponse({ error: 'CF_IMAGES_TOKEN secret not configured' }, 500);
+      }
+
+      let formData;
+      try {
+        formData = await request.formData();
+      } catch (err) {
+        return jsonResponse({ error: 'Could not parse form data: ' + err.message }, 400);
+      }
+
+      const file = formData.get('file');
+      if (!file) {
+        return jsonResponse({ error: 'No file field in form data' }, 400);
+      }
+
+      // Upload directly to Cloudflare Images using the API
+      const uploadForm = new FormData();
+      uploadForm.append('file', file);
+
+      const cfRes = await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/images/v1`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: uploadForm
+        }
+      );
+
+      const cfData = await cfRes.json();
+
+      if (!cfRes.ok || !cfData.success) {
+        const errMsg = cfData.errors && cfData.errors.length
+          ? cfData.errors.map(e => e.message).join(', ')
+          : 'Cloudflare Images upload failed';
+        return jsonResponse({ error: errMsg }, 502);
+      }
+
+      const imageId = cfData.result.id;
+      const deliveryUrl = `https://imagedelivery.net/${CF_ACCOUNT_HASH}/${imageId}/public`;
+
+      return jsonResponse({
+        ok: true,
+        id: imageId,
+        url: deliveryUrl
+      });
     }
 
     // ── Everything else → static assets ───────────────────────────
