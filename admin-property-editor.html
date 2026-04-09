@@ -145,7 +145,7 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 .pe-tab-panel{display:none;}.pe-tab-panel.active{display:flex;flex-direction:column;gap:20px;}
 
 /* ── PROPERTY EDITOR — page-specific overrides ========== */
-.pe-shell{display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;}
+.pe-shell{display:block;}
 .pe-form{display:flex;flex-direction:column;gap:20px;}
 .pe-sidebar{display:flex;flex-direction:column;gap:16px;position:sticky;top:80px;}
 
@@ -408,7 +408,6 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
   </div>
 
   <div class="pe-shell fade-in-2">
-    <div style="flex:1;min-width:0;">
 
       <!-- TAB BAR -->
       <div class="pe-tabs">
@@ -1005,46 +1004,7 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-    </div><!-- end panel-listing -->
-
-      <!-- ══ TAB 3: SAVE & PUBLISH ══ -->
-      <div class="pe-tab-panel" id="panel-publish">
-
-      <!-- 0. PROPERTY DATA (save/load) -->
-      <div class="pe-section" style="border:2px solid var(--accent);background:#fffdf9;">
-        <div class="pe-section-head" style="background:#fff9f0;border-bottom:1px solid #f0e4cc;">
-          <div class="pe-section-left">
-            <div class="pe-section-num" style="background:#8a5a2b;font-size:16px;">💾</div>
-            <div>
-              <div class="pe-section-title" style="font-size:16px;">Property data</div>
-              <div class="pe-section-sub">Save and load all form fields — persists across sessions</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-            <span id="prop-status" style="font-size:12px;color:var(--text3);">—</span>
-            <button class="btn btn-ghost btn-sm" onclick="propLoad()" id="prop-load-btn">Load</button>
-            <button class="btn btn-primary btn-sm" onclick="propSave()">Save property</button>
-          </div>
-        </div>
-        <div class="pe-section-body" style="padding:16px 24px;">
-          <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:200px;">
-              <label class="pe-label" style="margin-bottom:5px;">Load by slug</label>
-              <div style="display:flex;gap:8px;">
-                <input class="pe-input" id="prop-slug-input" placeholder="e.g. singita-grumeti" style="flex:1;">
-                <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="propLoadBySlug()">Load slug</button>
-              </div>
-            </div>
-            <div style="font-size:12px;color:var(--text3);line-height:1.5;padding-bottom:2px;">
-              Or fill in the property name below, then hit <strong style="color:var(--text2);">Load</strong>.
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- end panel-publish -->
-
-    </div><!-- end tabs wrapper -->
+      </div><!-- end pe-form -->
 
     <!-- RIGHT SIDEBAR — always visible -->
     <div class="pe-sidebar fade-in-3">
@@ -1171,6 +1131,96 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
   </div>
 </div>
 
+      </div><!-- end listing inner grid -->
+    </div><!-- end panel-listing -->
+
+      <!-- ══ TAB 3: SAVE & PUBLISH ══ -->
+      <div class="pe-tab-panel" id="panel-publish">
+
+      <!-- 0. PROPERTY DATA (save/load) -->
+      <div class="pe-section" style="border:2px solid var(--accent);background:#fffdf9;">
+        <div class="pe-section-head" style="background:#fff9f0;border-bottom:1px solid #f0e4cc;">
+          <div class="pe-section-left">
+            <div class="pe-section-num" style="background:#8a5a2b;font-size:16px;">💾</div>
+            <div>
+              <div class="pe-section-title" style="font-size:16px;">Property data</div>
+              <div class="pe-section-sub">Save and load all form fields — persists across sessions</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span id="prop-status" style="font-size:12px;color:var(--text3);">—</span>
+            <button class="btn btn-ghost btn-sm" onclick="propLoad()" id="prop-load-btn">Load</button>
+            <button class="btn btn-primary btn-sm" onclick="propSave()">Save property</button>
+          </div>
+        </div>
+        <div class="pe-section-body" style="padding:16px 24px;">
+          <div style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <label class="pe-label" style="margin-bottom:5px;">Load by slug</label>
+              <div style="display:flex;gap:8px;">
+                <input class="pe-input" id="prop-slug-input" placeholder="e.g. singita-grumeti" style="flex:1;">
+                <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="propLoadBySlug()">Load slug</button>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text3);line-height:1.5;padding-bottom:2px;">
+              Or fill in the property name below, then hit <strong style="color:var(--text2);">Load</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PUBLISH CHECKLIST -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px;">
+
+        <!-- Checklist -->
+        <div class="pe-section">
+          <div class="pe-section-head">
+            <div class="pe-section-left" style="gap:8px;">
+              <div class="pe-section-title" style="font-size:14px;">Publish checklist</div>
+            </div>
+            <div class="pe-progress-pct" id="comp-pct-2" style="font-family:'Fraunces',serif;font-size:18px;color:var(--accent);"></div>
+          </div>
+          <div style="padding:12px 16px;">
+            <div id="checklist-2">
+              <div class="pe-chk-item" id="ci2-name"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Property name</div></div>
+              <div class="pe-chk-item" id="ci2-type"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Property type</div></div>
+              <div class="pe-chk-item" id="ci2-hook"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Hook line</div></div>
+              <div class="pe-chk-item" id="ci2-hero"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Hero photo</div></div>
+              <div class="pe-chk-item" id="ci2-desc"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Intro paragraph 1</div></div>
+              <div class="pe-chk-item" id="ci2-verdict"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">The Bearing Verdict</div></div>
+              <div class="pe-chk-item" id="ci2-access"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Private Access</div></div>
+              <div class="pe-chk-item" id="ci2-contact"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Contact details</div></div>
+              <div class="pe-chk-item" id="ci2-rooms"><div class="pe-chk-dot"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--emerald)" stroke-width="3" stroke-linecap="round" style="opacity:0;"><polyline points="20 6 9 17 4 12"/></svg></div><div class="pe-chk-label">Room / pricing</div></div>
+            </div>
+            <div style="margin-top:14px;">
+              <button class="btn btn-primary" style="width:100%;padding:11px;" onclick="publishProperty()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Publish live
+              </button>
+              <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;line-height:1.6;">Exports JSON payload ready for your backend.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- JSON export -->
+        <div class="pe-section">
+          <div class="pe-section-head">
+            <div class="pe-section-left" style="gap:8px;"><div class="pe-section-title" style="font-size:14px;">JSON export</div></div>
+            <button class="btn btn-ghost btn-sm" onclick="copyJSON()">Copy</button>
+          </div>
+          <pre class="pe-json-pre" id="json-out-2" style="max-height:400px;overflow-y:auto;">{
+  "name": "",
+  ...
+}</pre>
+        </div>
+
+      </div>
+
+    </div><!-- end panel-publish -->
+
+  </div>
+</div>
+
 <script>
 // ── TAB SWITCHING ────────────────────────────────────────────────────
 function switchTab(name) {
@@ -1219,6 +1269,37 @@ function updateAll() {
   var hook = getFieldVal('f-hook');
   var hc = document.getElementById('hook-count');
   if(hc) hc.textContent = hook.length + ' chars' + (hook.length < 60 ? ' · aim for 60–120' : hook.length > 150 ? ' · getting long' : ' ✓');
+  // Sync publish tab checklist + JSON
+  syncPublishTab();
+}
+
+function syncPublishTab() {
+  // Mirror checklist state from sidebar checklist to publish tab checklist
+  var keys = ['name','type','hook','hero','desc','verdict','access','contact','rooms'];
+  keys.forEach(function(key) {
+    var src = document.getElementById('ci-' + key);
+    var dst = document.getElementById('ci2-' + key);
+    if (!src || !dst) return;
+    var srcDot = src.querySelector('.pe-chk-dot');
+    var dstDot = dst.querySelector('.pe-chk-dot');
+    var srcSvg = src.querySelector('svg');
+    var dstSvg = dst.querySelector('svg');
+    var srcLbl = src.querySelector('.pe-chk-label');
+    var dstLbl = dst.querySelector('.pe-chk-label');
+    if (srcDot && dstDot) { dstDot.style.borderColor = srcDot.style.borderColor; dstDot.style.background = srcDot.style.background; }
+    if (srcSvg && dstSvg) dstSvg.style.opacity = srcSvg.style.opacity;
+    if (srcLbl && dstLbl) dstLbl.style.color = srcLbl.style.color;
+    if (src.classList.contains('done')) dst.classList.add('done');
+    else dst.classList.remove('done');
+  });
+  // Mirror completeness percentage
+  var pct = document.getElementById('comp-pct');
+  var pct2 = document.getElementById('comp-pct-2');
+  if (pct && pct2) pct2.textContent = pct.textContent;
+  // Mirror JSON output
+  var jsonOut = document.getElementById('json-out');
+  var jsonOut2 = document.getElementById('json-out-2');
+  if (jsonOut && jsonOut2) jsonOut2.textContent = jsonOut.textContent;
 }
 
 function updateCompleteness() {
