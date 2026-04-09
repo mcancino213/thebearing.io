@@ -508,7 +508,102 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 </div>
-</div>
+
+<script>
+// ── TRANSACTION FILTER TABS ──────────────────────────────────────────
+var allRows = null;
+
+function initFilterTabs() {
+  var tbody = document.querySelector('.table-wrap table tbody');
+  if (!tbody) return;
+  // Cache all rows on first call
+  allRows = Array.from(tbody.querySelectorAll('tr'));
+
+  document.querySelectorAll('.filter-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+      var filter = this.textContent.trim().toLowerCase();
+
+      allRows.forEach(function(row) {
+        if (filter === 'all') {
+          row.style.display = '';
+          return;
+        }
+        var badge = row.querySelector('.badge');
+        var status = badge ? badge.textContent.replace('●', '').trim().toLowerCase() : '';
+        row.style.display = (status.indexOf(filter) !== -1) ? '' : 'none';
+      });
+
+      // Update "Showing X of Y" footer
+      var visible = filter === 'all' ? allRows.length : allRows.filter(function(r) { return r.style.display !== 'none'; }).length;
+      var footer = document.querySelector('.table-wrap + div, [style*="Showing"]');
+      if (!footer) {
+        // Try finding by text content
+        document.querySelectorAll('div').forEach(function(el) {
+          if (el.textContent.trim().startsWith('Showing ')) footer = el;
+        });
+      }
+      if (footer) footer.textContent = 'Showing ' + visible + ' of 142 transactions';
+    });
+  });
+}
+
+// ── PAYOUT PERIOD SELECTOR ───────────────────────────────────────────
+(function() {
+  var periodBtns = document.querySelectorAll('.card-body button');
+  // Only target payout section buttons if they exist
+  // The structure uses filter-tab class above; payout table has no period tabs yet.
+  // Wire any future period tabs here.
+})();
+
+// ── KV PROPERTY PAYOUT SYNC ─────────────────────────────────────────
+// On the live site, overlay KV property names onto the upcoming payouts table
+// so newly saved properties appear correctly even if the hardcoded list is stale.
+(function kvPaymentsSync() {
+  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  fetch(PROP_API)
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(index) {
+      if (!index || !index.slugs || !index.slugs.length) return;
+      // We don't rewrite the payouts table — just badge any property name
+      // that matches a live KV entry with a "✓ Editor" indicator.
+      return Promise.all(index.slugs.map(function(slug) {
+        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .catch(function() { return null; });
+      }));
+    })
+    .then(function(results) {
+      if (!results) return;
+      var kvNames = {};
+      results.forEach(function(res) {
+        if (res && res.exists && res.data && res.data.name) {
+          kvNames[res.data.name.toLowerCase()] = res.slug;
+        }
+      });
+      // Badge matching property names in all tables on the page
+      document.querySelectorAll('table tbody tr td').forEach(function(td) {
+        var nameEl = td.querySelector('[style*="font-weight:500"]');
+        if (!nameEl) return;
+        var name = nameEl.textContent.trim().toLowerCase();
+        if (kvNames[name]) {
+          var badge = document.createElement('span');
+          badge.style.cssText = 'font-size:10px;font-weight:600;color:#059669;background:#ecfdf5;padding:2px 6px;border-radius:100px;margin-left:7px;vertical-align:middle;';
+          badge.textContent = '✓ Editor';
+          nameEl.appendChild(badge);
+        }
+      });
+    })
+    .catch(function(e) { console.log('[Payments KV]', e.message); });
+})();
+
+// Init
+initFilterTabs();
+</script>
 
 </body>
 </html>

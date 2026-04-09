@@ -263,7 +263,7 @@ button{font-family:inherit;cursor:pointer;}
     <div style="font-size:.82rem;color:var(--stone);margin-bottom:20px;line-height:1.55;">Your card is held but not charged until the property confirms availability (within 24 hours). Cancel free if unavailable.</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Date</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Date</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onclick="try{this.showPicker()}catch(e){}"></div>
       <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option></select></div>
     </div>
 
@@ -334,7 +334,7 @@ button{font-family:inherit;cursor:pointer;}
         <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Email</label><input type="email" placeholder="you@email.com" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onclick="try{this.showPicker()}catch(e){}"></div>
         <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option><option>Family (2+kids)</option></select></div>
       </div>
       <div style="margin-bottom:16px;"><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Your message</label><textarea placeholder="Tell us what you're looking for — dates, room type, any special requests or questions. The property will reply directly." style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;resize:none;min-height:90px;line-height:1.55;"></textarea></div>
@@ -1164,11 +1164,11 @@ function tcSearchFromInput(inputId) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
-          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()" onclick="try{this.showPicker()}catch(e){}">
         </div>
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
-          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()" onclick="try{this.showPicker()}catch(e){}">
         </div>
       </div>
 

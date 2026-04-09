@@ -263,7 +263,7 @@ button{font-family:inherit;cursor:pointer;}
     <div style="font-size:.82rem;color:var(--stone);margin-bottom:20px;line-height:1.55;">Your card is held but not charged until the property confirms availability (within 24 hours). Cancel free if unavailable.</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Date</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+      <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Date</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onclick="try{this.showPicker()}catch(e){}"></div>
       <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option></select></div>
     </div>
 
@@ -344,7 +344,7 @@ button{font-family:inherit;cursor:pointer;}
         <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Email</label><input type="email" placeholder="you@email.com" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;"></div>
+        <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Preferred dates</label><input type="date" style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onclick="try{this.showPicker()}catch(e){}"></div>
         <div><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Guests</label><select style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;background:#fff;"><option>1 adult</option><option selected>2 adults</option><option>3 adults</option><option>4 adults</option><option>Family (2+kids)</option></select></div>
       </div>
       <div style="margin-bottom:16px;"><label style="font-size:.72rem;font-weight:600;color:var(--ink);display:block;margin-bottom:5px;">Your message</label><textarea placeholder="Tell us what you're looking for — dates, room type, any special requests or questions. The property will reply directly." style="width:100%;padding:10px 12px;border:1px solid var(--border-hi);border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;resize:none;min-height:90px;line-height:1.55;"></textarea></div>
@@ -1174,11 +1174,11 @@ function tcSearchFromInput(inputId) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
-          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()" onclick="try{this.showPicker()}catch(e){}">
         </div>
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
-          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()" onclick="try{this.showPicker()}catch(e){}">
         </div>
       </div>
 
@@ -1587,6 +1587,85 @@ function tbSubmitBooking() {
     btnText.textContent = 'Pay deposit now';
   }, 1800);
 }
+
+// ── KV HYDRATION — live content from Property Editor ─────────────────
+// Fetches /api/property?slug=singita-grumeti on load and patches dynamic
+// elements so the editor acts as the CMS for this page.
+(function kvHydrate() {
+  var SLUG = 'singita-grumeti';
+  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return; // static / local — leave hardcoded content as-is
+
+  fetch(PROP_API + '?slug=' + encodeURIComponent(SLUG))
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(res) {
+      if (!res || !res.exists || !res.data) return;
+      var p = res.data;
+
+      // Helper: set text on first matching element
+      function setText(sel, val) {
+        var el = document.querySelector(sel);
+        if (el && val) el.textContent = val;
+      }
+      function setHTML(sel, val) {
+        var el = document.querySelector(sel);
+        if (el && val) el.innerHTML = val;
+      }
+
+      // Hero image (first hero with position)
+      if (p.photos && p.photos.hero && p.photos.hero.length) {
+        var h = p.photos.hero[0];
+        var img = document.querySelector('.hero-img');
+        if (img) {
+          if (h.url) img.src = h.url;
+          if (h.position) img.style.objectPosition = h.position;
+        }
+      }
+
+      // Hero text overlays
+      if (p.render) {
+        setText('.hero-type', p.render.type_pill || p.type);
+        setText('.hero-badge', p.tag || '');
+      }
+      setText('.hero-name', p.name);
+
+      // Location line
+      if (p.render && p.render.location_line) {
+        var locEl = document.querySelector('.hero-loc');
+        if (locEl) locEl.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>' + p.render.location_line;
+      }
+
+      // Hook quote
+      setText('.hook-quote', p.hook ? '\u201c' + p.hook.replace(/^["\u201c]|["\u201d]$/g,'') + '\u201d' : null);
+
+      // Overview — first .sec-body (Overview section)
+      var secBodies = document.querySelectorAll('.sec-body');
+      if (secBodies.length && p.overview && p.overview.p1) {
+        var overviewText = [p.overview.p1, p.overview.p2, p.overview.p3]
+          .filter(Boolean).join('\n\n');
+        secBodies[0].textContent = overviewText;
+      }
+
+      // Booking sidebar price — first room
+      if (p.rooms && p.rooms.length) {
+        var room = p.rooms[0];
+        if (room.price) {
+          setText('.book-price-num', '$' + parseInt(room.price).toLocaleString());
+          setText('.book-price-unit', 'per ' + (room.per || 'night'));
+        }
+      }
+
+      // Stats strip (render.stats) — patch .sec-label + next .sec-body if an "At a glance" section exists
+      // We don't attempt to rebuild the at-a-glance table — too risky to break layout.
+      // Rating in sidebar if element exists
+      if (p.render && p.render.rating) {
+        var ratingEl = document.querySelector('.prop-rating');
+        if (ratingEl) ratingEl.textContent = p.render.rating;
+      }
+    })
+    .catch(function(e) { console.log('[KV Hydrate] singita-grumeti:', e.message); });
+})();
 </script>
 
 </body>

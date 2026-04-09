@@ -2,6 +2,8 @@
 //   /api/envoy   POST → proxies to Anthropic API with secret key
 //   /api/dossier GET  → reads a property dossier from KV by ?slug=
 //   /api/dossier POST → writes a property dossier to KV
+//   /api/itinerary GET  → reads an itinerary from KV by ?slug= (returns JSON object)
+//   /api/itinerary POST → writes an itinerary JSON object to KV under {slug}:itinerary
 //   /api/source  POST → fetches a URL, strips HTML, caches in KV under {slug}:source:{n}
 //   /api/source  GET  → returns all cached sources for a slug
 //   /api/source  DELETE → removes a cached source
@@ -78,6 +80,56 @@ export default {
           }
           await env.DOSSIERS.put(data.slug, data.dossier);
           return jsonResponse({ ok: true, slug: data.slug, length: data.dossier.length });
+        } catch (err) {
+          return jsonResponse({ error: 'invalid JSON: ' + err.message }, 400);
+        }
+      }
+
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    // ── /api/itinerary — KV-backed itinerary read/write ──────────
+    // Itineraries are stored as JSON objects under the key {slug}:itinerary
+    // Shape: { duration: string, headline: string, days: [{ label, title, desc }] }
+    if (url.pathname === '/api/itinerary') {
+      if (!env.DOSSIERS) {
+        return jsonResponse({ error: 'KV namespace DOSSIERS not bound' }, 500);
+      }
+
+      // GET ?slug=nour-el-nil → returns { slug, itinerary, exists }
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) return jsonResponse({ error: 'slug parameter required' }, 400);
+        const raw = await env.DOSSIERS.get(slug + ':itinerary');
+        let itinerary = null;
+        if (raw) {
+          try { itinerary = JSON.parse(raw); } catch (e) { itinerary = null; }
+        }
+        return jsonResponse({
+          slug: slug,
+          itinerary: itinerary,
+          exists: itinerary !== null
+        });
+      }
+
+      // POST { slug, itinerary } → saves and returns { ok, slug, length }
+      if (request.method === 'POST') {
+        try {
+          const data = await request.json();
+          if (!data.slug || typeof data.slug !== 'string') {
+            return jsonResponse({ error: 'slug required' }, 400);
+          }
+          if (!data.itinerary || typeof data.itinerary !== 'object') {
+            return jsonResponse({ error: 'itinerary object required' }, 400);
+          }
+          const serialized = JSON.stringify(data.itinerary);
+          await env.DOSSIERS.put(data.slug + ':itinerary', serialized);
+          return jsonResponse({
+            ok: true,
+            slug: data.slug,
+            length: serialized.length,
+            days: (data.itinerary.days || []).length
+          });
         } catch (err) {
           return jsonResponse({ error: 'invalid JSON: ' + err.message }, 400);
         }
@@ -258,6 +310,71 @@ export default {
         if (!slug || !slot) return jsonResponse({ error: 'slug and slot required' }, 400);
         await env.DOSSIERS.delete(slug + ':source:' + slot);
         return jsonResponse({ ok: true, slug: slug, slot: slot });
+      }
+
+      return new Response('Method not allowed', { status: 405 });
+    }
+
+    // ── /api/property — full property data save/load/delete/list ──
+    // Keys: {slug}:property  (JSON string)
+    // List index key: __property_index (JSON array of slugs)
+    if (url.pathname === '/api/property') {
+      if (!env.DOSSIERS) {
+        return jsonResponse({ error: 'KV namespace DOSSIERS not bound' }, 500);
+      }
+
+      // GET ?slug=... → returns { slug, data, exists }
+      // GET (no slug)  → returns { slugs: [...] }
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) {
+          // Return index
+          const rawIndex = await env.DOSSIERS.get('__property_index');
+          const slugs = rawIndex ? JSON.parse(rawIndex) : [];
+          return jsonResponse({ slugs });
+        }
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        let data = null;
+        if (raw) {
+          try { data = JSON.parse(raw); } catch (e) { data = null; }
+        }
+        return jsonResponse({ slug, data, exists: data !== null });
+      }
+
+      // POST { slug, property } → saves full property JSON, updates index
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (err) { return jsonResponse({ error: 'invalid JSON: ' + err.message }, 400); }
+        if (!body.slug || typeof body.slug !== 'string') {
+          return jsonResponse({ error: 'slug required' }, 400);
+        }
+        if (!body.property || typeof body.property !== 'object') {
+          return jsonResponse({ error: 'property object required' }, 400);
+        }
+        const serialized = JSON.stringify(body.property);
+        await env.DOSSIERS.put(body.slug + ':property', serialized);
+
+        // Update index
+        const rawIndex = await env.DOSSIERS.get('__property_index');
+        let slugs = rawIndex ? JSON.parse(rawIndex) : [];
+        if (!slugs.includes(body.slug)) {
+          slugs.push(body.slug);
+          await env.DOSSIERS.put('__property_index', JSON.stringify(slugs));
+        }
+        return jsonResponse({ ok: true, slug: body.slug, length: serialized.length });
+      }
+
+      // DELETE ?slug=... → removes property and updates index
+      if (request.method === 'DELETE') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        await env.DOSSIERS.delete(slug + ':property');
+        const rawIndex = await env.DOSSIERS.get('__property_index');
+        let slugs = rawIndex ? JSON.parse(rawIndex) : [];
+        slugs = slugs.filter(s => s !== slug);
+        await env.DOSSIERS.put('__property_index', JSON.stringify(slugs));
+        return jsonResponse({ ok: true, slug, deleted: true });
       }
 
       return new Response('Method not allowed', { status: 405 });
