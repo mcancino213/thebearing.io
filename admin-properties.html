@@ -34,8 +34,8 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 
 /* ── LAYOUT ── */
 .app{display:flex;min-height:100vh;}
-.main-area{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
-.page-body{flex:1;padding:36px 40px;overflow-y:auto;}
+.main-area{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow:hidden;}
+.page-body{flex:1;padding:36px 40px;overflow-y:auto;overflow-x:hidden;width:100%;}
 
 /* ── TOPBAR ── */
 .topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:50;}
@@ -107,10 +107,10 @@ tbody tr:hover{background:var(--bg);}
 .badge-amber{background:var(--amber-bg);color:var(--amber);}
 .badge-red{background:var(--red-bg);color:var(--red);}
   /* ── ADMIN PROPERTIES TABS ── */
-  .ap-tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+  .ap-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;}
   .ap-tab{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;transition:all .15s;white-space:nowrap;}
   .ap-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1);}
-  .ap-tab:hover:not(.active){color:var(--text);}
+  .ap-tab:hover:not(.active){color:var(--text);background:rgba(0,0,0,.04);}
 
   .lm-drag-over{background:var(--accent-bg)!important;outline:2px dashed var(--accent);outline-offset:-4px;border-radius:8px;}
   .lm-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);}
@@ -182,7 +182,8 @@ tbody tr:hover{background:var(--bg);}
 .view-toggle{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:3px;}
 .vt-btn{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;display:flex;align-items:center;gap:6px;transition:all .15s;}
 .vt-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
-#kanban-view{display:flex;gap:16px;overflow-x:auto;padding-bottom:20px;min-height:600px;}
+#kanban-view{overflow-x:auto;padding-bottom:20px;min-height:400px;width:100%;}
+#kb-board{display:flex;gap:16px;}
 .kb-col{flex:0 0 260px;display:flex;flex-direction:column;}
 .kb-col-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px;}
 .kb-col-title{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
@@ -269,7 +270,7 @@ tbody tr:hover{background:var(--bg);}
 <div class="page-body">
 
 <!-- ══ TAB: PIPELINE ══ -->
-<div id="ap-panel-pipeline">
+<div id="ap-panel-pipeline" style="width:100%;min-width:0;">
 
 <div class="setup-banner" id="setup-banner">
   <div style="width:40px;height:40px;border-radius:10px;background:rgba(193,127,62,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">✉</div>
@@ -302,7 +303,7 @@ tbody tr:hover{background:var(--bg);}
   <button class="btn btn-primary" onclick="openNew('prospecting')">+ Add property</button>
 </div>
 
-<div id="kanban-view"><div id="kb-board" style="display:contents;"></div></div>
+<div id="kanban-view"><div id="kb-board"></div></div>
 
 </div><!-- end ap-panel-pipeline -->
 
@@ -331,7 +332,7 @@ tbody tr:hover{background:var(--bg);}
       <button class="btn btn-primary btn-sm" onclick="saveListingOrder()">Save order</button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="listing-columns">
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;" id="listing-columns">
     <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;grid-column:1/-1;">Loading properties…</div>
   </div>
 </div><!-- end ap-panel-listing -->
@@ -806,22 +807,33 @@ render();
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   }
 
+  // Loading state
+  var _grid0 = document.getElementById('kv-saved-grid');
+  if (_grid0) _grid0.innerHTML = '<div style="grid-column:1/-1;padding:24px;text-align:center;color:var(--text3);font-size:13px;">Loading properties…</div>';
+
   fetch(PROP_API)
     .then(function(r) { return r.ok ? r.json() : null; })
     .then(function(index) {
+      console.log('[KV Saved] index:', index);
       if (!index || !index.slugs || !index.slugs.length) return null;
-      return Promise.all(index.slugs.map(function(slug) {
+      var slugs = index.slugs.filter(function(s) { return !s.startsWith('__'); });
+      if (!slugs.length) return null;
+      return Promise.all(slugs.map(function(slug) {
         return fetch(PROP_API + '?slug=' + encodeURIComponent(slug)).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
       }));
     })
     .then(function(results) {
-      if (!results) return;
-      var valid = results.filter(function(r) { return r && r.exists && r.data; });
-      if (!valid.length) return;
-      var section = document.getElementById('ap-panel-published');
       var grid = document.getElementById('kv-saved-grid');
       var countEl = document.getElementById('kv-saved-count');
-      // section is always visible when on that tab — no need to show/hide
+      if (!results) {
+        grid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;">No properties saved yet. <a href="admin-property-editor.html" style="color:var(--accent);">Create one →</a></div>';
+        return;
+      }
+      var valid = results.filter(function(r) { return r && r.exists && r.data && r.data.name; });
+      if (!valid.length) {
+        grid.innerHTML = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;">No properties saved yet. <a href="admin-property-editor.html" style="color:var(--accent);">Create one →</a></div>';
+        return;
+      }
       countEl.textContent = valid.length + ' propert' + (valid.length === 1 ? 'y' : 'ies');
       valid.forEach(function(res) {
         var p = res.data; var slug = res.slug;
@@ -848,7 +860,11 @@ render();
         grid.appendChild(card);
       });
     })
-    .catch(function(e) { console.log('[KV Saved]', e.message); });
+    .catch(function(e) { 
+      console.log('[KV Saved] error:', e.message);
+      var grid = document.getElementById('kv-saved-grid');
+      if (grid) grid.innerHTML = '<div style="grid-column:1/-1;padding:20px;color:var(--red);font-size:12px;">Load error: ' + e.message + '</div>';
+    });
 })();
 
 // ── KV DELETE PROPERTY ────────────────────────────────────────────────
