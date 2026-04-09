@@ -1305,7 +1305,7 @@ function pgRender(id) {
       var inp = document.createElement('input'); inp.id = 'f-h1'; inp.style.display = 'none';
       document.body.appendChild(inp); return inp;
     })();
-    h1.value = items.length ? items[0].url : '';
+    h1.value = items.length ? items[0].url : ''; // store full URL
     if (typeof updateAll === 'function') updateAll();
   }
 }
@@ -1558,9 +1558,10 @@ setTimeout(function() {
 }, 200);
 
 // ── IMAGE OPTIMIZER (client-side, before upload) ─────────────────────
-var IMG_MAX_DIMENSION = 3000;  // px on longest edge
-var IMG_QUALITY = 0.85;        // JPEG quality
-var IMG_SIZE_THRESHOLD = 4 * 1024 * 1024; // 4MB — optimize if over this
+var IMG_MAX_DIMENSION = 4000;  // px on longest edge — only applied if file is over CF limit
+var IMG_QUALITY = 0.92;        // JPEG quality — higher than before, only used when needed
+var IMG_SIZE_THRESHOLD = 10 * 1024 * 1024; // 10MB — Cloudflare Images hard limit
+// Files under 10MB are uploaded untouched. Only files over 10MB go through Canvas.
 
 function imgOptimize(file) {
   return new Promise(function(resolve) {
@@ -1576,12 +1577,13 @@ function imgOptimize(file) {
       var needsCompress = file.size > IMG_SIZE_THRESHOLD;
 
       if (!needsResize && !needsCompress) {
-        // File is fine as-is
+        // File is under 10MB and reasonable dimensions — upload original, no quality loss
         resolve({ file: file, optimized: false });
         return;
       }
 
-      // Calculate new dimensions
+      // Only reach here if file is over 10MB (CF limit) or over 4000px
+      // Resize to fit within 4000px, export at 92% quality
       var newW = w, newH = h;
       if (needsResize) {
         var ratio = Math.min(IMG_MAX_DIMENSION / w, IMG_MAX_DIMENSION / h);
@@ -1633,6 +1635,11 @@ function fmtSize(bytes) {
 }
 
 // ── CLOUDFLARE IMAGES UPLOAD ─────────────────────────────────────────
+function cfThumb(url) {
+  if (!url) return url;
+  return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
+}
+
 function cfUploadApi() {
   if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return null;
   return '/api/upload';

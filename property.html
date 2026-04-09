@@ -33,6 +33,7 @@
   .nav-link-d{font-size:.78rem;color:var(--bark);transition:color .15s;}
   .nav-link-d:hover{color:var(--ink);}
   .nav-link-d.featured{color:var(--terra);}
+  .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
   .nav-right{display:flex;align-items:center;gap:14px;}
   .nav-btn{font-size:.76rem;padding:8px;border-radius:100px;border:none;cursor:pointer;font-family:'Geist',sans-serif;background:transparent;transition:all .15s;}
   .nav-btn:hover{background:var(--linen);}
@@ -211,7 +212,9 @@
     <a class="nav-link-d" href="/cruises.html">Cruises</a>
     <a class="nav-link-d" href="/villas.html">Villas</a>
     <a class="nav-link-d" href="/collections.html">Collections</a>
+    <a class="nav-link-d nav-vibe" href="/vibe-search.html">✦ Vibe Search</a>
     <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
+    <a class="nav-link-d" href="/journal.html">Journal</a>
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
   </div>
   <div class="nav-right">
@@ -425,6 +428,11 @@ var heroUrls = [];
 var galleryUrls = [];
 var lbIndex = 0;
 
+function cfThumb(url) {
+  if (!url) return url;
+  return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
+}
+
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -583,7 +591,7 @@ function renderProperty(p) {
       var photos = (r.photos || []).filter(function(ph) { return ph && (typeof ph === 'string' ? ph : ph.url); });
       var strip = photos.length ?
         '<div class="room-photos-strip">' + photos.slice(0,3).map(function(ph) {
-          var url = typeof ph === 'string' ? ph : ph.url;
+          var url = cfThumb(typeof ph === 'string' ? ph : ph.url);
           var pos = (ph && ph.position) ? ph.position : 'center';
           return '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" loading="lazy">';
         }).join('') + '</div>' : '';

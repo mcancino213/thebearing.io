@@ -864,7 +864,7 @@ render();
         var health = computeHealth(p); var hc = healthColor(health);
         var statusVal = p['f-status'] || p.status || 'draft';
         var statusMap = { 'live': 'badge-green', 'draft': 'badge-gray', 'coming-soon': 'badge-blue', 'paused': 'badge-amber' };
-        var heroUrl = (p.photos && p.photos.hero && p.photos.hero.length && p.photos.hero[0].url) ? p.photos.hero[0].url : '';
+        var heroUrl = (p.photos && p.photos.hero && p.photos.hero.length && p.photos.hero[0].url) ? cfThumb(p.photos.hero[0].url) : '';
         var initials = (p.name || slug).split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
         var card = document.createElement('div');
         card.className = 'kv-prop-card';
@@ -892,6 +892,12 @@ render();
 })();
 
 // ── KV DELETE PROPERTY ────────────────────────────────────────────────
+
+// Convert a CF Images URL from any variant to thumb (800px) for card/thumbnail use
+function cfThumb(url) {
+  if (!url) return url;
+  return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
+}
 var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
   ? '/api/property' : null;
 
@@ -1018,7 +1024,7 @@ function loadListingData() {
         .then(function(res) {
           if (!res || !res.exists || !res.data) return null;
           var d = res.data;
-          var heroUrl = d.photos && d.photos.hero && d.photos.hero.length && (d.photos.hero[0].url || d.photos.hero[0]);
+          var heroUrl = d.photos && d.photos.hero && d.photos.hero.length && cfThumb(d.photos.hero[0].url || d.photos.hero[0]);
           return {
             slug: slug,
             name: d.name || slug,

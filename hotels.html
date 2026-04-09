@@ -929,8 +929,13 @@
   var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
   if (!PROP_API) return; // static cards remain on dev
 
+  function cfThumb(url) {
+    if (!url) return url;
+    return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
+  }
+
   function makeCard(p, slug) {
-    var hero = p.photos && p.photos.hero && p.photos.hero.length && (p.photos.hero[0].url || p.photos.hero[0]);
+    var hero = p.photos && p.photos.hero && p.photos.hero.length && cfThumb(p.photos.hero[0].url || p.photos.hero[0]);
     var price = p.rooms && p.rooms.length && p.rooms[0].price ? 'From $' + parseInt(p.rooms[0].price).toLocaleString() + (p.rooms[0].per ? '/' + p.rooms[0].per : '') : '';
     var tags = (p.details && p.details.tags || []).slice(0, 3);
     var loc = (p.render && p.render.location_line) || [p.region, p.country].filter(Boolean).join(' · ');
