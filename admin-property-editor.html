@@ -2204,6 +2204,7 @@ function updateJSON() {
 
   var el = document.getElementById('json-out-2');
   if (el) el.textContent = JSON.stringify(json, null, 2);
+  return json;
 }
 
 function copyJSON() {
@@ -3329,15 +3330,10 @@ async function propSave() {
   // Refresh JSON output with latest state before saving
   if (typeof updateAll === 'function') updateAll();
 
-  // Build the full structured payload from updateJSON output
-  // This is what property.html reads — must be the canonical shape
-  var jsonEl = document.getElementById('json-out-2') || document.getElementById('json-out');
-  var structuredData = null;
-  if (jsonEl && jsonEl.textContent) {
-    try { structuredData = JSON.parse(jsonEl.textContent); } catch(e) {}
-  }
-  if (!structuredData) {
-    propShowStatus('Generate JSON first — fill in at least a name.', 'error');
+  // Build structured payload directly from updateJSON (not from DOM element)
+  var structuredData = (typeof updateJSON === 'function') ? updateJSON() : null;
+  if (!structuredData || !structuredData.name) {
+    propShowStatus('Set a property name first.', 'error');
     return;
   }
 
