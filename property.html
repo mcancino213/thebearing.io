@@ -753,7 +753,7 @@ function renderProperty(p,slug){
       var photos=(rm.photos||[]).filter(function(ph){return ph&&(typeof ph==='string'?ph:ph.url);});
       var imgUrl=photos.length?esc(cfThumb(typeof photos[0]==='string'?photos[0]:photos[0].url)):'';
       var img=imgUrl?'<div class="cabin-img"><img src="'+imgUrl+'" alt="'+esc(rm.name||'')+'" loading="lazy"></div>':'';
-      var selectBtn='<button class="cabin-btn" onclick="tbOpenCheckout({property:\''+esc(p.name||'')+' · '+esc(p.location||'')+'\',title:\''+(isCruise?'Book your voyage':'Book your stay')+'\',roomLabel:\''+(isCruise?'Cabin type':'Room type')+'\',commissionRate:0.10,rooms:'+JSON.stringify(checkoutRooms)+'})">Select</button>';
+      var selectBtn='<button class="cabin-btn" onclick="tbOpenCheckout({property:\''+esc(p.name||'')+' · '+esc(p.location||'')+'\',title:\''+(isCruise?'Book your voyage':'Book your stay')+'\',roomLabel:\''+(isCruise?'Cabin type':'Room type')+'\',commissionRate:0.10,rooms:'+JSON.stringify(checkoutRooms).replace(/"/g,'&quot;')+'})">Select</button>';
       return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+(meta?'<div class="cabin-detail" style="font-size:.7rem;color:var(--mist);">'+esc(meta)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div>'+selectBtn+'</div></div>';
     }).join('');
     show('rooms-section');
