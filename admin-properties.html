@@ -337,6 +337,30 @@ tbody tr:hover{background:var(--bg);}
   </div>
 </div><!-- end ap-panel-listing -->
 
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal-backdrop" id="modal-delete" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head" style="border-bottom-color:var(--red-bg);">
+      <div>
+        <div class="modal-title" style="color:var(--red);">Delete property</div>
+        <div class="modal-sub" id="modal-delete-name" style="margin-top:3px;"></div>
+      </div>
+      <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--red-bg);border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--red);line-height:1.6;">
+        <strong>This is permanent.</strong> The property data, photos, and dossier will be removed from KV. This cannot be undone.
+      </div>
+      <label style="font-size:13px;font-weight:500;color:var(--text2);display:block;margin-bottom:8px;">Type <strong style="color:var(--text);letter-spacing:.04em;">DELETE</strong> to confirm</label>
+      <input id="modal-delete-input" class="filter-input" style="width:100%;font-size:14px;letter-spacing:.04em;" placeholder="DELETE" oninput="checkDeleteInput()" autocomplete="off" spellcheck="false">
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="closeDeleteModal()">Cancel</button>
+        <button id="modal-delete-confirm" class="btn" style="flex:1;background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.3);opacity:.45;cursor:not-allowed;" disabled onclick="executeDelete()">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- NEW PROPERTY -->
 <div class="modal-backdrop" id="modal-new" onclick="if(event.target===this)closeModal('modal-new')">
 <div class="modal"><div class="modal-head">
@@ -871,30 +895,72 @@ render();
 var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
   ? '/api/property' : null;
 
+var _deleteTarget = null; // { slug, btn }
+
 function kvDeleteProperty(slug, btn) {
-  if (!confirm('Permanently delete "' + slug + '"? This cannot be undone.')) return;
+  _deleteTarget = { slug: slug, btn: btn };
+  // Show the modal
+  var nameEl = document.getElementById('modal-delete-name');
+  if (nameEl) nameEl.textContent = slug;
+  var inp = document.getElementById('modal-delete-input');
+  if (inp) { inp.value = ''; }
+  var confirmBtn = document.getElementById('modal-delete-confirm');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.style.opacity = '.45'; confirmBtn.style.cursor = 'not-allowed'; }
+  document.getElementById('modal-delete').classList.add('open');
+  setTimeout(function() { if (inp) inp.focus(); }, 120);
+}
+
+function checkDeleteInput() {
+  var inp = document.getElementById('modal-delete-input');
+  var confirmBtn = document.getElementById('modal-delete-confirm');
+  var ready = inp && inp.value.trim() === 'DELETE';
+  if (confirmBtn) {
+    confirmBtn.disabled = !ready;
+    confirmBtn.style.opacity = ready ? '1' : '.45';
+    confirmBtn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    confirmBtn.style.background = ready ? 'var(--red)' : 'var(--red-bg)';
+    confirmBtn.style.color = ready ? '#fff' : 'var(--red)';
+  }
+}
+
+function closeDeleteModal() {
+  document.getElementById('modal-delete').classList.remove('open');
+  _deleteTarget = null;
+}
+
+function executeDelete() {
+  if (!_deleteTarget) return;
+  var slug = _deleteTarget.slug;
+  var btn = _deleteTarget.btn;
+  closeDeleteModal();
   if (!PROP_API) { toast('Delete only works on the live site.'); return; }
-  btn.textContent = '…';
-  btn.disabled = true;
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
   fetch(PROP_API + '?slug=' + encodeURIComponent(slug), { method: 'DELETE' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.ok || data.deleted) {
-        var card = btn.closest('.kv-prop-card');
-        if (card) { card.style.transition = 'opacity .3s,transform .3s'; card.style.opacity = '0'; card.style.transform = 'scale(.96)'; setTimeout(function() { card.remove(); updateKVCount(); }, 300); }
+        var card = btn ? btn.closest('.kv-prop-card') : null;
+        if (card) {
+          card.style.transition = 'opacity .3s,transform .3s';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(.96)';
+          setTimeout(function() { card.remove(); updateKVCount(); }, 300);
+        }
         toast('Deleted — ' + slug);
-        // Remove from listing state if present
         Object.keys(listingState).forEach(function(type) {
           listingState[type] = listingState[type].filter(function(s) { return s !== slug; });
         });
         allSavedProps = allSavedProps.filter(function(p) { return p.slug !== slug; });
         renderListingColumns();
       } else {
-        btn.textContent = '✕'; btn.disabled = false;
+        if (btn) { btn.textContent = '✕'; btn.disabled = false; }
         toast('Delete failed: ' + (data.error || 'unknown'));
       }
     })
-    .catch(function(e) { btn.textContent = '✕'; btn.disabled = false; toast('Error: ' + e.message); });
+    .catch(function(e) {
+      if (btn) { btn.textContent = '✕'; btn.disabled = false; }
+      toast('Error: ' + e.message);
+    });
 }
 
 function updateKVCount() {

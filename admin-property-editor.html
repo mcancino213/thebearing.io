@@ -3386,7 +3386,38 @@ async function propLoad() {
 async function propDelete() {
   var slug = propCurrentSlug();
   if (!slug) { propShowStatus('No property loaded.', 'error'); return; }
-  if (!confirm('Permanently delete "' + slug + '" from KV? This cannot be undone.')) return;
+  // Show modal
+  document.getElementById('editor-delete-name').textContent = slug;
+  var inp = document.getElementById('editor-delete-input');
+  if (inp) inp.value = '';
+  var btn = document.getElementById('editor-delete-confirm');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.45'; btn.style.cursor = 'not-allowed'; }
+  var modal = document.getElementById('editor-delete-modal');
+  modal.style.display = 'flex';
+  setTimeout(function() { if (inp) inp.focus(); }, 120);
+}
+
+function checkEditorDeleteInput() {
+  var inp = document.getElementById('editor-delete-input');
+  var btn = document.getElementById('editor-delete-confirm');
+  var ready = inp && inp.value.trim() === 'DELETE';
+  if (btn) {
+    btn.disabled = !ready;
+    btn.style.opacity = ready ? '1' : '.45';
+    btn.style.cursor = ready ? 'pointer' : 'not-allowed';
+    btn.style.background = ready ? '#dc2626' : '#fef2f2';
+    btn.style.color = ready ? '#fff' : '#dc2626';
+  }
+}
+
+function closeEditorDeleteModal() {
+  document.getElementById('editor-delete-modal').style.display = 'none';
+}
+
+async function executeEditorDelete() {
+  var slug = propCurrentSlug();
+  if (!slug) return;
+  closeEditorDeleteModal();
   var api = propApi();
   if (!api) { propShowStatus('Delete only works on the live site.', 'error'); return; }
   propShowStatus('Deleting…', '');
@@ -3396,7 +3427,6 @@ async function propDelete() {
     if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
     propShowStatus('✓ Deleted · ' + slug, 'success');
     showToast('Property deleted — ' + slug, 'success');
-    // Hide delete button, clear slug input
     var deleteBtn = document.getElementById('prop-delete-btn');
     if (deleteBtn) deleteBtn.style.display = 'none';
     var slugInp = document.getElementById('prop-slug-input');
@@ -3433,4 +3463,27 @@ function propLoadBySlug() {
   setTimeout(tryLoad, 600);
 })();
 </script>
+<!-- DELETE CONFIRMATION MODAL -->
+<div id="editor-delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;width:420px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;">
+    <div style="padding:22px 24px 16px;border-bottom:2px solid #fef2f2;display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:600;color:#dc2626;">Delete property</div>
+        <div id="editor-delete-name" style="font-size:13px;color:#6b7280;margin-top:3px;"></div>
+      </div>
+      <button onclick="closeEditorDeleteModal()" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e7eb;background:none;cursor:pointer;font-size:18px;color:#6b7280;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div style="padding:24px;">
+      <div style="background:#fef2f2;border:1px solid rgba(220,38,38,.2);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#dc2626;line-height:1.6;">
+        <strong>This is permanent.</strong> All property data, photos and dossier will be removed from KV. This cannot be undone.
+      </div>
+      <label style="font-size:13px;font-weight:500;color:#374151;display:block;margin-bottom:8px;">Type <strong style="color:#111827;letter-spacing:.04em;">DELETE</strong> to confirm</label>
+      <input id="editor-delete-input" style="width:100%;padding:10px 14px;font-size:14px;letter-spacing:.04em;border:1.5px solid #e5e7eb;border-radius:9px;font-family:inherit;outline:none;" placeholder="DELETE" oninput="checkEditorDeleteInput()" autocomplete="off" spellcheck="false">
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <button onclick="closeEditorDeleteModal()" style="flex:1;padding:11px;background:transparent;border:1.5px solid #e5e7eb;border-radius:100px;font-family:inherit;font-size:.88rem;font-weight:500;color:#374151;cursor:pointer;">Cancel</button>
+        <button id="editor-delete-confirm" disabled onclick="executeEditorDelete()" style="flex:1;padding:11px;background:#fef2f2;border:1px solid rgba(220,38,38,.3);border-radius:100px;font-family:inherit;font-size:.88rem;font-weight:600;color:#dc2626;cursor:not-allowed;opacity:.45;transition:all .15s;">Delete permanently</button>
+      </div>
+    </div>
+  </div>
+</div>
 </div></div></body></html>
