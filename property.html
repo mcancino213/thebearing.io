@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="page-title">Loading — TheBearing.io</title>
+<meta name="description" id="page-desc" content="">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
+    --border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);
+    --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
+    --terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);
+    --sea:#2e6a8a;--moss:#3a7055;--gold:#9a7230;
+    --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;
+    --nav-h:66px;
+  }
+
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{overflow-x:hidden;scroll-behavior:smooth;}
+  body{font-family:'Geist',system-ui,sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+
+  /* ── NAV ── */
+  .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+  .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
+  .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);}
+  .nav-logo .dot{color:var(--terra);}
+  .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
+  .nav-links-desktop{display:flex;align-items:center;gap:22px;}
+  .nav-link-d{font-size:.78rem;color:var(--bark);transition:color .15s;}
+  .nav-link-d:hover{color:var(--ink);}
+  .nav-link-d.featured{color:var(--terra);}
+  .nav-right{display:flex;align-items:center;gap:14px;}
+  .nav-btn{font-size:.76rem;padding:8px;border-radius:100px;border:none;cursor:pointer;font-family:'Geist',sans-serif;background:transparent;transition:all .15s;}
+  .nav-btn:hover{background:var(--linen);}
+
+  /* ── LOADING STATE ── */
+  .prop-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;color:var(--stone);}
+  .prop-loading-spinner{width:32px;height:32px;border:3px solid var(--sand);border-top-color:var(--terra);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* ── ERROR STATE ── */
+  .prop-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;padding:40px;}
+  .prop-error h1{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--ink);}
+  .prop-error p{color:var(--stone);max-width:440px;line-height:1.6;}
+
+  /* ── HERO ── */
+  .hero{position:relative;height:72vh;min-height:480px;margin-top:var(--nav-h);overflow:hidden;background:#1a1208;}
+  .hero-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:opacity .4s;}
+  .hero-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 0%,rgba(0,0,0,.0) 40%,rgba(0,0,0,.5) 100%);}
+  .hero-content{position:absolute;bottom:36px;left:40px;right:40px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;}
+  .hero-badge{display:inline-block;padding:4px 12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);border-radius:100px;font-size:.65rem;font-weight:600;letter-spacing:.08em;color:#fff;margin-bottom:8px;}
+  .hero-type{font-size:.7rem;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
+  .hero-name{font-family:'Instrument Serif',serif;font-size:3rem;color:#fff;line-height:1.1;margin-bottom:6px;}
+  .hero-loc{display:flex;align-items:center;gap:5px;font-size:.8rem;color:rgba(255,255,255,.7);}
+  /* Hero rotation */
+  .hero-dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:2;}
+  .hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s;}
+  .hero-dot.active{background:#fff;}
+
+  /* ── LAYOUT ── */
+  .prop-wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
+  .prop-grid{display:grid;grid-template-columns:1fr 360px;gap:48px;padding-top:40px;align-items:start;}
+  .prop-main{min-width:0;}
+  .prop-sidebar{position:sticky;top:calc(var(--nav-h) + 20px);}
+
+  /* ── STATS STRIP ── */
+  .stats-strip{display:flex;gap:0;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;background:#fff;margin:24px 0;}
+  .stat-cell{flex:1;padding:16px 20px;border-right:1px solid var(--border);text-align:center;}
+  .stat-cell:last-child{border-right:none;}
+  .stat-val{font-family:'Instrument Serif',serif;font-size:1.4rem;color:var(--ink);line-height:1.2;}
+  .stat-lbl{font-size:.62rem;color:var(--stone);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;}
+
+  /* ── BOOKING CARD ── */
+  .book-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:24px;box-shadow:0 4px 24px rgba(80,55,25,.08);margin-bottom:16px;}
+  .book-price-from{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;}
+  .book-price-num{font-family:'Instrument Serif',serif;font-size:2.2rem;color:var(--ink);line-height:1;}
+  .book-price-unit{font-size:.72rem;color:var(--stone);margin-bottom:16px;margin-top:2px;}
+  .book-divider{height:1px;background:var(--border);margin:16px 0;}
+  .book-detail{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:8px;}
+  .book-detail-lbl{color:var(--stone);}
+  .book-detail-val{font-weight:500;text-align:right;}
+
+  /* ── CTA ── */
+  .cta-primary{width:100%;padding:14px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;}
+  .cta-primary:hover{opacity:.88;}
+  .cta-secondary{width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .cta-secondary:hover{border-color:var(--terra);color:var(--terra);}
+  .cta-note{font-size:.68rem;color:var(--stone);text-align:center;margin-top:8px;}
+  .trust-item{display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--bark);margin-bottom:6px;}
+
+  /* ── CONTENT ── */
+  .sec{margin-bottom:36px;}
+  .sec-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;}
+  .sec-title{font-family:'Instrument Serif',serif;font-size:1.65rem;color:var(--ink);margin-bottom:14px;line-height:1.25;}
+  .sec-body{font-size:.9rem;color:var(--bark);line-height:1.75;}
+  .hook-quote{font-family:'Instrument Serif',serif;font-size:1.15rem;font-style:italic;color:var(--bark);line-height:1.65;border-left:2px solid var(--terra);padding-left:20px;margin:24px 0;}
+
+  /* ── GALLERY ── */
+  .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:32px;border-radius:var(--r-xl);overflow:hidden;}
+  .gallery-grid img{width:100%;height:200px;object-fit:cover;display:block;cursor:pointer;transition:opacity .2s;}
+  .gallery-grid img:hover{opacity:.88;}
+  .gallery-grid img:first-child{grid-column:span 2;height:280px;}
+
+  /* ── ROOMS ── */
+  .rooms-grid{display:flex;flex-direction:column;gap:12px;}
+  .room-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;}
+  .room-card-body{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+  .room-name{font-weight:600;font-size:.88rem;margin-bottom:2px;}
+  .room-meta{font-size:.75rem;color:var(--stone);}
+  .room-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);white-space:nowrap;}
+  .room-photos-strip{display:flex;gap:4px;height:80px;overflow:hidden;}
+  .room-photos-strip img{flex:1;object-fit:cover;min-width:0;}
+
+  /* ── VERDICT ── */
+  .verdict-block{border-left:3px solid var(--terra);background:var(--terra-dim);padding:20px 22px;border-radius:0 var(--r-lg) var(--r-lg) 0;margin-bottom:36px;}
+  .verdict-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .verdict-text{font-family:'Instrument Serif',serif;font-size:1.05rem;font-style:italic;color:var(--ink);line-height:1.6;}
+
+  /* ── PRIVATE ACCESS ── */
+  .access-card{position:relative;border-radius:var(--r-xl);overflow:hidden;margin-bottom:36px;min-height:180px;background:linear-gradient(135deg,var(--terra-d),var(--terra));}
+  .access-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45;}
+  .access-card-body{position:relative;padding:28px 32px;}
+  .access-card-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px;}
+  .access-card-name{font-family:'Instrument Serif',serif;font-size:1.5rem;color:#fff;margin-bottom:10px;line-height:1.25;}
+  .access-card-desc{font-size:.85rem;color:rgba(255,255,255,.85);line-height:1.65;max-width:560px;}
+
+  /* ── TAGS ── */
+  .tag-pill{display:inline-block;padding:4px 10px;background:var(--linen);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;}
+
+  /* ── ITINERARY ── */
+  .itin-day{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--border);}
+  .itin-day:last-child{border-bottom:none;}
+  .itin-day-num{width:36px;height:36px;border-radius:50%;background:var(--terra);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0;margin-top:2px;}
+  .itin-day-label{font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--stone);margin-bottom:3px;}
+  .itin-day-title{font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);margin-bottom:6px;}
+  .itin-day-desc{font-size:.85rem;color:var(--bark);line-height:1.65;}
+
+  /* ── DETAILS TABLE ── */
+  .details-table{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;}
+  .details-row{display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);font-size:.82rem;}
+  .details-row:last-child{border-bottom:none;}
+  .details-row-lbl{color:var(--stone);}
+  .details-row-val{font-weight:500;text-align:right;max-width:60%;}
+
+  /* ── LIGHTBOX ── */
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:center;justify-content:center;}
+  .lightbox.open{display:flex;}
+  .lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:8px;}
+  .lightbox-close{position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;line-height:1;}
+  .lightbox-prev,.lightbox-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;}
+  .lightbox-prev{left:20px;}
+  .lightbox-next{right:20px;}
+
+  /* ── ENQUIRY OVERLAY ── */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .overlay.open{display:flex;}
+  .sheet{background:#fff;border-radius:20px;width:500px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2);}
+  .sheet-input{width:100%;padding:11px 14px;font-family:'Geist',sans-serif;font-size:.88rem;background:var(--cream);border:1.5px solid var(--border-hi);border-radius:var(--r-md);outline:none;margin-bottom:12px;}
+  .sheet-input:focus{border-color:var(--terra);}
+
+  /* ── ENVOY FAB ── */
+  .ci-fab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--ink);border:none;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:300;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
+  .ci-fab:hover{transform:scale(1.06);}
+
+  @media(max-width:768px){
+    .prop-grid{grid-template-columns:1fr;}
+    .prop-sidebar{position:static;}
+    .hero-name{font-size:2rem;}
+    .hero-content{left:20px;right:20px;bottom:20px;}
+    .prop-wrap{padding:0 20px;}
+    .gallery-grid img:first-child{grid-column:span 1;height:200px;}
+    .nav-links-desktop{display:none;}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a class="nav-logo-wrap" href="/">
+    <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
+    <div class="nav-tagline">Pointing you to the extraordinary.</div>
+  </a>
+  <div class="nav-links-desktop">
+    <a class="nav-link-d" href="/hotels.html">Hotels</a>
+    <a class="nav-link-d" href="/cruises.html">Cruises</a>
+    <a class="nav-link-d" href="/villas.html">Villas</a>
+    <a class="nav-link-d" href="/collections.html">Collections</a>
+    <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
+    <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="window.location='/search.html'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    </button>
+    <button class="nav-btn" onclick="window.location='/my-account.html'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- LOADING -->
+<div class="prop-loading" id="prop-loading" style="margin-top:var(--nav-h);">
+  <div class="prop-loading-spinner"></div>
+  <div style="font-size:.85rem;color:var(--stone);">Loading property…</div>
+</div>
+
+<!-- ERROR -->
+<div class="prop-error" id="prop-error" style="margin-top:var(--nav-h);">
+  <h1>Property not found</h1>
+  <p>This property hasn't been added to The Bearing yet, or the link may be incorrect.</p>
+  <a href="/hotels.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:12px 24px;background:var(--terra);color:#fff;border-radius:100px;font-size:.85rem;font-weight:600;">
+    Browse all properties
+  </a>
+</div>
+
+<!-- PROPERTY CONTENT (rendered by JS) -->
+<div id="prop-content" style="display:none;">
+
+  <!-- HERO -->
+  <div class="hero" id="prop-hero">
+    <img class="hero-img" id="hero-img" src="" alt="">
+    <div class="hero-scrim"></div>
+    <div class="hero-content">
+      <div>
+        <div class="hero-badge" id="hero-badge"></div>
+        <div class="hero-type" id="hero-type"></div>
+        <h1 class="hero-name" id="hero-name"></h1>
+        <div class="hero-loc" id="hero-loc"></div>
+      </div>
+      <div id="hero-price-pill" style="flex-shrink:0;padding:12px 20px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:var(--r-xl);text-align:right;display:none;">
+        <div style="font-size:.6rem;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;">From</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;" id="hero-price-num"></div>
+        <div style="font-size:.65rem;color:rgba(255,255,255,.6);margin-top:2px;" id="hero-price-unit"></div>
+      </div>
+    </div>
+    <div class="hero-dots" id="hero-dots"></div>
+  </div>
+
+  <div class="prop-wrap">
+    <div class="prop-grid">
+
+      <!-- MAIN CONTENT -->
+      <div class="prop-main">
+
+        <!-- Hook -->
+        <div style="padding:24px 0 8px;" id="hook-section">
+          <div style="font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">The Bearing edit</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);line-height:1.4;" id="hook-text"></div>
+        </div>
+
+        <!-- Stats strip -->
+        <div class="stats-strip" id="stats-strip" style="display:none;"></div>
+
+        <!-- Gallery -->
+        <div class="gallery-grid" id="gallery-grid" style="display:none;"></div>
+
+        <!-- Overview -->
+        <div class="sec" id="overview-sec" style="display:none;">
+          <div class="sec-label">Overview</div>
+          <div class="sec-body" id="overview-body"></div>
+        </div>
+
+        <!-- Verdict -->
+        <div class="verdict-block" id="verdict-block" style="display:none;">
+          <div class="verdict-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2" stroke-linecap="round"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
+            The Bearing Verdict
+          </div>
+          <div class="verdict-text" id="verdict-text"></div>
+        </div>
+
+        <!-- Rooms -->
+        <div class="sec" id="rooms-sec" style="display:none;">
+          <div class="sec-label">Rooms &amp; suites</div>
+          <div class="rooms-grid" id="rooms-grid"></div>
+        </div>
+
+        <!-- Itinerary -->
+        <div class="sec" id="itin-sec" style="display:none;">
+          <div class="sec-label" id="itin-eyebrow">The Journey</div>
+          <div class="sec-title" id="itin-headline"></div>
+          <div id="itin-days"></div>
+        </div>
+
+        <!-- Private Access -->
+        <div class="access-card" id="access-card" style="display:none;">
+          <img class="access-card-img" id="access-img" src="" alt="">
+          <div class="access-card-body">
+            <div class="access-card-label">The Bearing Private Access</div>
+            <div class="access-card-name" id="access-name"></div>
+            <div class="access-card-desc" id="access-desc"></div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="sec" id="details-sec" style="display:none;">
+          <div class="sec-label">At a glance</div>
+          <div class="details-table" id="details-table"></div>
+        </div>
+
+        <!-- Tags -->
+        <div id="tags-section" style="margin-bottom:40px;display:none;"></div>
+
+        <!-- Getting there -->
+        <div class="sec" id="getting-there-sec" style="display:none;">
+          <div class="sec-label">Getting there</div>
+          <div class="sec-body" id="getting-there-body"></div>
+        </div>
+
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="prop-sidebar">
+        <div class="book-card">
+          <div class="book-price-from">From</div>
+          <div class="book-price-num" id="sb-price">—</div>
+          <div class="book-price-unit" id="sb-price-unit">per night</div>
+          <div class="book-divider"></div>
+          <div id="sb-details"></div>
+          <div class="book-divider"></div>
+          <button class="cta-primary" id="btn-book">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            Book now
+          </button>
+          <button class="cta-secondary" id="btn-enquire">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Send an enquiry first
+          </button>
+          <div class="cta-note">Same price as booking direct · 0% fees</div>
+          <div class="book-divider"></div>
+          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>
+          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>No fees · 0% commission</div>
+          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Reply within 24 hours</div>
+        </div>
+        <div style="text-align:center;">
+          <a href="/hotels.html" id="back-link" style="font-size:.75rem;color:var(--stone);display:inline-flex;align-items:center;gap:5px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
+            Back to all properties
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)lbClose()">
+  <button class="lightbox-close" onclick="lbClose()">×</button>
+  <button class="lightbox-prev" onclick="lbNav(-1)">‹</button>
+  <img id="lb-img" src="" alt="">
+  <button class="lightbox-next" onclick="lbNav(1)">›</button>
+</div>
+
+<!-- ENQUIRY OVERLAY -->
+<div class="overlay" id="enquiry-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="enq-type"></div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;" id="enq-name"></div>
+      </div>
+      <button onclick="document.getElementById('enquiry-overlay').classList.remove('open')" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <input class="sheet-input" placeholder="Your name" id="enq-fname">
+    <input class="sheet-input" placeholder="Email address" type="email" id="enq-email">
+    <input class="sheet-input" placeholder="Preferred dates (flexible is fine)" id="enq-dates">
+    <textarea class="sheet-input" rows="3" placeholder="Any questions or special requests?" id="enq-msg" style="resize:vertical;"></textarea>
+    <button onclick="submitEnquiry()" style="width:100%;padding:13px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Send enquiry</button>
+    <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-top:10px;">We'll reply within 24 hours. No commitment required.</div>
+  </div>
+</div>
+
+<!-- ENVOY FAB -->
+<button class="ci-fab" id="ci-fab" title="Ask The Envoy">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
+</button>
+
+<script>
+// ── LOAD PROPERTY FROM KV ─────────────────────────────────────────────
+var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+  ? '/api/property' : null;
+
+var propData = null;
+var galleryUrls = [];
+var lbIndex = 0;
+var heroUrls = [];
+var heroIndex = 0;
+var heroTimer = null;
+
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function show(id) { var el = document.getElementById(id); if (el) el.style.display = ''; }
+function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
+function setText(id, val) { var el = document.getElementById(id); if (el && val) el.textContent = val; }
+function setHTML(id, val) { var el = document.getElementById(id); if (el) el.innerHTML = val; }
+
+// Get slug from URL: /property.html?slug=singita-grumeti
+function getSlug() {
+  var params = new URLSearchParams(location.search);
+  return params.get('slug') || '';
+}
+
+async function loadProperty() {
+  var slug = getSlug();
+  if (!slug) { showError(); return; }
+
+  if (!PROP_API) {
+    // Dev mode — show a placeholder so the template is visible
+    showDevPlaceholder(slug);
+    return;
+  }
+
+  try {
+    var res = await fetch(PROP_API + '?slug=' + encodeURIComponent(slug));
+    var data = await res.json();
+    if (!res.ok || !data.exists || !data.data) { showError(); return; }
+    propData = data.data;
+    renderProperty(propData);
+    // Also load dossier for Envoy context
+    loadDossierContext(slug);
+  } catch (err) {
+    showError();
+  }
+}
+
+function showError() {
+  hide('prop-loading');
+  document.getElementById('prop-error').style.display = 'flex';
+}
+
+function showDevPlaceholder(slug) {
+  hide('prop-loading');
+  document.getElementById('prop-error').style.display = 'flex';
+  document.querySelector('#prop-error h1').textContent = 'Dev mode';
+  document.querySelector('#prop-error p').textContent = 'Property "' + slug + '" — deploy to Cloudflare to load from KV.';
+}
+
+function renderProperty(p) {
+  hide('prop-loading');
+  show('prop-content');
+
+  // ── PAGE META ──
+  var title = (p.name || '') + (p.type ? ' — ' + p.type : '') + ' · TheBearing.io';
+  document.getElementById('page-title').textContent = title;
+  document.title = title;
+  if (p.seo && p.seo.meta_title) document.getElementById('page-title').textContent = p.seo.meta_title;
+  if (p.seo && p.seo.meta_description) document.getElementById('page-desc').setAttribute('content', p.seo.meta_description);
+
+  // ── HERO ──
+  heroUrls = [];
+  if (p.photos && p.photos.hero && p.photos.hero.length) {
+    heroUrls = p.photos.hero.map(function(h) { return typeof h === 'string' ? {url:h,position:'center'} : h; });
+  }
+  if (heroUrls.length) {
+    renderHero(0);
+    if (heroUrls.length > 1) startHeroRotation();
+  }
+
+  // Hero text
+  var render = p.render || {};
+  setText('hero-badge', p.tag || render.type_pill || p.type || '');
+  setText('hero-type', render.type_pill || p.type || '');
+  setText('hero-name', p.name || '');
+
+  var locEl = document.getElementById('hero-loc');
+  if (locEl) {
+    var locText = render.location_line || [p.region, p.country].filter(Boolean).join(' · ');
+    if (locText) locEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>' + esc(locText);
+  }
+
+  // Hero price pill
+  if (p.rooms && p.rooms.length && p.rooms[0].price) {
+    var r0 = p.rooms[0];
+    document.getElementById('hero-price-num').textContent = '$' + parseInt(r0.price).toLocaleString();
+    document.getElementById('hero-price-unit').textContent = 'per ' + (r0.per || 'night');
+    show('hero-price-pill');
+  }
+
+  // ── HOOK ──
+  if (p.hook) {
+    setText('hook-text', p.hook);
+  } else {
+    hide('hook-section');
+  }
+
+  // ── STATS STRIP ──
+  if (render.stats && render.stats.length) {
+    var strip = document.getElementById('stats-strip');
+    strip.innerHTML = render.stats.map(function(s) {
+      return '<div class="stat-cell"><div class="stat-val">' + esc(s.value) + '</div><div class="stat-lbl">' + esc(s.label) + '</div></div>';
+    }).join('');
+    show('stats-strip');
+  }
+
+  // ── GALLERY ──
+  var gallery = (p.photos && p.photos.gallery) || [];
+  galleryUrls = gallery.map(function(g) { return typeof g === 'string' ? g : g.url; }).filter(Boolean);
+  if (galleryUrls.length) {
+    var grid = document.getElementById('gallery-grid');
+    grid.innerHTML = galleryUrls.map(function(url, i) {
+      var pos = gallery[i] && gallery[i].position ? gallery[i].position : 'center';
+      return '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" onclick="lbOpen(' + i + ')" loading="lazy">';
+    }).join('');
+    show('gallery-grid');
+  }
+
+  // ── OVERVIEW ──
+  var overview = p.overview || {};
+  var overviewParas = [overview.p1, overview.p2, overview.p3, overview.body].filter(Boolean);
+  // Fallback to legacy fields
+  if (!overviewParas.length && p.description_short) overviewParas.push(p.description_short);
+  if (!overviewParas.length && p.description_long) overviewParas.push(p.description_long);
+  if (overviewParas.length) {
+    document.getElementById('overview-body').innerHTML = overviewParas.map(function(t) {
+      return '<p style="margin-bottom:14px;">' + esc(t) + '</p>';
+    }).join('');
+    show('overview-sec');
+  }
+
+  // ── VERDICT ──
+  var verdict = p.verdict || (p.f_verdict); // handle both shapes
+  if (verdict) {
+    setText('verdict-text', verdict);
+    show('verdict-block');
+  }
+
+  // ── ROOMS ──
+  if (p.rooms && p.rooms.length) {
+    var rg = document.getElementById('rooms-grid');
+    rg.innerHTML = p.rooms.map(function(r) {
+      var meta = [
+        r.size ? r.size + (r.size_unit === 'sqft' ? ' ft²' : ' m²') : '',
+        r.beds || '',
+        r.max_occupancy ? 'Max ' + r.max_occupancy : ''
+      ].filter(Boolean).join(' · ');
+      var price = r.price ? '$' + parseInt(r.price).toLocaleString() + ' / ' + (r.per || 'night') : 'POA';
+      var photos = (r.photos || []).filter(function(ph) { return ph && (typeof ph === 'string' ? ph : ph.url); });
+      var strip = photos.length ?
+        '<div class="room-photos-strip">' + photos.slice(0,3).map(function(ph) {
+          var url = typeof ph === 'string' ? ph : ph.url;
+          var pos = (ph && ph.position) ? ph.position : 'center';
+          return '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" loading="lazy">';
+        }).join('') + '</div>' : '';
+      return '<div class="room-card">' + strip +
+        '<div class="room-card-body"><div><div class="room-name">' + esc(r.name) + '</div>' +
+        (meta ? '<div class="room-meta">' + esc(meta) + '</div>' : '') +
+        (r.description ? '<div style="font-size:.78rem;color:var(--stone);margin-top:4px;">' + esc(r.description) + '</div>' : '') +
+        '</div><div class="room-price">' + esc(price) + '</div></div></div>';
+    }).join('');
+    show('rooms-sec');
+  }
+
+  // ── ITINERARY ──
+  if (p.itinerary && p.itinerary.days && p.itinerary.days.length) {
+    var it = p.itinerary;
+    if (it.duration) setText('itin-eyebrow', it.duration);
+    if (it.headline) { setText('itin-headline', it.headline); }
+    var daysHtml = it.days.map(function(day, i) {
+      return '<div class="itin-day">' +
+        '<div class="itin-day-num">' + (i+1) + '</div>' +
+        '<div><div class="itin-day-label">' + esc(day.label || ('Day ' + (i+1))) + '</div>' +
+        '<div class="itin-day-title">' + esc(day.title || '') + '</div>' +
+        '<div class="itin-day-desc">' + esc(day.desc || '') + '</div></div></div>';
+    }).join('');
+    setHTML('itin-days', daysHtml);
+    show('itin-sec');
+  }
+
+  // ── PRIVATE ACCESS ──
+  if (p.private_access && p.private_access.name) {
+    var pa = p.private_access;
+    setText('access-name', pa.name);
+    setText('access-desc', pa.description);
+    if (pa.photo) document.getElementById('access-img').src = pa.photo;
+    show('access-card');
+  }
+
+  // ── DETAILS TABLE ──
+  var rows = [];
+  var loc = render.location_line || [p.region, p.country].filter(Boolean).join(' · ');
+  if (loc) rows.push(['Location', loc]);
+  if (p.details) {
+    if (p.details.total_rooms) rows.push(['Rooms', p.details.total_rooms]);
+    if (p.details.max_guests) rows.push(['Max guests', p.details.max_guests]);
+    if (p.details.year) rows.push(['Opened', p.details.year]);
+    if (p.details.season) rows.push(['Best season', p.details.season]);
+    if (p.details.awards) rows.push(['Awards', p.details.awards]);
+    if (p.airport) rows.push(['Nearest airport', p.airport]);
+  }
+  if (render.rating) rows.push(['Rating', render.rating + '★' + (render.reviews ? ' · ' + render.reviews + ' reviews' : '')]);
+  if (rows.length) {
+    document.getElementById('details-table').innerHTML = rows.map(function(r) {
+      return '<div class="details-row"><span class="details-row-lbl">' + esc(r[0]) + '</span><span class="details-row-val">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    show('details-sec');
+  }
+
+  // ── TAGS ──
+  var tags = (p.details && p.details.tags) || [];
+  if (tags.length) {
+    document.getElementById('tags-section').innerHTML = tags.map(function(t) {
+      return '<span class="tag-pill">' + esc(t) + '</span>';
+    }).join('');
+    show('tags-section');
+  }
+
+  // ── GETTING THERE ──
+  if (p.details && p.details.getting_there) {
+    setText('getting-there-body', p.details.getting_there);
+    show('getting-there-sec');
+  }
+
+  // ── SIDEBAR ──
+  if (p.rooms && p.rooms.length && p.rooms[0].price) {
+    var r = p.rooms[0];
+    setText('sb-price', '$' + parseInt(r.price).toLocaleString());
+    setText('sb-price-unit', 'per ' + (r.per || 'night'));
+    // Sidebar details
+    var sbRows = [];
+    if (loc) sbRows.push(['Location', loc]);
+    if (p.details && p.details.total_rooms) sbRows.push(['Rooms', p.details.total_rooms]);
+    if (render.duration_tagline) sbRows.push(['Duration', render.duration_tagline]);
+    document.getElementById('sb-details').innerHTML = sbRows.map(function(r) {
+      return '<div class="book-detail"><span class="book-detail-lbl">' + esc(r[0]) + '</span><span class="book-detail-val">' + esc(r[1]) + '</span></div>';
+    }).join('');
+  }
+
+  // Enquiry buttons
+  document.getElementById('btn-enquire').onclick = function() { openEnquiry(); };
+  document.getElementById('btn-book').onclick = function() { openEnquiry(); };
+
+  // Back link type
+  var typeSlug = (p.type || '').toLowerCase();
+  var backHref = typeSlug.includes('cruise') ? '/cruises.html' : typeSlug.includes('villa') ? '/villas.html' : '/hotels.html';
+  document.getElementById('back-link').href = backHref;
+
+  // Envoy FAB
+  document.getElementById('ci-fab').onclick = function() {
+    window.location = '/the-envoy.html';
+  };
+}
+
+// ── HERO ROTATION ─────────────────────────────────────────────────────
+function renderHero(idx) {
+  var h = heroUrls[idx];
+  if (!h) return;
+  var img = document.getElementById('hero-img');
+  img.src = h.url;
+  img.style.objectPosition = h.position || 'center';
+  // Dots
+  var dots = document.getElementById('hero-dots');
+  if (heroUrls.length > 1) {
+    dots.innerHTML = heroUrls.map(function(_, i) {
+      return '<div class="hero-dot' + (i === idx ? ' active' : '') + '" onclick="heroGoTo(' + i + ')"></div>';
+    }).join('');
+  }
+  heroIndex = idx;
+}
+
+function heroGoTo(idx) {
+  clearInterval(heroTimer);
+  renderHero(idx);
+  heroTimer = setInterval(function() { renderHero((heroIndex + 1) % heroUrls.length); }, 5000);
+}
+
+function startHeroRotation() {
+  heroTimer = setInterval(function() { renderHero((heroIndex + 1) % heroUrls.length); }, 5000);
+}
+
+// ── LIGHTBOX ─────────────────────────────────────────────────────────
+function lbOpen(idx) {
+  lbIndex = idx;
+  document.getElementById('lb-img').src = galleryUrls[idx];
+  document.getElementById('lightbox').classList.add('open');
+}
+function lbClose() { document.getElementById('lightbox').classList.remove('open'); }
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + galleryUrls.length) % galleryUrls.length;
+  document.getElementById('lb-img').src = galleryUrls[lbIndex];
+}
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('lightbox').classList.contains('open')) {
+    if (e.key === 'Escape') lbClose();
+    if (e.key === 'ArrowLeft') lbNav(-1);
+    if (e.key === 'ArrowRight') lbNav(1);
+  }
+});
+
+// ── ENQUIRY ───────────────────────────────────────────────────────────
+function openEnquiry() {
+  if (propData) {
+    setText('enq-type', propData.type || '');
+    setText('enq-name', propData.name || '');
+  }
+  document.getElementById('enquiry-overlay').classList.add('open');
+}
+
+function submitEnquiry() {
+  var name = document.getElementById('enq-fname').value.trim();
+  var email = document.getElementById('enq-email').value.trim();
+  if (!name || !email) { alert('Please enter your name and email.'); return; }
+  document.getElementById('enquiry-overlay').classList.remove('open');
+  // Show confirmation
+  var toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:100px;font-size:.85rem;z-index:600;';
+  toast.textContent = '✓ Enquiry sent — we\'ll reply within 24 hours';
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 4000);
+}
+
+// ── ENVOY DOSSIER CONTEXT ─────────────────────────────────────────────
+var CI_SYSTEM = 'You are The Envoy — The Bearing\'s travel specialist. Help guests with questions about this property. Be concise, specific, and knowledgeable.';
+
+function loadDossierContext(slug) {
+  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
+  if (!DOSSIER_API) return;
+  fetch(DOSSIER_API + '?slug=' + encodeURIComponent(slug))
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(data) {
+      if (data && data.dossier) {
+        CI_SYSTEM = 'You are The Envoy on the ' + (propData && propData.name || slug) + ' property page.\n\nPROPERTY DOSSIER:\n' + data.dossier + '\n\nAnswer guest questions specifically about this property. Be concise, insider, and authoritative.';
+      }
+    })
+    .catch(function() {});
+}
+
+// Init
+loadProperty();
+</script>
+</body>
+</html>
