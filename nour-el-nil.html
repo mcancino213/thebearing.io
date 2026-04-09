@@ -1172,7 +1172,10 @@
     .xrec-img img{width:100%;height:100%;object-fit:cover;}
     .xrec-tag{display:inline-block;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:4px;}
     .xrec-title{font-size:.88rem;font-weight:500;color:var(--ink);margin-bottom:2px;line-height:1.3;}
-    .xrec-body{font-size:.75rem;color:var(--stone);line-height:1.5;}
+    .xrec-body-preview{font-size:.75rem;color:var(--stone);line-height:1.5;}
+    .xrec-body-full{font-size:.75rem;color:var(--stone);line-height:1.5;display:none;}
+    .xrec-expand{font-size:.68rem;font-weight:500;color:var(--terra);cursor:pointer;border:none;background:none;padding:4px 0 0;font-family:'Geist',sans-serif;letter-spacing:.02em;}
+    .xrec-expand:hover{opacity:.75;}
     .xrec-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;color:var(--mist);flex-shrink:0;margin-top:2px;}
   </style>
 
@@ -1256,6 +1259,15 @@
     }
   ];
 
+  function xrecToggle(uid){
+    var full=document.getElementById('full-'+uid);
+    var btn=document.getElementById('btn-'+uid);
+    if(!full||!btn) return;
+    var open=full.style.display==='block';
+    full.style.display=open?'none':'block';
+    btn.textContent=open?'Read more ↓':'Show less ↑';
+  }
+
   function selectExpert(idx, btn) {
     document.querySelectorAll('.xpill').forEach(function(p){ p.classList.remove('active'); });
     btn.classList.add('active');
@@ -1269,12 +1281,20 @@
 
     var recs = document.getElementById('expert-recs');
     recs.innerHTML = e.recs.map(function(r, i){
+      var body = r.body||'';
+      var sentences = body.replace(/([.!?])\s+/g,'$1\n').split('\n').filter(Boolean);
+      var preview = sentences.slice(0,2).join(' ');
+      var rest = sentences.slice(2).join(' ');
+      var hasMore = rest.length > 0;
+      var uid = 'xrec-'+i+'-'+Math.random().toString(36).slice(2);
       return '<div class="xrec">'
         + '<div class="xrec-num">' + (i+1) + '</div>'
         + '<div style="flex:1;">'
         + '<span class="xrec-tag" style="color:'+r.tagColor+';background:'+r.tagBg+';border:1px solid '+r.tagColor+'33;">'+r.tag+'</span>'
         + '<div class="xrec-title">'+r.title+'</div>'
-        + '<div class="xrec-body">'+r.body+'</div>'
+        + '<div class="xrec-body-preview" id="prev-'+uid+'">'+preview+'</div>'
+        + (hasMore ? '<div class="xrec-body-full" id="full-'+uid+'" style="display:none;font-size:.75rem;color:var(--stone);line-height:1.5;">'+rest+'</div>' : '')
+        + (hasMore ? '<button class="xrec-expand" id="btn-'+uid+'" onclick="xrecToggle(\''+uid+'\')">Read more ↓</button>' : '')
         + '</div>'
         + '<div class="xrec-img"><img src="'+r.img+'" alt="'+r.title+'"></div>'
         + '</div>';

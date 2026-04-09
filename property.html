@@ -198,11 +198,15 @@ button{font-family:inherit;cursor:pointer;}
 .xpill-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:.85rem;font-style:italic;color:#fff;flex-shrink:0;}
 .xpill-name{font-size:.75rem;font-weight:500;color:var(--ink);line-height:1.2;}
 .xpill-role{font-size:.62rem;color:var(--stone);}
-.xrec{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:flex-start;cursor:pointer;transition:background .15s;}
+.xrec{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:flex-start;cursor:default;transition:background .15s;}
 .xrec:last-child{border-bottom:none;}
 .xrec:hover{background:var(--linen);}
 .xrec-img{width:56px;height:56px;border-radius:var(--r-md);overflow:hidden;flex-shrink:0;background:var(--sand);}
 .xrec-img img{width:100%;height:100%;object-fit:cover;}
+.xrec-body-preview{font-size:.75rem;color:var(--stone);line-height:1.5;}
+.xrec-body-full{font-size:.75rem;color:var(--stone);line-height:1.5;display:none;}
+.xrec-expand{font-size:.68rem;font-weight:500;color:var(--terra);cursor:pointer;border:none;background:none;padding:4px 0 0;font-family:'Geist',sans-serif;letter-spacing:.02em;}
+.xrec-expand:hover{opacity:.75;}
 .xrec-tag{display:inline-block;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:4px;}
 .xrec-title{font-size:.88rem;font-weight:500;color:var(--ink);margin-bottom:2px;line-height:1.3;}
 .xrec-body{font-size:.75rem;color:var(--stone);line-height:1.5;}
@@ -710,7 +714,96 @@ async function loadProperty(){
     if(!res.ok||!d.exists||!d.data){showError();return;}
     propData=d.data;
     renderProperty(d.data,slug);
+    loadSimilar(d.data,slug);
   }catch(e){showError();}
+}
+
+async function loadSimilar(p, currentSlug){
+  if(!PROP_API) return;
+  try{
+    // Fetch the property index
+    var idxRes = await fetch(PROP_API);
+    var idxData = await idxRes.json();
+    var slugs = (idxData.slugs||[]).filter(function(s){ return s !== currentSlug; });
+    if(!slugs.length) return;
+
+    // Score each property by similarity to current
+    var currentType = (p.type||'').toLowerCase();
+    var currentRegion = (p.region||p.country||'').toLowerCase();
+
+    // Fetch up to 12 properties in parallel (enough to find 3 good matches)
+    var candidates = slugs.slice(0,12);
+    var results = await Promise.all(candidates.map(function(s){
+      return fetch(PROP_API+'?slug='+encodeURIComponent(s))
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; });
+    }));
+
+    // Score and rank
+    var scored = results
+      .filter(function(r){ return r&&r.exists&&r.data&&r.data.status==='live'; })
+      .map(function(r){
+        var q = r.data;
+        var score = 0;
+        var qType = (q.type||'').toLowerCase();
+        var qRegion = (q.region||q.country||'').toLowerCase();
+        // Same type category (cruise, hotel, villa, safari)
+        var typeMatch = function(a,b){
+          var cats = [['cruise','river','sail'],['villa','estate'],['safari','camp','lodge'],['hotel','resort','retreat']];
+          for(var i=0;i<cats.length;i++){
+            var inA = cats[i].some(function(k){return a.includes(k);});
+            var inB = cats[i].some(function(k){return b.includes(k);});
+            if(inA&&inB) return true;
+          }
+          return a===b;
+        };
+        if(typeMatch(currentType, qType)) score += 3;
+        // Same country/region
+        if(qRegion && currentRegion && qRegion === currentRegion) score += 2;
+        // Same continent heuristic (rough)
+        var continents = {
+          africa: ['egypt','tanzania','kenya','morocco','south africa','rwanda','botswana','zambia','namibia'],
+          asia: ['indonesia','bali','thailand','vietnam','cambodia','myanmar','laos','india','nepal','bhutan','japan','maldives','oman','jordan'],
+          americas: ['peru','brazil','mexico','belize','costa rica','ecuador','argentina','chile','galapagos'],
+          europe: ['france','italy','spain','greece','turkey','portugal','croatia']
+        };
+        var getCont = function(reg){
+          for(var cont in continents){
+            if(continents[cont].some(function(c){ return reg.includes(c); })) return cont;
+          }
+          return null;
+        };
+        var cA = getCont(currentRegion), cB = getCont(qRegion);
+        if(cA && cB && cA===cB) score += 1;
+        return { slug: r.slug||r.data.slug, data: q, score: score };
+      })
+      .filter(function(x){ return x.score > 0; })
+      .sort(function(a,b){ return b.score - a.score; })
+      .slice(0,3);
+
+    if(!scored.length) return;
+
+    var ss = document.getElementById('similar-scroll');
+    if(!ss) return;
+
+    ss.innerHTML = scored.map(function(x){
+      var q = x.data;
+      var slug = x.slug || q.slug || '';
+      var photo = (q.photos&&q.photos.hero&&q.photos.hero[0]&&q.photos.hero[0].url) || '';
+      var region = (q.render&&q.render.location_line) || q.region || q.country || '';
+      var price = (q.rooms&&q.rooms[0]&&q.rooms[0].price) ? 'From $'+parseInt(q.rooms[0].price).toLocaleString()+'pp' : '';
+      var href = '/property?slug='+encodeURIComponent(slug);
+      return '<div class="sim-card" onclick="window.location=\''+href+'\'">'
+        +(photo?'<div class="sim-img"><img src="'+esc(photo)+'" alt="'+esc(q.name||'')+'" loading="lazy"></div>':'<div class="sim-img"></div>')
+        +'<div class="sim-body">'
+        +'<div class="sim-region">'+esc(region)+'</div>'
+        +'<div class="sim-name">'+esc(q.name||'')+'</div>'
+        +(price?'<div class="sim-price"><strong>'+esc(price)+'</strong></div>':'')
+        +'</div></div>';
+    }).join('');
+
+    show('similar-section');
+  }catch(e){ console.log('[Similar]',e.message); }
 }
 
 function showError(){hide('prop-loading');document.getElementById('prop-error').style.display='flex';}
@@ -934,22 +1027,8 @@ function renderProperty(p,slug){
     }
   }
 
-  // Similar properties
-  if(p.similar&&p.similar.length){
-    var ss=document.getElementById('similar-scroll');
-    if(ss){
-      ss.innerHTML=p.similar.map(function(s){
-        return '<div class="sim-card" onclick="window.location=\''+'/property?slug='+esc(s.slug||'')+'\'">'+ 
-          (s.photo?'<div class="sim-img"><img src="'+esc(s.photo)+'" alt="'+esc(s.name||'')+'"></div>':'<div class="sim-img"></div>')+
-          '<div class="sim-body">'+
-          '<div class="sim-region">'+esc(s.region||'')+'</div>'+
-          '<div class="sim-name">'+esc(s.name||'')+'</div>'+
-          (s.price?'<div class="sim-price">From <strong>'+esc(s.price)+'</strong></div>':'')+
-          '</div></div>';
-      }).join('');
-      show('similar-section');
-    }
-  }
+  // Similar properties — auto-fetched from KV index by type/region
+  // (populated async by loadSimilar() called after renderProperty)
 
   // Desktop booking card
   if(hasRooms&&p.rooms[0].price){
@@ -1015,6 +1094,15 @@ function lbClose(){document.getElementById('lightbox').classList.remove('open');
 function lbNav(d){lbIdx=(lbIdx+d+galleryUrls.length)%galleryUrls.length;document.getElementById('lb-img').src=galleryUrls[lbIdx];}
 document.addEventListener('keydown',function(e){if(!document.getElementById('lightbox').classList.contains('open'))return;if(e.key==='Escape')lbClose();if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='ArrowRight')lbNav(1);});
 
+function xrecToggle(uid){
+  var full=document.getElementById('full-'+uid);
+  var btn=document.getElementById('btn-'+uid);
+  if(!full||!btn) return;
+  var open=full.style.display==='block';
+  full.style.display=open?'none':'block';
+  btn.textContent=open?'Read more ↓':'Show less ↑';
+}
+
 function selectLensExpert(idx,btn){
   document.querySelectorAll('#expert-pills .xpill').forEach(function(p){p.classList.remove('active');});
   if(btn)btn.classList.add('active');
@@ -1028,12 +1116,21 @@ function selectLensExpert(idx,btn){
   document.getElementById('expert-bio').textContent=e.bio||'';
   var recs=document.getElementById('expert-recs');
   recs.innerHTML=(e.recommendations||e.recs||[]).map(function(r,i){
+    var body=esc(r.body||r.description||'');
+    // Split into sentences — preview = first 2, rest = expandable
+    var sentences=body.replace(/([.!?])\s+/g,'$1\n').split('\n').filter(Boolean);
+    var preview=sentences.slice(0,2).join(' ');
+    var rest=sentences.slice(2).join(' ');
+    var hasMore=rest.length>0;
+    var uid='xrec-'+i+'-'+Date.now();
     return '<div class="xrec">'
       +'<div class="xrec-num">'+(i+1)+'</div>'
       +'<div style="flex:1;">'
       +(r.tag?'<span class="xrec-tag" style="color:'+(r.tagColor||'var(--terra)')+';background:'+(r.tagBg||'rgba(176,88,48,.1)')+';border:1px solid '+(r.tagColor||'var(--terra)')+'33;">'+esc(r.tag)+'</span>':'')
       +'<div class="xrec-title">'+esc(r.title||'')+'</div>'
-      +'<div class="xrec-body">'+esc(r.body||r.description||'')+'</div>'
+      +'<div class="xrec-body-preview" id="prev-'+uid+'">'+preview+'</div>'
+      +(hasMore?'<div class="xrec-body-full" id="full-'+uid+'">'+rest+'</div>':'')
+      +(hasMore?'<button class="xrec-expand" id="btn-'+uid+'" onclick="xrecToggle(\''+uid+'\')" >Read more ↓</button>':'')
       +'</div>'
       +(r.img?'<div class="xrec-img"><img src="'+esc(r.img)+'" alt="'+esc(r.title||'')+'"></div>':'')
       +'</div>';
