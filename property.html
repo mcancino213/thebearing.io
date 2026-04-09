@@ -689,7 +689,7 @@ function renderProperty(p) {
 // ── HERO MOSAIC ────────────────────────────────────────────────────────
 function renderHeroMosaic() {
   var mosaic = document.getElementById('hero-mosaic');
-  var fade = document.getElementById('hero-fade');
+  var fade   = document.getElementById('hero-fade');
   var countEl = document.getElementById('hero-photo-count');
   if (!mosaic) return;
 
@@ -702,36 +702,152 @@ function renderHeroMosaic() {
                 : 'hero-tile';
 
   mosaic.innerHTML = urls.map(function(h, i) {
-    return '<div class="' + tileClass + '" onclick="lbOpenHero(' + i + ')" data-tile="' + i + '">' +
+    return '<div class="' + tileClass + '" data-tile="' + i + '">' +
       '<img src="' + esc(h.url) + '" alt="" style="object-position:' + (h.position||'center') + ';" loading="' + (i===0?'eager':'lazy') + '">' +
     '</div>';
   }).join('');
 
-  // Show photo count badge if multiple
+  // Show photo count badge
   if (urls.length > 1 && countEl) {
     countEl.textContent = urls.length + ' photos';
     countEl.style.display = '';
   }
 
-  // Hide right fade if only 1-2 photos (nothing to scroll to)
+  // Hide right fade if only 1-2 photos
   if (fade && urls.length <= 3) fade.style.display = 'none';
 
-  // Hide fade when scrolled to end
+  // Fade on scroll end
   mosaic.addEventListener('scroll', function() {
     if (!fade) return;
     var atEnd = mosaic.scrollLeft + mosaic.clientWidth >= mosaic.scrollWidth - 10;
     fade.style.opacity = atEnd ? '0' : '1';
   });
-}
 
-function lbOpenHero(idx) {
-  // Hero photos open in lightbox using heroUrls
-  var savedGallery = galleryUrls;
-  galleryUrls = heroUrls.map(function(h) { return h.url; });
-  lbOpen(idx);
-  // Restore gallery after lightbox closes
-  var origClose = lbClose;
-  lbClose = function() { origClose(); galleryUrls = savedGallery; lbClose = origClose; };
+  // ── EXPAND / CONTRACT CAROUSEL ──────────────────────────────────────
+  var focused = -1;
+  var TRANS   = 'flex .4s cubic-bezier(.4,0,.2,1), opacity .3s';
+
+  function getTiles() {
+    return Array.from(mosaic.querySelectorAll('[data-tile]'));
+  }
+
+  function renderMosaic() {
+    var tiles = getTiles();
+    var total = tiles.length;
+    var prevFocused = focused;
+
+    if (focused === -1) {
+      // Collapsed — all equal
+      tiles.forEach(function(t) {
+        t.style.transition = TRANS;
+        t.style.display    = '';
+        t.style.flex       = urls.length === 1 ? '0 0 100%'
+                           : urls.length === 2 ? '0 0 calc(50% - 1.5px)'
+                           : '0 0 calc(100% / 3 - 2px)';
+        t.style.opacity    = '1';
+        t.style.cursor     = urls.length > 1 ? 'pointer' : 'default';
+      });
+      setTimeout(function() {
+        mosaic.style.overflowX = urls.length > 3 ? 'auto' : 'hidden';
+        if (prevFocused >= 0) {
+          var tileW = mosaic.scrollWidth / total;
+          mosaic.scrollLeft = Math.max(0, Math.min((prevFocused - 1) * tileW, mosaic.scrollWidth - mosaic.clientWidth));
+        }
+      }, 420);
+      if (fade) fade.style.opacity = urls.length > 3 ? '1' : '0';
+      var x = document.getElementById('hero-mc-close');
+      if (x) x.remove();
+
+    } else {
+      // Expanded — focused tile is 75%, two neighbours 12.5%
+      mosaic.style.overflowX = 'hidden';
+      var n1, n2;
+      if (focused === 0)           { n1 = 1;       n2 = 2; }
+      else if (focused === total-1){ n1 = total-2; n2 = total-3; }
+      else                         { n1 = focused-1; n2 = focused+1; }
+
+      tiles.forEach(function(t, i) {
+        t.style.transition = TRANS;
+        if (i === focused) {
+          t.style.display  = '';
+          t.style.flex     = '0 0 75%';
+          t.style.opacity  = '1';
+          t.style.cursor   = 'pointer';
+        } else if (i === n1 || i === n2) {
+          t.style.display  = '';
+          t.style.flex     = '0 0 12.5%';
+          t.style.opacity  = '.65';
+          t.style.cursor   = 'pointer';
+        } else {
+          t.style.display  = 'none';
+          t.style.flex     = '0 0 0%';
+          t.style.opacity  = '0';
+          t.style.cursor   = 'default';
+        }
+      });
+      if (fade) fade.style.opacity = '0';
+
+      // Scroll to right position
+      if (focused === 0)           { mosaic.scrollLeft = 0; }
+      else if (focused === total-1){ mosaic.scrollLeft = mosaic.scrollWidth; }
+      else {
+        var tileW2 = mosaic.scrollWidth / total;
+        mosaic.scrollLeft = (focused - 1) * tileW2;
+      }
+
+      // ✕ close button
+      if (!document.getElementById('hero-mc-close')) {
+        var btn = document.createElement('button');
+        btn.id = 'hero-mc-close';
+        btn.innerHTML = '&#x2715;';
+        btn.style.cssText = 'position:absolute;top:12px;right:12px;z-index:30;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+        btn.onclick = function(e) { e.stopPropagation(); focused = -1; renderMosaic(); };
+        mosaic.parentNode.appendChild(btn);
+      }
+    }
+  }
+
+  // Wire tile clicks
+  function wireTiles() {
+    getTiles().forEach(function(t, i) {
+      t.onclick = function() {
+        if (urls.length <= 1) return; // single photo — no expand
+        var total = getTiles().length;
+        var n1, n2;
+        if (focused === 0)            { n1=1;       n2=2; }
+        else if (focused === total-1) { n1=total-2; n2=total-3; }
+        else                          { n1=focused-1; n2=focused+1; }
+
+        if (focused === -1)           { focused = i; renderMosaic(); }
+        else if (i === focused)       { focused = -1; renderMosaic(); }
+        else if (i === n1 || i === n2){ focused = i; renderMosaic(); }
+      };
+    });
+  }
+  wireTiles();
+
+  // Touch / mouse swipe when expanded
+  var x0 = null;
+  mosaic.addEventListener('touchstart', function(e) { x0 = e.touches[0].clientX; }, {passive:true});
+  mosaic.addEventListener('touchend', function(e) {
+    if (focused === -1 || x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 50) {
+      var tiles = getTiles();
+      var n = focused + (dx < 0 ? 1 : -1);
+      if (n >= 0 && n < tiles.length) { focused = n; renderMosaic(); }
+    }
+  }, {passive:true});
+  mosaic.addEventListener('mousedown', function(e) { x0 = e.clientX; }, {passive:true});
+  mosaic.addEventListener('mouseup', function(e) {
+    if (focused === -1 || x0 === null) return;
+    var dx = e.clientX - x0; x0 = null;
+    if (Math.abs(dx) > 50) {
+      var tiles = getTiles();
+      var n = focused + (dx < 0 ? 1 : -1);
+      if (n >= 0 && n < tiles.length) { focused = n; renderMosaic(); }
+    }
+  });
 }
 
 // ── LIGHTBOX ─────────────────────────────────────────────────────────
