@@ -750,6 +750,24 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
+      <!-- THE LENS -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-icon">🔭</div>
+            <div>
+              <div class="pe-section-title">The Lens — Expert Perspectives</div>
+              <div class="pe-section-sub">Add up to 4 local specialists. The first is shown free; the rest are locked behind a member gate. Each expert gets a name, role, bio, and up to 3 recommendations.</div>
+            </div>
+          </div>
+          <button class="pe-section-toggle" onclick="toggleSection(this)">▾</button>
+        </div>
+        <div class="pe-section-body">
+          <div id="lens-experts-wrap" style="display:flex;flex-direction:column;gap:20px;"></div>
+          <button onclick="addLensExpert()" style="margin-top:8px;padding:9px 18px;background:transparent;border:1.5px dashed var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.8rem;color:var(--text2);cursor:pointer;width:100%;transition:border-color .15s,color .15s;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--text2)'">+ Add expert</button>
+        </div>
+      </div>
+
       <!-- 3. ROOMS & PRICING -->
       <div class="pe-section">
         <div class="pe-section-head">
@@ -1735,6 +1753,128 @@ function initPhotoUpload() {
 var heroCount = 8;
 var galleryCount = 12;
 var roomCount = 0;
+var lensExpertCount = 0;
+
+var EXPERT_COLORS = [
+  'linear-gradient(135deg,#9a7230,#7a5820)',
+  'linear-gradient(135deg,#2e6a8a,#1a4a6a)',
+  'linear-gradient(135deg,#3a7055,#2a5040)',
+  'linear-gradient(135deg,#8c4422,#6a3218)'
+];
+
+function addLensExpert(data) {
+  if (lensExpertCount >= 4) { alert('Maximum 4 experts per property.'); return; }
+  lensExpertCount++;
+  var n = lensExpertCount;
+  var color = data && data.color ? data.color : EXPERT_COLORS[(n-1) % EXPERT_COLORS.length];
+  var wrap = document.getElementById('lens-experts-wrap');
+  var div = document.createElement('div');
+  div.id = 'lens-expert-' + n;
+  div.style.cssText = 'border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;';
+  var nameVal = data && data.name ? data.name.replace(/"/g,'&quot;') : '';
+  var roleVal = data && data.role ? data.role.replace(/"/g,'&quot;') : '';
+  var bioVal  = data && data.bio  ? data.bio  : '';
+  var lockBadge = n === 1
+    ? '<span style="font-size:.65rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-left:4px;">FREE</span>'
+    : '<span style="font-size:.65rem;color:var(--text3);font-weight:400;margin-left:4px;">locked</span>';
+  div.innerHTML = [
+    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border);">',
+      '<div style="display:flex;align-items:center;gap:10px;">',
+        '<div style="width:28px;height:28px;border-radius:50%;background:'+color+';display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;color:#fff;font-size:.85rem;" id="lex-avatar-'+n+'">?</div>',
+        '<span style="font-size:.8rem;font-weight:500;color:var(--text1);" id="lex-label-'+n+'">Expert '+n+lockBadge+'</span>',
+      '</div>',
+      '<button onclick="removeLensExpert('+n+')" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:1rem;padding:0 4px;" title="Remove">&times;</button>',
+    '</div>',
+    '<div style="padding:14px;display:flex;flex-direction:column;gap:10px;">',
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">',
+        '<div><label class="pe-label">Name</label><input class="pe-input" id="lex-name-'+n+'" placeholder="e.g. Dr. Amira Khalil" oninput="updateLensAvatar('+n+')" value="'+nameVal+'"></div>',
+        '<div><label class="pe-label">Role / title</label><input class="pe-input" id="lex-role-'+n+'" placeholder="e.g. Egyptologist · Cairo" value="'+roleVal+'"></div>',
+      '</div>',
+      '<div><label class="pe-label">Bio / pull quote</label><textarea class="pe-input pe-textarea" id="lex-bio-'+n+'" style="min-height:60px;" placeholder="e.g. Most visitors rush. The Nile rewards patience."></textarea></div>',
+      '<div style="font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-top:2px;">Recommendations (up to 3)</div>',
+      buildRecRows(n, data && data.recommendations ? data.recommendations : []),
+    '</div>'
+  ].join('');
+  // Set bio via textContent to avoid XSS
+  var bioEl = div.querySelector('#lex-bio-'+n);
+  if (bioEl) bioEl.value = bioVal;
+  wrap.appendChild(div);
+  updateLensAvatar(n);
+  updateJSON();
+}
+
+
+function buildRecRows(n, recs) {
+  var rows = '';
+  for (var i = 1; i <= 3; i++) {
+    var r = recs[i-1] || {};
+    var tagVal   = (r.tag   || '').replace(/"/g,'&quot;');
+    var titleVal = (r.title || '').replace(/"/g,'&quot;');
+    var bodyVal  = (r.body  || r.description || '').replace(/"/g,'&quot;');
+    rows += '<div style="display:grid;grid-template-columns:90px 1fr 2fr;gap:8px;align-items:start;">'
+      + '<div><label class="pe-label">Tag</label><input class="pe-input" id="lex-r'+i+'-tag-'+n+'" placeholder="Hidden" value="'+tagVal+'"></div>'
+      + '<div><label class="pe-label">Title</label><input class="pe-input" id="lex-r'+i+'-title-'+n+'" placeholder="e.g. The necropolis at El Kab" value="'+titleVal+'"></div>'
+      + '<div><label class="pe-label">Description</label><input class="pe-input" id="lex-r'+i+'-body-'+n+'" placeholder="What makes it special..." value="'+bodyVal+'"></div>'
+      + '</div>';
+  }
+  return rows;
+}
+
+
+function updateLensAvatar(n) {
+  var nameEl = document.getElementById('lex-name-'+n);
+  var avatarEl = document.getElementById('lex-avatar-'+n);
+  var labelEl = document.getElementById('lex-label-'+n);
+  if (!nameEl || !avatarEl) return;
+  var name = nameEl.value.trim();
+  avatarEl.textContent = name ? name[0].toUpperCase() : '?';
+  if (labelEl && name) {
+    var locked = n > 1
+      ? ' <span style="font-size:.65rem;color:var(--text3);font-weight:400;">locked</span>'
+      : ' <span style="font-size:.65rem;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.08em;">FREE</span>';
+    labelEl.innerHTML = name.split(' ')[0] + locked;
+  }
+  updateJSON();
+}
+
+function removeLensExpert(n) {
+  var el = document.getElementById('lens-expert-'+n);
+  if (el) el.remove();
+  updateJSON();
+}
+
+function getLensExperts() {
+  var experts = [];
+  for (var i = 1; i <= lensExpertCount; i++) {
+    var nameEl = document.getElementById('lex-name-'+i);
+    if (!nameEl) continue;
+    var name = nameEl.value.trim();
+    if (!name) continue;
+    var role  = (document.getElementById('lex-role-'+i)||{}).value || '';
+    var bio   = (document.getElementById('lex-bio-'+i)||{}).value  || '';
+    var color = EXPERT_COLORS[(i-1) % EXPERT_COLORS.length];
+    var hexMatch = color.match(/#[0-9a-fA-F]{6}/);
+    var tagColor = hexMatch ? hexMatch[0] : '#9a7230';
+    var recs = [];
+    for (var r = 1; r <= 3; r++) {
+      var tag   = (document.getElementById('lex-r'+r+'-tag-'+i)  ||{}).value || '';
+      var title = (document.getElementById('lex-r'+r+'-title-'+i)||{}).value || '';
+      var body  = (document.getElementById('lex-r'+r+'-body-'+i) ||{}).value || '';
+      if (title) recs.push({ tag: tag, tagColor: tagColor, tagBg: 'rgba(154,114,48,.1)', title: title, body: body });
+    }
+    experts.push({ name: name, initial: name[0].toUpperCase(), role: role, bio: bio, color: color, recommendations: recs });
+  }
+  return experts;
+}
+
+function loadLensExperts(experts) {
+  if (!experts || !experts.length) return;
+  var wrap = document.getElementById('lens-experts-wrap');
+  if (wrap) wrap.innerHTML = '';
+  lensExpertCount = 0;
+  experts.forEach(function(ex) { addLensExpert(ex); });
+}
+
 
 function getFieldVal(id) {
   var el = document.getElementById(id);
@@ -2157,6 +2297,9 @@ function updateJSON() {
     // Pull quote
     quote: (getFieldVal('f-quote-text') ? { text: getFieldVal('f-quote-text'), attribution: getFieldVal('f-quote-attr') } : null),
 
+    // The Lens
+    lens: (getLensExperts().length ? { experts: getLensExperts() } : null),
+
     // Media
     photos: {
       hero: hero,
@@ -2426,8 +2569,7 @@ function aiPopulateFields(draft, overwrite) {
     'f-desc-long': draft.description_long,
     'f-verdict': draft.verdict,
     'f-quote-text': draft.quote_text,
-    'f-quote-attr': draft.quote_attribution,
-    'f-rcount': draft.rcount, 'f-maxg': draft.maxg, 'f-year': draft.year,
+    'f-quote-attr': draft.quote_attribution,    'f-rcount': draft.rcount, 'f-maxg': draft.maxg, 'f-year': draft.year,
     'f-awards': draft.awards, 'f-season': draft.season, 'f-getting-there': draft.getting_there,
     'f-meta-title': draft.meta_title, 'f-meta-desc': draft.meta_desc
   };
@@ -3240,6 +3382,9 @@ function propSnapshot() {
     fields['__room-' + i] = r;
   }
 
+  // 6. Lens experts
+  fields['__lensExperts'] = getLensExperts();
+
   return fields;
 }
 
@@ -3334,6 +3479,11 @@ function propRestore(fields) {
   // 6. Trigger reactivity
   if (typeof updateAll === 'function') updateAll();
   if (typeof updateItineraryVisibility === 'function') updateItineraryVisibility();
+
+  // 6b. Restore lens experts
+  if (Array.isArray(fields['__lensExperts']) && fields['__lensExperts'].length) {
+    loadLensExperts(fields['__lensExperts']);
+  }
 
   // 7. Word count refreshes
   ['f-desc-short','f-desc-p2','f-desc-p3','f-desc-long','f-verdict'].forEach(function(id) {
