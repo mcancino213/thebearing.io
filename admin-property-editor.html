@@ -785,6 +785,11 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
           <div id="itin-days-wrap" style="margin-top:6px;"></div>
 
+          <div class="pe-field" style="margin-top:16px;">
+            <label class="pe-label">Flexibility note<span class="pe-label-hint">(shown below the itinerary — conditions, authority regulations, spirit of journey, etc.)</span></label>
+            <textarea class="pe-input pe-textarea" id="f-itin-note" rows="3" placeholder="e.g. Nour El Nil reserves the right to vary the itinerary as conditions require. The Nile's moods and Egyptian river authority regulations sometimes mean changes are announced only hours in advance. What never changes is the spirit of the journey." oninput="itSave()" style="font-size:13px;"></textarea>
+          </div>
+
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;">
             <div style="font-size:11px;color:var(--text2);" id="itin-status">—</div>
             <div style="display:flex;gap:8px;">
@@ -882,49 +887,7 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
           </div>
 
-          <!-- STATS STRIP -->
-          <div class="pe-photo-group">
-            <div class="pe-photo-group-label">
-              <label class="pe-label">Stats strip<span class="pe-label-hint">(4 highlight stats shown below the hero — e.g. altitude, acreage, year built)</span></label>
-            </div>
-            <div class="pe-grid-2" style="gap:12px;">
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
-                <label class="pe-label" style="font-size:11px;">Stat 1 — Value</label>
-                <input class="pe-input" id="f-stat1-val" placeholder="e.g. 350,000" style="margin-bottom:7px;">
-                <label class="pe-label" style="font-size:11px;">Label</label>
-                <input class="pe-input" id="f-stat1-label" placeholder="e.g. Private acres">
-              </div>
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
-                <label class="pe-label" style="font-size:11px;">Stat 2 — Value</label>
-                <input class="pe-input" id="f-stat2-val" placeholder="e.g. 16" style="margin-bottom:7px;">
-                <label class="pe-label" style="font-size:11px;">Label</label>
-                <input class="pe-input" id="f-stat2-label" placeholder="e.g. Tented suites">
-              </div>
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
-                <label class="pe-label" style="font-size:11px;">Stat 3 — Value</label>
-                <input class="pe-input" id="f-stat3-val" placeholder="e.g. 1995" style="margin-bottom:7px;">
-                <label class="pe-label" style="font-size:11px;">Label</label>
-                <input class="pe-input" id="f-stat3-label" placeholder="e.g. Est.">
-              </div>
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px;">
-                <label class="pe-label" style="font-size:11px;">Stat 4 — Value</label>
-                <input class="pe-input" id="f-stat4-val" placeholder="e.g. Big Five" style="margin-bottom:7px;">
-                <label class="pe-label" style="font-size:11px;">Label</label>
-                <input class="pe-input" id="f-stat4-label" placeholder="e.g. Wildlife">
-              </div>
-            </div>
-          </div>
-
-          <!-- GALLERY PHOTOS -->
-          <div class="pe-photo-group">
-            <div class="pe-photo-group-label">
-              <label class="pe-label">Gallery photos<span class="pe-label-hint">(editorial photo grid on the property page — up to 12)</span></label>
-            </div>
-
-          <!-- ROOM PHOTOS — photos are now inline in section 3 -->
-          <div style="display:none;" id="room-photos-wrap"></div>
-        </div>
-      </div>
+          
 
       <!-- 5. DETAILS & TAGS -->
       <div class="pe-section">
@@ -991,6 +954,12 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
           <div class="pe-field">
             <label class="pe-label">Description<span class="pe-label-req">*</span></label>
             <textarea class="pe-input pe-textarea" id="f-access-desc" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateAll()"></textarea>
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Bullet points<span class="pe-label-hint">(3 short highlight lines shown below the description — e.g. what's included)</span></label>
+            <input class="pe-input" id="f-access-b1" placeholder="e.g. Private rooftop table for two — set at golden hour" oninput="updateAll()" style="margin-bottom:7px;">
+            <input class="pe-input" id="f-access-b2" placeholder="e.g. Traditional Egyptian feast — tagines, mezze, fresh-baked bread" oninput="updateAll()" style="margin-bottom:7px;">
+            <input class="pe-input" id="f-access-b3" placeholder="e.g. Complimentary — included with your booking, no extra charge" oninput="updateAll()">
           </div>
           <div class="pe-field">
             <label class="pe-label">Photo<span class="pe-label-hint">(Cloudflare Images — drag &amp; drop or paste URL)</span></label>
@@ -2187,6 +2156,7 @@ function updateJSON() {
     private_access: {
       name: getFieldVal('f-access-name'),
       description: getFieldVal('f-access-desc'),
+      bullets: [getFieldVal('f-access-b1'), getFieldVal('f-access-b2'), getFieldVal('f-access-b3')].filter(Boolean),
       photo: getFieldVal('f-access-photo')
     },
 
@@ -2205,6 +2175,23 @@ function updateJSON() {
       meta_title: getFieldVal('f-meta-title'),
       meta_description: getFieldVal('f-meta-desc')
     },
+
+    // Itinerary (cruises/experiential — built from live itDays state)
+    itinerary: (function() {
+      if (!itDays || !itDays.length) return null;
+      var duration = getFieldVal('f-itin-duration');
+      var headline = getFieldVal('f-itin-headline');
+      // Skip if no meaningful content — default empty day + no header fields
+      var hasContent = duration || headline ||
+        itDays.some(function(d) { return d.title || d.desc || d.label; });
+      if (!hasContent) return null;
+      return {
+        duration: duration,
+        headline: headline,
+        note: getFieldVal('f-itin-note'),
+        days: itDays.filter(function(d) { return d.title || d.desc || d.label; })
+      };
+    })(),
 
     notes: getFieldVal('f-notes'),
     updated_at: new Date().toISOString()
@@ -3053,6 +3040,7 @@ async function itSaveToKV() {
     itinerary: {
       duration: document.getElementById('f-itin-duration').value || '',
       headline: document.getElementById('f-itin-headline').value || '',
+      note: document.getElementById('f-itin-note').value || '',
       days: itDays
     }
   };
@@ -3088,6 +3076,7 @@ async function itLoad() {
     var it = data.itinerary;
     document.getElementById('f-itin-duration').value = it.duration || '';
     document.getElementById('f-itin-headline').value = it.headline || '';
+    document.getElementById('f-itin-note').value = it.note || '';
     itDays = (it.days && it.days.length) ? it.days : [{ label: '', title: '', desc: '' }];
     itRender();
     itShowStatus('✓ Loaded ' + itDays.length + ' day(s)', 'success');

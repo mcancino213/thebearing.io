@@ -2,206 +2,279 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title id="page-title">Loading — TheBearing.io</title>
 <meta name="description" id="page-desc" content="">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>
+function jumpTo(id){
+  var el=document.getElementById(id);if(!el)return;
+  var nav=document.querySelector('.nav'),sub=document.querySelector('.subnav'),bar=document.querySelector('.book-bar');
+  var chrome=(nav?nav.offsetHeight:66)+(sub?sub.offsetHeight:42)+(bar?bar.offsetHeight:52)+8;
+  window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-chrome,behavior:'smooth'});
+}
+function initScrollSpy(){
+  var secs=['sec-overview','sec-gallery','sec-rooms','sec-itinerary'];
+  var items=document.querySelectorAll('.subnav-item');
+  if(!items.length)return;
+  function spy(){var y=window.pageYOffset+220,a=0;secs.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=y)a=i;});items.forEach(function(it,i){it.classList.toggle('active',i===a);});}
+  window.addEventListener('scroll',spy,{passive:true});spy();
+}
+document.addEventListener('DOMContentLoaded',initScrollSpy);
+var _t;function toast(m){var e=document.getElementById('toast-el');if(!e)return;e.textContent=m;e.classList.add('show');clearTimeout(_t);_t=setTimeout(function(){e.classList.remove('show');},2800);}
+function openEnquiry(){document.getElementById('inq-overlay').classList.add('open');document.body.style.overflow='hidden';}
+function closeEnquiry(){document.getElementById('inq-overlay').classList.remove('open');document.body.style.overflow='';}
+function submitEnquiry(){
+  if(!document.getElementById('enq-name').value.trim()||!document.getElementById('enq-email').value.trim()){toast('Please enter your name and email.');return;}
+  closeEnquiry();toast('✓ Enquiry sent — we\'ll reply within 24 hours');
+}
+</script>
 <style>
-  :root {
-    --cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;
-    --border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);
-    --ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;
-    --terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);
-    --sea:#2e6a8a;--moss:#3a7055;--gold:#9a7230;
-    --r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;
-    --nav-h:66px;
-  }
+:root{--cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;--border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);--ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;--terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);--gold:#9a7230;--sea:#2e6a8a;--moss:#3a7055;--r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{font-size:16px;scroll-behavior:smooth;overflow-x:hidden;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Geist',system-ui,sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;}
+a{text-decoration:none;color:inherit;}
+button{font-family:inherit;cursor:pointer;}
 
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-  html{overflow-x:hidden;scroll-behavior:smooth;}
-  body{font-family:'Geist',system-ui,sans-serif;background:var(--cream);color:var(--ink);-webkit-font-smoothing:antialiased;}
-  a{text-decoration:none;color:inherit;}
-  button{font-family:inherit;cursor:pointer;}
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+.nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;flex-shrink:0;}
+.nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1;}
+.nav-logo .dot{color:var(--terra);}
+.nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
+.nav-links-desktop{display:flex;align-items:center;gap:22px;}
+.nav-link-d{font-size:.78rem;color:var(--bark);transition:color .15s;white-space:nowrap;}
+.nav-link-d:hover{color:var(--ink);}
+.nav-link-d.featured{color:var(--terra);}
+.nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.nav-btn{background:none;border:none;cursor:pointer;color:var(--stone);padding:4px;display:flex;align-items:center;transition:color .15s;}
+.nav-btn:hover{color:var(--ink);}
 
-  /* ── NAV ── */
-  .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
-  .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
-  .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);}
-  .nav-logo .dot{color:var(--terra);}
-  .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
-  .nav-links-desktop{display:flex;align-items:center;gap:22px;}
-  .nav-link-d{font-size:.78rem;color:var(--bark);transition:color .15s;}
-  .nav-link-d:hover{color:var(--ink);}
-  .nav-link-d.featured{color:var(--terra);}
-  .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
-  .nav-right{display:flex;align-items:center;gap:14px;}
-  .nav-btn{font-size:.76rem;padding:8px;border-radius:100px;border:none;cursor:pointer;font-family:'Geist',sans-serif;background:transparent;transition:all .15s;}
-  .nav-btn:hover{background:var(--linen);}
+/* HERO MOSAIC */
+.hero-wrap{margin-top:66px;position:relative;}
+.hero-mosaic{display:flex;gap:3px;height:72vw;max-height:520px;min-height:280px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;background:#1a1208;}
+.hero-mosaic::-webkit-scrollbar{display:none;}
+.hero-tile{flex:0 0 calc(100% / 3 - 2px);height:100%;overflow:hidden;cursor:pointer;position:relative;background:#1a1208;}
+.hero-tile img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+.hero-tile:hover img{transform:scale(1.04);}
+.hero-tile-single{flex:0 0 100%!important;}
+.hero-tile-two{flex:0 0 calc(50% - 1.5px)!important;}
+.hero-fade{position:absolute;top:0;right:0;bottom:0;width:72px;background:linear-gradient(to right,transparent,rgba(12,10,8,.72));pointer-events:none;z-index:2;}
+.hero-scrim{position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(8,6,3,.82) 0%,rgba(8,6,3,.45) 40%,rgba(8,6,3,0) 100%);pointer-events:none;z-index:3;}
+.hero-overlay{position:absolute;bottom:0;left:0;right:0;padding:16px 20px 22px;z-index:4;pointer-events:none;}
+.hero-type-lbl{font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,200,140,.8);margin-bottom:4px;}
+.hero-name-lbl{font-family:'Instrument Serif',serif;font-size:clamp(1.6rem,5.5vw,2.5rem);font-style:italic;color:#fff;line-height:1.05;margin-bottom:5px;text-shadow:0 2px 20px rgba(0,0,0,.3);}
+.hero-loc-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.hero-loc-row span{font-size:.68rem;color:rgba(255,255,255,.52);}
+.hero-loc-row .sep{width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.22);display:inline-block;}
+.hero-count{position:absolute;top:14px;right:14px;font-size:.62rem;font-weight:500;color:rgba(255,255,255,.7);background:rgba(0,0,0,.4);backdrop-filter:blur(6px);padding:4px 10px;border-radius:100px;z-index:4;letter-spacing:.06em;}
+#hero-mc-close{position:absolute;top:12px;right:12px;z-index:30;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.85rem;display:flex;align-items:center;justify-content:center;}
 
-  /* ── LOADING STATE ── */
-  .prop-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;color:var(--stone);}
-  .prop-loading-spinner{width:32px;height:32px;border:3px solid var(--sand);border-top-color:var(--terra);border-radius:50%;animation:spin .8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg);}}
+/* BREADCRUMB */
+.breadcrumb{padding:14px 20px 0;display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--mist);}
+.breadcrumb a{color:var(--mist);transition:color .15s;}
+.breadcrumb a:hover{color:var(--terra);}
+.breadcrumb-sep{font-size:.6rem;opacity:.5;}
 
-  /* ── ERROR STATE ── */
-  .prop-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;padding:40px;}
-  .prop-error h1{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--ink);}
-  .prop-error p{color:var(--stone);max-width:440px;line-height:1.6;}
+/* PROPERTY HEADER */
+.prop-header{padding:18px 20px 0;}
+.prop-type-row{margin-bottom:10px;}
+.prop-type-pill{display:inline-flex;align-items:center;font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(46,106,138,.09);color:var(--sea);border:1px solid rgba(46,106,138,.2);}
+.prop-name{font-family:'Instrument Serif',serif;font-size:2rem;line-height:1.08;color:var(--ink);margin-bottom:6px;}
+.prop-location{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--stone);margin-bottom:12px;}
+.prop-location svg{width:13px;height:13px;flex-shrink:0;color:var(--terra);}
+.prop-rating-row{display:flex;align-items:center;gap:5px;font-size:.78rem;color:var(--bark);margin-bottom:18px;}
+.star-gold{color:var(--gold);font-size:.9rem;}
 
-  /* ── HERO — scrollable mosaic ── */
-  .hero{position:relative;margin-top:var(--nav-h);overflow:hidden;background:#1a1208;}
-  .hero-mosaic{display:flex;gap:3px;height:72vw;max-height:560px;min-height:320px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
-  .hero-mosaic::-webkit-scrollbar{display:none;}
-  .hero-tile{flex:0 0 calc(100% / 3 - 2px);height:100%;overflow:hidden;cursor:pointer;position:relative;background:#1a1208;}
-  .hero-tile img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-  .hero-tile:hover img{transform:scale(1.04);}
-  .hero-tile-single{flex:0 0 100%!important;}
-  .hero-tile-two{flex:0 0 calc(50% - 1.5px)!important;}
-  .hero-fade{position:absolute;top:0;right:0;bottom:0;width:72px;background:linear-gradient(to right,transparent,rgba(12,10,8,.72));pointer-events:none;z-index:2;}
-  .hero-scrim{position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(8,6,3,.82) 0%,rgba(8,6,3,.45) 40%,rgba(8,6,3,0) 100%);pointer-events:none;z-index:3;}
-  .hero-content{position:absolute;bottom:0;left:0;right:0;padding:16px 32px 28px;z-index:4;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;}
-  .hero-badge{display:inline-block;padding:3px 10px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,140,.9);margin-bottom:5px;}
-  .hero-type{font-size:.62rem;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
-  .hero-name{font-family:'Instrument Serif',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#fff;line-height:1.1;margin-bottom:5px;font-style:italic;}
-  .hero-loc{display:flex;align-items:center;gap:5px;font-size:.72rem;color:rgba(255,255,255,.55);}
-  .hero-photo-count{position:absolute;top:14px;right:14px;font-size:.6rem;font-weight:500;color:rgba(255,255,255,.7);background:rgba(0,0,0,.4);backdrop-filter:blur(6px);padding:4px 10px;border-radius:100px;pointer-events:none;z-index:5;letter-spacing:.06em;}
+/* STATS STRIP */
+.stats-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-top:18px;}
+.stat-cell{background:var(--cream);padding:13px 10px;text-align:center;}
+.stat-val{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);line-height:1;}
+.stat-lbl{font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--mist);margin-top:3px;}
 
-  /* ── LAYOUT ── */
-  .prop-wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
-  .prop-grid{display:grid;grid-template-columns:1fr 360px;gap:48px;padding-top:40px;align-items:start;}
-  .prop-main{min-width:0;}
-  .prop-sidebar{position:sticky;top:calc(var(--nav-h) + 20px);}
+/* SUBNAV */
+.subnav{position:sticky;top:66px;z-index:79;background:rgba(250,247,241,.96);backdrop-filter:blur(12px);display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
+.subnav::-webkit-scrollbar{display:none;}
+.subnav-item{flex-shrink:0;padding:0 18px;height:42px;display:flex;align-items:center;font-size:.75rem;font-weight:500;color:var(--mist);border:none;background:none;border-bottom:2px solid transparent;transition:color .18s,border-color .18s;white-space:nowrap;}
+.subnav-item:hover{color:var(--bark);}
+.subnav-item.active{color:var(--ink);border-bottom-color:var(--terra);}
 
-  /* ── STATS STRIP ── */
-  .stats-strip{display:flex;gap:0;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;background:#fff;margin:24px 0;}
-  .stat-cell{flex:1;padding:16px 20px;border-right:1px solid var(--border);text-align:center;}
-  .stat-cell:last-child{border-right:none;}
-  .stat-val{font-family:'Instrument Serif',serif;font-size:1.4rem;color:var(--ink);line-height:1.2;}
-  .stat-lbl{font-size:.62rem;color:var(--stone);letter-spacing:.06em;text-transform:uppercase;margin-top:3px;}
+/* BOOK BAR */
+.book-bar{position:sticky;top:108px;z-index:80;background:var(--sand);border-top:2px solid var(--terra);border-bottom:1px solid var(--border-hi);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.book-bar-from{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);}
+.book-bar-num{font-family:'Instrument Serif',serif;font-size:1.35rem;color:var(--ink);line-height:1;}
+.book-bar-num small{font-family:'Geist',sans-serif;font-size:.68rem;color:var(--stone);font-weight:400;}
+.book-bar-perks{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--moss);font-weight:500;margin-top:2px;}
+.book-bar-btn{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:11px 18px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-md);font-size:.82rem;font-weight:600;white-space:nowrap;transition:opacity .15s;}
+.book-bar-btn:hover{opacity:.9;}
+.book-bar-btn-icon{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
-  /* ── BOOKING CARD ── */
-  .book-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:24px;box-shadow:0 4px 24px rgba(80,55,25,.08);margin-bottom:16px;}
-  .book-price-from{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;}
-  .book-price-num{font-family:'Instrument Serif',serif;font-size:2.2rem;color:var(--ink);line-height:1;}
-  .book-price-unit{font-size:.72rem;color:var(--stone);margin-bottom:16px;margin-top:2px;}
-  .book-divider{height:1px;background:var(--border);margin:16px 0;}
-  .book-detail{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:8px;}
-  .book-detail-lbl{color:var(--stone);}
-  .book-detail-val{font-weight:500;text-align:right;}
+/* BODY */
+.prop-body{padding:28px 20px 60px;}
+.desktop-book-col{display:none;}
 
-  /* ── CTA ── */
-  .cta-primary{width:100%;padding:14px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;}
-  .cta-primary:hover{opacity:.88;}
-  .cta-secondary{width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
-  .cta-secondary:hover{border-color:var(--terra);color:var(--terra);}
-  .cta-note{font-size:.68rem;color:var(--stone);text-align:center;margin-top:8px;}
-  .trust-item{display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--bark);margin-bottom:6px;}
+/* SECTION HEADERS */
+.sec-eyebrow{font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.sec-eyebrow::after{content:'';flex:1;height:1px;background:var(--border);}
+.sec-title{font-family:'Instrument Serif',serif;font-size:1.45rem;color:var(--ink);margin-bottom:14px;line-height:1.2;}
+.sec-title em{font-style:italic;color:var(--terra);}
 
-  /* ── CONTENT ── */
-  .sec{margin-bottom:36px;}
-  .sec-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;}
-  .sec-title{font-family:'Instrument Serif',serif;font-size:1.65rem;color:var(--ink);margin-bottom:14px;line-height:1.25;}
-  .sec-body{font-size:.9rem;color:var(--bark);line-height:1.75;}
-  .hook-quote{font-family:'Instrument Serif',serif;font-size:1.15rem;font-style:italic;color:var(--bark);line-height:1.65;border-left:2px solid var(--terra);padding-left:20px;margin:24px 0;}
+/* CONTENT */
+.prop-intro{font-size:.95rem;line-height:1.8;color:var(--bark);margin-bottom:28px;}
+.prop-intro p{margin-bottom:16px;}
+.prop-intro p:last-child{margin-bottom:0;}
+.prop-intro strong{font-weight:500;color:var(--ink);}
 
-  /* ── GALLERY ── */
-  .pgal-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:480px;margin-bottom:0;}
-  .pgal-tile{position:relative;overflow:hidden;background:var(--sand);cursor:pointer;}
-  .pgal-tile img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
-  .pgal-tile:hover img{transform:scale(1.04);}
-  .pgal-tile-feature{grid-row:1 / span 2;border-radius:var(--r-md) 0 0 var(--r-md);}
-  .pgal-tile:nth-child(2){border-radius:0 var(--r-md) 0 0;}
+/* VERDICT */
+.verdict-block{margin:0 0 28px;padding:20px;border-left:3px solid var(--terra);background:var(--terra-dim);border-radius:0 var(--r-lg) var(--r-lg) 0;}
+.verdict-label{font-size:.58rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.verdict-text{font-family:'Instrument Serif',serif;font-style:italic;font-size:1.05rem;line-height:1.6;color:var(--ink);}
+
+/* GALLERY */
+.pgal-wrap{margin-bottom:28px;}
+.pgal-eyebrow{font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.pgal-eyebrow::after{content:'';flex:1;height:1px;background:var(--border);}
+.pgal-title{font-family:'Instrument Serif',serif;font-size:1.45rem;color:var(--ink);margin-bottom:14px;line-height:1.2;}
+.pgal-title em{font-style:italic;color:var(--terra);}
+.pgal-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:380px;}
+.pgal-tile{position:relative;overflow:hidden;background:var(--sand);cursor:pointer;}
+.pgal-tile img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
+.pgal-tile:hover img{transform:scale(1.04);}
+.pgal-tile-feature{grid-row:1 / span 2;border-radius:var(--r-md) 0 0 var(--r-md);}
+.pgal-tile:nth-child(2){border-radius:0 var(--r-md) 0 0;}
+.pgal-tile:nth-child(3){border-radius:0;}
+.pgal-tile:nth-child(4){border-radius:0;}
+.pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;position:relative;}
+.pgal-more{position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,18,8,.55),rgba(26,18,8,.78));display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:6px;pointer-events:none;}
+.pgal-more-count{font-family:'Instrument Serif',serif;font-size:1.6rem;line-height:1;}
+.pgal-more-label{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.8);}
+.pgal-cta{display:flex;justify-content:center;margin-top:14px;}
+.pgal-cta button{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;border:1px solid var(--border-hi);border-radius:100px;font-size:.78rem;font-weight:500;color:var(--ink);cursor:pointer;transition:all .2s;}
+.pgal-cta button:hover{background:var(--sand);border-color:var(--bark);}
+
+/* ROOMS / CABINS */
+.rooms-list{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+.cabin-card{border-radius:var(--r-lg);border:1px solid var(--border);background:#fff;overflow:hidden;}
+.cabin-img{height:160px;overflow:hidden;background:var(--sand);}
+.cabin-img img{width:100%;height:100%;object-fit:cover;}
+.cabin-body{padding:14px;}
+.cabin-name{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;}
+.cabin-detail{font-size:.75rem;color:var(--stone);line-height:1.5;margin-bottom:8px;}
+.cabin-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);}
+.cabin-price small{font-family:'Geist',sans-serif;font-size:.68rem;color:var(--stone);font-weight:400;}
+
+/* PRIVATE ACCESS */
+.access-card{position:relative;border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;min-height:200px;background:linear-gradient(135deg,var(--terra-d),var(--terra));}
+.access-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4;}
+.access-card-body{position:relative;padding:28px 24px;}
+.access-card-label{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.access-card-label::before{content:'';width:6px;height:6px;border-radius:50%;background:#ffd060;display:inline-block;}
+.access-card-name{font-family:'Instrument Serif',serif;font-size:1.45rem;color:#fff;margin-bottom:10px;line-height:1.25;}
+.access-card-desc{font-size:.82rem;color:rgba(255,255,255,.8);line-height:1.65;margin-bottom:12px;}
+
+/* ITINERARY */
+.itin-block{margin-bottom:28px;}
+.itin-day{display:flex;gap:14px;margin-bottom:16px;position:relative;}
+.itin-day::before{content:'';position:absolute;left:16px;top:32px;bottom:-16px;width:1px;background:var(--border);}
+.itin-day:last-child::before{display:none;}
+.itin-num{width:32px;height:32px;border-radius:50%;background:var(--ink);color:var(--cream);font-size:.72rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.itin-label{font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-bottom:2px;}
+.itin-title{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;}
+.itin-desc{font-size:.8rem;color:var(--stone);line-height:1.6;}
+.itin-note{margin-top:20px;padding:16px 20px;background:var(--linen);border-radius:var(--r-md);font-size:.82rem;color:var(--stone);line-height:1.65;font-style:italic;border:1px solid var(--border);}
+
+/* DETAILS TABLE */
+.know-grid{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-bottom:28px;}
+.know-row{display:grid;grid-template-columns:130px 1fr;background:var(--cream);}
+.know-lbl{padding:12px 14px;font-size:.72rem;font-weight:600;color:var(--stone);letter-spacing:.04em;background:var(--linen);border-right:1px solid var(--border);}
+.know-val{padding:12px 16px;font-size:.82rem;color:var(--bark);line-height:1.5;}
+
+/* TAGS */
+.tag-pill{display:inline-block;padding:5px 12px;background:var(--sand);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;border:1px solid var(--border);}
+
+/* DESKTOP BOOKING CARD */
+.dbc-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:22px;box-shadow:0 4px 24px rgba(80,55,25,.08);margin-bottom:16px;}
+.dbc-price-from{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;}
+.dbc-price-num{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--ink);line-height:1;margin:4px 0 2px;}
+.dbc-price-pp{font-size:.72rem;color:var(--stone);}
+.dbc-divider{height:1px;background:var(--border);margin:14px 0;}
+.dbc-detail{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:.78rem;border-bottom:1px solid var(--border);}
+.dbc-detail:last-of-type{border-bottom:none;}
+.dbc-detail-lbl{color:var(--stone);}
+.dbc-detail-val{font-weight:500;text-align:right;max-width:55%;}
+.dbc-cta{width:100%;padding:13px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-xl);font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:10px;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dbc-cta:hover{opacity:.9;}
+.dbc-cta-ghost{width:100%;padding:12px;background:transparent;border:1.5px solid var(--border-hi);border-radius:var(--r-xl);font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dbc-cta-ghost:hover{border-color:var(--terra);color:var(--terra);}
+.dbc-trust{display:flex;flex-direction:column;gap:6px;}
+.dbc-trust-item{display:flex;align-items:center;gap:8px;font-size:.72rem;color:var(--stone);}
+.dbc-trust-item svg{width:13px;height:13px;stroke:var(--moss);fill:none;flex-shrink:0;stroke-width:2.5;stroke-linecap:round;}
+
+/* OVERLAY / ENQUIRY */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(30,24,16,.45);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+.overlay.open{opacity:1;pointer-events:auto;}
+.sheet{width:92vw;max-width:480px;background:var(--cream);border-radius:20px;border:1px solid var(--border-hi);padding:28px;box-shadow:0 20px 80px rgba(80,55,25,.18);transform:scale(.96);opacity:0;transition:transform .38s cubic-bezier(.32,.72,0,1),opacity .28s;}
+.overlay.open .sheet{transform:scale(1);opacity:1;}
+.f-inp{width:100%;padding:12px 14px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);outline:none;margin-bottom:10px;transition:border-color .2s;}
+.f-inp:focus{border-color:var(--terra);}
+.f-next{width:100%;padding:14px;border:none;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;font-size:.9rem;font-weight:600;cursor:pointer;margin-top:6px;transition:opacity .15s;}
+.f-next:hover{opacity:.9;}
+
+/* LIGHTBOX */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:center;justify-content:center;}
+.lightbox.open{display:flex;}
+.lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:8px;}
+.lb-close{position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;line-height:1;}
+.lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.4rem;display:flex;align-items:center;justify-content:center;}
+.lb-prev{left:20px;}
+.lb-next{right:20px;}
+
+/* ENVOY FAB */
+.ci-fab{position:fixed;bottom:28px;right:24px;z-index:300;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 13px;background:var(--ink);border-radius:100px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:transform .15s;}
+.ci-fab:hover{transform:translateY(-2px);}
+.ci-fab-pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;position:relative;}
+.ci-fab-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(74,222,128,.3);animation:cipulse 2s ease-in-out infinite;}
+@keyframes cipulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:0;}}
+.ci-fab-label{font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;}
+
+/* LOADING / ERROR */
+.prop-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;}
+.prop-loading-spinner{width:32px;height:32px;border:3px solid var(--sand);border-top-color:var(--terra);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.prop-error{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;padding:40px;}
+.prop-error h1{font-family:'Instrument Serif',serif;font-size:2rem;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;z-index:600;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--cream);padding:11px 22px;border-radius:100px;font-size:.8rem;font-weight:500;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .28s,transform .32s cubic-bezier(.34,1.4,.64,1);}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* DESKTOP */
+@media(min-width:768px){
+  .nav-links-desktop{display:flex;}
+  .desktop-book-col{display:block;}
+  .hero-mosaic{height:56vw!important;max-height:600px!important;}
+  .breadcrumb,.prop-header{padding-left:48px;padding-right:48px;}
+  .subnav,.book-bar{padding-left:48px;padding-right:48px;}
+  .prop-body{display:grid;grid-template-columns:1fr 300px;gap:0 48px;align-items:start;padding:40px 48px 80px;max-width:1200px;margin:0 auto;}
+  .prop-body > *{grid-column:1;}
+  .desktop-book-col{grid-column:2;grid-row:1 / 20;position:sticky;top:200px;padding-top:8px;}
+  .pgal-grid{height:460px;}
+}
+@media(max-width:767px){
+  .nav-links-desktop{display:none;}
+  .pgal-grid{grid-template-columns:1fr 1fr;grid-template-rows:160px 160px 160px;height:auto;gap:4px;}
+  .pgal-tile-feature{grid-column:1 / -1;border-radius:var(--r-md) var(--r-md) 0 0;}
+  .pgal-tile:nth-child(2){border-radius:0;}
   .pgal-tile:nth-child(3){border-radius:0;}
-  .pgal-tile:nth-child(4){border-radius:0;}
-  .pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;position:relative;}
-  .pgal-more{position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,18,8,.55),rgba(26,18,8,.78));display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:6px;pointer-events:none;}
-  .pgal-more-count{font-family:'Instrument Serif',serif;font-size:1.6rem;line-height:1;}
-  .pgal-more-label{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.8);}
-  .pgal-cta{display:flex;justify-content:center;margin-top:14px;margin-bottom:32px;}
-  .pgal-cta button{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;border:1px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;color:var(--ink);cursor:pointer;transition:all .2s;}
-  .pgal-cta button:hover{background:var(--sand);border-color:var(--bark);}
-  @media(max-width:768px){
-    .pgal-grid{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,160px);height:auto;gap:4px;}
-    .pgal-tile-feature{grid-column:1 / -1;grid-row:auto;border-radius:var(--r-md) var(--r-md) 0 0;}
-    .pgal-tile:nth-child(2){border-radius:0;}.pgal-tile:nth-child(3){border-radius:0;}
-    .pgal-tile:nth-child(4){border-radius:0 0 0 var(--r-md);}.pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;}
-  }
-
-  /* ── ROOMS ── */
-  .rooms-grid{display:flex;flex-direction:column;gap:12px;}
-  .room-card{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;}
-  .room-card-body{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
-  .room-name{font-weight:600;font-size:.88rem;margin-bottom:2px;}
-  .room-meta{font-size:.75rem;color:var(--stone);}
-  .room-price{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--terra);white-space:nowrap;}
-  .room-photos-strip{display:flex;gap:4px;height:80px;overflow:hidden;}
-  .room-photos-strip img{flex:1;object-fit:cover;min-width:0;}
-
-  /* ── VERDICT ── */
-  .verdict-block{border-left:3px solid var(--terra);background:var(--terra-dim);padding:20px 22px;border-radius:0 var(--r-lg) var(--r-lg) 0;margin-bottom:36px;}
-  .verdict-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-  .verdict-text{font-family:'Instrument Serif',serif;font-size:1.05rem;font-style:italic;color:var(--ink);line-height:1.6;}
-
-  /* ── PRIVATE ACCESS ── */
-  .access-card{position:relative;border-radius:var(--r-xl);overflow:hidden;margin-bottom:36px;min-height:180px;background:linear-gradient(135deg,var(--terra-d),var(--terra));}
-  .access-card-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45;}
-  .access-card-body{position:relative;padding:28px 32px;}
-  .access-card-label{font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px;}
-  .access-card-name{font-family:'Instrument Serif',serif;font-size:1.5rem;color:#fff;margin-bottom:10px;line-height:1.25;}
-  .access-card-desc{font-size:.85rem;color:rgba(255,255,255,.85);line-height:1.65;max-width:560px;}
-
-  /* ── TAGS ── */
-  .tag-pill{display:inline-block;padding:4px 10px;background:var(--linen);border-radius:100px;font-size:.68rem;color:var(--bark);margin:0 4px 4px 0;}
-
-  /* ── ITINERARY ── */
-  .itin-day{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--border);}
-  .itin-day:last-child{border-bottom:none;}
-  .itin-day-num{width:36px;height:36px;border-radius:50%;background:var(--terra);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:600;flex-shrink:0;margin-top:2px;}
-  .itin-day-label{font-size:.65rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--stone);margin-bottom:3px;}
-  .itin-day-title{font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);margin-bottom:6px;}
-  .itin-day-desc{font-size:.85rem;color:var(--bark);line-height:1.65;}
-
-  /* ── DETAILS TABLE ── */
-  .details-table{background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);overflow:hidden;}
-  .details-row{display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);font-size:.82rem;}
-  .details-row:last-child{border-bottom:none;}
-  .details-row-lbl{color:var(--stone);}
-  .details-row-val{font-weight:500;text-align:right;max-width:60%;}
-
-  /* ── LIGHTBOX ── */
-  .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;align-items:center;justify-content:center;}
-  .lightbox.open{display:flex;}
-  .lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:8px;}
-  .lightbox-close{position:absolute;top:20px;right:24px;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;line-height:1;}
-  .lightbox-prev,.lightbox-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.12);border:none;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;}
-  .lightbox-prev{left:20px;}
-  .lightbox-next{right:20px;}
-
-  /* ── ENQUIRY OVERLAY ── */
-  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
-  .overlay.open{display:flex;}
-  .sheet{background:#fff;border-radius:20px;width:500px;max-width:92vw;max-height:90vh;overflow-y:auto;padding:28px;box-shadow:0 24px 64px rgba(0,0,0,.2);}
-  .sheet-input{width:100%;padding:11px 14px;font-family:'Geist',sans-serif;font-size:.88rem;background:var(--cream);border:1.5px solid var(--border-hi);border-radius:var(--r-md);outline:none;margin-bottom:12px;}
-  .sheet-input:focus{border-color:var(--terra);}
-
-  /* ── ENVOY FAB ── */
-  .ci-fab{position:fixed;bottom:28px;right:28px;width:52px;height:52px;border-radius:50%;background:var(--ink);border:none;color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.25);z-index:300;display:flex;align-items:center;justify-content:center;transition:transform .2s;}
-  .ci-fab:hover{transform:scale(1.06);}
-
-  @media(max-width:768px){
-    .prop-grid{grid-template-columns:1fr;}
-    .prop-sidebar{position:static;}
-    .hero-name{font-size:2rem;}
-    .hero-content{left:20px;right:20px;bottom:20px;}
-    .prop-wrap{padding:0 20px;}
-    .gallery-grid img:first-child{grid-column:span 1;height:200px;}
-    .nav-links-desktop{display:none;}
-  }
+  .pgal-tile:nth-child(4){border-radius:0 0 0 var(--r-md);}
+  .pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;}
+}
 </style>
 </head>
 <body>
 
-<!-- NAV -->
 <nav class="nav">
   <a class="nav-logo-wrap" href="/">
     <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
@@ -218,704 +291,473 @@
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
   </div>
   <div class="nav-right">
-    <button class="nav-btn" onclick="window.location='/search.html'">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-    </button>
-    <button class="nav-btn" onclick="window.location='/my-account.html'">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-    </button>
+    <button class="nav-btn" onclick="window.location='/search.html'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></button>
+    <button class="nav-btn" onclick="window.location='/my-account.html'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
   </div>
 </nav>
 
-<!-- LOADING -->
-<div class="prop-loading" id="prop-loading" style="margin-top:var(--nav-h);">
+<div class="prop-loading" id="prop-loading" style="margin-top:66px;">
   <div class="prop-loading-spinner"></div>
   <div style="font-size:.85rem;color:var(--stone);">Loading property…</div>
 </div>
 
-<!-- ERROR -->
-<div class="prop-error" id="prop-error" style="margin-top:var(--nav-h);">
+<div class="prop-error" id="prop-error" style="margin-top:66px;">
   <h1>Property not found</h1>
-  <p>This property hasn't been added to The Bearing yet, or the link may be incorrect.</p>
-  <a href="/hotels.html" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:12px 24px;background:var(--terra);color:#fff;border-radius:100px;font-size:.85rem;font-weight:600;">
-    Browse all properties
-  </a>
+  <p style="color:var(--stone);max-width:380px;line-height:1.6;margin-top:8px;">This property hasn't been added to The Bearing yet, or the link may be incorrect.</p>
+  <a href="/hotels.html" style="margin-top:16px;padding:12px 24px;background:var(--terra);color:#fff;border-radius:100px;font-size:.85rem;font-weight:600;display:inline-block;">Browse all properties</a>
 </div>
 
-<!-- PROPERTY CONTENT (rendered by JS) -->
 <div id="prop-content" style="display:none;">
 
-  <!-- HERO — scrollable mosaic -->
-  <div class="hero" id="prop-hero">
+  <!-- HERO -->
+  <div class="hero-wrap" id="hero-wrap">
     <div class="hero-mosaic" id="hero-mosaic"></div>
     <div class="hero-fade" id="hero-fade"></div>
     <div class="hero-scrim"></div>
-    <div class="hero-content">
-      <div>
-        <div class="hero-badge" id="hero-badge"></div>
-        <div class="hero-type" id="hero-type"></div>
-        <h1 class="hero-name" id="hero-name"></h1>
-        <div class="hero-loc" id="hero-loc"></div>
-      </div>
-      <div id="hero-price-pill" style="flex-shrink:0;padding:12px 20px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:var(--r-xl);text-align:right;display:none;">
-        <div style="font-size:.6rem;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px;">From</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;" id="hero-price-num"></div>
-        <div style="font-size:.65rem;color:rgba(255,255,255,.6);margin-top:2px;" id="hero-price-unit"></div>
-      </div>
+    <div class="hero-overlay">
+      <div class="hero-type-lbl" id="hero-type-lbl"></div>
+      <div class="hero-name-lbl" id="hero-name-lbl"></div>
+      <div class="hero-loc-row" id="hero-loc-row"></div>
     </div>
-    <div class="hero-photo-count" id="hero-photo-count" style="display:none;"></div>
+    <div class="hero-count" id="hero-count" style="display:none;"></div>
   </div>
 
-  <div class="prop-wrap">
-    <div class="prop-grid">
+  <!-- BREADCRUMB -->
+  <div class="breadcrumb">
+    <a href="/">The Bearing</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="/hotels.html" id="bc-type-link">Hotels</a>
+    <span class="breadcrumb-sep">›</span>
+    <span id="bc-name" style="color:var(--bark);"></span>
+  </div>
 
-      <!-- MAIN CONTENT -->
-      <div class="prop-main">
-
-        <!-- Hook -->
-        <div style="padding:24px 0 8px;" id="hook-section">
-          <div style="font-size:.68rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">The Bearing edit</div>
-          <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);line-height:1.4;" id="hook-text"></div>
-        </div>
-
-        <!-- Stats strip -->
-        <div class="stats-strip" id="stats-strip" style="display:none;"></div>
-
-        <!-- Gallery -->
-        <div id="gallery-section" style="display:none;">
-          <div class="pgal-grid" id="gallery-grid"></div>
-          <div class="pgal-cta">
-            <button id="gallery-all-btn" onclick="lbOpen(0)">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-              Browse all photos
-            </button>
-          </div>
-        </div>
-
-        <!-- Overview -->
-        <div class="sec" id="overview-sec" style="display:none;">
-          <div class="sec-label">Overview</div>
-          <div class="sec-body" id="overview-body"></div>
-        </div>
-
-        <!-- Verdict -->
-        <div class="verdict-block" id="verdict-block" style="display:none;">
-          <div class="verdict-label">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2" stroke-linecap="round"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
-            The Bearing Verdict
-          </div>
-          <div class="verdict-text" id="verdict-text"></div>
-        </div>
-
-        <!-- Rooms -->
-        <div class="sec" id="rooms-sec" style="display:none;">
-          <div class="sec-label">Rooms &amp; suites</div>
-          <div class="rooms-grid" id="rooms-grid"></div>
-        </div>
-
-        <!-- Itinerary -->
-        <div class="sec" id="itin-sec" style="display:none;">
-          <div class="sec-label" id="itin-eyebrow">The Journey</div>
-          <div class="sec-title" id="itin-headline"></div>
-          <div id="itin-days"></div>
-        </div>
-
-        <!-- Private Access -->
-        <div class="access-card" id="access-card" style="display:none;">
-          <img class="access-card-img" id="access-img" src="" alt="">
-          <div class="access-card-body">
-            <div class="access-card-label">The Bearing Private Access</div>
-            <div class="access-card-name" id="access-name"></div>
-            <div class="access-card-desc" id="access-desc"></div>
-          </div>
-        </div>
-
-        <!-- Details -->
-        <div class="sec" id="details-sec" style="display:none;">
-          <div class="sec-label">At a glance</div>
-          <div class="details-table" id="details-table"></div>
-        </div>
-
-        <!-- Tags -->
-        <div id="tags-section" style="margin-bottom:40px;display:none;"></div>
-
-        <!-- Getting there -->
-        <div class="sec" id="getting-there-sec" style="display:none;">
-          <div class="sec-label">Getting there</div>
-          <div class="sec-body" id="getting-there-body"></div>
-        </div>
-
-      </div>
-
-      <!-- SIDEBAR -->
-      <div class="prop-sidebar">
-        <div class="book-card">
-          <div class="book-price-from">From</div>
-          <div class="book-price-num" id="sb-price">—</div>
-          <div class="book-price-unit" id="sb-price-unit">per night</div>
-          <div class="book-divider"></div>
-          <div id="sb-details"></div>
-          <div class="book-divider"></div>
-          <button class="cta-primary" id="btn-book">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            Book now
-          </button>
-          <button class="cta-secondary" id="btn-enquire">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            Send an enquiry first
-          </button>
-          <div class="cta-note">Same price as booking direct · 0% fees</div>
-          <div class="book-divider"></div>
-          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>
-          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>No fees · 0% commission</div>
-          <div class="trust-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--moss)" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Reply within 24 hours</div>
-        </div>
-        <div style="text-align:center;">
-          <a href="/hotels.html" id="back-link" style="font-size:.75rem;color:var(--stone);display:inline-flex;align-items:center;gap:5px;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>
-            Back to all properties
-          </a>
-        </div>
-      </div>
-
+  <!-- PROPERTY HEADER -->
+  <div class="prop-header">
+    <div class="prop-type-row"><span class="prop-type-pill" id="prop-type-pill"></span></div>
+    <h1 class="prop-name" id="prop-name"></h1>
+    <div class="prop-location">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z"/><circle cx="8" cy="6" r="1.5"/></svg>
+      <span id="prop-loc-text"></span>
     </div>
+    <div class="prop-rating-row" id="prop-rating" style="display:none;">
+      <span class="star-gold" id="prop-stars"></span>
+      <span id="prop-rating-val" style="font-weight:500;color:var(--ink);"></span>
+      <span id="prop-reviews-val" style="color:var(--mist);"></span>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-strip" id="stats-strip" style="display:none;"></div>
+
+  <!-- SUBNAV -->
+  <nav class="subnav">
+    <button class="subnav-item active" onclick="jumpTo('sec-overview')">Overview</button>
+    <button class="subnav-item" id="sub-gallery" style="display:none;" onclick="jumpTo('sec-gallery')">Gallery</button>
+    <button class="subnav-item" id="sub-rooms" style="display:none;" onclick="jumpTo('sec-rooms')">Rooms</button>
+    <button class="subnav-item" id="sub-itin" style="display:none;" onclick="jumpTo('sec-itinerary')">Itinerary</button>
+  </nav>
+
+  <!-- BOOK BAR -->
+  <div class="book-bar" id="book-bar" style="display:none;">
+    <div>
+      <div class="book-bar-from">From</div>
+      <div class="book-bar-num" id="bar-price"></div>
+      <div class="book-bar-perks" id="bar-perks">
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3"><polyline points="2,6 5,9 10,3"/></svg>
+        <span id="bar-perks-txt"></span>
+      </div>
+    </div>
+    <button class="book-bar-btn" onclick="openEnquiry()">
+      <div class="book-bar-btn-icon"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
+      Enquire now
+    </button>
+  </div>
+
+  <!-- BODY -->
+  <div class="prop-body">
+
+    <!-- DESKTOP BOOKING CARD -->
+    <div class="desktop-book-col">
+      <div class="dbc-card">
+        <div class="dbc-price-from">From</div>
+        <div class="dbc-price-num" id="dbc-price"></div>
+        <div class="dbc-price-pp" id="dbc-pp"></div>
+        <div class="dbc-divider"></div>
+        <div id="dbc-details"></div>
+        <div class="dbc-divider"></div>
+        <button class="dbc-cta" onclick="openEnquiry()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Book now
+        </button>
+        <button class="dbc-cta-ghost" onclick="openEnquiry()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Send an enquiry first
+        </button>
+        <div style="font-size:.68rem;color:var(--stone);text-align:center;margin:8px 0 4px;">Same price as booking direct · 0% fees</div>
+        <div class="dbc-divider"></div>
+        <div class="dbc-trust">
+          <div class="dbc-trust-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>
+          <div class="dbc-trust-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No hidden fees · 0% commission</div>
+          <div class="dbc-trust-item"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Reply within 24 hours</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <a name="sec-overview" id="sec-overview"></a>
+    <div class="sec-eyebrow">The Bearing edit</div>
+    <h2 class="sec-title" id="overview-title"></h2>
+    <div class="prop-intro" id="prop-intro"></div>
+
+    <!-- VERDICT -->
+    <div class="verdict-block" id="verdict-block" style="display:none;">
+      <div class="verdict-label">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
+        The Bearing Verdict
+      </div>
+      <div class="verdict-text" id="verdict-text"></div>
+    </div>
+
+    <!-- GALLERY -->
+    <a name="sec-gallery" id="sec-gallery"></a>
+    <div class="pgal-wrap" id="gallery-section" style="display:none;">
+      <div class="pgal-eyebrow">The gallery</div>
+      <h2 class="pgal-title">A closer <em>look</em></h2>
+      <div class="pgal-grid" id="gallery-grid"></div>
+      <div class="pgal-cta">
+        <button id="gallery-all-btn" onclick="lbOpen(0)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Browse all photos
+        </button>
+      </div>
+    </div>
+
+    <!-- ROOMS -->
+    <a name="sec-rooms" id="sec-rooms"></a>
+    <div id="rooms-section" style="display:none;">
+      <div class="sec-eyebrow" id="rooms-eyebrow">Accommodation</div>
+      <h2 class="sec-title" id="rooms-title">The <em>rooms</em></h2>
+      <div class="rooms-list" id="rooms-list"></div>
+    </div>
+
+    <!-- PRIVATE ACCESS -->
+    <div class="access-card" id="access-card" style="display:none;">
+      <img class="access-card-img" id="access-img" src="" alt="" style="display:none;">
+      <div class="access-card-body">
+        <div class="access-card-label">The Bearing Private Access</div>
+        <div class="access-card-name" id="access-name"></div>
+        <div class="access-card-desc" id="access-desc"></div>
+        <div id="access-bullets" style="display:none;flex-direction:column;gap:7px;margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- ITINERARY -->
+    <a name="sec-itinerary" id="sec-itinerary"></a>
+    <div id="itin-section" style="display:none;">
+      <div class="sec-eyebrow" id="itin-eyebrow">The journey</div>
+      <h2 class="sec-title" id="itin-title"></h2>
+      <div class="itin-block" id="itin-days"></div>
+      <div class="itin-note" id="itin-note" style="display:none;"></div>
+    </div>
+
+    <!-- DETAILS -->
+    <div id="details-section" style="display:none;">
+      <div class="sec-eyebrow">Practical details</div>
+      <h2 class="sec-title">Know before <em>you go</em></h2>
+      <div class="know-grid" id="details-table"></div>
+    </div>
+
+    <!-- TAGS -->
+    <div id="tags-section" style="display:none;margin-bottom:28px;"></div>
+
+    <!-- GETTING THERE -->
+    <div id="getting-there-sec" style="display:none;margin-bottom:40px;">
+      <div class="sec-eyebrow">Getting there</div>
+      <div style="font-size:.88rem;color:var(--bark);line-height:1.75;" id="getting-there-txt"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ENQUIRY OVERLAY -->
+<div class="overlay" id="inq-overlay" onclick="if(event.target===this)closeEnquiry()">
+  <div class="sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="enq-type"></div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;" id="enq-prop"></div>
+      </div>
+      <button onclick="closeEnquiry()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--stone);">×</button>
+    </div>
+    <input class="f-inp" id="enq-name" placeholder="Your name">
+    <input class="f-inp" id="enq-email" type="email" placeholder="Email address">
+    <input class="f-inp" id="enq-dates" placeholder="Preferred dates (flexible is fine)">
+    <textarea class="f-inp" id="enq-msg" rows="3" placeholder="Any questions or special requests?" style="resize:vertical;"></textarea>
+    <button class="f-next" onclick="submitEnquiry()">Send enquiry →</button>
+    <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-top:10px;">We'll reply within 24 hours. No commitment required.</div>
   </div>
 </div>
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)lbClose()">
-  <button class="lightbox-close" onclick="lbClose()">×</button>
-  <button class="lightbox-prev" onclick="lbNav(-1)">‹</button>
+  <button class="lb-close" onclick="lbClose()">×</button>
+  <button class="lb-prev" onclick="lbNav(-1)">‹</button>
   <img id="lb-img" src="" alt="">
-  <button class="lightbox-next" onclick="lbNav(1)">›</button>
-</div>
-
-<!-- ENQUIRY OVERLAY -->
-<div class="overlay" id="enquiry-overlay" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="enq-type"></div>
-        <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;" id="enq-name"></div>
-      </div>
-      <button onclick="document.getElementById('enquiry-overlay').classList.remove('open')" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <input class="sheet-input" placeholder="Your name" id="enq-fname">
-    <input class="sheet-input" placeholder="Email address" type="email" id="enq-email">
-    <input class="sheet-input" placeholder="Preferred dates (flexible is fine)" id="enq-dates">
-    <textarea class="sheet-input" rows="3" placeholder="Any questions or special requests?" id="enq-msg" style="resize:vertical;"></textarea>
-    <button onclick="submitEnquiry()" style="width:100%;padding:13px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Send enquiry</button>
-    <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-top:10px;">We'll reply within 24 hours. No commitment required.</div>
-  </div>
+  <button class="lb-next" onclick="lbNav(1)">›</button>
 </div>
 
 <!-- ENVOY FAB -->
-<button class="ci-fab" id="ci-fab" title="Ask The Envoy">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
+<button class="ci-fab" onclick="window.location='/the-envoy.html'">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-label">The Envoy</div>
 </button>
 
+<div id="toast-el" class="toast"></div>
+
 <script>
-// ── LOAD PROPERTY FROM KV ─────────────────────────────────────────────
-var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-  ? '/api/property' : null;
+var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
+var propData = null, heroUrls = [], galleryUrls = [], lbIdx = 0;
 
-var propData = null;
-var galleryUrls = [];
-var lbIndex = 0;
-var heroUrls = [];
-var galleryUrls = [];
-var lbIndex = 0;
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function show(id){var e=document.getElementById(id);if(e)e.style.display='';}
+function hide(id){var e=document.getElementById(id);if(e)e.style.display='none';}
+function setText(id,v){var e=document.getElementById(id);if(e&&v!=null)e.textContent=v;}
+function cfThumb(u){return u?(u+'').replace(/\/public$|\/thumb$|\/w=\d+$/,'/thumb'):u;}
 
-function cfThumb(url) {
-  if (!url) return url;
-  return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
+async function loadProperty(){
+  var slug=new URLSearchParams(location.search).get('slug')||'';
+  if(!slug){showError();return;}
+  if(!PROP_API){showDev(slug);return;}
+  try{
+    var res=await fetch(PROP_API+'?slug='+encodeURIComponent(slug));
+    var d=await res.json();
+    if(!res.ok||!d.exists||!d.data){showError();return;}
+    propData=d.data;
+    renderProperty(d.data,slug);
+  }catch(e){showError();}
 }
 
-function esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function showError(){hide('prop-loading');document.getElementById('prop-error').style.display='flex';}
+function showDev(slug){showError();document.querySelector('#prop-error h1').textContent='Dev mode';document.querySelector('#prop-error p').textContent='"'+slug+'" — deploy to Cloudflare to render.';}
 
-function show(id) { var el = document.getElementById(id); if (el) el.style.display = ''; }
-function hide(id) { var el = document.getElementById(id); if (el) el.style.display = 'none'; }
-function setText(id, val) { var el = document.getElementById(id); if (el && val) el.textContent = val; }
-function setHTML(id, val) { var el = document.getElementById(id); if (el) el.innerHTML = val; }
+function renderProperty(p,slug){
+  hide('prop-loading');show('prop-content');
+  var r=p.render||{};
 
-// Get slug from URL: /property.html?slug=singita-grumeti
-function getSlug() {
-  var params = new URLSearchParams(location.search);
-  return params.get('slug') || '';
-}
+  // Meta
+  var t=(p.name||'')+' — TheBearing.io';
+  document.title=t;setText('page-title',t);
+  if(p.seo&&p.seo.meta_description)document.getElementById('page-desc').setAttribute('content',p.seo.meta_description);
 
-async function loadProperty() {
-  var slug = getSlug();
-  if (!slug) { showError(); return; }
-
-  if (!PROP_API) {
-    // Dev mode — show a placeholder so the template is visible
-    showDevPlaceholder(slug);
-    return;
-  }
-
-  try {
-    var res = await fetch(PROP_API + '?slug=' + encodeURIComponent(slug));
-    var data = await res.json();
-    if (!res.ok || !data.exists || !data.data) { showError(); return; }
-    propData = data.data;
-    renderProperty(propData);
-    // Also load dossier for Envoy context
-    loadDossierContext(slug);
-  } catch (err) {
-    showError();
-  }
-}
-
-function showError() {
-  hide('prop-loading');
-  document.getElementById('prop-error').style.display = 'flex';
-}
-
-function showDevPlaceholder(slug) {
-  hide('prop-loading');
-  document.getElementById('prop-error').style.display = 'flex';
-  document.querySelector('#prop-error h1').textContent = 'Dev mode';
-  document.querySelector('#prop-error p').textContent = 'Property "' + slug + '" — deploy to Cloudflare to load from KV.';
-}
-
-function renderProperty(p) {
-  hide('prop-loading');
-  show('prop-content');
-
-  // ── PAGE META ──
-  var title = (p.name || '') + (p.type ? ' — ' + p.type : '') + ' · TheBearing.io';
-  document.getElementById('page-title').textContent = title;
-  document.title = title;
-  if (p.seo && p.seo.meta_title) document.getElementById('page-title').textContent = p.seo.meta_title;
-  if (p.seo && p.seo.meta_description) document.getElementById('page-desc').setAttribute('content', p.seo.meta_description);
-
-  // ── HERO — mosaic ──
-  heroUrls = (p.photos && p.photos.hero || []).map(function(h) {
-    return typeof h === 'string' ? {url:h,position:'center'} : h;
-  });
+  // Hero
+  heroUrls=(p.photos&&p.photos.hero||[]).map(function(h){return typeof h==='string'?{url:h,position:'center'}:h;});
   renderHeroMosaic();
+  setText('hero-type-lbl',r.type_pill||p.type||'');
+  setText('hero-name-lbl',p.name||'');
+  var loc=r.location_line||[p.region,p.country].filter(Boolean).join(' · ');
+  if(loc){
+    var lr=document.getElementById('hero-loc-row');
+    lr.innerHTML='<span>'+esc(loc)+'</span>';
+    if(r.duration_tagline)lr.innerHTML+='<span class="sep"></span><span>'+esc(r.duration_tagline)+'</span>';
+  }
+  if(heroUrls.length>1){setText('hero-count',heroUrls.length+' photos');show('hero-count');}
 
-  // Hero text
-  var render = p.render || {};
-  setText('hero-badge', p.tag || render.type_pill || p.type || '');
-  setText('hero-type', render.type_pill || p.type || '');
-  setText('hero-name', p.name || '');
-
-  var locEl = document.getElementById('hero-loc');
-  if (locEl) {
-    var locText = render.location_line || [p.region, p.country].filter(Boolean).join(' · ');
-    if (locText) locEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>' + esc(locText);
+  // Breadcrumb + header
+  setText('bc-name',p.name||'');
+  var ts=(p.type||'').toLowerCase();
+  var bcl=document.getElementById('bc-type-link');
+  if(ts.includes('cruise')){bcl.href='/cruises.html';bcl.textContent='Cruises';}
+  else if(ts.includes('villa')){bcl.href='/villas.html';bcl.textContent='Villas';}
+  setText('prop-type-pill',r.type_pill||p.type||'');
+  setText('prop-name',p.name||'');
+  setText('prop-loc-text',loc);
+  if(r.rating){
+    setText('prop-stars','★'.repeat(Math.round(r.rating)));
+    setText('prop-rating-val',r.rating);
+    setText('prop-reviews-val','· '+(r.reviews||'')+' reviews'+(r.verified?' · The Bearing Verified':''));
+    show('prop-rating');
   }
 
-  // Hero price pill
-  if (p.rooms && p.rooms.length && p.rooms[0].price) {
-    var r0 = p.rooms[0];
-    document.getElementById('hero-price-num').textContent = '$' + parseInt(r0.price).toLocaleString();
-    document.getElementById('hero-price-unit').textContent = 'per ' + (r0.per || 'night');
-    show('hero-price-pill');
-  }
-
-  // ── HOOK ──
-  if (p.hook) {
-    setText('hook-text', p.hook);
-  } else {
-    hide('hook-section');
-  }
-
-  // ── STATS STRIP ──
-  if (render.stats && render.stats.length) {
-    var strip = document.getElementById('stats-strip');
-    strip.innerHTML = render.stats.map(function(s) {
-      return '<div class="stat-cell"><div class="stat-val">' + esc(s.value) + '</div><div class="stat-lbl">' + esc(s.label) + '</div></div>';
-    }).join('');
+  // Stats
+  if(r.stats&&r.stats.length){
+    document.getElementById('stats-strip').innerHTML=r.stats.map(function(s){return '<div class="stat-cell"><div class="stat-val">'+esc(s.value)+'</div><div class="stat-lbl">'+esc(s.label)+'</div></div>';}).join('');
     show('stats-strip');
   }
 
-  // ── GALLERY — editorial pgal layout ──
-  var gallery = (p.photos && p.photos.gallery) || [];
-  galleryUrls = gallery.map(function(g) { return typeof g === 'string' ? g : g.url; }).filter(Boolean);
-  if (galleryUrls.length) {
-    var grid = document.getElementById('gallery-grid');
-    var show5 = galleryUrls.slice(0, 5);
-    grid.innerHTML = show5.map(function(url, i) {
-      var pos = (gallery[i] && gallery[i].position) ? gallery[i].position : 'center';
-      var cls = i === 0 ? 'pgal-tile pgal-tile-feature' : 'pgal-tile';
-      var extra = (i === 4 && galleryUrls.length > 5)
-        ? '<div class="pgal-more"><div class="pgal-more-count">+' + (galleryUrls.length - 4) + '</div><div class="pgal-more-label">more photos</div></div>'
-        : '';
-      return '<div class="' + cls + '" onclick="lbOpen(' + i + ')">' +
-        '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" loading="lazy">' +
-        extra + '</div>';
+  // Subnav/book bar
+  var gal=(p.photos&&p.photos.gallery)||[];
+  galleryUrls=gal.map(function(g){return typeof g==='string'?g:g.url;}).filter(Boolean);
+  var hasRooms=p.rooms&&p.rooms.length;
+  var hasItin=p.itinerary&&p.itinerary.days&&p.itinerary.days.length&&p.itinerary.days.some(function(d){return d.title||d.desc;});
+  if(galleryUrls.length)show('sub-gallery');
+  if(hasRooms)show('sub-rooms');
+  if(hasItin)show('sub-itin');
+  if(hasRooms&&p.rooms[0].price){
+    var r0=p.rooms[0];
+    document.getElementById('bar-price').innerHTML='$'+parseInt(r0.price).toLocaleString()+' <small>/ '+(r0.per||'night')+'</small>';
+    setText('bar-perks-txt',r.duration_tagline||'Best rate guaranteed');
+    show('book-bar');
+  }
+
+  // Overview — hook as title
+  if(p.hook){
+    var ot=document.getElementById('overview-title');
+    // Italicise after em-dash if present
+    var h=esc(p.hook);
+    ot.innerHTML=h.includes('—')?h.replace('—','<em>—</em>'):h;
+  }
+  var paras=[(p.overview&&p.overview.p1)||(p.description_short||''), p.overview&&p.overview.p2, p.overview&&p.overview.p3, p.overview&&p.overview.body].filter(Boolean);
+  if(paras.length)document.getElementById('prop-intro').innerHTML=paras.map(function(t){return '<p>'+esc(t)+'</p>';}).join('');
+
+  // Verdict
+  if(p.verdict){setText('verdict-text',p.verdict);show('verdict-block');}
+
+  // Gallery
+  if(galleryUrls.length){
+    var g=document.getElementById('gallery-grid');
+    g.innerHTML=galleryUrls.slice(0,5).map(function(u,i){
+      var pos=(gal[i]&&gal[i].position)||'center';
+      var cls=i===0?'pgal-tile pgal-tile-feature':'pgal-tile';
+      var extra=(i===4&&galleryUrls.length>5)?'<div class="pgal-more"><div class="pgal-more-count">+'+(galleryUrls.length-4)+'</div><div class="pgal-more-label">more photos</div></div>':'';
+      return '<div class="'+cls+'" onclick="lbOpen('+i+')">'+'<img src="'+esc(u)+'" alt="" style="object-position:'+pos+';" loading="lazy">'+extra+'</div>';
     }).join('');
-    // Update browse button text
-    var allBtn = document.getElementById('gallery-all-btn');
-    if (allBtn) allBtn.innerHTML = allBtn.innerHTML.replace('Browse all photos', 'Browse all ' + galleryUrls.length + ' photos');
-    document.getElementById('gallery-section').style.display = '';
+    var ab=document.getElementById('gallery-all-btn');
+    if(ab)ab.innerHTML=ab.innerHTML.replace('Browse all photos','Browse all '+galleryUrls.length+' photos');
+    show('gallery-section');
   }
 
-  // ── OVERVIEW ──
-  var overview = p.overview || {};
-  var overviewParas = [overview.p1, overview.p2, overview.p3, overview.body].filter(Boolean);
-  // Fallback to legacy fields
-  if (!overviewParas.length && p.description_short) overviewParas.push(p.description_short);
-  if (!overviewParas.length && p.description_long) overviewParas.push(p.description_long);
-  if (overviewParas.length) {
-    document.getElementById('overview-body').innerHTML = overviewParas.map(function(t) {
-      return '<p style="margin-bottom:14px;">' + esc(t) + '</p>';
+  // Rooms
+  if(hasRooms){
+    var rl=document.getElementById('rooms-list');
+    if(ts.includes('cruise'))document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
+    rl.innerHTML=p.rooms.map(function(rm){
+      var meta=[rm.size?rm.size+(rm.size_unit==='sqft'?' ft²':' m²'):'',rm.beds||'',rm.max_occupancy?'Max '+rm.max_occupancy:''].filter(Boolean).join(' · ');
+      var price=rm.price?'$'+parseInt(rm.price).toLocaleString():'POA';
+      var per=rm.per?' / '+rm.per:'';
+      var photos=(rm.photos||[]).filter(function(ph){return ph&&(typeof ph==='string'?ph:ph.url);});
+      var img=photos.length?'<div class="cabin-img"><img src="'+esc(cfThumb(typeof photos[0]==='string'?photos[0]:photos[0].url))+'" alt="" loading="lazy"></div>':'';
+      return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(meta?'<div class="cabin-detail">'+esc(meta)+'</div>':'')+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div></div></div>';
     }).join('');
-    show('overview-sec');
+    show('rooms-section');
   }
 
-  // ── VERDICT ──
-  var verdict = p.verdict || (p.f_verdict); // handle both shapes
-  if (verdict) {
-    setText('verdict-text', verdict);
-    show('verdict-block');
-  }
-
-  // ── ROOMS ──
-  if (p.rooms && p.rooms.length) {
-    var rg = document.getElementById('rooms-grid');
-    rg.innerHTML = p.rooms.map(function(r) {
-      var meta = [
-        r.size ? r.size + (r.size_unit === 'sqft' ? ' ft²' : ' m²') : '',
-        r.beds || '',
-        r.max_occupancy ? 'Max ' + r.max_occupancy : ''
-      ].filter(Boolean).join(' · ');
-      var price = r.price ? '$' + parseInt(r.price).toLocaleString() + ' / ' + (r.per || 'night') : 'POA';
-      var photos = (r.photos || []).filter(function(ph) { return ph && (typeof ph === 'string' ? ph : ph.url); });
-      var strip = photos.length ?
-        '<div class="room-photos-strip">' + photos.slice(0,3).map(function(ph) {
-          var url = cfThumb(typeof ph === 'string' ? ph : ph.url);
-          var pos = (ph && ph.position) ? ph.position : 'center';
-          return '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" loading="lazy">';
-        }).join('') + '</div>' : '';
-      return '<div class="room-card">' + strip +
-        '<div class="room-card-body"><div><div class="room-name">' + esc(r.name) + '</div>' +
-        (meta ? '<div class="room-meta">' + esc(meta) + '</div>' : '') +
-        (r.description ? '<div style="font-size:.78rem;color:var(--stone);margin-top:4px;">' + esc(r.description) + '</div>' : '') +
-        '</div><div class="room-price">' + esc(price) + '</div></div></div>';
-    }).join('');
-    show('rooms-sec');
-  }
-
-  // ── ITINERARY ──
-  if (p.itinerary && p.itinerary.days && p.itinerary.days.length) {
-    var it = p.itinerary;
-    if (it.duration) setText('itin-eyebrow', it.duration);
-    if (it.headline) { setText('itin-headline', it.headline); }
-    var daysHtml = it.days.map(function(day, i) {
-      return '<div class="itin-day">' +
-        '<div class="itin-day-num">' + (i+1) + '</div>' +
-        '<div><div class="itin-day-label">' + esc(day.label || ('Day ' + (i+1))) + '</div>' +
-        '<div class="itin-day-title">' + esc(day.title || '') + '</div>' +
-        '<div class="itin-day-desc">' + esc(day.desc || '') + '</div></div></div>';
-    }).join('');
-    setHTML('itin-days', daysHtml);
-    show('itin-sec');
-  }
-
-  // ── PRIVATE ACCESS ──
-  if (p.private_access && p.private_access.name) {
-    var pa = p.private_access;
-    setText('access-name', pa.name);
-    setText('access-desc', pa.description);
-    if (pa.photo) document.getElementById('access-img').src = pa.photo;
+  // Private access
+  if(p.private_access&&p.private_access.name){
+    var pa=p.private_access;
+    setText('access-name',pa.name);
+    setText('access-desc',pa.description);
+    if(pa.photo){var ai=document.getElementById('access-img');ai.src=pa.photo;ai.style.display='block';}
+    var be=document.getElementById('access-bullets');
+    if(be&&pa.bullets&&pa.bullets.length){
+      be.innerHTML=pa.bullets.map(function(b){return '<div style="display:flex;align-items:flex-start;gap:10px;"><div style="width:5px;height:5px;border-radius:50%;background:#ffd060;flex-shrink:0;margin-top:7px;"></div><div style="font-size:.8rem;color:rgba(255,255,255,.8);line-height:1.55;">'+esc(b)+'</div></div>';}).join('');
+      be.style.display='flex';be.style.flexDirection='column';
+    }
     show('access-card');
   }
 
-  // ── DETAILS TABLE ──
-  var rows = [];
-  var loc = render.location_line || [p.region, p.country].filter(Boolean).join(' · ');
-  if (loc) rows.push(['Location', loc]);
-  if (p.details) {
-    if (p.details.total_rooms) rows.push(['Rooms', p.details.total_rooms]);
-    if (p.details.max_guests) rows.push(['Max guests', p.details.max_guests]);
-    if (p.details.year) rows.push(['Opened', p.details.year]);
-    if (p.details.season) rows.push(['Best season', p.details.season]);
-    if (p.details.awards) rows.push(['Awards', p.details.awards]);
-    if (p.airport) rows.push(['Nearest airport', p.airport]);
-  }
-  if (render.rating) rows.push(['Rating', render.rating + '★' + (render.reviews ? ' · ' + render.reviews + ' reviews' : '')]);
-  if (rows.length) {
-    document.getElementById('details-table').innerHTML = rows.map(function(r) {
-      return '<div class="details-row"><span class="details-row-lbl">' + esc(r[0]) + '</span><span class="details-row-val">' + esc(r[1]) + '</span></div>';
+  // Itinerary
+  if(hasItin){
+    var it=p.itinerary;
+    if(it.duration)setText('itin-eyebrow',it.duration);
+    if(it.headline){var ih=document.getElementById('itin-title');ih.innerHTML=esc(it.headline).includes('—')?esc(it.headline).replace('—','<em>—</em>'):esc(it.headline);}
+    document.getElementById('itin-days').innerHTML=it.days.map(function(d,i){
+      return '<div class="itin-day"><div class="itin-num">'+(i+1)+'</div><div>'+(d.label?'<div class="itin-label">'+esc(d.label)+'</div>':'')+'<div class="itin-title">'+esc(d.title||'')+'</div><div class="itin-desc">'+esc(d.desc||'')+'</div></div></div>';
     }).join('');
-    show('details-sec');
+    if(it.note){setText('itin-note',it.note);show('itin-note');}
+    show('itin-section');
   }
 
-  // ── TAGS ──
-  var tags = (p.details && p.details.tags) || [];
-  if (tags.length) {
-    document.getElementById('tags-section').innerHTML = tags.map(function(t) {
-      return '<span class="tag-pill">' + esc(t) + '</span>';
-    }).join('');
+  // Details
+  var rows=[];
+  if(loc)rows.push(['Location',loc]);
+  if(p.details){
+    if(p.details.total_rooms)rows.push(['Rooms',p.details.total_rooms]);
+    if(p.details.max_guests)rows.push(['Max guests',p.details.max_guests]);
+    if(p.details.year)rows.push(['Opened',p.details.year]);
+    if(p.details.season)rows.push(['Best season',p.details.season]);
+    if(p.details.awards)rows.push(['Awards',p.details.awards]);
+  }
+  if(p.airport)rows.push(['Nearest airport',p.airport]);
+  if(r.rating)rows.push(['Rating',r.rating+'★'+(r.reviews?' · '+r.reviews+' reviews':'')]);
+  if(rows.length){
+    document.getElementById('details-table').innerHTML=rows.map(function(rw){return '<div class="know-row"><div class="know-lbl">'+esc(rw[0])+'</div><div class="know-val">'+esc(rw[1])+'</div></div>';}).join('');
+    show('details-section');
+  }
+
+  // Tags
+  var tags=(p.details&&p.details.tags)||[];
+  if(tags.length){
+    document.getElementById('tags-section').innerHTML=tags.map(function(t){return '<span class="tag-pill">'+esc(t)+'</span>';}).join('');
     show('tags-section');
   }
 
-  // ── GETTING THERE ──
-  if (p.details && p.details.getting_there) {
-    setText('getting-there-body', p.details.getting_there);
-    show('getting-there-sec');
+  // Getting there
+  if(p.details&&p.details.getting_there){setText('getting-there-txt',p.details.getting_there);show('getting-there-sec');}
+
+  // Desktop booking card
+  if(hasRooms&&p.rooms[0].price){
+    var dr=p.rooms[0];
+    setText('dbc-price','$'+parseInt(dr.price).toLocaleString());
+    setText('dbc-pp','per '+(dr.per||'night')+(r.duration_tagline?' · '+r.duration_tagline:''));
+    var dd=[];
+    if(loc)dd.push(['Location',loc]);
+    if(p.details&&p.details.total_rooms)dd.push(['Rooms',p.details.total_rooms]);
+    if(r.duration_tagline)dd.push(['Duration',r.duration_tagline]);
+    if(p.details&&p.details.max_guests)dd.push(['Max guests',p.details.max_guests]);
+    document.getElementById('dbc-details').innerHTML=dd.map(function(d){return '<div class="dbc-detail"><span class="dbc-detail-lbl">'+esc(d[0])+'</span><span class="dbc-detail-val">'+esc(d[1])+'</span></div>';}).join('');
   }
 
-  // ── SIDEBAR ──
-  if (p.rooms && p.rooms.length && p.rooms[0].price) {
-    var r = p.rooms[0];
-    setText('sb-price', '$' + parseInt(r.price).toLocaleString());
-    setText('sb-price-unit', 'per ' + (r.per || 'night'));
-    // Sidebar details
-    var sbRows = [];
-    if (loc) sbRows.push(['Location', loc]);
-    if (p.details && p.details.total_rooms) sbRows.push(['Rooms', p.details.total_rooms]);
-    if (render.duration_tagline) sbRows.push(['Duration', render.duration_tagline]);
-    document.getElementById('sb-details').innerHTML = sbRows.map(function(r) {
-      return '<div class="book-detail"><span class="book-detail-lbl">' + esc(r[0]) + '</span><span class="book-detail-val">' + esc(r[1]) + '</span></div>';
-    }).join('');
-  }
-
-  // Enquiry buttons
-  document.getElementById('btn-enquire').onclick = function() { openEnquiry(); };
-  document.getElementById('btn-book').onclick = function() { openEnquiry(); };
-
-  // Back link type
-  var typeSlug = (p.type || '').toLowerCase();
-  var backHref = typeSlug.includes('cruise') ? '/cruises.html' : typeSlug.includes('villa') ? '/villas.html' : '/hotels.html';
-  document.getElementById('back-link').href = backHref;
-
-  // Envoy FAB
-  document.getElementById('ci-fab').onclick = function() {
-    window.location = '/the-envoy.html';
-  };
+  // Enquiry
+  setText('enq-type',p.type||'');
+  setText('enq-prop',p.name||'');
 }
 
-// ── HERO MOSAIC ────────────────────────────────────────────────────────
-function renderHeroMosaic() {
-  var mosaic = document.getElementById('hero-mosaic');
-  var fade   = document.getElementById('hero-fade');
-  var countEl = document.getElementById('hero-photo-count');
-  if (!mosaic) return;
-
-  var urls = heroUrls;
-  if (!urls.length) return;
-
-  // Tile class based on count
-  var tileClass = urls.length === 1 ? 'hero-tile hero-tile-single'
-                : urls.length === 2 ? 'hero-tile hero-tile-two'
-                : 'hero-tile';
-
-  mosaic.innerHTML = urls.map(function(h, i) {
-    return '<div class="' + tileClass + '" data-tile="' + i + '">' +
-      '<img src="' + esc(h.url) + '" alt="" style="object-position:' + (h.position||'center') + ';" loading="' + (i===0?'eager':'lazy') + '">' +
-    '</div>';
+// ── HERO MOSAIC ──────────────────────────────────────────────────────
+function renderHeroMosaic(){
+  var mosaic=document.getElementById('hero-mosaic');
+  var fade=document.getElementById('hero-fade');
+  if(!mosaic||!heroUrls.length)return;
+  var urls=heroUrls;
+  mosaic.innerHTML=urls.map(function(h,i){
+    var cls=urls.length===1?'hero-tile hero-tile-single':urls.length===2?'hero-tile hero-tile-two':'hero-tile';
+    return '<div class="'+cls+'" data-tile="'+i+'"><img src="'+esc(h.url)+'" alt="" style="object-position:'+(h.position||'center')+';" loading="'+(i===0?'eager':'lazy')+'"></div>';
   }).join('');
+  if(fade&&urls.length<=3)fade.style.display='none';
+  mosaic.addEventListener('scroll',function(){if(fade){var e=mosaic.scrollLeft+mosaic.clientWidth>=mosaic.scrollWidth-10;fade.style.opacity=e?'0':'1';}});
 
-  // Show photo count badge
-  if (urls.length > 1 && countEl) {
-    countEl.textContent = urls.length + ' photos';
-    countEl.style.display = '';
-  }
-
-  // Hide right fade if only 1-2 photos
-  if (fade && urls.length <= 3) fade.style.display = 'none';
-
-  // Fade on scroll end
-  mosaic.addEventListener('scroll', function() {
-    if (!fade) return;
-    var atEnd = mosaic.scrollLeft + mosaic.clientWidth >= mosaic.scrollWidth - 10;
-    fade.style.opacity = atEnd ? '0' : '1';
-  });
-
-  // ── EXPAND / CONTRACT CAROUSEL ──────────────────────────────────────
-  var focused = -1;
-  var TRANS   = 'flex .4s cubic-bezier(.4,0,.2,1), opacity .3s';
-
-  function getTiles() {
-    return Array.from(mosaic.querySelectorAll('[data-tile]'));
-  }
-
-  function renderMosaic() {
-    var tiles = getTiles();
-    var total = tiles.length;
-    var prevFocused = focused;
-
-    if (focused === -1) {
-      // Collapsed — all equal
-      tiles.forEach(function(t) {
-        t.style.transition = TRANS;
-        t.style.display    = '';
-        t.style.flex       = urls.length === 1 ? '0 0 100%'
-                           : urls.length === 2 ? '0 0 calc(50% - 1.5px)'
-                           : '0 0 calc(100% / 3 - 2px)';
-        t.style.opacity    = '1';
-        t.style.cursor     = urls.length > 1 ? 'pointer' : 'default';
-      });
-      setTimeout(function() {
-        mosaic.style.overflowX = urls.length > 3 ? 'auto' : 'hidden';
-        if (prevFocused >= 0) {
-          var tileW = mosaic.scrollWidth / total;
-          mosaic.scrollLeft = Math.max(0, Math.min((prevFocused - 1) * tileW, mosaic.scrollWidth - mosaic.clientWidth));
-        }
-      }, 420);
-      if (fade) fade.style.opacity = urls.length > 3 ? '1' : '0';
-      var x = document.getElementById('hero-mc-close');
-      if (x) x.remove();
-
-    } else {
-      // Expanded — focused tile is 75%, two neighbours 12.5%
-      mosaic.style.overflowX = 'hidden';
-      var n1, n2;
-      if (focused === 0)           { n1 = 1;       n2 = 2; }
-      else if (focused === total-1){ n1 = total-2; n2 = total-3; }
-      else                         { n1 = focused-1; n2 = focused+1; }
-
-      tiles.forEach(function(t, i) {
-        t.style.transition = TRANS;
-        if (i === focused) {
-          t.style.display  = '';
-          t.style.flex     = '0 0 75%';
-          t.style.opacity  = '1';
-          t.style.cursor   = 'pointer';
-        } else if (i === n1 || i === n2) {
-          t.style.display  = '';
-          t.style.flex     = '0 0 12.5%';
-          t.style.opacity  = '.65';
-          t.style.cursor   = 'pointer';
-        } else {
-          t.style.display  = 'none';
-          t.style.flex     = '0 0 0%';
-          t.style.opacity  = '0';
-          t.style.cursor   = 'default';
-        }
-      });
-      if (fade) fade.style.opacity = '0';
-
-      // Scroll to right position
-      if (focused === 0)           { mosaic.scrollLeft = 0; }
-      else if (focused === total-1){ mosaic.scrollLeft = mosaic.scrollWidth; }
-      else {
-        var tileW2 = mosaic.scrollWidth / total;
-        mosaic.scrollLeft = (focused - 1) * tileW2;
-      }
-
-      // ✕ close button
-      if (!document.getElementById('hero-mc-close')) {
-        var btn = document.createElement('button');
-        btn.id = 'hero-mc-close';
-        btn.innerHTML = '&#x2715;';
-        btn.style.cssText = 'position:absolute;top:12px;right:12px;z-index:30;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-        btn.onclick = function(e) { e.stopPropagation(); focused = -1; renderMosaic(); };
-        mosaic.parentNode.appendChild(btn);
-      }
+  var focused=-1,TRANS='flex .4s cubic-bezier(.4,0,.2,1), opacity .3s';
+  function gt(){return Array.from(mosaic.querySelectorAll('[data-tile]'));}
+  function rm(){
+    var tiles=gt(),total=tiles.length,prev=focused;
+    if(focused===-1){
+      tiles.forEach(function(t){t.style.transition=TRANS;t.style.display='';t.style.opacity='1';t.style.cursor=total>1?'pointer':'default';t.style.flex=total===1?'0 0 100%':total===2?'0 0 calc(50% - 1.5px)':'0 0 calc(100% / 3 - 2px)';});
+      setTimeout(function(){mosaic.style.overflowX=total>3?'auto':'hidden';if(prev>=0){var tw=mosaic.scrollWidth/total;mosaic.scrollLeft=Math.max(0,Math.min((prev-1)*tw,mosaic.scrollWidth-mosaic.clientWidth));}},420);
+      if(fade)fade.style.opacity=total>3?'1':'0';
+      var x=document.getElementById('hero-mc-close');if(x)x.remove();
+    }else{
+      mosaic.style.overflowX='hidden';
+      var n1,n2;
+      if(focused===0){n1=1;n2=2;}else if(focused===total-1){n1=total-2;n2=total-3;}else{n1=focused-1;n2=focused+1;}
+      tiles.forEach(function(t,i){t.style.transition=TRANS;if(i===focused){t.style.display='';t.style.flex='0 0 75%';t.style.opacity='1';t.style.cursor='pointer';}else if(i===n1||i===n2){t.style.display='';t.style.flex='0 0 12.5%';t.style.opacity='.65';t.style.cursor='pointer';}else{t.style.display='none';t.style.flex='0 0 0%';t.style.opacity='0';t.style.cursor='default';}});
+      if(fade)fade.style.opacity='0';
+      if(focused===0)mosaic.scrollLeft=0;else if(focused===total-1)mosaic.scrollLeft=mosaic.scrollWidth;else{var tw2=mosaic.scrollWidth/total;mosaic.scrollLeft=(focused-1)*tw2;}
+      if(!document.getElementById('hero-mc-close')){var btn=document.createElement('button');btn.id='hero-mc-close';btn.innerHTML='&#x2715;';btn.onclick=function(e){e.stopPropagation();focused=-1;rm();};mosaic.parentNode.appendChild(btn);}
     }
   }
-
-  // Wire tile clicks
-  function wireTiles() {
-    getTiles().forEach(function(t, i) {
-      t.onclick = function() {
-        if (urls.length <= 1) return; // single photo — no expand
-        var total = getTiles().length;
-        var n1, n2;
-        if (focused === 0)            { n1=1;       n2=2; }
-        else if (focused === total-1) { n1=total-2; n2=total-3; }
-        else                          { n1=focused-1; n2=focused+1; }
-
-        if (focused === -1)           { focused = i; renderMosaic(); }
-        else if (i === focused)       { focused = -1; renderMosaic(); }
-        else if (i === n1 || i === n2){ focused = i; renderMosaic(); }
-      };
-    });
-  }
-  wireTiles();
-
-  // Touch / mouse swipe when expanded
-  var x0 = null;
-  mosaic.addEventListener('touchstart', function(e) { x0 = e.touches[0].clientX; }, {passive:true});
-  mosaic.addEventListener('touchend', function(e) {
-    if (focused === -1 || x0 === null) return;
-    var dx = e.changedTouches[0].clientX - x0; x0 = null;
-    if (Math.abs(dx) > 50) {
-      var tiles = getTiles();
-      var n = focused + (dx < 0 ? 1 : -1);
-      if (n >= 0 && n < tiles.length) { focused = n; renderMosaic(); }
-    }
-  }, {passive:true});
-  mosaic.addEventListener('mousedown', function(e) { x0 = e.clientX; }, {passive:true});
-  mosaic.addEventListener('mouseup', function(e) {
-    if (focused === -1 || x0 === null) return;
-    var dx = e.clientX - x0; x0 = null;
-    if (Math.abs(dx) > 50) {
-      var tiles = getTiles();
-      var n = focused + (dx < 0 ? 1 : -1);
-      if (n >= 0 && n < tiles.length) { focused = n; renderMosaic(); }
-    }
-  });
+  gt().forEach(function(t,i){t.onclick=function(){if(urls.length<=1)return;var total=gt().length,n1,n2;if(focused===0){n1=1;n2=2;}else if(focused===total-1){n1=total-2;n2=total-3;}else{n1=focused-1;n2=focused+1;}if(focused===-1){focused=i;rm();}else if(i===focused){focused=-1;rm();}else if(i===n1||i===n2){focused=i;rm();}};});
+  var x0=null;
+  mosaic.addEventListener('touchstart',function(e){x0=e.touches[0].clientX;},{passive:true});
+  mosaic.addEventListener('touchend',function(e){if(focused===-1||x0===null)return;var dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>50){var ts=gt();var n=focused+(dx<0?1:-1);if(n>=0&&n<ts.length){focused=n;rm();}}},{passive:true});
+  mosaic.addEventListener('mousedown',function(e){x0=e.clientX;},{passive:true});
+  mosaic.addEventListener('mouseup',function(e){if(focused===-1||x0===null)return;var dx=e.clientX-x0;x0=null;if(Math.abs(dx)>50){var ts=gt();var n=focused+(dx<0?1:-1);if(n>=0&&n<ts.length){focused=n;rm();}}});
 }
 
 // ── LIGHTBOX ─────────────────────────────────────────────────────────
-function lbOpen(idx) {
-  lbIndex = idx;
-  document.getElementById('lb-img').src = galleryUrls[idx];
-  document.getElementById('lightbox').classList.add('open');
-}
-function lbClose() { document.getElementById('lightbox').classList.remove('open'); }
-function lbNav(dir) {
-  lbIndex = (lbIndex + dir + galleryUrls.length) % galleryUrls.length;
-  document.getElementById('lb-img').src = galleryUrls[lbIndex];
-}
-document.addEventListener('keydown', function(e) {
-  if (document.getElementById('lightbox').classList.contains('open')) {
-    if (e.key === 'Escape') lbClose();
-    if (e.key === 'ArrowLeft') lbNav(-1);
-    if (e.key === 'ArrowRight') lbNav(1);
-  }
-});
+function lbOpen(i){lbIdx=i;document.getElementById('lb-img').src=galleryUrls[i];document.getElementById('lightbox').classList.add('open');}
+function lbClose(){document.getElementById('lightbox').classList.remove('open');}
+function lbNav(d){lbIdx=(lbIdx+d+galleryUrls.length)%galleryUrls.length;document.getElementById('lb-img').src=galleryUrls[lbIdx];}
+document.addEventListener('keydown',function(e){if(!document.getElementById('lightbox').classList.contains('open'))return;if(e.key==='Escape')lbClose();if(e.key==='ArrowLeft')lbNav(-1);if(e.key==='ArrowRight')lbNav(1);});
 
-// ── ENQUIRY ───────────────────────────────────────────────────────────
-function openEnquiry() {
-  if (propData) {
-    setText('enq-type', propData.type || '');
-    setText('enq-name', propData.name || '');
-  }
-  document.getElementById('enquiry-overlay').classList.add('open');
-}
-
-function submitEnquiry() {
-  var name = document.getElementById('enq-fname').value.trim();
-  var email = document.getElementById('enq-email').value.trim();
-  if (!name || !email) { alert('Please enter your name and email.'); return; }
-  document.getElementById('enquiry-overlay').classList.remove('open');
-  // Show confirmation
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:100px;font-size:.85rem;z-index:600;';
-  toast.textContent = '✓ Enquiry sent — we\'ll reply within 24 hours';
-  document.body.appendChild(toast);
-  setTimeout(function() { toast.remove(); }, 4000);
-}
-
-// ── ENVOY DOSSIER CONTEXT ─────────────────────────────────────────────
-var CI_SYSTEM = 'You are The Envoy — The Bearing\'s travel specialist. Help guests with questions about this property. Be concise, specific, and knowledgeable.';
-
-function loadDossierContext(slug) {
-  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  if (!DOSSIER_API) return;
-  fetch(DOSSIER_API + '?slug=' + encodeURIComponent(slug))
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(data) {
-      if (data && data.dossier) {
-        CI_SYSTEM = 'You are The Envoy on the ' + (propData && propData.name || slug) + ' property page.\n\nPROPERTY DOSSIER:\n' + data.dossier + '\n\nAnswer guest questions specifically about this property. Be concise, insider, and authoritative.';
-      }
-    })
-    .catch(function() {});
-}
-
-// Init
 loadProperty();
 </script>
 </body>
