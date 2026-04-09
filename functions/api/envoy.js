@@ -437,6 +437,8 @@ export default {
       }
 
       const imageId = cfData.result.id;
+      // Store both the base URL and image ID so templates can request appropriate sizes
+      // /public serves the default variant — configure it in CF Images dashboard to be full res
       const deliveryUrl = `https://imagedelivery.net/${CF_ACCOUNT_HASH}/${imageId}/public`;
 
       return jsonResponse({

@@ -794,6 +794,50 @@
   .acc-pref-btn{padding:7px 14px;border:1px solid var(--border-hi);border-radius:100px;background:#fff;color:var(--bark);font-family:'Geist',sans-serif;font-size:.74rem;cursor:pointer;transition:all .15s;}
   .acc-pref-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
   .acc-pref-btn:hover{border-color:var(--terra);color:var(--terra);}
+
+
+
+  /* ── H-CARD (KV listing cards) ── */
+
+
+
+  /* ── H-CARD (KV listing cards) ── */
+  .h-card{border-radius:var(--r-xl);overflow:hidden;background:#fff;border:1px solid var(--border);cursor:pointer;transition:box-shadow .25s,transform .25s;animation:fadeUp .5s ease both;}
+  .h-card:hover{box-shadow:0 12px 48px rgba(80,55,25,.13);transform:translateY(-3px);}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .h-card:nth-child(1){animation-delay:.05s}.h-card:nth-child(2){animation-delay:.1s}.h-card:nth-child(3){animation-delay:.15s}
+  .h-card:nth-child(4){animation-delay:.2s}.h-card:nth-child(5){animation-delay:.25s}.h-card:nth-child(6){animation-delay:.3s}
+  .h-card:nth-child(7){animation-delay:.35s}.h-card:nth-child(8){animation-delay:.4s}.h-card:nth-child(9){animation-delay:.45s}
+  
+  .h-card-img{height:220px;overflow:hidden;position:relative;}
+  .h-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+  .h-card:hover .h-card-img img{transform:scale(1.04);}
+  .h-card-badges{position:absolute;top:12px;left:12px;display:flex;gap:6px;}
+  .h-badge{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);}
+  .h-badge-dark{background:rgba(10,8,4,.55);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.15);}
+  .h-badge-gold{background:rgba(154,114,48,.85);color:#fff;}
+  .h-badge-terra{background:rgba(176,88,48,.85);color:#fff;}
+  .h-heart{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--stone);transition:all .2s;}
+  .h-heart:hover,.h-heart.saved{color:var(--terra);background:#fff;}
+  .h-card-body{padding:16px 18px 18px;}
+  .h-region{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;}
+  .h-name{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);margin-bottom:2px;}
+  .h-loc{font-size:.72rem;color:var(--stone);margin-bottom:8px;display:flex;align-items:center;gap:4px;}
+  .h-hook{font-size:.78rem;color:var(--bark);line-height:1.55;margin-bottom:12px;font-style:italic;}
+  .h-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .h-tags{display:flex;gap:5px;flex-wrap:wrap;}
+  .h-tag{font-size:.6rem;padding:2px 8px;border-radius:100px;background:var(--sand);color:var(--bark);}
+  .h-price{font-size:.8rem;color:var(--terra);font-weight:600;white-space:nowrap;}
+  
+  .h-card
+  .h-card
+  .h-card
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="nav-logo-wrap" href="/">
+    <div class="nav-logo">The Bearing
 </style>
 <style>
 @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
@@ -935,7 +979,74 @@ body{background:var(--cream);color:var(--ink);}
 
 
 
-<div class="vc-villa" style="margin-top:32px;">
+
+<!-- KV-driven listing — injected above static content -->
+<div id="kv-villas-grid" style="display:none;">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;" id="kv-villas-cards"></div>
+</div>
+<script>
+(function() {
+  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  function makeCard(p, slug) {
+    var hero = p.photos && p.photos.hero && p.photos.hero.length && (p.photos.hero[0].url || p.photos.hero[0]);
+    var price = p.rooms && p.rooms.length && p.rooms[0].price ? 'From $' + parseInt(p.rooms[0].price).toLocaleString() + (p.rooms[0].per ? '/' + p.rooms[0].per : '') : '';
+    var tags = (p.details && p.details.tags || []).slice(0, 3);
+    var loc = (p.render && p.render.location_line) || [p.region, p.country].filter(Boolean).join(' · ');
+    var card = document.createElement('div');
+    card.className = 'h-card';
+    card.onclick = function() { window.location = '/property.html?slug=' + encodeURIComponent(slug); };
+    var imgHtml = hero
+      ? '<img src="' + hero + '" alt="' + (p.name || '').replace(/"/g, '') + '" loading="lazy">'
+      : '<div style="width:100%;height:100%;background:var(--sand);"></div>';
+    var badgeHtml = p.tag ? '<div class="h-card-badges"><span class="h-badge h-badge-gold">' + p.tag + '</span></div>' : '';
+    var tagsHtml = tags.map(function(t) { return '<span class="h-tag">' + t + '</span>'; }).join('');
+    var locHtml = loc ? '<div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>' + loc + '</div>' : '';
+    card.innerHTML = [
+      '<div class="h-card-img">',
+        imgHtml, badgeHtml,
+        '<button class="h-heart" onclick="event.stopPropagation();this.classList.toggle(\'saved\')">',
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+        '</button>',
+      '</div>',
+      '<div class="h-card-body">',
+        '<div class="h-region">' + (p.type || '') + '</div>',
+        '<div class="h-name">' + (p.name || slug) + '</div>',
+        locHtml,
+        p.hook ? '<div class="h-hook">&ldquo;' + p.hook + '&rdquo;</div>' : '',
+        '<div class="h-foot">',
+          '<div class="h-tags">' + tagsHtml + '</div>',
+          price ? '<div class="h-price">' + price + '</div>' : '',
+        '</div>',
+      '</div>'
+    ].join('');
+    return card;
+  }
+
+  fetch(PROP_API + '?slug=__index_villas')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(res) {
+      if (!res || !res.exists || !res.data || !res.data.slugs || !res.data.slugs.length) return;
+      return Promise.all(res.data.slugs.map(function(slug) {
+        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(res) { return res && res.exists ? {slug:slug, data:res.data} : null; })
+          .catch(function(){ return null; });
+      })).then(function(props) {
+        var valid = props.filter(Boolean);
+        if (!valid.length) return;
+        var grid = document.getElementById('kv-villas-cards');
+        var wrap = document.getElementById('kv-villas-grid');
+        var staticEl = document.getElementById('static-villas');
+        valid.forEach(function(p) { grid.appendChild(makeCard(p.data, p.slug)); });
+        wrap.style.display = '';
+        if (staticEl) staticEl.style.display = 'none';
+      });
+    }).catch(function(){});
+})();
+</script>
+<div id="static-villas"><div class="vc-villa" style="margin-top:32px;">
   <div class="vc-villa-bg">
     <img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Amangiri Villas" style="object-position:center 66%;" loading="lazy">
     <div class="vc-villa-scrim"></div>
@@ -1114,6 +1225,8 @@ function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.clas
   });
 })();
 </script>
+
+</div><!-- end static-villas -->
 
 <!-- ══ QUICK ENQUIRY MODAL ══ -->
 <div id="quick-enquiry-overlay" onclick="if(event.target===this)closeQuickEnquiry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);">

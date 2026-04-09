@@ -1105,6 +1105,7 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
           <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
             <span id="prop-status" style="font-size:12px;color:var(--text3);">—</span>
             <button class="btn btn-ghost btn-sm" onclick="propLoad()" id="prop-load-btn">Load</button>
+            <button class="btn btn-danger btn-sm" onclick="propDelete()" id="prop-delete-btn" style="display:none;">Delete</button>
             <button class="btn btn-primary btn-sm" onclick="propSave()">Save property</button>
           </div>
         </div>
@@ -3374,12 +3375,38 @@ async function propLoad() {
 
     propShowStatus('✓ Loaded · ' + slug, 'success');
     showToast('Loaded: ' + slug, 'success');
+    // Show delete button now that a real property is loaded
+    var deleteBtn = document.getElementById('prop-delete-btn');
+    if (deleteBtn) deleteBtn.style.display = '';
   } catch (err) {
     propShowStatus('Load failed: ' + err.message, 'error');
   }
 }
 
-async function propLoadBySlug() {
+async function propDelete() {
+  var slug = propCurrentSlug();
+  if (!slug) { propShowStatus('No property loaded.', 'error'); return; }
+  if (!confirm('Permanently delete "' + slug + '" from KV? This cannot be undone.')) return;
+  var api = propApi();
+  if (!api) { propShowStatus('Delete only works on the live site.', 'error'); return; }
+  propShowStatus('Deleting…', '');
+  try {
+    var res = await fetch(api + '?slug=' + encodeURIComponent(slug), { method: 'DELETE' });
+    var data = await res.json();
+    if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
+    propShowStatus('✓ Deleted · ' + slug, 'success');
+    showToast('Property deleted — ' + slug, 'success');
+    // Hide delete button, clear slug input
+    var deleteBtn = document.getElementById('prop-delete-btn');
+    if (deleteBtn) deleteBtn.style.display = 'none';
+    var slugInp = document.getElementById('prop-slug-input');
+    if (slugInp) slugInp.value = '';
+  } catch (err) {
+    propShowStatus('Delete failed: ' + err.message, 'error');
+  }
+}
+
+function propLoadBySlug() {
   // Same as propLoad but slug comes explicitly from the input
   var input = document.getElementById('prop-slug-input');
   if (!input || !input.value.trim()) { propShowStatus('Enter a slug first.', 'error'); return; }

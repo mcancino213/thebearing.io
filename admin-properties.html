@@ -106,6 +106,15 @@ tbody tr:hover{background:var(--bg);}
 .badge-green{background:var(--emerald-bg);color:var(--emerald);}
 .badge-amber{background:var(--amber-bg);color:var(--amber);}
 .badge-red{background:var(--red-bg);color:var(--red);}
+  /* ── ADMIN PROPERTIES TABS ── */
+  .ap-tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+  .ap-tab{padding:6px 16px;border-radius:6px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border:none;background:none;transition:all .15s;white-space:nowrap;}
+  .ap-tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .ap-tab:hover:not(.active){color:var(--text);}
+
+  .lm-drag-over{background:var(--accent-bg)!important;outline:2px dashed var(--accent);outline-offset:-4px;border-radius:8px;}
+  .lm-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .kv-prop-card{transition:opacity .3s,transform .3s;}
 .badge-blue{background:var(--blue-bg);color:var(--blue);}
 .badge-gray{background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 .badge-accent{background:var(--accent-bg);color:var(--accent);}
@@ -247,13 +256,20 @@ tbody tr:hover{background:var(--bg);}
   <div class="sb-footer"><div class="sb-footer-user"><div class="sb-footer-avatar">MG</div><div><div class="sb-footer-name">Miguel Guerrero</div><div class="sb-footer-role">Founder · Admin</div></div></div></div>
 </aside>
 <div class="main-area">
-<div class="topbar"><div class="topbar-title">Properties pipeline</div><div class="topbar-right"><input class="filter-input" style="width:220px;" placeholder="Search properties…"><button class="btn btn-ghost btn-sm">Export</button><a href="admin-invite.html" class="btn btn-primary btn-sm">+ Invite property</a></div></div>
+<div class="topbar">
+  <div class="topbar-title" id="ap-topbar-title">Properties</div>
+  <div class="topbar-right">
+    <div class="ap-tabs">
+      <button class="ap-tab active" id="ap-tab-pipeline" onclick="apSwitch('pipeline')">Pipeline</button>
+      <button class="ap-tab" id="ap-tab-published" onclick="apSwitch('published')">Published</button>
+      <button class="ap-tab" id="ap-tab-listing" onclick="apSwitch('listing')">Listing order</button>
+    </div>
+  </div>
+</div>
 <div class="page-body">
 
-<div class="page-header">
-  <div class="page-eyebrow">Property CRM</div>
-  <div class="page-title">Properties pipeline</div>
-</div>
+<!-- ══ TAB: PIPELINE ══ -->
+<div id="ap-panel-pipeline">
 
 <div class="setup-banner" id="setup-banner">
   <div style="width:40px;height:40px;border-radius:10px;background:rgba(193,127,62,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">✉</div>
@@ -288,18 +304,37 @@ tbody tr:hover{background:var(--bg);}
 
 <div id="kanban-view"><div id="kb-board" style="display:contents;"></div></div>
 
-<!-- KV SAVED PROPERTIES SECTION -->
-<div id="kv-saved-section" style="display:none;margin-top:36px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+</div><!-- end ap-panel-pipeline -->
+
+<!-- ══ TAB: PUBLISHED ══ -->
+<div id="ap-panel-published" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
     <div>
       <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Editor CMS</div>
-      <div style="font-size:18px;font-weight:600;color:var(--text);">Saved in Property Editor <span id="kv-saved-count" style="font-size:13px;font-weight:400;color:var(--text3);margin-left:6px;"></span></div>
+      <div style="font-size:18px;font-weight:600;color:var(--text);">Published properties <span id="kv-saved-count" style="font-size:13px;font-weight:400;color:var(--text3);margin-left:6px;"></span></div>
     </div>
     <a href="admin-property-editor.html" class="btn btn-primary btn-sm">+ New property</a>
   </div>
   <div id="kv-saved-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
-</div>
+</div><!-- end ap-panel-published -->
 
+<!-- ══ TAB: LISTING ORDER ══ -->
+<div id="ap-panel-listing" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Listing pages</div>
+      <div style="font-size:18px;font-weight:600;color:var(--text);">Publish &amp; order properties</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:3px;">Drag properties into the columns below. Order controls how they appear on the public pages.</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="loadListingData()">↻ Refresh</button>
+      <button class="btn btn-primary btn-sm" onclick="saveListingOrder()">Save order</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" id="listing-columns">
+    <div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;grid-column:1/-1;">Loading properties…</div>
+  </div>
+</div><!-- end ap-panel-listing -->
 
 <!-- NEW PROPERTY -->
 <div class="modal-backdrop" id="modal-new" onclick="if(event.target===this)closeModal('modal-new')">
@@ -783,10 +818,10 @@ render();
       if (!results) return;
       var valid = results.filter(function(r) { return r && r.exists && r.data; });
       if (!valid.length) return;
-      var section = document.getElementById('kv-saved-section');
+      var section = document.getElementById('ap-panel-published');
       var grid = document.getElementById('kv-saved-grid');
       var countEl = document.getElementById('kv-saved-count');
-      section.style.display = '';
+      // section is always visible when on that tab — no need to show/hide
       countEl.textContent = valid.length + ' propert' + (valid.length === 1 ? 'y' : 'ies');
       valid.forEach(function(res) {
         var p = res.data; var slug = res.slug;
@@ -796,6 +831,7 @@ render();
         var heroUrl = (p.photos && p.photos.hero && p.photos.hero.length && p.photos.hero[0].url) ? p.photos.hero[0].url : '';
         var initials = (p.name || slug).split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
         var card = document.createElement('div');
+        card.className = 'kv-prop-card';
         card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;';
         card.innerHTML =
           (heroUrl ? '<div style="height:120px;overflow:hidden;"><img src="'+heroUrl+'" style="width:100%;height:100%;object-fit:cover;"></div>'
@@ -807,13 +843,315 @@ render();
             '</div>' +
             '<div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;"><span>Completeness</span><span style="font-weight:600;color:'+hc+';">'+health+'%</span></div><div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:'+health+'%;height:100%;background:'+hc+';border-radius:3px;"></div></div></div>' +
             (p.hook ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"'+p.hook+'"</div>' : '') +
-            '<div style="display:flex;gap:8px;margin-top:auto;"><a href="admin-property-editor.html?slug='+encodeURIComponent(slug)+'" style="flex:1;padding:7px 0;background:var(--accent);color:#fff;border-radius:7px;font-size:13px;font-weight:500;text-align:center;text-decoration:none;">Edit</a><a href="/property.html?slug='+encodeURIComponent(slug)+'" target="_blank" style="padding:7px 12px;background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:13px;text-decoration:none;">View →</a></div>' +
+            '<div style="display:flex;gap:8px;margin-top:auto;"><a href="admin-property-editor.html?slug='+encodeURIComponent(slug)+'" style="flex:1;padding:7px 0;background:var(--accent);color:#fff;border-radius:7px;font-size:13px;font-weight:500;text-align:center;text-decoration:none;">Edit</a><a href="/property.html?slug='+encodeURIComponent(slug)+'" target="_blank" style="padding:7px 12px;background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:13px;text-decoration:none;">View →</a><button onclick="kvDeleteProperty(\''+slug+'\',this)" style="padding:7px 10px;background:var(--red-bg);border:1px solid transparent;color:var(--red);border-radius:7px;font-size:13px;cursor:pointer;" title="Delete property">✕</button></div>' +
           '</div>';
         grid.appendChild(card);
       });
     })
     .catch(function(e) { console.log('[KV Saved]', e.message); });
 })();
+
+// ── KV DELETE PROPERTY ────────────────────────────────────────────────
+var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+  ? '/api/property' : null;
+
+function kvDeleteProperty(slug, btn) {
+  if (!confirm('Permanently delete "' + slug + '"? This cannot be undone.')) return;
+  if (!PROP_API) { toast('Delete only works on the live site.'); return; }
+  btn.textContent = '…';
+  btn.disabled = true;
+  fetch(PROP_API + '?slug=' + encodeURIComponent(slug), { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.ok || data.deleted) {
+        var card = btn.closest('.kv-prop-card');
+        if (card) { card.style.transition = 'opacity .3s,transform .3s'; card.style.opacity = '0'; card.style.transform = 'scale(.96)'; setTimeout(function() { card.remove(); updateKVCount(); }, 300); }
+        toast('Deleted — ' + slug);
+        // Remove from listing state if present
+        Object.keys(listingState).forEach(function(type) {
+          listingState[type] = listingState[type].filter(function(s) { return s !== slug; });
+        });
+        allSavedProps = allSavedProps.filter(function(p) { return p.slug !== slug; });
+        renderListingColumns();
+      } else {
+        btn.textContent = '✕'; btn.disabled = false;
+        toast('Delete failed: ' + (data.error || 'unknown'));
+      }
+    })
+    .catch(function(e) { btn.textContent = '✕'; btn.disabled = false; toast('Error: ' + e.message); });
+}
+
+function updateKVCount() {
+  var cards = document.querySelectorAll('.kv-prop-card');
+  var el = document.getElementById('kv-saved-count');
+  if (el) el.textContent = '(' + cards.length + ')';
+}
+
+// ── LISTING ORDER MANAGER ─────────────────────────────────────────────
+var listingTypes = [
+  { id: 'hotels',  label: 'Hotels',  icon: '🏨' },
+  { id: 'cruises', label: 'Cruises', icon: '⛵' },
+  { id: 'villas',  label: 'Villas',  icon: '🏡' }
+];
+var listingState  = { hotels: [], cruises: [], villas: [] };
+var allSavedProps = []; // [{ slug, name, type, heroUrl }]
+var listingDragSlug = null;
+var listingDragFrom = null;
+var listingLoaded = false;
+
+// apSwitch — switches between Pipeline / Published / Listing order tabs
+function apSwitch(tab) {
+  ['pipeline','published','listing'].forEach(function(t) {
+    document.getElementById('ap-panel-' + t).style.display = t === tab ? '' : 'none';
+    var btn = document.getElementById('ap-tab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  // Lazy-load the listing tab the first time it's opened
+  if (tab === 'listing' && !listingLoaded && PROP_API) {
+    listingLoaded = true;
+    loadListingData();
+  }
+}
+
+// Also show kv-saved-section is now ap-panel-published — keep old JS refs working
+var _kvSavedSection = { style: { display: '' } }; // stub so old refs don't crash
+
+function loadListingData() {
+  if (!PROP_API) return;
+  Promise.all([
+    // All property slugs
+    fetch(PROP_API).then(function(r) { return r.ok ? r.json() : { slugs: [] }; }),
+    // Existing listing indexes
+    fetch(PROP_API + '?slug=__index_hotels').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+    fetch(PROP_API + '?slug=__index_cruises').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; }),
+    fetch(PROP_API + '?slug=__index_villas').then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; })
+  ]).then(function(results) {
+    var indexResult = results[0];
+    var rawSlugs = (indexResult.slugs || []).filter(function(s) { return !s.startsWith('__'); });
+
+    // Load each property's name, type, heroUrl
+    return Promise.all(rawSlugs.map(function(slug) {
+      return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(res) {
+          if (!res || !res.exists || !res.data) return null;
+          var d = res.data;
+          var heroUrl = d.photos && d.photos.hero && d.photos.hero.length && (d.photos.hero[0].url || d.photos.hero[0]);
+          return {
+            slug: slug,
+            name: d.name || slug,
+            type: d.type || '',
+            heroUrl: heroUrl || ''
+          };
+        })
+        .catch(function() { return null; });
+    })).then(function(props) {
+      allSavedProps = props.filter(Boolean);
+
+      // Parse listing indexes
+      ['hotels', 'cruises', 'villas'].forEach(function(type, i) {
+        var res = results[i + 1];
+        listingState[type] = (res && res.exists && res.data && Array.isArray(res.data.slugs))
+          ? res.data.slugs.filter(function(s) { return !s.startsWith('__'); })
+          : [];
+      });
+
+      renderListingColumns();
+    });
+  }).catch(function(e) {
+    document.getElementById('listing-columns').innerHTML =
+      '<div style="grid-column:1/-1;padding:24px;color:var(--red);font-size:13px;">Failed to load: ' + e.message + '</div>';
+  });
+}
+
+function renderListingColumns() {
+  var container = document.getElementById('listing-columns');
+  if (!container) return;
+
+  container.innerHTML = listingTypes.map(function(lt) {    var slugsInList = listingState[lt.id] || [];
+    var inList = slugsInList.map(function(slug) {
+      return allSavedProps.find(function(p) { return p.slug === slug; });
+    }).filter(Boolean);
+    var notInList = allSavedProps.filter(function(p) {
+      return slugsInList.indexOf(p.slug) === -1;
+    });
+
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">' +
+      // Column header
+      '<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg);">' +
+        '<span style="font-size:16px;">' + lt.icon + '</span>' +
+        '<div style="font-size:13px;font-weight:600;">' + lt.label + '</div>' +
+        '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + inList.length + ' published</span>' +
+      '</div>' +
+      '<div id="lm-' + lt.id + '" class="lm-col" data-type="' + lt.id + '" style="padding:8px;min-height:60px;">' +
+        (inList.length === 0
+          ? '<div class="lm-empty" style="border:2px dashed var(--border);border-radius:8px;padding:14px;text-align:center;font-size:12px;color:var(--text3);">Drop properties here</div>'
+          : inList.map(function(p, i) { return lmCard(p, lt.id, true, i); }).join('')) +
+      '</div>' +
+      // Unlisted pool
+      (notInList.length
+        ? '<div style="padding:8px;border-top:2px dashed var(--border);background:var(--bg);">' +
+            '<div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;padding:0 4px;">Not listed</div>' +
+            notInList.map(function(p) { return lmCard(p, lt.id, false, -1); }).join('') +
+          '</div>'
+        : '') +
+    '</div>';
+  }).join('');
+
+  // Wire drag events to .lm-col divs (avoids inline event handler quote issues)
+  container.querySelectorAll('.lm-col').forEach(function(col) {
+    var type = col.dataset.type;
+    col.addEventListener('dragover', function(e) { e.preventDefault(); lmDragOver(e, type); });
+    col.addEventListener('drop', function(e) { e.preventDefault(); lmDrop(e, type); });
+    col.addEventListener('dragleave', function(e) { lmDragLeave(e); });
+  });
+
+  // Wire lm-card drag and button events via delegation
+  container.querySelectorAll('.lm-card').forEach(function(card) {
+    var slug = card.dataset.slug;
+    var ltype = card.dataset.ltype;
+    var inList = card.dataset.inlist === '1';
+    var idx = parseInt(card.dataset.idx);
+    card.addEventListener('dragstart', function(e) { lmDragStart(e, slug, ltype, inList, idx); });
+    card.addEventListener('dragend', lmDragEnd);
+    var rm = card.querySelector('.lm-rm');
+    if (rm) rm.addEventListener('click', function(e) { e.stopPropagation(); lmRemove(ltype, slug); });
+    var add = card.querySelector('.lm-add');
+    if (add) add.addEventListener('click', function(e) { e.stopPropagation(); lmAdd(ltype, slug); });
+  });
+}
+
+function lmCard(p, listingType, inList, idx) {
+  var imgHtml = p.heroUrl
+    ? '<img src="' + p.heroUrl + '" style="width:38px;height:30px;object-fit:cover;border-radius:4px;flex-shrink:0;" loading="lazy">'
+    : '<div style="width:38px;height:30px;background:var(--surface2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">&#127991;</div>';
+
+  var actionHtml = inList
+    ? '<span style="font-size:10px;font-weight:600;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:4px;">' + (idx + 1) + '</span>'
+      + '<button class="lm-rm" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:0 2px;line-height:1;" title="Remove">&#215;</button>'
+    : '<button class="lm-add" style="background:var(--accent-bg);border:1px solid var(--accent);color:var(--accent);border-radius:6px;font-size:11px;font-weight:600;padding:3px 8px;cursor:pointer;white-space:nowrap;">+ Add</button>';
+
+  return [
+    '<div class="lm-card" draggable="true"',
+      ' data-slug="' + p.slug + '"',
+      ' data-ltype="' + listingType + '"',
+      ' data-inlist="' + (inList ? '1' : '0') + '"',
+      ' data-idx="' + idx + '"',
+      ' style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:5px;cursor:grab;user-select:none;">',
+      imgHtml,
+      '<div style="flex:1;min-width:0;">',
+        '<div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.name || p.slug) + '</div>',
+        '<div style="font-size:10px;color:var(--text3);">' + (p.type || '') + '</div>',
+      '</div>',
+      actionHtml,
+    '</div>'
+  ].join('');
+}
+
+
+// Drag events
+function lmDragStart(e, slug, type, inList, idx) {
+  listingDragSlug = slug;
+  listingDragFrom = { type: type, inList: inList, idx: idx };
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.style.opacity = '.4';
+}
+function lmDragEnd(e) {
+  e.currentTarget.style.opacity = '';
+  listingDragSlug = null;
+  listingDragFrom = null;
+  document.querySelectorAll('.lm-drop-indicator').forEach(function(el) { el.remove(); });
+  document.querySelectorAll('.lm-drag-over').forEach(function(el) { el.classList.remove('lm-drag-over'); });
+}
+function lmDragOver(e, type) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var col = document.getElementById('lm-' + type);
+  if (col) col.classList.add('lm-drag-over');
+}
+function lmDragLeave(e) {
+  if (e.currentTarget.id && e.currentTarget.id.startsWith('lm-')) {
+    e.currentTarget.classList.remove('lm-drag-over');
+  }
+}
+function lmDrop(e, type) {
+  e.preventDefault();
+  var col = document.getElementById('lm-' + type);
+  if (col) col.classList.remove('lm-drag-over');
+  if (!listingDragSlug) return;
+
+  var slug = listingDragSlug;
+  var fromType = listingDragFrom && listingDragFrom.type;
+
+  // Remove from source if different column
+  if (fromType && fromType !== type && listingDragFrom.inList) {
+    listingState[fromType] = listingState[fromType].filter(function(s) { return s !== slug; });
+  }
+
+  // Add to target if not already there
+  if (!listingState[type]) listingState[type] = [];
+  if (listingState[type].indexOf(slug) === -1) {
+    // Find drop position based on mouse position
+    var cards = col.querySelectorAll('.lm-card[data-in-list="true"]');
+    var insertIdx = listingState[type].length;
+    var found = false;
+    cards.forEach(function(card, i) {
+      if (found) return;
+      var rect = card.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) {
+        insertIdx = parseInt(card.dataset.idx);
+        found = true;
+      }
+    });
+    listingState[type].splice(insertIdx, 0, slug);
+  } else {
+    // Reorder within same column
+    var cards = col.querySelectorAll('.lm-card[data-in-list="true"]');
+    var targetIdx = listingState[type].length - 1;
+    cards.forEach(function(card) {
+      var rect = card.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) {
+        var ci = parseInt(card.dataset.idx);
+        if (ci < targetIdx) targetIdx = ci;
+      }
+    });
+    listingState[type] = listingState[type].filter(function(s) { return s !== slug; });
+    listingState[type].splice(targetIdx, 0, slug);
+  }
+
+  renderListingColumns();
+}
+
+function lmAdd(type, slug) {
+  if (!listingState[type]) listingState[type] = [];
+  if (listingState[type].indexOf(slug) === -1) {
+    listingState[type].push(slug);
+    renderListingColumns();
+  }
+}
+function lmRemove(type, slug) {
+  listingState[type] = (listingState[type] || []).filter(function(s) { return s !== slug; });
+  renderListingColumns();
+}
+
+async function saveListingOrder() {
+  if (!PROP_API) { toast('Only works on the live site.'); return; }
+  try {
+    await Promise.all(listingTypes.map(function(lt) {
+      return fetch(PROP_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: '__index_' + lt.id,
+          property: { slugs: listingState[lt.id] || [], updatedAt: new Date().toISOString() }
+        })
+      });
+    }));
+    toast('✓ Listing order saved');
+  } catch(e) {
+    toast('Save failed: ' + e.message);
+  }
+}
 </script>
 <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0f1117;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
 </body>

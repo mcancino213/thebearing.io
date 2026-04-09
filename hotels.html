@@ -921,161 +921,73 @@
     Surprise me — show me something unexpected
   </button>
 
-  <div class="hotels-grid">
-    <div class="h-card featured" onclick="window.location='/nour-el-nil.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-gold">Nat Geo pick</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">River Cruise</div>
-    <div class="h-name">Nour El Nil</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Nile · Esna to Aswan, Egypt</div>
-    <div class="h-hook">"The only way to see the Nile at the speed it was meant to be seen — from the deck of a dahabiya, with 23 other people."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adults only</span><span class="h-tag">Max 24</span><span class="h-tag">Cultural</span></div><div class="h-price">From $4,200pp</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
+  <div class="hotels-grid" id="hotels-grid">
+  <!-- Populated from KV listing index — falls back to static cards if KV unavailable -->
 </div>
-<div class="h-card" onclick="window.location='/al-moudira.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-terra">Relais & Châteaux</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Desert Lodge</div>
-    <div class="h-name">Al Moudira</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>West Bank · Luxor, Egypt</div>
-    <div class="h-hook">"A palace built from salvaged antiques by someone who had very strong opinions about how things should look."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adults only</span><span class="h-tag">Palace</span><span class="h-tag">Cultural</span></div><div class="h-price">From $420/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" data-property="Singita Grumeti" onclick="window.location='/singita-grumeti.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&fit=crop" alt="Singita Grumeti" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Wilderness</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Safari Lodge</div>
-    <div class="h-name">Singita Grumeti</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Serengeti · Tanzania</div>
-    <div class="h-hook">"350,000 private acres. The migration passes through here. Almost nowhere else can say that."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Wildlife</span><span class="h-tag">Private concession</span></div><div class="h-price">From $4,100pp/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" onclick="window.location='/soneva-fushi.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Soneva Fushi" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Overwater</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Island Resort</div>
-    <div class="h-name">Soneva Fushi</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Baa Atoll · Maldives</div>
-    <div class="h-hook">"No shoes. A resident marine biologist. The most pristine coral in the Indian Ocean."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adults only</span><span class="h-tag">Diving</span><span class="h-tag">UNESCO</span></div><div class="h-price">From $2,800/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" onclick="window.location='/amangiri.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Amangiri" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Architecture</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Desert Resort</div>
-    <div class="h-name">Amangiri</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Canyon Point · Utah, USA</div>
-    <div class="h-hook">"The pool wraps around a 65-million-year-old rock formation. Enough said."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Design</span><span class="h-tag">Wilderness</span></div><div class="h-price">From $3,200/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" onclick="window.location='/beyond-ngorongoro.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="&Beyond Ngorongoro" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Wildlife</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Mountain Lodge</div>
-    <div class="h-name">&Beyond Ngorongoro</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Ngorongoro · Tanzania</div>
-    <div class="h-hook">"Perched on the rim of the world's largest intact volcanic caldera. Lions below. Chandeliers above."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Safari</span><span class="h-tag">Cultural</span></div><div class="h-price">From $2,200pp/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" data-property="Capella Ubud" onclick="window.location='/capella-ubud.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80&fit=crop" alt="Capella Ubud" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Remote</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Rainforest Lodge</div>
-    <div class="h-name">Capella Ubud</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Ubud · Bali, Indonesia</div>
-    <div class="h-hook">"Tented villas suspended above a river gorge. The jungle sounds louder than your thoughts."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adults only</span><span class="h-tag">Wellness</span></div><div class="h-price">From $1,100/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" data-property="Kyoto Ryokan" onclick="window.location='/nour-el-nil.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1549144511-f099e773c147?w=800&q=80&fit=crop" alt="Kyoto Ryokan" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-dark">Design</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Ryokan</div>
-    <div class="h-name">Kyoto Ryokan</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Kyoto · Japan</div>
-    <div class="h-hook">"Six rooms. A chef who has been making the same breakfast for thirty years. Tatami floors. No Wi-Fi."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adults only</span><span class="h-tag">Cultural</span><span class="h-tag">No Wi-Fi</span></div><div class="h-price">From $890/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-<div class="h-card" onclick="window.location='/alila-jabal-akhdar.html'">
-  <div class="h-card-img">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Alila Jabal Akhdar" loading="lazy">
-    <div class="h-card-badges"><span class="h-badge h-badge-terra">Dramatic</span></div>
-    <button class="h-heart" onclick="event.stopPropagation();this.classList.toggle('saved')">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-    </button>
-  </div>
-  <div class="h-card-body">
-    <div class="h-region">Clifftop Villa</div>
-    <div class="h-name">Alila Jabal Akhdar</div>
-    <div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>Jabal Akhdar · Oman</div>
-    <div class="h-hook">"A hotel carved into a 2,000-metre cliff in the Al Hajar mountains. The views are not exaggerating."</div>
-    <div class="h-foot"><div class="h-tags"><span class="h-tag">Adventure</span><span class="h-tag">Mountain</span></div><div class="h-price">From $780/night</div><button onclick="event.stopPropagation();openQuickEnquiry(this.closest('.h-card').querySelector('.h-name')?.textContent||'this property')" style="flex-shrink:0;padding:6px 14px;background:transparent;border:1.5px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;color:var(--bark);cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)'" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)'">Enquire</button>
-        <button onclick="event.stopPropagation();var n=this.closest('[class*=card],[class*=villa],[class*=voyage]')?.querySelector('[class*=name]')?.textContent||'this property';tbOpenCheckout({property:n,title:'Book now',commissionRate:0.10,rooms:[{name:'Standard',price:400},{name:'Deluxe',price:700},{name:'Suite',price:1200}]})" style="flex-shrink:0;padding:6px 14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;white-space:nowrap;">Book now</button></div>
-  </div>
-</div>
-  </div>
+<script>
+(function() {
+  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
+  if (!PROP_API) return; // static cards remain on dev
+
+  function makeCard(p, slug) {
+    var hero = p.photos && p.photos.hero && p.photos.hero.length && (p.photos.hero[0].url || p.photos.hero[0]);
+    var price = p.rooms && p.rooms.length && p.rooms[0].price ? 'From $' + parseInt(p.rooms[0].price).toLocaleString() + (p.rooms[0].per ? '/' + p.rooms[0].per : '') : '';
+    var tags = (p.details && p.details.tags || []).slice(0, 3);
+    var loc = (p.render && p.render.location_line) || [p.region, p.country].filter(Boolean).join(' · ');
+    var card = document.createElement('div');
+    card.className = 'h-card';
+    card.onclick = function() { window.location = '/property.html?slug=' + encodeURIComponent(slug); };
+    var imgHtml = hero
+      ? '<img src="' + hero + '" alt="' + (p.name || '').replace(/"/g, '') + '" loading="lazy">'
+      : '<div style="width:100%;height:100%;background:var(--sand);"></div>';
+    var badgeHtml = p.tag ? '<div class="h-card-badges"><span class="h-badge h-badge-gold">' + p.tag + '</span></div>' : '';
+    var tagsHtml = tags.map(function(t) { return '<span class="h-tag">' + t + '</span>'; }).join('');
+    var locHtml = loc ? '<div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>' + loc + '</div>' : '';
+    card.innerHTML = [
+      '<div class="h-card-img">',
+        imgHtml, badgeHtml,
+        '<button class="h-heart" onclick="event.stopPropagation();this.classList.toggle(\'saved\')">',
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+        '</button>',
+      '</div>',
+      '<div class="h-card-body">',
+        '<div class="h-region">' + (p.type || '') + '</div>',
+        '<div class="h-name">' + (p.name || slug) + '</div>',
+        locHtml,
+        p.hook ? '<div class="h-hook">&ldquo;' + p.hook + '&rdquo;</div>' : '',
+        '<div class="h-foot">',
+          '<div class="h-tags">' + tagsHtml + '</div>',
+          price ? '<div class="h-price">' + price + '</div>' : '',
+        '</div>',
+      '</div>'
+    ].join('');
+    return card;
+  }
+
+  fetch(PROP_API + '?slug=__index_hotels')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(res) {
+      if (!res || !res.exists || !res.data || !res.data.slugs || !res.data.slugs.length) return;
+      var slugs = res.data.slugs;
+      var grid = document.getElementById('hotels-grid');
+      // Load properties in order
+      return Promise.all(slugs.map(function(slug) {
+        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+          .then(function(r) { return r.ok ? r.json() : null; })
+          .then(function(res) { return res && res.exists ? { slug: slug, data: res.data } : null; })
+          .catch(function() { return null; });
+      })).then(function(props) {
+        var valid = props.filter(Boolean);
+        if (!valid.length) return;
+        grid.innerHTML = ''; // clear static fallback
+        valid.forEach(function(p) {
+          grid.appendChild(makeCard(p.data, p.slug));
+        });
+      });
+    })
+    .catch(function() {}); // silently fall back to static cards
+})();
+</script>
 </div>
 
 <script>

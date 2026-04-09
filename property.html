@@ -47,19 +47,23 @@
   .prop-error h1{font-family:'Instrument Serif',serif;font-size:2rem;color:var(--ink);}
   .prop-error p{color:var(--stone);max-width:440px;line-height:1.6;}
 
-  /* ── HERO ── */
-  .hero{position:relative;height:72vh;min-height:480px;margin-top:var(--nav-h);overflow:hidden;background:#1a1208;}
-  .hero-img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;transition:opacity .4s;}
-  .hero-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08) 0%,rgba(0,0,0,.0) 40%,rgba(0,0,0,.5) 100%);}
-  .hero-content{position:absolute;bottom:36px;left:40px;right:40px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;}
-  .hero-badge{display:inline-block;padding:4px 12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);border-radius:100px;font-size:.65rem;font-weight:600;letter-spacing:.08em;color:#fff;margin-bottom:8px;}
-  .hero-type{font-size:.7rem;color:rgba(255,255,255,.7);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;}
-  .hero-name{font-family:'Instrument Serif',serif;font-size:3rem;color:#fff;line-height:1.1;margin-bottom:6px;}
-  .hero-loc{display:flex;align-items:center;gap:5px;font-size:.8rem;color:rgba(255,255,255,.7);}
-  /* Hero rotation */
-  .hero-dots{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:2;}
-  .hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);cursor:pointer;transition:background .2s;}
-  .hero-dot.active{background:#fff;}
+  /* ── HERO — scrollable mosaic ── */
+  .hero{position:relative;margin-top:var(--nav-h);overflow:hidden;background:#1a1208;}
+  .hero-mosaic{display:flex;gap:3px;height:72vw;max-height:560px;min-height:320px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch;}
+  .hero-mosaic::-webkit-scrollbar{display:none;}
+  .hero-tile{flex:0 0 calc(100% / 3 - 2px);height:100%;overflow:hidden;cursor:pointer;position:relative;background:#1a1208;}
+  .hero-tile img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
+  .hero-tile:hover img{transform:scale(1.04);}
+  .hero-tile-single{flex:0 0 100%!important;}
+  .hero-tile-two{flex:0 0 calc(50% - 1.5px)!important;}
+  .hero-fade{position:absolute;top:0;right:0;bottom:0;width:72px;background:linear-gradient(to right,transparent,rgba(12,10,8,.72));pointer-events:none;z-index:2;}
+  .hero-scrim{position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(8,6,3,.82) 0%,rgba(8,6,3,.45) 40%,rgba(8,6,3,0) 100%);pointer-events:none;z-index:3;}
+  .hero-content{position:absolute;bottom:0;left:0;right:0;padding:16px 32px 28px;z-index:4;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;}
+  .hero-badge{display:inline-block;padding:3px 10px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,140,.9);margin-bottom:5px;}
+  .hero-type{font-size:.62rem;color:rgba(255,255,255,.55);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+  .hero-name{font-family:'Instrument Serif',serif;font-size:clamp(1.6rem,4vw,2.6rem);color:#fff;line-height:1.1;margin-bottom:5px;font-style:italic;}
+  .hero-loc{display:flex;align-items:center;gap:5px;font-size:.72rem;color:rgba(255,255,255,.55);}
+  .hero-photo-count{position:absolute;top:14px;right:14px;font-size:.6rem;font-weight:500;color:rgba(255,255,255,.7);background:rgba(0,0,0,.4);backdrop-filter:blur(6px);padding:4px 10px;border-radius:100px;pointer-events:none;z-index:5;letter-spacing:.06em;}
 
   /* ── LAYOUT ── */
   .prop-wrap{max-width:1200px;margin:0 auto;padding:0 32px;}
@@ -100,10 +104,27 @@
   .hook-quote{font-family:'Instrument Serif',serif;font-size:1.15rem;font-style:italic;color:var(--bark);line-height:1.65;border-left:2px solid var(--terra);padding-left:20px;margin:24px 0;}
 
   /* ── GALLERY ── */
-  .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:32px;border-radius:var(--r-xl);overflow:hidden;}
-  .gallery-grid img{width:100%;height:200px;object-fit:cover;display:block;cursor:pointer;transition:opacity .2s;}
-  .gallery-grid img:hover{opacity:.88;}
-  .gallery-grid img:first-child{grid-column:span 2;height:280px;}
+  .pgal-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:480px;margin-bottom:0;}
+  .pgal-tile{position:relative;overflow:hidden;background:var(--sand);cursor:pointer;}
+  .pgal-tile img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
+  .pgal-tile:hover img{transform:scale(1.04);}
+  .pgal-tile-feature{grid-row:1 / span 2;border-radius:var(--r-md) 0 0 var(--r-md);}
+  .pgal-tile:nth-child(2){border-radius:0 var(--r-md) 0 0;}
+  .pgal-tile:nth-child(3){border-radius:0;}
+  .pgal-tile:nth-child(4){border-radius:0;}
+  .pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;position:relative;}
+  .pgal-more{position:absolute;inset:0;background:linear-gradient(135deg,rgba(26,18,8,.55),rgba(26,18,8,.78));display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;gap:6px;pointer-events:none;}
+  .pgal-more-count{font-family:'Instrument Serif',serif;font-size:1.6rem;line-height:1;}
+  .pgal-more-label{font-size:.62rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.8);}
+  .pgal-cta{display:flex;justify-content:center;margin-top:14px;margin-bottom:32px;}
+  .pgal-cta button{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:transparent;border:1px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;color:var(--ink);cursor:pointer;transition:all .2s;}
+  .pgal-cta button:hover{background:var(--sand);border-color:var(--bark);}
+  @media(max-width:768px){
+    .pgal-grid{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,160px);height:auto;gap:4px;}
+    .pgal-tile-feature{grid-column:1 / -1;grid-row:auto;border-radius:var(--r-md) var(--r-md) 0 0;}
+    .pgal-tile:nth-child(2){border-radius:0;}.pgal-tile:nth-child(3){border-radius:0;}
+    .pgal-tile:nth-child(4){border-radius:0 0 0 var(--r-md);}.pgal-tile:nth-child(5){border-radius:0 0 var(--r-md) 0;}
+  }
 
   /* ── ROOMS ── */
   .rooms-grid{display:flex;flex-direction:column;gap:12px;}
@@ -221,9 +242,10 @@
 <!-- PROPERTY CONTENT (rendered by JS) -->
 <div id="prop-content" style="display:none;">
 
-  <!-- HERO -->
+  <!-- HERO — scrollable mosaic -->
   <div class="hero" id="prop-hero">
-    <img class="hero-img" id="hero-img" src="" alt="">
+    <div class="hero-mosaic" id="hero-mosaic"></div>
+    <div class="hero-fade" id="hero-fade"></div>
     <div class="hero-scrim"></div>
     <div class="hero-content">
       <div>
@@ -238,7 +260,7 @@
         <div style="font-size:.65rem;color:rgba(255,255,255,.6);margin-top:2px;" id="hero-price-unit"></div>
       </div>
     </div>
-    <div class="hero-dots" id="hero-dots"></div>
+    <div class="hero-photo-count" id="hero-photo-count" style="display:none;"></div>
   </div>
 
   <div class="prop-wrap">
@@ -257,7 +279,15 @@
         <div class="stats-strip" id="stats-strip" style="display:none;"></div>
 
         <!-- Gallery -->
-        <div class="gallery-grid" id="gallery-grid" style="display:none;"></div>
+        <div id="gallery-section" style="display:none;">
+          <div class="pgal-grid" id="gallery-grid"></div>
+          <div class="pgal-cta">
+            <button id="gallery-all-btn" onclick="lbOpen(0)">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Browse all photos
+            </button>
+          </div>
+        </div>
 
         <!-- Overview -->
         <div class="sec" id="overview-sec" style="display:none;">
@@ -392,8 +422,8 @@ var propData = null;
 var galleryUrls = [];
 var lbIndex = 0;
 var heroUrls = [];
-var heroIndex = 0;
-var heroTimer = null;
+var galleryUrls = [];
+var lbIndex = 0;
 
 function esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -456,15 +486,11 @@ function renderProperty(p) {
   if (p.seo && p.seo.meta_title) document.getElementById('page-title').textContent = p.seo.meta_title;
   if (p.seo && p.seo.meta_description) document.getElementById('page-desc').setAttribute('content', p.seo.meta_description);
 
-  // ── HERO ──
-  heroUrls = [];
-  if (p.photos && p.photos.hero && p.photos.hero.length) {
-    heroUrls = p.photos.hero.map(function(h) { return typeof h === 'string' ? {url:h,position:'center'} : h; });
-  }
-  if (heroUrls.length) {
-    renderHero(0);
-    if (heroUrls.length > 1) startHeroRotation();
-  }
+  // ── HERO — mosaic ──
+  heroUrls = (p.photos && p.photos.hero || []).map(function(h) {
+    return typeof h === 'string' ? {url:h,position:'center'} : h;
+  });
+  renderHeroMosaic();
 
   // Hero text
   var render = p.render || {};
@@ -502,16 +528,26 @@ function renderProperty(p) {
     show('stats-strip');
   }
 
-  // ── GALLERY ──
+  // ── GALLERY — editorial pgal layout ──
   var gallery = (p.photos && p.photos.gallery) || [];
   galleryUrls = gallery.map(function(g) { return typeof g === 'string' ? g : g.url; }).filter(Boolean);
   if (galleryUrls.length) {
     var grid = document.getElementById('gallery-grid');
-    grid.innerHTML = galleryUrls.map(function(url, i) {
-      var pos = gallery[i] && gallery[i].position ? gallery[i].position : 'center';
-      return '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" onclick="lbOpen(' + i + ')" loading="lazy">';
+    var show5 = galleryUrls.slice(0, 5);
+    grid.innerHTML = show5.map(function(url, i) {
+      var pos = (gallery[i] && gallery[i].position) ? gallery[i].position : 'center';
+      var cls = i === 0 ? 'pgal-tile pgal-tile-feature' : 'pgal-tile';
+      var extra = (i === 4 && galleryUrls.length > 5)
+        ? '<div class="pgal-more"><div class="pgal-more-count">+' + (galleryUrls.length - 4) + '</div><div class="pgal-more-label">more photos</div></div>'
+        : '';
+      return '<div class="' + cls + '" onclick="lbOpen(' + i + ')">' +
+        '<img src="' + esc(url) + '" alt="" style="object-position:' + pos + ';" loading="lazy">' +
+        extra + '</div>';
     }).join('');
-    show('gallery-grid');
+    // Update browse button text
+    var allBtn = document.getElementById('gallery-all-btn');
+    if (allBtn) allBtn.innerHTML = allBtn.innerHTML.replace('Browse all photos', 'Browse all ' + galleryUrls.length + ' photos');
+    document.getElementById('gallery-section').style.display = '';
   }
 
   // ── OVERVIEW ──
@@ -650,31 +686,52 @@ function renderProperty(p) {
   };
 }
 
-// ── HERO ROTATION ─────────────────────────────────────────────────────
-function renderHero(idx) {
-  var h = heroUrls[idx];
-  if (!h) return;
-  var img = document.getElementById('hero-img');
-  img.src = h.url;
-  img.style.objectPosition = h.position || 'center';
-  // Dots
-  var dots = document.getElementById('hero-dots');
-  if (heroUrls.length > 1) {
-    dots.innerHTML = heroUrls.map(function(_, i) {
-      return '<div class="hero-dot' + (i === idx ? ' active' : '') + '" onclick="heroGoTo(' + i + ')"></div>';
-    }).join('');
+// ── HERO MOSAIC ────────────────────────────────────────────────────────
+function renderHeroMosaic() {
+  var mosaic = document.getElementById('hero-mosaic');
+  var fade = document.getElementById('hero-fade');
+  var countEl = document.getElementById('hero-photo-count');
+  if (!mosaic) return;
+
+  var urls = heroUrls;
+  if (!urls.length) return;
+
+  // Tile class based on count
+  var tileClass = urls.length === 1 ? 'hero-tile hero-tile-single'
+                : urls.length === 2 ? 'hero-tile hero-tile-two'
+                : 'hero-tile';
+
+  mosaic.innerHTML = urls.map(function(h, i) {
+    return '<div class="' + tileClass + '" onclick="lbOpenHero(' + i + ')" data-tile="' + i + '">' +
+      '<img src="' + esc(h.url) + '" alt="" style="object-position:' + (h.position||'center') + ';" loading="' + (i===0?'eager':'lazy') + '">' +
+    '</div>';
+  }).join('');
+
+  // Show photo count badge if multiple
+  if (urls.length > 1 && countEl) {
+    countEl.textContent = urls.length + ' photos';
+    countEl.style.display = '';
   }
-  heroIndex = idx;
+
+  // Hide right fade if only 1-2 photos (nothing to scroll to)
+  if (fade && urls.length <= 3) fade.style.display = 'none';
+
+  // Hide fade when scrolled to end
+  mosaic.addEventListener('scroll', function() {
+    if (!fade) return;
+    var atEnd = mosaic.scrollLeft + mosaic.clientWidth >= mosaic.scrollWidth - 10;
+    fade.style.opacity = atEnd ? '0' : '1';
+  });
 }
 
-function heroGoTo(idx) {
-  clearInterval(heroTimer);
-  renderHero(idx);
-  heroTimer = setInterval(function() { renderHero((heroIndex + 1) % heroUrls.length); }, 5000);
-}
-
-function startHeroRotation() {
-  heroTimer = setInterval(function() { renderHero((heroIndex + 1) % heroUrls.length); }, 5000);
+function lbOpenHero(idx) {
+  // Hero photos open in lightbox using heroUrls
+  var savedGallery = galleryUrls;
+  galleryUrls = heroUrls.map(function(h) { return h.url; });
+  lbOpen(idx);
+  // Restore gallery after lightbox closes
+  var origClose = lbClose;
+  lbClose = function() { origClose(); galleryUrls = savedGallery; lbClose = origClose; };
 }
 
 // ── LIGHTBOX ─────────────────────────────────────────────────────────
