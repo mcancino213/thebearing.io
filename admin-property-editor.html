@@ -566,7 +566,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
 
 
-      <!-- 1. CORE IDENTITY -->
+      
+<!-- 1. CORE IDENTITY -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -670,7 +671,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 2. OVERVIEW -->
+      
+<!-- 2. OVERVIEW -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -703,7 +705,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 2.5 THE BEARING VERDICT -->
+      
+<!-- 2.5 THE BEARING VERDICT -->
       <div class="pe-section" style="border-left:3px solid var(--accent);">
         <div class="pe-section-head" style="background:linear-gradient(to right,#fffbf5,var(--surface));">
           <div class="pe-section-left">
@@ -726,7 +729,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- PULL QUOTE -->
+      
+<!-- PULL QUOTE -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -750,7 +754,54 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- THE LENS -->
+      
+<!-- 6. PRIVATE ACCESS -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">6</div>
+            <div class="pe-section-title">The Bearing Private Access</div>
+          </div>
+          <span class="badge badge-gold">Required</span>
+        </div>
+        <div class="pe-section-body">
+          <div class="pe-access-notice">
+            Every property on TheBearing must include at least one exclusive experience — something a guest cannot book anywhere else. This is our core differentiator. Work with the property to define something real.
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Experience name<span class="pe-label-req">*</span></label>
+            <input class="pe-input" id="f-access-name" placeholder="e.g. Private sunrise at Edfu Temple" oninput="updateAll()">
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Description<span class="pe-label-req">*</span></label>
+            <textarea class="pe-input pe-textarea" id="f-access-desc" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateAll()"></textarea>
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Bullet points<span class="pe-label-hint">(3 short highlight lines shown below the description — e.g. what's included)</span></label>
+            <input class="pe-input" id="f-access-b1" placeholder="e.g. Private rooftop table for two — set at golden hour" oninput="updateAll()" style="margin-bottom:7px;">
+            <input class="pe-input" id="f-access-b2" placeholder="e.g. Traditional Egyptian feast — tagines, mezze, fresh-baked bread" oninput="updateAll()" style="margin-bottom:7px;">
+            <input class="pe-input" id="f-access-b3" placeholder="e.g. Complimentary — included with your booking, no extra charge" oninput="updateAll()">
+          </div>
+          <div class="pe-field">
+            <label class="pe-label">Photo<span class="pe-label-hint">(Cloudflare Images — drag &amp; drop or paste URL)</span></label>
+            <div style="display:flex;gap:14px;align-items:flex-start;">
+              <div id="access-tile-grid" class="pe-tile-grid" style="width:160px;flex-shrink:0;margin-bottom:0;"></div>
+              <div style="flex:1;">
+                <div class="pe-tile-drop-zone" id="access-drop-zone" style="margin-top:0;">
+                  <input type="file" accept="image/*" onchange="pgBatchUpload('access', this.files)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:4px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  <div>Drop or click to upload</div>
+                </div>
+                <input class="pe-input" id="f-access-photo" placeholder="Or paste URL: https://imagedelivery.net/..." oninput="pgSyncFromUrl('access', this.value)" style="margin-top:8px;">
+              </div>
+            </div>
+            <div id="access-inputs" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+
+      
+<!-- THE LENS -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -768,7 +819,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 3. ROOMS & PRICING -->
+      
+<!-- 3. ROOMS & PRICING -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -802,7 +854,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 3.5 ITINERARY (conditional — shown for cruises, safaris, or experiential) -->
+      
+<!-- 3.5 ITINERARY (conditional — shown for cruises, safaris, or experiential) -->
       <div class="pe-section" id="pe-itinerary-section" style="display:none;">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -842,7 +895,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 4. PHOTOS -->
+      
+<!-- 4. PHOTOS -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -931,7 +985,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
           
 
-      <!-- 5. DETAILS & TAGS -->
+      
+<!-- 5. DETAILS & TAGS -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -976,52 +1031,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 6. PRIVATE ACCESS -->
-      <div class="pe-section">
-        <div class="pe-section-head">
-          <div class="pe-section-left">
-            <div class="pe-section-num">6</div>
-            <div class="pe-section-title">The Bearing Private Access</div>
-          </div>
-          <span class="badge badge-gold">Required</span>
-        </div>
-        <div class="pe-section-body">
-          <div class="pe-access-notice">
-            Every property on TheBearing must include at least one exclusive experience — something a guest cannot book anywhere else. This is our core differentiator. Work with the property to define something real.
-          </div>
-          <div class="pe-field">
-            <label class="pe-label">Experience name<span class="pe-label-req">*</span></label>
-            <input class="pe-input" id="f-access-name" placeholder="e.g. Private sunrise at Edfu Temple" oninput="updateAll()">
-          </div>
-          <div class="pe-field">
-            <label class="pe-label">Description<span class="pe-label-req">*</span></label>
-            <textarea class="pe-input pe-textarea" id="f-access-desc" placeholder="e.g. 45 minutes alone in Egypt's best-preserved temple, before it opens to the public. Arranged only for The Bearing guests." oninput="updateAll()"></textarea>
-          </div>
-          <div class="pe-field">
-            <label class="pe-label">Bullet points<span class="pe-label-hint">(3 short highlight lines shown below the description — e.g. what's included)</span></label>
-            <input class="pe-input" id="f-access-b1" placeholder="e.g. Private rooftop table for two — set at golden hour" oninput="updateAll()" style="margin-bottom:7px;">
-            <input class="pe-input" id="f-access-b2" placeholder="e.g. Traditional Egyptian feast — tagines, mezze, fresh-baked bread" oninput="updateAll()" style="margin-bottom:7px;">
-            <input class="pe-input" id="f-access-b3" placeholder="e.g. Complimentary — included with your booking, no extra charge" oninput="updateAll()">
-          </div>
-          <div class="pe-field">
-            <label class="pe-label">Photo<span class="pe-label-hint">(Cloudflare Images — drag &amp; drop or paste URL)</span></label>
-            <div style="display:flex;gap:14px;align-items:flex-start;">
-              <div id="access-tile-grid" class="pe-tile-grid" style="width:160px;flex-shrink:0;margin-bottom:0;"></div>
-              <div style="flex:1;">
-                <div class="pe-tile-drop-zone" id="access-drop-zone" style="margin-top:0;">
-                  <input type="file" accept="image/*" onchange="pgBatchUpload('access', this.files)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="margin-bottom:4px;opacity:.5;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                  <div>Drop or click to upload</div>
-                </div>
-                <input class="pe-input" id="f-access-photo" placeholder="Or paste URL: https://imagedelivery.net/..." oninput="pgSyncFromUrl('access', this.value)" style="margin-top:8px;">
-              </div>
-            </div>
-            <div id="access-inputs" style="display:none;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 7. CONTACT -->
+      
+<!-- 7. CONTACT -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -1067,7 +1078,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
         </div>
       </div>
 
-      <!-- 8. SEO -->
+      
+<!-- 8. SEO -->
       <div class="pe-section">
         <div class="pe-section-head">
           <div class="pe-section-left">
@@ -1099,6 +1111,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
       </div><!-- end pe-form -->
     </div><!-- end panel-listing -->
 
+
+      
 
       <!-- ══ TAB 3: SAVE & PUBLISH ══ -->
       <div class="pe-tab-panel" id="panel-save">

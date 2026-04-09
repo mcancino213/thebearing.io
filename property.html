@@ -14,7 +14,7 @@ function jumpTo(id){
   window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-chrome,behavior:'smooth'});
 }
 function initScrollSpy(){
-  var secs=['sec-overview','sec-gallery','sec-rooms','sec-lens','sec-itinerary'];
+  var secs=['sec-overview','sec-gallery','sec-lens','sec-rooms','sec-itinerary'];
   var items=document.querySelectorAll('.subnav-item');
   if(!items.length)return;
   function spy(){var y=window.pageYOffset+220,a=0;secs.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=y)a=i;});items.forEach(function(it,i){it.classList.toggle('active',i===a);});}
@@ -396,8 +396,8 @@ button{font-family:inherit;cursor:pointer;}
   <nav class="subnav">
     <button class="subnav-item active" onclick="jumpTo('sec-overview')">Overview</button>
     <button class="subnav-item" id="sub-gallery" style="display:none;" onclick="jumpTo('sec-gallery')">Gallery</button>
-    <button class="subnav-item" id="sub-rooms" style="display:none;" onclick="jumpTo('sec-rooms')">Rooms</button>
     <button class="subnav-item" id="sub-lens" style="display:none;" onclick="jumpTo('sec-lens')">The Lens</button>
+    <button class="subnav-item" id="sub-rooms" style="display:none;" onclick="jumpTo('sec-rooms')">Rooms</button>
     <button class="subnav-item" id="sub-itin" style="display:none;" onclick="jumpTo('sec-itinerary')">Itinerary</button>
   </nav>
 
@@ -420,7 +420,7 @@ button{font-family:inherit;cursor:pointer;}
   <!-- BODY -->
   <div class="prop-body">
 
-    <!-- DESKTOP BOOKING CARD -->
+<!-- DESKTOP BOOKING CARD -->
     <div class="desktop-book-col">
       <div class="dbc-card">
         <div class="dbc-price-from">From</div>
@@ -447,13 +447,15 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
 
-    <!-- OVERVIEW -->
+    
+<!-- OVERVIEW -->
     <a name="sec-overview" id="sec-overview"></a>
     <div class="sec-eyebrow">The Bearing edit</div>
     <h2 class="sec-title" id="overview-title"></h2>
     <div class="prop-intro" id="prop-intro"></div>
 
-    <!-- VERDICT -->
+    
+<!-- VERDICT -->
     <div class="verdict-block" id="verdict-block" style="display:none;">
       <div class="verdict-label">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--terra)" stroke-width="2"><path d="M12 2L15 8.5L22 9.5L17 14.5L18 21.5L12 18L6 21.5L7 14.5L2 9.5L9 8.5L12 2Z"/></svg>
@@ -462,36 +464,15 @@ button{font-family:inherit;cursor:pointer;}
       <div class="verdict-text" id="verdict-text"></div>
     </div>
 
-    <!-- GALLERY -->
-    <a name="sec-gallery" id="sec-gallery"></a>
-    <div class="pgal-wrap" id="gallery-section" style="display:none;">
-      <div class="pgal-eyebrow">The gallery</div>
-      <h2 class="pgal-title">A closer <em>look</em></h2>
-      <div class="pgal-grid" id="gallery-grid"></div>
-      <div class="pgal-cta">
-        <button id="gallery-all-btn" onclick="lbOpen(0)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Browse all photos
-        </button>
-      </div>
-    </div>
-
-    <!-- PULL QUOTE -->
+    
+<!-- PULL QUOTE -->
     <div class="pull-quote" id="pull-quote-block" style="display:none;">
       <p id="pull-quote-text"></p>
       <cite id="pull-quote-attr"></cite>
     </div>
 
-    <!-- ROOMS / CABINS -->
-    <a name="sec-rooms" id="sec-rooms"></a>
-    <div id="rooms-section" style="display:none;">
-      <div class="sec-eyebrow" id="rooms-eyebrow">Accommodation</div>
-      <h2 class="sec-title" id="rooms-title">The <em>rooms</em></h2>
-      <div class="cabin-scroll" id="rooms-list"></div>
-      <p id="rooms-note" style="font-size:.72rem;color:var(--mist);line-height:1.6;margin-bottom:28px;display:none;"></p>
-    </div>
-
-    <!-- PRIVATE ACCESS -->
+    
+<!-- PRIVATE ACCESS -->
     <div id="access-card" style="display:none;border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;position:relative;">
       <div id="access-bg-photo" style="position:absolute;inset:0;background-size:cover;background-position:center;"></div>
       <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(122,46,10,.78) 0%,rgba(160,64,32,.72) 40%,rgba(106,48,96,.78) 100%);"></div>
@@ -510,7 +491,23 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
 
-    <!-- THE LENS -->
+    
+<!-- GALLERY -->
+    <a name="sec-gallery" id="sec-gallery"></a>
+    <div class="pgal-wrap" id="gallery-section" style="display:none;">
+      <div class="pgal-eyebrow">The gallery</div>
+      <h2 class="pgal-title">A closer <em>look</em></h2>
+      <div class="pgal-grid" id="gallery-grid"></div>
+      <div class="pgal-cta">
+        <button id="gallery-all-btn" onclick="lbOpen(0)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Browse all photos
+        </button>
+      </div>
+    </div>
+
+    
+<!-- THE LENS -->
     <div id="lens-section" style="display:none;">
       <a name="sec-lens" id="sec-lens"></a>
       <div class="sec-eyebrow">The Lens</div>
@@ -542,7 +539,8 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
 
-    <!-- LENS GATE OVERLAY -->
+    
+<!-- LENS GATE OVERLAY -->
     <div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
       <div class="lens-gate-sheet">
         <div class="lens-gate-grip"></div>
@@ -556,7 +554,18 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
 
-    <!-- ITINERARY -->
+    
+<!-- ROOMS / CABINS -->
+    <a name="sec-rooms" id="sec-rooms"></a>
+    <div id="rooms-section" style="display:none;">
+      <div class="sec-eyebrow" id="rooms-eyebrow">Accommodation</div>
+      <h2 class="sec-title" id="rooms-title">The <em>rooms</em></h2>
+      <div class="cabin-scroll" id="rooms-list"></div>
+      <p id="rooms-note" style="font-size:.72rem;color:var(--mist);line-height:1.6;margin-bottom:28px;display:none;"></p>
+    </div>
+
+    
+<!-- ITINERARY -->
     <a name="sec-itinerary" id="sec-itinerary"></a>
     <div id="itin-section" style="display:none;">
       <div class="sec-eyebrow" id="itin-eyebrow">The journey</div>
@@ -565,17 +574,20 @@ button{font-family:inherit;cursor:pointer;}
       <div class="itin-note" id="itin-note" style="display:none;"></div>
     </div>
 
-    <!-- DETAILS -->
+    
+<!-- DETAILS -->
     <div id="details-section" style="display:none;">
       <div class="sec-eyebrow">Practical details</div>
       <h2 class="sec-title">Know before <em>you go</em></h2>
       <div class="know-grid" id="details-table"></div>
     </div>
 
-    <!-- TAGS -->
+    
+<!-- TAGS -->
     <div id="tags-section" style="display:none;margin-bottom:28px;"></div>
 
-    <!-- GETTING THERE -->
+    
+<!-- GETTING THERE -->
     <div id="getting-there-sec" style="display:none;margin-bottom:40px;">
       <div class="sec-eyebrow">Getting there</div>
       <div style="font-size:.88rem;color:var(--bark);line-height:1.75;" id="getting-there-txt"></div>
@@ -583,7 +595,6 @@ button{font-family:inherit;cursor:pointer;}
 
   </div>
 </div>
-
 <!-- ENQUIRY OVERLAY -->
 <div class="overlay" id="inq-overlay" onclick="if(event.target===this)closeEnquiry()">
   <div class="sheet">
@@ -708,9 +719,16 @@ function renderProperty(p,slug){
   // Overview — hook as title
   if(p.hook){
     var ot=document.getElementById('overview-title');
-    // Italicise after em-dash if present
+    // Italicise second clause: after em-dash or after first sentence period
     var h=esc(p.hook);
-    ot.innerHTML=h.includes('—')?h.replace('—','<em>—</em>'):h;
+    if(h.includes('—')){
+      ot.innerHTML=h.replace('—','<em>—</em>');
+    } else if(h.includes('. ')){
+      var parts=h.split('. ');
+      ot.innerHTML=parts[0]+'. <em>'+parts.slice(1).join('. ')+'</em>';
+    } else {
+      ot.innerHTML=h;
+    }
   }
   var paras=[(p.overview&&p.overview.p1)||(p.description_short||''), p.overview&&p.overview.p2, p.overview&&p.overview.p3, p.overview&&p.overview.body].filter(Boolean);
   if(paras.length)document.getElementById('prop-intro').innerHTML=paras.map(function(t){return '<p>'+esc(t)+'</p>';}).join('');
