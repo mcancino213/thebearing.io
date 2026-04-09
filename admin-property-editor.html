@@ -3325,11 +3325,30 @@ async function propSave() {
   var api = propApi();
   if (!api) { propShowStatus('Saving only works on the live site.', 'error'); showToast('Property save only works on the live site.', 'error'); return; }
   propShowStatus('Saving…', '');
+
+  // Refresh JSON output with latest state before saving
+  if (typeof updateAll === 'function') updateAll();
+
+  // Build the full structured payload from updateJSON output
+  // This is what property.html reads — must be the canonical shape
+  var jsonEl = document.getElementById('json-out-2') || document.getElementById('json-out');
+  var structuredData = null;
+  if (jsonEl && jsonEl.textContent) {
+    try { structuredData = JSON.parse(jsonEl.textContent); } catch(e) {}
+  }
+  if (!structuredData) {
+    propShowStatus('Generate JSON first — fill in at least a name.', 'error');
+    return;
+  }
+
+  // Also attach the raw snapshot so the editor can reload all fields
+  structuredData.__editorSnapshot = propSnapshot();
+
   try {
     var res = await fetch(api, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: slug, property: propSnapshot() })
+      body: JSON.stringify({ slug: slug, property: structuredData })
     });
     var data = await res.json();
     if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
@@ -3350,7 +3369,13 @@ async function propLoad() {
     var res = await fetch(api + '?slug=' + encodeURIComponent(slug));
     var data = await res.json();
     if (!res.ok || !data.exists) { propShowStatus('No saved data for: ' + slug, 'error'); return; }
-    propRestore(data.data);
+
+    var saved = data.data;
+    // New format: structured data with __editorSnapshot embedded
+    // Old format: flat snapshot object
+    var snapshot = saved.__editorSnapshot || saved;
+    propRestore(snapshot);
+
     propShowStatus('✓ Loaded · ' + slug, 'success');
     showToast('Loaded: ' + slug, 'success');
   } catch (err) {
