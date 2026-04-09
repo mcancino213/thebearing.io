@@ -357,6 +357,400 @@ button{font-family:inherit;cursor:pointer;}
 .sim-name{font-family:'Instrument Serif',serif;font-size:.9rem;color:var(--ink);margin-bottom:4px;line-height:1.2;}
 .sim-price{font-size:.78rem;color:var(--stone);}
 .sim-price strong{color:var(--ink);font-weight:500;}
+
+
+  .overlay{position:fixed;inset:0;z-index:200;background:rgba(30,24,16,.45);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s;display:flex;align-items:center;justify-content:center;}
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .sheet{
+    position:relative;bottom:auto;left:auto;right:auto;
+    width:92vw;max-width:520px;
+    background:var(--cream,#faf7f1);
+    border-radius:20px;
+    border:1px solid var(--border-hi,#e8dfd0);
+    max-height:96dvh;overflow-y:auto;
+    transform:scale(.96);opacity:0;
+    box-shadow:0 20px 80px rgba(80,55,25,.18),0 0 0 1px rgba(176,88,48,.08);
+    transition:transform .38s cubic-bezier(.32,.72,0,1),opacity .28s;
+  }
+  .overlay.open .sheet{transform:scale(1);opacity:1;}
+  .sheet-grip{display:none;}
+
+  /* Step indicator */
+  .step-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:20px 20px 0;}
+  .step-pip{height:3px;border-radius:2px;background:var(--sand,#ece5d8);transition:all .35s;flex:1;max-width:60px;}
+  .step-pip.done{background:rgba(58,112,85,.7);}
+  .step-pip.active{background:linear-gradient(90deg,#b05830,#d4804a);}
+
+  /* Step panels */
+  .step-panel{display:none;padding:24px 22px 24px;}
+  .step-panel.active{display:block;}
+
+  /* Step 1 — form */
+  .inq-kicker{font-size:.58rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:8px;}
+  .inq-title{font-family:'Instrument Serif',serif;font-size:1.65rem;color:var(--ink,#1e1810);line-height:1.1;margin-bottom:5px;}
+  .inq-sub{font-size:.76rem;color:var(--stone,#9a8e80);line-height:1.6;margin-bottom:24px;}
+
+  /* Floating label fields */
+  .f-field{position:relative;margin-bottom:12px;}
+  .f-lbl{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mist,#bdb4a8);margin-bottom:5px;display:block;transition:color .18s;}
+  .f-inp{
+    width:100%;padding:13px 16px;
+    background:#fff;
+    border:1px solid var(--border-hi,#e8dfd0);
+    border-radius:12px;
+    color:var(--ink,#1e1810);
+    font-family:'Geist',sans-serif;font-size:.88rem;
+    outline:none;
+    transition:border-color .2s,background .2s,box-shadow .2s;
+    margin-bottom:0;
+    -webkit-appearance:none;
+  }
+  .f-inp::placeholder{color:var(--mist,#bdb4a8);}
+  .f-inp:focus{
+    border-color:var(--terra,#b05830);
+    background:#fff;
+    box-shadow:0 0 0 3px rgba(176,88,48,.1);
+  }
+  .f-inp:focus + .f-lbl,
+  .f-field:focus-within .f-lbl{color:rgba(176,88,48,.8);}
+  .f-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .f-ta{min-height:72px;resize:none;line-height:1.6;}
+  .f-select{
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b05830' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;
+  }
+  .f-select option{background:#fff;color:var(--ink,#1e1810);}
+  .f-next{
+    width:100%;padding:15px;border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#b05830 0%,#8c4422 100%);
+    color:#fff;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;
+    cursor:pointer;transition:opacity .15s,transform .15s,box-shadow .15s;
+    margin-top:8px;letter-spacing:.03em;
+    box-shadow:0 4px 24px rgba(176,88,48,.35),0 0 0 1px rgba(176,88,48,.2);
+    position:relative;overflow:hidden;
+  }
+  .f-next::after{content:'';position:absolute;top:0;bottom:0;left:-100%;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);animation:fNextShimmer 2.5s ease-in-out 1s infinite;}
+  @keyframes fNextShimmer{0%{left:-100%}50%,100%{left:140%}}
+  .f-next:hover{opacity:.92;box-shadow:0 6px 32px rgba(176,88,48,.45);}
+  .f-next:active{transform:scale(.98);}
+  .f-note{font-size:.65rem;color:var(--mist,#bdb4a8);text-align:center;margin-top:10px;margin-bottom:12px;line-height:1.8;}
+
+  /* Step 2 — review */
+  .review-card{
+    background:#fff;
+    border:1px solid var(--border-hi,#e8dfd0);
+    border-radius:16px;overflow:hidden;margin-bottom:16px;
+  }
+  .review-header{
+    background:var(--ink,#1e1810);
+    border-bottom:1px solid rgba(255,255,255,.06);
+    padding:16px 18px;display:flex;align-items:center;gap:12px;
+  }
+  .review-header-img{width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,.1);}
+  .review-prop{font-family:'Instrument Serif',serif;font-size:1rem;color:#fff;font-style:italic;}
+  .review-loc{font-size:.65rem;color:rgba(255,255,255,.4);margin-top:1px;letter-spacing:.04em;}
+  .review-rows{padding:0;}
+  .review-row{display:flex;align-items:flex-start;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--border,#e8dfd0);gap:16px;}
+  .review-row:last-child{border-bottom:none;}
+  .review-lbl{font-size:.7rem;color:var(--stone,#9a8e80);white-space:nowrap;}
+  .review-val{font-size:.82rem;color:var(--ink,#1e1810);font-weight:500;text-align:right;}
+  .edit-link{font-size:.66rem;color:var(--terra,#b05830);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
+
+  /* trust row */
+  .trust-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .trust-chip{display:flex;align-items:center;gap:5px;font-size:.67rem;font-weight:500;padding:5px 11px;border-radius:100px;}
+  .trust-chip svg{width:10px;height:10px;flex-shrink:0;}
+  .trust-chip.green{color:rgba(120,220,140,.9);border:1px solid rgba(120,220,140,.2);background:rgba(120,220,140,.08);}
+  .trust-chip.blue{color:rgba(100,180,220,.9);border:1px solid rgba(100,180,220,.2);background:rgba(100,180,220,.08);}
+  .trust-chip.gold{color:rgba(220,180,80,.9);border:1px solid rgba(220,180,80,.2);background:rgba(220,180,80,.08);}
+
+  /* Step 3 — confirmation */
+  .confirm-header{text-align:center;padding:28px 0 20px;}
+  .confirm-icon{
+    width:56px;height:56px;border-radius:50%;
+    background:rgba(58,112,85,.08);
+    border:1px solid rgba(58,112,85,.2);
+    box-shadow:none;
+    display:flex;align-items:center;justify-content:center;margin:0 auto 16px;
+  }
+  .confirm-icon svg{width:24px;height:24px;stroke:rgba(120,220,140,.9);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .confirm-title{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink,#1e1810);margin-bottom:5px;}
+  .confirm-sub{font-size:.78rem;color:var(--stone,#9a8e80);line-height:1.65;max-width:280px;margin:0 auto;}
+
+  /* Inbox preview */
+  .inbox-wrap{background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;margin:12px 0;}
+  .inbox-topbar{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;}
+  .inbox-brand{font-family:'Instrument Serif',serif;font-size:.9rem;color:#fff;font-style:italic;}
+  .inbox-brand span{font-style:normal;font-family:'Geist',sans-serif;font-size:.65em;color:rgba(176,88,48,.8);font-weight:400;}
+  .inbox-badge{font-size:.56rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:100px;background:rgba(120,220,140,.12);color:rgba(120,220,140,.85);border:1px solid rgba(120,220,140,.18);}
+  .inbox-thread{padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+  .inbox-msg{max-width:80%;}
+  .inbox-msg.tc{align-self:flex-start;}
+  .inbox-msg.guest{align-self:flex-end;}
+  .inbox-bubble{padding:9px 13px;border-radius:14px;font-size:.74rem;line-height:1.55;}
+  .inbox-msg.tc .inbox-bubble{background:rgba(255,255,255,.14);color:#fff;border-radius:4px 14px 14px 14px;border:1px solid rgba(255,255,255,.1);}
+  .inbox-msg.guest .inbox-bubble{background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;border-radius:14px 4px 14px 14px;}
+  .inbox-sender{font-size:.58rem;font-weight:600;color:rgba(255,255,255,.28);margin-bottom:3px;letter-spacing:.06em;}
+  .inbox-time{font-size:.56rem;color:rgba(255,255,255,.2);margin-top:3px;text-align:right;}
+  .inbox-typing{display:flex;align-items:center;gap:5px;padding:8px 13px;background:rgba(255,255,255,.05);border-radius:4px 14px 14px 14px;border:1px solid rgba(255,255,255,.04);width:fit-content;}
+  .inbox-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3);}
+  .inbox-dot:nth-child(1){animation:idot .9s 0s infinite;}
+  .inbox-dot:nth-child(2){animation:idot .9s .18s infinite;}
+  .inbox-dot:nth-child(3){animation:idot .9s .36s infinite;}
+  @keyframes idot{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-4px);opacity:.85}}
+  .inbox-input-row{padding:10px 16px;border-top:1px solid rgba(255,255,255,.05);display:flex;gap:8px;align-items:center;}
+  .inbox-input-fake{flex:1;background:rgba(255,255,255,.05);border-radius:100px;padding:8px 14px;font-size:.72rem;color:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.06);}
+  .inbox-send-btn{width:30px;height:30px;border-radius:50%;background:var(--terra);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .inbox-send-btn svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-left:1px;}
+  .inbox-explainer{font-size:.7rem;color:var(--stone,#9a8e80);line-height:1.7;margin-bottom:20px;padding:12px 14px;background:var(--linen,#f4efe4);border-radius:12px;border:1px solid var(--border,#e8dfd0);}
+  .inbox-explainer strong{color:var(--bark,#5a4e40);font-weight:500;}
+  .close-btn{width:100%;padding:13px;border:1px solid var(--border-hi,#ddd4c4);border-radius:14px;background:none;color:var(--bark,#5a4e40);font-family:'Geist',sans-serif;font-size:.87rem;font-weight:500;cursor:pointer;transition:background .15s;}
+  .close-btn:hover{background:var(--sand,#ece5d8);}
+
+  .booking-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .booking-card:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(0,0,0,.3);}
+  .booking-card:active{transform:scale(.98);}
+
+  /* ── TOAST ── */
+  .toast{position:fixed;bottom:28px;left:50%;z-index:500;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--cream);padding:11px 22px;border-radius:100px;font-size:.8rem;font-weight:500;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .28s,transform .32s cubic-bezier(.34,1.4,.64,1);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .fade-up{opacity:0;animation:fadeUp .6s ease forwards;}
+  .fade-up:nth-child(2){animation-delay:.1s;}
+  .fade-up:nth-child(3){animation-delay:.2s;}
+
+  /* ══ THE ENVOY DRAWER ══ */
+  .ci-fab{position:fixed;bottom:28px;right:24px;z-index:300;display:flex;align-items:center;gap:9px;padding:11px 18px 11px 13px;background:var(--ink,#1e1810);border-radius:100px;border:none;cursor:pointer;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:transform .15s,opacity .15s,right .38s cubic-bezier(.32,.72,0,1);}
+  .ci-fab.drawer-open{right:calc(25vw + 28px);}
+  .ci-fab:hover{transform:translateY(-2px);}
+  .ci-fab:active{transform:scale(.97);}
+  .ci-fab-pulse{width:8px;height:8px;border-radius:50%;background:#4ade80;flex-shrink:0;position:relative;}
+  .ci-fab-pulse::after{content:'';position:absolute;inset:-3px;border-radius:50%;background:rgba(74,222,128,.3);animation:cipulse 2s ease-in-out infinite;}
+  @keyframes cipulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:0;}}
+  .ci-fab-txt{display:flex;flex-direction:column;}
+  .ci-fab-label{font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;color:#fff;white-space:nowrap;line-height:1.2;}
+  .ci-fab-sub{font-size:.6rem;color:rgba(255,255,255,.45);white-space:nowrap;}
+
+  /* Drawer */
+  .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#faf7f1;border-left:1px solid rgba(0,0,0,.08);box-shadow:-8px 0 40px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);}
+  .ci-drawer.open{transform:translateX(0);}
+
+  /* Page push */
+  body{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
+  @media(min-width:768px){
+    body.ci-open{margin-right:clamp(320px,25vw,480px);}
+    .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
+  }
+  /* Mobile — just slide over, no reflow */
+  @media(max-width:767px){
+    .ci-drawer{width:88vw;min-width:0;max-width:400px;}
+    .ci-fab.drawer-open{right:calc(88vw + 12px);}
+  }
+
+  /* Drawer header */
+  .ci-head{padding:16px 18px 12px;border-bottom:1px solid rgba(0,0,0,.06);display:flex;align-items:center;gap:10px;flex-shrink:0;background:linear-gradient(135deg,#1e1810,#2e200c);}
+  .ci-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .ci-avatar svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
+  .ci-head-txt{flex:1;}
+  .ci-name{font-size:.84rem;font-weight:500;color:#fff;font-family:'Geist',sans-serif;}
+  .ci-status{font-size:.64rem;color:rgba(120,220,140,.85);display:flex;align-items:center;gap:4px;margin-top:2px;}
+  .ci-close{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0;transition:background .15s;}
+  .ci-close:hover{background:rgba(255,255,255,.18);}
+  .ci-close svg{width:11px;height:11px;stroke:#fff;stroke-width:1.8;fill:none;stroke-linecap:round;}
+
+  /* Context pill — shows which page you're on */
+  .ci-context{padding:8px 16px;background:rgba(176,88,48,.08);border-bottom:1px solid rgba(176,88,48,.1);display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .ci-context-dot{width:5px;height:5px;border-radius:50%;background:var(--terra,#b05830);flex-shrink:0;}
+  .ci-context-txt{font-size:.64rem;color:var(--terra,#b05830);font-weight:500;font-family:'Geist',sans-serif;}
+
+  /* Messages */
+  .ci-messages{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:10px;}
+  .ci-msg{max-width:88%;padding:10px 13px;border-radius:16px;font-size:.8rem;line-height:1.58;font-family:'Geist',sans-serif;}
+  .ci-msg p{margin:0;}
+  .ci-msg p+p{margin-top:5px;}
+  .ci-msg.ai{background:#ece5d8;color:#1e1810;border-radius:4px 16px 16px 16px;align-self:flex-start;}
+  .ci-msg.user{background:#1e1810;color:#fff;border-radius:16px 4px 16px 16px;align-self:flex-end;}
+  .ci-typing-msg{display:flex;align-items:center;gap:4px;padding:10px 13px;background:#ece5d8;border-radius:4px 16px 16px 16px;align-self:flex-start;width:fit-content;}
+  .ci-typing-msg span{width:6px;height:6px;border-radius:50%;background:#9a8e80;animation:ciDot 1.2s ease-in-out infinite;}
+  .ci-typing-msg span:nth-child(2){animation-delay:.2s;}
+  .ci-typing-msg span:nth-child(3){animation-delay:.4s;}
+  @keyframes ciDot{0%,80%,100%{transform:scale(.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
+
+  /* Suggestions */
+  .ci-sugs{padding:0 16px 10px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+  .ci-sug{padding:10px 14px;background:#fff;border:1px solid rgba(0,0,0,.09);border-radius:10px;font-size:.76rem;color:#5a4e40;cursor:pointer;text-align:left;transition:border-color .15s,background .15s;font-family:'Geist',sans-serif;line-height:1.4;}
+  .ci-sug:hover{border-color:#b05830;background:#fdf6f0;}
+
+  /* Input */
+  .ci-input-row{padding:10px 16px 20px;display:flex;gap:8px;flex-shrink:0;border-top:1px solid rgba(0,0,0,.07);}
+  .ci-input{flex:1;padding:11px 14px;border:1px solid rgba(0,0,0,.12);border-radius:22px;font-family:'Geist',sans-serif;font-size:.82rem;color:#1e1810;outline:none;background:#fff;transition:border-color .18s;}
+  .ci-input:focus{border-color:#b05830;box-shadow:0 0 0 3px rgba(176,88,48,.08);}
+  .ci-send{width:38px;height:38px;border-radius:50%;background:#1e1810;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+  .ci-send:hover{background:#b05830;}
+  .ci-send svg{width:14px;height:14px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+
+
+
+/* ════════════════════════════════════
+   BASE — always applied
+   ════════════════════════════════════ */
+.nav-dropdown-wrap { position:relative; }
+.nav-dropdown-trigger { display:flex; align-items:center; cursor:pointer; user-select:none; }
+.nav-dropdown { position:absolute; top:calc(100% + 12px); left:50%; transform:translateX(-50%) translateY(-6px); background:var(--cream); border:1px solid var(--border-hi); border-radius:var(--r-lg); box-shadow:0 8px 32px rgba(80,55,25,.14); min-width:200px; padding:6px 0; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:200; }
+.nav-dropdown-wrap:hover .nav-dropdown { opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+.nav-dropdown::before { content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:12px; height:12px; background:var(--cream); border-left:1px solid var(--border-hi); border-top:1px solid var(--border-hi); rotate:45deg; }
+.nav-dropdown-item { display:block; width:100%; padding:9px 18px; font-size:.78rem; color:var(--bark); background:none; border:none; text-align:left; cursor:pointer; font-family:'Geist',sans-serif; transition:background .15s,color .15s; text-decoration:none; }
+.nav-dropdown-item:hover { background:var(--linen); color:var(--ink); }
+
+/* Mobile: hide desktop booking column (sticky book-bar handles it) */
+.desktop-book-col { display: none; }
+
+/* ════════════════════════════════════
+   DESKTOP — 768px+
+   ════════════════════════════════════ */
+@media (min-width: 768px) {
+
+  /* ── Nav ── */
+  .nav-menu-btn { display:none !important; }
+  
+  /* Show desktop booking column */
+  .desktop-book-col { display: block; }
+
+  /* ── Mosaic ── */
+  #mosaic-track { height: 56vw !important; max-height: 600px !important; }
+
+  /* ── Full-width wrapper ── */
+  .breadcrumb-wrap,
+  .stats-strip,
+  .subnav,
+  .book-bar { padding-left: 48px; padding-right: 48px; }
+
+  /* ── Prop header ── */
+  .prop-header-inner { padding: 20px 48px 0; }
+
+  /* ── Stats strip ── */
+  .stats-strip { padding: 0 48px; }
+
+  /* ── Body: two-column grid ── */
+  .prop-body {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 0 48px;
+    align-items: start;
+    padding: 40px 48px 80px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Everything in left column by default */
+  .prop-body > * { grid-column: 1; }
+
+  /* ── Right column: sticky booking card ── */
+  .prop-body > .desktop-book-col {
+    grid-column: 2;
+    grid-row: 1 / 8;
+    position: sticky;
+    top: 200px;
+    padding-top: 8px;
+    padding-bottom: 60px;
+  }
+
+  /* ── Sections that should span full width ── */
+  .prop-body > .full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* ── Cabin cards: 3-column ── */
+  .cabin-scroll {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    overflow-x: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+  .cabin-card { width: auto; flex-shrink: unset; }
+
+  /* ── Know before you go: 2-column ── */
+  .know-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  /* ── Promise items: 2-column ── */
+  .promise-items { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Similar journeys: 3-column ── */
+  .similar-scroll {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    overflow-x: visible;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+  .sim-card { width: auto; flex-shrink: unset; }
+
+  /* ── Booking overlay: centred modal ── */
+  .overlay { align-items: center; justify-content: center; }
+  .sheet {
+    position: relative;
+    bottom: auto;
+    width: 520px;
+    max-width: 520px;
+    border-radius: 20px;
+    max-height: 96vh;
+    transform: scale(.96);
+    opacity: 0;
+    transition: transform .38s cubic-bezier(.32,.72,0,1), opacity .28s;
+  }
+  .overlay.open .sheet { transform: scale(1); opacity: 1; }
+  .sheet-grip { display: none; }
+
+  /* ── Desktop booking card styles ── */
+  .desktop-book-col .dbc-card {
+    background: #fff;
+    border: 1px solid var(--border-hi);
+    border-radius: var(--r-xl);
+    padding: 24px;
+    box-shadow: 0 4px 24px rgba(80,55,25,.08);
+    margin-bottom: 16px;
+  }
+  .dbc-price-from { font-size:.6rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--stone); }
+  .dbc-price-num { font-family:'Instrument Serif',serif; font-size:2rem; color:var(--ink); line-height:1; margin:4px 0 2px; }
+  .dbc-price-pp { font-size:.72rem; color:var(--stone); }
+  .dbc-divider { height:1px; background:var(--border); margin:16px 0; }
+  .dbc-detail { display:flex; justify-content:space-between; align-items:center; padding:8px 0; font-size:.78rem; border-bottom:1px solid var(--border); }
+  .dbc-detail:last-of-type { border-bottom:none; }
+  .dbc-detail-lbl { color:var(--stone); }
+  .dbc-detail-val { color:var(--ink); font-weight:500; }
+  .dbc-cta { width:100%; padding:12px; border:1.5px solid var(--terra); border-radius:12px; background:transparent; color:var(--terra); font-family:'Geist',sans-serif; font-size:.86rem; font-weight:600; cursor:pointer; margin-top:16px; transition:background .18s, color .18s; }
+  .dbc-cta:hover { background:var(--terra); color:#fff; }
+  .dbc-trust { display:flex; flex-direction:column; gap:6px; }
+  .dbc-trust-item { display:flex; align-items:center; gap:8px; font-size:.72rem; color:var(--stone); }
+  .dbc-trust-item svg { width:13px; height:13px; stroke:var(--moss); fill:none; flex-shrink:0; }
+  .dbc-lens-teaser { background:linear-gradient(135deg,#0d4a52,#1a3a6e); border-radius:var(--r-lg); padding:16px; margin-bottom:32px; }
+  .dbc-lens-title { font-family:'Instrument Serif',serif; font-size:.95rem; color:#fff; margin-bottom:6px; }
+  .dbc-lens-sub { font-size:.72rem; color:rgba(255,255,255,.6); line-height:1.5; margin-bottom:12px; }
+  .dbc-lens-experts { display:flex; gap:0; margin-bottom:10px; }
+  .dbc-lens-face { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Instrument Serif',serif; font-style:italic; color:#fff; font-size:.72rem; border:2px solid rgba(255,255,255,.3); margin-right:-5px; }
+}
+
+
+  .acc-pref-btn{padding:7px 14px;border:1px solid var(--border-hi);border-radius:100px;background:#fff;color:var(--bark);font-family:'Geist',sans-serif;font-size:.74rem;cursor:pointer;transition:all .15s;}
+  .acc-pref-btn.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .acc-pref-btn:hover{border-color:var(--terra);color:var(--terra);}
+
+  /* ── CI drawer CSS reset — prevent page styles bleeding in ── */
+  .ci-drawer *{box-sizing:border-box;}
+  .ci-drawer p{margin:0;padding:0;background:none!important;border:none!important;border-radius:0!important;font-size:.8rem;line-height:1.58;color:inherit;font-weight:400;display:block;}
+  .ci-drawer .ci-msg.ai p{color:#1e1810;}
+  .ci-drawer .ci-msg.user p{color:#fff;}
+  .ci-drawer input,.ci-drawer button,.ci-drawer div{box-sizing:border-box;}
 </style>
 </head>
 <body>
@@ -840,6 +1234,25 @@ function renderProperty(p,slug){
   setText('prop-type-pill',r.type_pill||p.type||'');
   setText('prop-name',p.name||'');
   setText('prop-loc-text',loc);
+
+  // Update inquiry overlay with this property's name/location
+  var propLabel = (p.name||'') + (loc ? ' · '+loc : '');
+  var isCruiseProp = (p.type||'').toLowerCase().includes('cruise');
+  document.querySelectorAll('.inq-kicker').forEach(function(el){ if(propLabel) el.textContent = propLabel; });
+  document.querySelectorAll('.inq-title').forEach(function(el,i){ if(i===0) el.textContent = 'Send an enquiry'; });
+  // Update room/cabin selector label and populate options from p.rooms
+  var inqCabin = document.getElementById('inq-cabin');
+  if(inqCabin && p.rooms && p.rooms.length){
+    inqCabin.innerHTML = '<option value="">Not sure yet</option>' +
+      p.rooms.filter(function(r){return r.name;}).map(function(r){
+        return '<option value="'+esc(r.name)+'">'+esc(r.name)+(r.price?' — from $'+parseInt(r.price).toLocaleString()+(r.per?'/'+r.per:''):'')+'</option>';
+      }).join('');
+    var cabinLbl = document.querySelector('label[for="inq-cabin"]');
+    if(cabinLbl) cabinLbl.textContent = isCruiseProp ? 'Cabin preference' : 'Room preference';
+  }
+  // Update review step property banner
+  var reviewKicker = document.querySelector('#step-2 .inq-kicker');
+  if(reviewKicker && propLabel) reviewKicker.textContent = propLabel;
   if(r.rating){
     setText('prop-stars','★'.repeat(Math.round(r.rating)));
     setText('prop-rating-val',r.rating);
@@ -1151,7 +1564,1537 @@ function submitLensGate(){
   var banner=document.getElementById('lens-lock-banner');if(banner)banner.style.display='none';
 }
 
+/* ══ PORTED FROM NEN: all interactive functions ══ */
+
+/* overlay open/close */
+function openOverlay(id){var e=document.getElementById(id);if(e){e.classList.add('open');document.body.style.overflow='hidden';}var fab=document.getElementById('ci-fab');if(fab)fab.style.display='none';}
+  function closeOverlay(id){var e=document.getElementById(id);if(e){e.classList.remove('open');document.body.style.overflow='';}var fab=document.getElementById('ci-fab');if(fab)fab.style.display='';}
+  function jumpTo(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var nav    = document.querySelector('.nav');
+    var subnav = document.querySelector('.subnav');
+    var book   = document.querySelector('.book-bar');
+    var chrome = (nav    ? nav.offsetHeight    : 66)
+               + (subnav ? subnav.offsetHeight : 42)
+               + (book   ? book.offsetHeight   : 52)
+               + 16;
+    var rect = el.getBoundingClientRect();
+    var absTop = rect.top + window.pageYOffset;
+    var target = absTop - chrome;
+    document.documentElement.scrollTop = target;
+    document.body.scrollTop = target;
+  }
+  /* Scroll spy */
+  function initScrollSpy(){
+    var secs  = ['sec-overview','sec-gallery','sec-lens','sec-cabins','sec-itinerary'];
+    var items = document.querySelectorAll('.subnav-item');
+    if(!items.length) return;
+    function spy(){
+      var y = window.pageYOffset + 220;
+      var active = 0;
+      secs.forEach(function(id,i){
+        var el = document.getElementById(id);
+        if(el && el.offsetTop <= y) active = i;
+      });
+      items.forEach(function(it,i){ it.classList.toggle('active', i===active); });
+    }
+    window.addEventListener('scroll', spy, {passive:true});
+    spy();
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', initScrollSpy);
+  } else {
+    initScrollSpy();
+  }
+  function showMemberSignup(){
+    document.getElementById('member-signup').style.display='block';
+    setTimeout(function(){document.getElementById('lens-email').focus();},100);
+  }
+  function openLensGate(){
+    var g=document.getElementById('lens-gate');
+    if(g){g.classList.add('open');document.body.style.overflow='hidden';}
+    setTimeout(function(){var i=document.getElementById('lens-email');if(i)i.focus();},300);
+  }
+  function closeLensGate(){
+    var g=document.getElementById('lens-gate');
+    if(g){g.classList.remove('open');document.body.style.overflow='';}
+  }
+  function submitLensGate(){
+    var email=document.getElementById('lens-email');
+    if(!email||!email.value||!email.value.includes('@')){
+      email.style.borderColor='var(--terra)';
+      email.focus();
+      return;
+    }
+    closeLensGate();
+    // Unlock all experts
+    document.querySelectorAll('.xpill-locked').forEach(function(p,i){
+      p.classList.remove('xpill-locked');
+      p.onclick=function(){ selectExpert(i+1,p); };
+      p.querySelectorAll('[style*="blur"]').forEach(function(el){el.style.filter='';});
+      var lock=p.querySelector('.xpill-lock');
+      if(lock)lock.remove();
+    });
+    var banner=document.getElementById('lens-lock-banner');
+    if(banner)banner.remove();
+    toast('Welcome to The Bearing · All lenses unlocked ✓');
+  }  var toastT;
+  function toast(msg){var e=document.getElementById('toast-el');if(!e)return;e.textContent=msg;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){e.classList.remove('show');},2800);}
+
+
+/* 3-step inquiry flow */
+
+/* ── 3-STEP BOOKING FLOW ── */
+function goStep(n) {
+  [1,2,3].forEach(function(i){
+    document.getElementById('step-'+i).classList.toggle('active', i===n);
+    var pip = document.getElementById('pip-'+i);
+    pip.classList.remove('active','done');
+    if(i < n) pip.classList.add('done');
+    else if(i === n) pip.classList.add('active');
+  });
+
+  // Scroll sheet to top on step change
+  var sheet = document.querySelector('.sheet');
+  if(sheet) sheet.scrollTop = 0;
+
+  if(n === 2) populateReview();
+  if(n === 3) populateConfirmation();
+}
+
+function val(id){ return (document.getElementById(id)||{}).value || ''; }
+
+function populateReview(){
+  var name   = val('inq-name')   || 'Sarah Mitchell';
+  var email  = val('inq-email')  || 'sarah.mitchell@gmail.com';
+  var date   = val('inq-date');
+  var guests = val('inq-guests') || '2 adults';
+  var cabin  = val('inq-cabin')  || 'Deluxe Suite';
+  var notes  = val('inq-notes');
+
+  setText('rv-name',  name);
+  setText('rv-email', email);
+  setText('rv-date',  date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : '15 October 2025');
+  setText('rv-guests', guests);
+  setText('rv-cabin',  cabin);
+
+  var notesRow = document.getElementById('rv-notes-row');
+  if(notes && notes.trim()){
+    setText('rv-notes', notes);
+    if(notesRow) notesRow.style.display = 'flex';
+  } else {
+    if(notesRow) notesRow.style.display = 'none';
+  }
+}
+
+function populateConfirmation(){
+  var name   = val('inq-name');
+  var cabin  = val('inq-cabin') || 'Luxury Room';
+  var date   = val('inq-date');
+  var guests = val('inq-guests') || '2 guests';
+
+  // Format dates
+  var checkIn = date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '15 Oct 2025';
+  var checkOut = '';
+  if(date){
+    var d = new Date(date+'T00:00');
+    d.setDate(d.getDate()+6);
+    checkOut = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  } else { checkOut = '21 Oct 2025'; }
+
+  // Build guest first message
+  var guestMsg = 'Hi';
+  if(name) guestMsg += ' — my name is ' + name;
+  guestMsg += '. I\'d like to inquire about the ' + cabin + ' on Nour El Nil';
+  if(guests) guestMsg += ' for ' + guests;
+  if(date) guestMsg += ', departing ' + checkIn;
+  guestMsg += '. Please let me know availability and next steps.';
+
+  var previewEl = document.getElementById('preview-msg');
+  if(previewEl) previewEl.textContent = guestMsg;
+
+  // Update booking card dates and cabin
+  var cardDetails = document.querySelectorAll('.booking-card [data-checkin]');
+  var checkInEls  = document.querySelectorAll('#inbox-thread .checkin-val');
+  var checkOutEls = document.querySelectorAll('#inbox-thread .checkout-val');
+  var cabinEls    = document.querySelectorAll('#inbox-thread .cabin-val');
+  checkInEls.forEach(function(el){ el.textContent = checkIn; });
+  checkOutEls.forEach(function(el){ el.textContent = checkOut; });
+  cabinEls.forEach(function(el){ el.textContent = cabin; });
+}
+
+// setText already defined
+
+
+/* cabin photo viewer */
+
+/* ── Cabin photo viewer ── */
+var cvPhotos = {};
+var cvCurrent = { cabin: '', idx: 0 };
+
+// Photo arrays from the property JSON. The gallery uses the special key __gallery__
+// so the same lightbox can render either a cabin's photos or the editorial gallery.
+cvPhotos['Panoramic Suite'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/19a363a6-3e80-4720-d777-8cfa03b16f00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/4d96d3d5-4d7e-4294-07f0-c349756a5100/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/96d39e6e-b51b-44b8-360c-a528ce7db100/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/d75ac815-0e2b-48f2-0080-815b200b0700/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/d2548a0e-af6c-4973-a3db-150004043900/public'
+];
+cvPhotos['Luxury Room'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/cc9a551b-602f-403c-4d42-f36c9963ff00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/5f925a95-648e-4695-6a79-c9ccbb515c00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/9b95bee3-4d81-408d-a770-4e39184bfc00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/28b5698a-8a80-413b-3633-f04625916b00/public'
+];
+cvPhotos['__gallery__'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/0a6501aa-1c3d-4bd0-a28f-c919eeefaf00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/c1f8bf3c-4a8d-4d93-19c1-41473cb49300/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/38942c98-52e1-4312-87ee-e49fd3127400/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/7b2caa59-e4c9-4781-edb7-0f9f1468ab00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/14c3f45a-4530-4d9b-645b-756fee292800/public'
+];
+
+function openCabinPhotos(name) {
+  var photos = cvPhotos[name] || [];
+  if (!photos.length) return;
+  cvCurrent = { cabin: name, idx: 0 };
+  cvRender();
+  var v = document.getElementById('cabin-viewer');
+  v.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCabinViewer() {
+  document.getElementById('cabin-viewer').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function cvNav(dir) {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  cvCurrent.idx = (cvCurrent.idx + dir + photos.length) % photos.length;
+  cvRender();
+}
+
+function cvRender() {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  var idx    = cvCurrent.idx;
+
+  // Main image
+  var img = document.getElementById('cv-img');
+  img.style.opacity = '0';
+  setTimeout(function() {
+    img.src = photos[idx];
+    img.style.opacity = '1';
+  }, 120);
+
+  // Name + counter
+  var displayName = cvCurrent.cabin === '__gallery__' ? 'A closer look' : cvCurrent.cabin;
+  document.getElementById('cv-name').textContent = displayName;
+  document.getElementById('cv-counter').textContent = (idx + 1) + ' of ' + photos.length + '  ·  tap outside to close';
+
+  // Show/hide arrows
+  document.getElementById('cv-prev').style.display = photos.length > 1 ? 'flex' : 'none';
+  document.getElementById('cv-next').style.display = photos.length > 1 ? 'flex' : 'none';
+
+  // Thumbnails
+  var strip = document.getElementById('cv-thumbs');
+  strip.innerHTML = '';
+  if (photos.length > 1) {
+    photos.forEach(function(src, i) {
+      var t = document.createElement('div');
+      t.style.cssText = 'width:52px;height:36px;border-radius:4px;overflow:hidden;cursor:pointer;flex-shrink:0;border:2px solid ' + (i === idx ? '#fff' : 'transparent') + ';transition:border-color .15s;';
+      var im = document.createElement('img');
+      im.src = src;
+      im.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      t.appendChild(im);
+      t.onclick = function(e) { e.stopPropagation(); cvCurrent.idx = i; cvRender(); };
+      strip.appendChild(t);
+    });
+  }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('cabin-viewer').style.display === 'none') return;
+  if (e.key === 'ArrowRight') cvNav(1);
+  if (e.key === 'ArrowLeft')  cvNav(-1);
+  if (e.key === 'Escape')     closeCabinViewer();
+});
+
+
+/* cabin select + account helpers */
+
+function selectCabin(name) {
+  // Pre-select cabin in the form dropdown
+  var sel = document.getElementById('inq-cabin');
+  if (sel) {
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === name) {
+        sel.selectedIndex = i;
+        break;
+      }
+    }
+  }
+  openOverlay('inq-overlay');
+}
+
+function togglePref(btn){ btn.classList.toggle('active'); }
+function submitAccount(){
+  var name  = document.getElementById('acc-name') && document.getElementById('acc-name').value;
+  var email = document.getElementById('acc-email') && document.getElementById('acc-email').value;
+  closeOverlay('account-overlay');
+  toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
+}
+
+
+/* checkout engine */
+
+// ── THEBEARING CHECKOUT ENGINE ────────────────────────────────────────
+// STRIPE INTEGRATION POINT:
+// 1. Add <script src="https://js.stripe.com/v3/"><\/script> to <head>
+// 2. Replace 'STRIPE_PUBLISHABLE_KEY' with your live key
+// 3. In tbSubmitBooking(), uncomment the Stripe PaymentIntent call
+// 4. Replace the demo card inputs with: stripe.elements().create('card')
+// Everything else is wired and ready.
+// const stripe = Stripe('STRIPE_PUBLISHABLE_KEY');
+// ─────────────────────────────────────────────────────────────────────
+
+var tbCheckout = {
+  property: '',
+  pricePerNight: 0,
+  rooms: [],
+  currentStep: 1,
+  totalAmount: 0,
+  depositAmount: 0,
+  commissionRate: 0.10  // 10% — configurable per property
+};
+
+function tbOpenCheckout(config) {
+  // config = { property, label, rooms, pricePerNight, roomLabel }
+  tbCheckout.property    = config.property    || 'this property';
+  tbCheckout.pricePerNight = config.pricePerNight || 0;
+  tbCheckout.rooms       = config.rooms       || [{ name:'Standard', price:0 }];
+  tbCheckout.commissionRate = config.commissionRate || 0.10;
+
+  // Set property label and title
+  document.getElementById('tb-co-property-label').textContent = config.property;
+  document.getElementById('tb-co-title').textContent = config.title || 'Book your stay';
+
+  // Set room label
+  var roomLbl = document.getElementById('tb-co-room-label');
+  if (roomLbl) roomLbl.textContent = config.roomLabel || 'Room / cabin type';
+
+  // Populate room select
+  var sel = document.getElementById('tb-co-room');
+  sel.innerHTML = tbCheckout.rooms.map(r =>
+    '<option value="'+r.price+'">'+r.name+' — from $'+r.price.toLocaleString()+'/pp</option>'
+  ).join('');
+
+  tbGoStep(1);
+  tbUpdateSummary();
+
+  var el = document.getElementById('tb-checkout-overlay');
+  el.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function tbCloseCheckout() {
+  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function tbGoStep(n) {
+  [1,2,3,4].forEach(i => {
+    var s = document.getElementById('tb-step-'+i);
+    var p = document.getElementById('tb-pip-'+i);
+    if (s) s.style.display = (i===n) ? 'block' : 'none';
+    if (p) p.style.background = (i<=n) ? 'var(--terra,#b05830)' : '#e5e0d8';
+  });
+  tbCheckout.currentStep = n;
+  if (n===2) tbBuildStep2Summary();
+  if (n===3) tbBuildStep3Summary();
+  document.getElementById('tb-checkout-sheet').scrollTop = 0;
+}
+
+function tbUpdateSummary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
+  var guestsSel = document.getElementById('tb-co-guests');
+  var guests    = guestsSel ? (guestsSel.value.match(/\d+/) || [2])[0] : 2;
+
+  var nights = 0;
+  if (arrival && departure) {
+    nights = Math.round((new Date(departure)-new Date(arrival))/(1000*60*60*24));
+    if (nights < 0) nights = 0;
+  }
+
+  var total   = roomPrice * parseInt(guests) * (nights || 1);
+  var deposit = Math.round(total * tbCheckout.commissionRate);
+  var balance = total - deposit;
+  tbCheckout.totalAmount   = total;
+  tbCheckout.depositAmount = deposit;
+
+  var lineRoom = document.getElementById('tb-line-room');
+  var lineTotal = document.getElementById('tb-line-total');
+  var depEl    = document.getElementById('tb-deposit-amount');
+  var balEl    = document.getElementById('tb-balance-amount');
+
+  if (lineRoom && total > 0) {
+    lineRoom.textContent  = (roomSel ? roomSel.options[roomSel.selectedIndex].text.split('—')[0].trim() : '') + (nights > 0 ? ' · '+nights+' night'+(nights>1?'s':'') : '');
+    lineTotal.textContent = '$'+total.toLocaleString();
+    depEl.textContent     = '$'+deposit.toLocaleString();
+    balEl.textContent     = '$'+balance.toLocaleString()+' paid to property';
+  } else if (lineRoom) {
+    lineRoom.textContent  = 'Select dates and room type';
+    lineTotal.textContent = '—';
+    depEl.textContent     = '—';
+    balEl.textContent     = '—';
+  }
+
+  // Update pay button
+  var payBtn = document.getElementById('tb-pay-btn-text');
+  if (payBtn) payBtn.textContent = deposit > 0 ? 'Pay $'+deposit.toLocaleString()+' deposit' : 'Pay deposit now';
+}
+
+function tbBuildStep2Summary() {
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var guests    = document.getElementById('tb-co-guests').value;
+  var nights    = (arrival && departure) ? Math.round((new Date(departure)-new Date(arrival))/(86400000)) : 0;
+  var s = document.getElementById('tb-step2-summary');
+  if (s) s.innerHTML = [
+    '<div><strong>'+tbCheckout.property+'</strong></div>',
+    arrival ? '<div>'+new Date(arrival).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+' → '+new Date(departure).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>' : '',
+    nights > 0 ? '<div>'+nights+' night'+(nights>1?'s':'')+' · '+guests+'</div>' : '',
+    roomName ? '<div>'+roomName+'</div>' : '',
+    tbCheckout.depositAmount > 0 ? '<div style="margin-top:6px;font-weight:600;color:#b05830;">Deposit: $'+tbCheckout.depositAmount.toLocaleString()+'</div>' : ''
+  ].join('');
+}
+
+function tbBuildStep3Summary() {
+  tbBuildStep2Summary();
+  var s3 = document.getElementById('tb-step3-summary');
+  var fc = document.getElementById('tb-final-charge');
+  var bn = document.getElementById('tb-balance-note');
+  var arrival   = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
+  var roomSel   = document.getElementById('tb-co-room');
+  var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
+  var balance   = tbCheckout.totalAmount - tbCheckout.depositAmount;
+
+  if (s3) s3.innerHTML = [
+    '<div style="display:flex;justify-content:space-between;"><span>'+tbCheckout.property+'</span><span style="font-weight:600;">$'+tbCheckout.totalAmount.toLocaleString()+'</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">TheBearing.io fee</span><span style="color:#3a7055;font-weight:600;">$0</span></div>',
+    '<div style="display:flex;justify-content:space-between;"><span style="color:#9a8e80;">Balance to property</span><span style="color:#9a8e80;">$'+balance.toLocaleString()+'</span></div>',
+  ].join('');
+  if (fc) fc.textContent = tbCheckout.depositAmount > 0 ? '$'+tbCheckout.depositAmount.toLocaleString() : '—';
+  if (bn) bn.textContent = 'Remaining $'+balance.toLocaleString()+' arranged directly with '+tbCheckout.property;
+}
+
+function tbFormatCard(el) {
+  var v = el.value.replace(/\D/g,'').substring(0,16);
+  el.value = v.replace(/(.{4})/g,'$1 ').trim();
+}
+function tbFormatExpiry(el) {
+  var v = el.value.replace(/\D/g,'');
+  if (v.length >= 2) v = v.substring(0,2)+' / '+v.substring(2,4);
+  el.value = v;
+}
+
+function tbSubmitBooking() {
+  var btn = document.getElementById('tb-pay-btn');
+  var btnText = document.getElementById('tb-pay-btn-text');
+
+  // Validation
+  var card = document.getElementById('tb-co-card').value.replace(/\s/g,'');
+  var expiry = document.getElementById('tb-co-expiry').value;
+  var cvv = document.getElementById('tb-co-cvv').value;
+  var email = document.getElementById('tb-co-email').value;
+  var firstname = document.getElementById('tb-co-firstname').value;
+
+  if (!firstname || !email || card.length < 15 || !expiry || !cvv) {
+    alert('Please fill in all required fields before proceeding.');
+    return;
+  }
+
+  // Loading state
+  btnText.textContent = 'Processing…';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  // ── STRIPE INTEGRATION POINT ──────────────────────────────────────
+  // In production, replace this setTimeout with:
+  //
+  // const { paymentMethod, error } = await stripe.createPaymentMethod({
+  //   type: 'card',
+  //   card: cardElement,  // stripe.elements().create('card')
+  //   billing_details: { name: firstname + ' ' + lastname, email }
+  // });
+  // if (error) { show error; return; }
+  //
+  // const response = await fetch('/api/create-payment-intent', {
+  //   method: 'POST',
+  //   body: JSON.stringify({
+  //     paymentMethodId: paymentMethod.id,
+  //     amount: tbCheckout.depositAmount * 100, // cents
+  //     currency: 'usd',
+  //     description: 'TheBearing deposit — ' + tbCheckout.property,
+  //     metadata: { booking_ref: ref, property: tbCheckout.property }
+  //   })
+  // });
+  // const { clientSecret } = await response.json();
+  // const result = await stripe.confirmCardPayment(clientSecret);
+  // ─────────────────────────────────────────────────────────────────
+
+  // Demo: simulate payment processing
+  setTimeout(function() {
+    var ref = 'TB-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*9000);
+    document.getElementById('tb-confirm-ref').textContent = ref;
+    document.getElementById('tb-confirm-msg').textContent =
+      'Your $'+tbCheckout.depositAmount.toLocaleString()+' deposit for '+tbCheckout.property+' has been received. The property will contact you directly within 24 hours.';
+    document.getElementById('tb-confirm-email').textContent = email;
+    tbGoStep(4);
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btnText.textContent = 'Pay deposit now';
+  }, 1800);
+}
+
+// ── KV HYDRATION — live content from Property Editor ─────────────────
+// Fetches /api/property?slug=nour-el-nil on load and patches dynamic
+// elements so the editor acts as the CMS for this page.
+(function kvHydrate() {
+  var SLUG = 'nour-el-nil';
+  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  fetch(PROP_API + '?slug=' + encodeURIComponent(SLUG))
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(res) {
+      if (!res || !res.exists || !res.data) return;
+      var p = res.data;
+
+      function setText(sel, val) {
+        var el = document.querySelector(sel);
+        if (el && val != null && val !== '') el.textContent = val;
+      }
+
+      // Property name
+      setText('.prop-name', p.name);
+
+      // Type pill
+      if (p.render && p.render.type_pill) {
+        setText('.prop-type-pill', p.render.type_pill);
+      }
+
+      // Location line
+      if (p.render && p.render.location_line) {
+        var locEl = document.querySelector('.prop-location');
+        if (locEl) {
+          locEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z"/><circle cx="8" cy="6" r="1.5"/></svg>' + p.render.location_line;
+        }
+      }
+
+      // Rating + reviews
+      if (p.render) {
+        var ratingRow = document.querySelector('.prop-rating-row');
+        if (ratingRow && p.render.rating) {
+          var stars = ratingRow.querySelector('.star-gold');
+          var ratingNum = ratingRow.querySelector('span[style*="font-weight:500"]') ||
+                          ratingRow.querySelectorAll('span')[1];
+          var reviewSpan = ratingRow.querySelectorAll('span')[2];
+          if (stars) stars.textContent = '★★★★★';
+          if (ratingNum) ratingNum.textContent = p.render.rating;
+          if (reviewSpan && p.render.reviews) {
+            reviewSpan.textContent = '· ' + p.render.reviews + ' journeys';
+          }
+        }
+      }
+
+      // Stats strip — patch up to 4 cells
+      if (p.render && Array.isArray(p.render.stats) && p.render.stats.length) {
+        var cells = document.querySelectorAll('.stats-strip .stat-cell');
+        p.render.stats.forEach(function(stat, i) {
+          if (!cells[i]) return;
+          var valEl = cells[i].querySelector('.stat-val');
+          var lblEl = cells[i].querySelector('.stat-lbl');
+          if (valEl && stat.value) valEl.textContent = stat.value;
+          if (lblEl && stat.label) lblEl.textContent = stat.label;
+        });
+      }
+
+      // Hero mosaic — replace tile images with KV hero photos (up to 6)
+      if (p.photos && p.photos.hero && p.photos.hero.length) {
+        var tiles = document.querySelectorAll('#mosaic-track [data-tile] img');
+        p.photos.hero.forEach(function(h, i) {
+          if (!tiles[i] || !h.url) return;
+          tiles[i].src = h.url;
+          if (h.position) tiles[i].style.objectPosition = h.position;
+        });
+      }
+
+      // Overview paragraphs — patch .prop-intro <p> tags
+      var introEl = document.querySelector('.prop-intro');
+      if (introEl && p.overview) {
+        var paras = [p.overview.p1, p.overview.p2, p.overview.p3, p.overview.body].filter(Boolean);
+        if (paras.length) {
+          introEl.innerHTML = paras.map(function(t) {
+            return '<p>' + t.replace(/</g, '&lt;') + '</p>';
+          }).join('<br>');
+        }
+      }
+
+      // Verdict block
+      if (p.verdict) {
+        var verdictP = document.querySelector('[style*="Bearing Verdict"] + p, [style*="Bearing Verdict"] ~ p');
+        // More robust: find the italic verdict paragraph after the verdict label
+        var verdictSection = document.querySelector('p[style*="font-style:italic"][style*="Instrument Serif"]');
+        if (verdictSection) verdictSection.textContent = p.verdict;
+      }
+
+      // Booking bar price — first room
+      if (p.rooms && p.rooms.length) {
+        var room = p.rooms[0];
+        if (room.price) {
+          setText('.dbc-price-num', '$' + parseInt(room.price).toLocaleString());
+          if (p.render && p.render.duration_tagline) {
+            setText('.dbc-price-pp', 'per person · ' + p.render.duration_tagline);
+          }
+        }
+      }
+    })
+    .catch(function(e) { console.log('[KV Hydrate] nour-el-nil:', e.message); });
+})();
+
+
+/* Envoy — context injection */
+
+/* ══ THE ENVOY — PERSISTENT DRAWER ══ */
+
+var CI_SYSTEM = "You are The Envoy — the AI travel specialist of The Bearing. You are on a specific property page. Answer questions about this property and the collection. Voice: warm, literary, discerning. Short evocative sentences. No bullet points.";
+
+// ── ENVOY LAYER 1: page-aware dossier + sources injection ──
+// On property pages, fetch the property's dossier from KV plus any cached
+// source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
+// deep page-specific context.
+(function() {
+  var KNOWN_PROPERTY_SLUGS = ['__all__']; var __all__ = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
+  if (!path) return;
+  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
+  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  if (!DOSSIER_API) return;
+  // Fetch dossier and sources in parallel
+  Promise.all([
+    fetch(DOSSIER_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(SOURCE_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ]).then(function(results) {
+    var dossierData = results[0];
+    var sourceData = results[1];
+    var hasDossier = dossierData && dossierData.dossier;
+    var sources = (sourceData && sourceData.sources) || [];
+    if (!hasDossier && sources.length === 0) return;
+    var contextBlocks = '';
+    if (hasDossier) {
+      contextBlocks += '=== PROPERTY DOSSIER ===\n' + dossierData.dossier + '\n=== END DOSSIER ===\n\n';
+    }
+    if (sources.length > 0) {
+      sources.forEach(function(src, i) {
+        contextBlocks += '=== SOURCE ' + (i+1) + ': ' + (src.label || 'Reference') + ' ===\n';
+        contextBlocks += 'URL: ' + src.url + '\n';
+        contextBlocks += 'Cached: ' + src.fetchedAt + '\n';
+        contextBlocks += 'Content:\n' + src.content + '\n';
+        contextBlocks += '=== END SOURCE ' + (i+1) + ' ===\n\n';
+      });
+    }
+    CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n\n" + contextBlocks + CI_SYSTEM;
+    var counts = (hasDossier ? '1 dossier' : '0 dossier') + ' + ' + sources.length + ' source(s)';
+    console.log('[Envoy] Loaded ' + counts + ' for ' + path + ' (' + contextBlocks.length + ' chars total context)');
+  }).catch(function(e){ console.log('[Envoy] Context load error:', e.message); });
+})();
+
+
+
+/* Envoy — UI */
+var ciOpen = false;
+var ciBusy = false;
+
+// Persist history across pages via sessionStorage
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+function ciClearOnFresh() {
+  // Only clear if no history exists yet (first visit)
+}
+
+var ciHistory = ciLoadHistory();
+
+function openEnvoy() {
+  ciOpen = true;
+  document.getElementById('ci-drawer').classList.add('open');
+  var _fab = document.getElementById('ci-fab');
+  if(_fab){ _fab.style.opacity='0'; _fab.style.transform='translateY(16px)'; setTimeout(function(){ _fab.style.display='none'; }, 280); }
+  document.body.classList.add('ci-open');
+  // Restore messages from history
+  ciRestoreMessages();
+  setTimeout(function(){ document.getElementById('ci-input').focus(); }, 400);
+}
+
+function closeEnvoy() {
+  ciOpen = false;
+  document.getElementById('ci-drawer').classList.remove('open');
+  var _fab2 = document.getElementById('ci-fab');
+  if(_fab2){ _fab2.style.display='flex'; setTimeout(function(){ _fab2.style.opacity='1'; _fab2.style.transform=''; }, 20); }
+  document.body.classList.remove('ci-open');
+}
+
+function ciRestoreMessages() {
+  var msgs = document.getElementById('ci-messages');
+  msgs.innerHTML = '';
+  if (ciHistory.length === 0) {
+    // First time — show welcome
+    ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
+  } else {
+    // Restore previous conversation
+    ciHistory.forEach(function(m) {
+      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+    });
+  }
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Update context pill based on current page
+(function() {
+  var path = window.location.pathname;
+  var ctx = 'Browsing The Bearing';
+  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
+  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
+  var el = document.getElementById('ci-context-txt');
+  if (el) el.textContent = ctx;
+})();
+
+function ciAsk(btn) {
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(btn.textContent.trim());
+}
+
+function ciSend() {
+  var inp = document.getElementById('ci-input');
+  var q = inp.value.trim();
+  if (!q || ciBusy) return;
+  inp.value = '';
+  document.getElementById('ci-sugs').style.display = 'none';
+  ciSendMsg(q);
+}
+
+async function ciSendMsg(text) {
+  ciAddMsg(text, 'user');
+  ciHistory.push({ role: 'user', content: text });
+  ciSaveHistory(ciHistory);
+
+  ciBusy = true;
+  var t = ciShowTyping();
+
+  try {
+    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var res = await fetch(CI_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+    });
+    var data = await res.json();
+    var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
+    t.remove();
+    ciBusy = false;
+    ciAddMsg(reply, 'ai');
+    ciHistory.push({ role: 'assistant', content: reply });
+    ciSaveHistory(ciHistory);
+  } catch(e) {
+    t.remove();
+    ciBusy = false;
+    ciAddMsg('Something went wrong — please try again.', 'ai');
+  }
+}
+
+function ciAddMsg(text, type) {
+  var msgs = document.getElementById('ci-messages');
+  var div = document.createElement('div');
+  div.className = 'ci-msg ' + type;
+  text.split('\n').filter(function(p){ return p.trim(); }).forEach(function(p, i) {
+    var el = document.createElement('p');
+    el.textContent = p.trim();
+    if (i > 0) el.style.marginTop = '5px';
+    div.appendChild(el);
+  });
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function ciShowTyping() {
+  var msgs = document.getElementById('ci-messages');
+  var d = document.createElement('div');
+  d.className = 'ci-typing-msg';
+  d.innerHTML = '<span></span><span></span><span></span>';
+  msgs.appendChild(d);
+  msgs.scrollTop = msgs.scrollHeight;
+  return d;
+}
+
+// Restore open state if user navigated while drawer was open
+if (sessionStorage.getItem('ci_was_open') === '1') {
+  // Small delay to let page render
+  setTimeout(openEnvoy, 100);
+}
+window.addEventListener('beforeunload', function() {
+  sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
+});
+
 loadProperty();
 </script>
+
+
+<div class="overlay" id="inq-overlay" onclick="if(event.target===this)closeOverlay('inq-overlay')">
+  <div class="sheet">
+    <div class="sheet-grip" onclick="closeOverlay('inq-overlay')"></div>
+
+    <!-- Step indicator -->
+    <div class="step-bar">
+      <div class="step-pip active" id="pip-1"></div>
+      <div class="step-pip" id="pip-2"></div>
+      <div class="step-pip" id="pip-3"></div>
+    </div>
+
+    <!-- ── STEP 1: Your details ── -->
+    <div class="step-panel active" id="step-1">
+      <div class="inq-kicker">Nour El Nil · Egypt</div>
+      <div class="inq-title">Send an enquiry</div>
+      <div class="inq-sub">No payment required. Tell us what you're looking for and the property will reply within 24 hours with availability, rates, and anything you want to know.</div>
+
+      <div>
+
+        <div class="f-field">
+          <label class="f-lbl" for="inq-name">Full name</label>
+          <input class="f-inp" id="inq-name" name="name" type="text" placeholder="Your name" autocomplete="name">
+        </div>
+
+        <div class="f-field">
+          <label class="f-lbl" for="inq-email">Email address</label>
+          <input class="f-inp" id="inq-email" name="email" type="email" placeholder="you@email.com" autocomplete="email">
+        </div>
+
+        <div class="f-field">
+          <label class="f-lbl" for="inq-phone">Phone (optional)</label>
+          <input class="f-inp" id="inq-phone" name="tel" type="tel" placeholder="+1 (000) 000-0000" autocomplete="tel">
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <label class="f-lbl" for="inq-date">Preferred dates</label>
+            <input class="f-inp" id="inq-date" name="date" type="date" onclick="try{this.showPicker()}catch(e){}">
+          </div>
+          <div class="f-field">
+            <label class="f-lbl" for="inq-guests">Guests</label>
+            <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
+          </div>
+        </div>
+
+        <div class="f-field">
+          <label class="f-lbl" for="inq-cabin">Cabin preference</label>
+          <select class="f-inp f-select" id="inq-cabin" name="cabin">
+            <option value="">Not sure yet</option>
+            <option value="Luxury Room">Luxury Room — from $4,200/voyage</option>
+            <option value="Panoramic Suite">Panoramic Suite — from $8,150/voyage</option>
+          </select>
+        </div>
+
+        <div class="f-field">
+          <label class="f-lbl" for="inq-notes">Anything we should know?</label>
+          <textarea class="f-inp f-ta" id="inq-notes" name="notes" placeholder="Dietary requirements, special occasions, flexibility on dates…"></textarea>
+        </div>
+
+        <button class="f-next" type="button" onclick="goStep(2)">Review & confirm →</button>
+        <p class="f-note">Same price as booking direct · 0% extra cost · The Bearing verified</p>
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Review ── -->
+    <div class="step-panel" id="step-2">
+      <div class="inq-kicker">One step away</div>
+      <div class="inq-title">Your journey awaits.</div>
+      <!-- Hero property banner -->
+      <div style="position:relative;height:110px;border-radius:14px;overflow:hidden;margin-bottom:16px;">
+        <img src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,6,3,.1) 0%,rgba(8,6,3,.72) 100%);"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 18px;">
+          <div style="font-size:.58rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:3px;">River Cruise · Nile, Egypt</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.2rem;color:#fff;font-style:italic;line-height:1.1;">Nour El Nil</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px;">Esna → Aswan · 6 days · 5 nights · Dahabiya</div>
+        </div>
+        <!-- Pending badge -->
+        <div style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:4px 11px;display:flex;align-items:center;gap:6px;">
+          <div style="width:6px;height:6px;border-radius:50%;background:#ffd060;"></div>
+          <span style="font-size:.6rem;font-weight:600;color:#fff;letter-spacing:.08em;text-transform:uppercase;">Pending review</span>
+        </div>
+      </div>
+
+      <!-- Detail rows — clean and spacious -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:18px;">
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;">Name</span>
+          <span style="font-size:.88rem;color:var(--ink);font-weight:600;" id="rv-name">—</span>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;">Email</span>
+          <span style="font-size:.78rem;color:var(--ink);" id="rv-email">—</span>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;">Dates</span>
+          <span style="font-size:.88rem;color:var(--ink);font-weight:500;" id="rv-date">—</span>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;">Guests</span>
+          <span style="font-size:.88rem;color:var(--ink);font-weight:500;" id="rv-guests">—</span>
+        </div>
+        <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;">Room Category</span>
+          <span style="font-size:.88rem;color:var(--ink);font-weight:500;" id="rv-cabin">Not specified</span>
+        </div>
+        <div id="rv-notes-row" style="display:none;padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+          <span style="font-size:.72rem;color:var(--stone);font-weight:500;white-space:nowrap;">Notes</span>
+          <span style="font-size:.78rem;color:var(--ink);text-align:right;" id="rv-notes"></span>
+        </div>
+        <div style="padding:8px 16px;display:flex;justify-content:flex-end;">
+          <button class="edit-link" onclick="goStep(1)">← Edit details</button>
+        </div>
+      </div>
+
+
+
+      <!-- What happens next — compact chips -->
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;padding:14px 16px;background:linear-gradient(135deg,#f8f3ec,#f2ebe0);border:1px solid var(--border-hi);border-radius:12px;">
+        <div style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">What happens next</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:.56rem;font-weight:700;color:#fff;">1</span></div>
+          <span style="font-size:.75rem;color:var(--bark);">Sent directly to Nour El Nil — no middlemen</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:.56rem;font-weight:700;color:#fff;">2</span></div>
+          <span style="font-size:.75rem;color:var(--bark);">Personal reply within 24 hours with availability</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:18px;height:18px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:.56rem;font-weight:700;color:#fff;">3</span></div>
+          <span style="font-size:.75rem;color:var(--bark);">Private channel — no emails exchanged, cancel any time</span>
+        </div>
+      </div>
+
+      <button class="f-next" onclick="goStep(3)">Open my The Bearing channel →</button>
+      <p class="f-note">No payment now · No obligation · Cancel any time</p>
+    </div>
+
+    <!-- ── STEP 3: Confirmation + inbox preview ── -->
+    <div class="step-panel" id="step-3" style="padding:14px 22px 32px;">
+
+      <!-- Confirm header -->
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;background:#1e3a2e;border:1px solid rgba(120,220,140,.25);border-radius:14px;">
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(58,112,85,.7),rgba(58,112,85,.35));border:1px solid rgba(120,220,140,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
+          <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
+        </div>
+        <a onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);return false;" href="#" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
+          Go to channel
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
+        </a>
+      </div>
+
+      <!-- iPhone-style conversation -->
+      <div class="inbox-wrap">
+
+        <div style="padding:10px 14px 9px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7a5820,#4a3010);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.85rem;">N</div>
+          <div style="flex:1;">
+            <div style="font-size:.79rem;font-weight:500;color:#fff;">Nour El Nil</div>
+            <div style="font-size:.6rem;color:rgba(255,255,255,.3);">via The Bearing · encrypted</div>
+          </div>
+          <div class="inbox-badge">● Live</div>
+        </div>
+
+        <div class="inbox-thread" id="inbox-thread" style="max-height:400px;overflow-y:auto;">
+          <div style="text-align:center;margin:4px 0 8px;">
+            <span style="font-size:.57rem;color:rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:3px 10px;border-radius:100px;">Today</span>
+          </div>
+
+          <div class="inbox-msg guest">
+            <div class="inbox-bubble" id="preview-msg">Hi — I'd like to inquire about the Deluxe Suite on Nour El Nil for 2 guests, departing 15 October 2025. Please let me know availability and next steps.</div>
+            <div class="inbox-time">10:42 AM · Delivered ✓✓</div>
+          </div>
+
+          <div class="inbox-msg tc" style="margin-top:12px;">
+            <div class="inbox-sender">Nour El Nil</div>
+            <div class="inbox-bubble">Thank you so much — we're genuinely thrilled to hear from you. The Nile in October is extraordinary. A member of our team will reply personally within 24 hours with availability and full details. Welcome to Nour El Nil.</div>
+            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">10:42 AM · Automatic reply</div>
+          </div>
+
+          <div class="inbox-msg guest" style="margin-top:12px;">
+            <div class="inbox-bubble">That's perfect — I've reviewed everything and I'm ready to confirm. Please go ahead and hold the Deluxe Suite for those dates.</div>
+            <div class="inbox-time">11:18 AM · Delivered ✓✓</div>
+          </div>
+
+          <div class="inbox-msg tc" style="margin-top:12px;">
+            <div class="inbox-sender">Nour El Nil</div>
+            <div class="inbox-bubble" style="padding:0;overflow:hidden;background:none;border:none;">
+              <div class="booking-card" onclick="toast('Full booking details coming soon')">
+                <div style="height:88px;overflow:hidden;position:relative;">
+                  <img src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 62%;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(13,38,13,.82));"></div>
+                  <div style="position:absolute;top:7px;right:8px;background:rgba(120,220,140,.15);border:1px solid rgba(120,220,140,.25);border-radius:100px;padding:2px 7px;display:flex;align-items:center;gap:3px;">
+                    <div style="width:4px;height:4px;border-radius:50%;background:#4ade80;"></div>
+                    <span style="font-size:.54rem;font-weight:600;color:rgba(120,220,140,.9);letter-spacing:.07em;">CONFIRMED</span>
+                  </div>
+                  <div style="position:absolute;bottom:8px;left:11px;">
+                    <div style="font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:1px;">Booking confirmation</div>
+                    <div style="font-family:'Instrument Serif',serif;font-size:.92rem;color:#fff;font-style:italic;">Nour El Nil · Deluxe Suite</div>
+                  </div>
+                </div>
+                <div style="background:rgba(13,38,13,.95);padding:6px 12px 7px;">
+                  <div style="font-size:.64rem;color:rgba(255,255,255,.4);">Esna → Aswan · Nile, Egypt</div>
+                </div>
+                <div style="background:rgba(255,255,255,.06);padding:9px 12px;display:flex;border-top:1px solid rgba(255,255,255,.06);">
+                  <div style="flex:1;border-right:1px solid rgba(255,255,255,.06);padding-right:10px;">
+                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check in</div>
+                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkin-val">15 Oct 2025</div>
+                  </div>
+                  <div style="flex:1;padding-left:10px;">
+                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check out</div>
+                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkout-val">21 Oct 2025</div>
+                  </div>
+                </div>
+                <div style="background:rgba(255,255,255,.04);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.05);">
+                  <div style="font-size:.65rem;color:rgba(255,255,255,.4);">2 guests · 6 days</div>
+                  <div style="font-size:.65rem;color:rgba(120,220,140,.7);font-weight:500;display:flex;align-items:center;gap:3px;">View details <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg></div>
+                </div>
+              </div>
+            </div>
+            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">11:19 AM</div>
+          </div>
+
+          <div class="inbox-msg tc" style="margin-top:8px;">
+            <div class="inbox-typing"><div class="inbox-dot"></div><div class="inbox-dot"></div><div class="inbox-dot"></div></div>
+          </div>
+        </div>
+
+        <div class="inbox-input-row">
+          <div class="inbox-input-fake">Message Nour El Nil…</div>
+          <div class="inbox-send-btn"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
+        </div>
+      </div>
+
+      <!-- Action row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
+        <button class="close-btn" onclick="closeOverlay('inq-overlay');goStep(1)" style="margin:0;padding:12px;">Close panel</button>
+        <button onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);" style="padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Go to my channel →</button>
+      </div>
+
+    </div>
+
+  </div><!-- end .sheet -->
+</div><!-- end #inq-overlay -->
+
+<!-- ══ LENS GATE OVERLAY ══ -->
+<div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
+  <div class="lens-gate-sheet">
+    <div class="lens-gate-grip" onclick="closeLensGate()"></div>
+    <div class="lens-gate-icon">
+      <svg viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
+    </div>
+    <div class="lens-gate-title">Unlock The Lens</div>
+    <div class="lens-gate-sub">Three specialists are waiting — the chef, the textile designer, the writer. Access is included when you book through The Bearing, or join as a member.</div>
+
+    <!-- Expert faces preview -->
+    <div class="lens-gate-experts">
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#9a7230,#7a5820);margin-right:-8px;z-index:3;">A</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#2e6a8a,#1a4a6a);margin-right:-8px;z-index:2;">J</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#3a7055,#2a5040);margin-right:-8px;z-index:1;">S</div>
+      <div class="lens-gate-face" style="background:linear-gradient(135deg,#8c4422,#6a3218);">R</div>
+    </div>
+
+    <!-- Two paths -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="border:1px solid var(--border-hi);border-radius:var(--r-md);padding:14px 12px;text-align:center;cursor:pointer;" onclick="openOverlay('inq-overlay');closeLensGate();">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">Included with booking</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;">Book this property</div>
+        <div style="font-size:.7rem;color:var(--stone);line-height:1.4;">The Lens unlocks automatically for this property and sitewide for 1 year.</div>
+      </div>
+      <div style="border:1.5px solid var(--ink);border-radius:var(--r-md);padding:14px 12px;text-align:center;background:var(--ink);cursor:pointer;" onclick="showMemberSignup()">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,120,.9);margin-bottom:4px;">Annual membership</div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:#fff;margin-bottom:4px;">$99 / year</div>
+        <div style="font-size:.7rem;color:rgba(255,255,255,.6);line-height:1.4;">All properties · All specialists · Priority advisor access.</div>
+      </div>
+    </div>
+
+    <div id="member-signup" style="display:none;">
+      <input class="lens-gate-input" id="lens-email" type="email" placeholder="Your email address" autocomplete="email">
+      <button class="lens-gate-submit" onclick="submitLensGate()">Continue to payment</button>
+    </div>
+    <div class="lens-gate-note">Book first and The Lens is complimentary · Cancel membership anytime</div>
+  </div>
+</div>
+
+
+<!-- ══ THE ENVOY FAB ══ -->
+<button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
+  <div class="ci-fab-pulse"></div>
+  <div class="ci-fab-txt">
+    <div class="ci-fab-label">The Envoy</div>
+    <div class="ci-fab-sub">Your Resident Expert</div>
+  </div>
+</button>
+
+<!-- ══ THE ENVOY DRAWER ══ -->
+<div class="ci-drawer" id="ci-drawer">
+
+  <div class="ci-head">
+    <div class="ci-avatar"><svg viewBox="0 0 16 16"><circle cx="8" cy="6" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div>
+    <div class="ci-head-txt">
+      <div class="ci-name">The Envoy</div>
+      <div class="ci-status"><div style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></div>Online · specialist in rare travel</div>
+    </div>
+    <button class="ci-close" onclick="closeEnvoy()"><svg viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10"/><line x1="10" y1="2" x2="2" y2="10"/></svg></button>
+  </div>
+
+  <div class="ci-context" id="ci-context">
+    <div class="ci-context-dot"></div>
+    <div class="ci-context-txt" id="ci-context-txt">Browsing The Bearing</div>
+  </div>
+
+  <div class="ci-messages" id="ci-messages"></div>
+
+  <div class="ci-sugs" id="ci-sugs">
+    <button class="ci-sug" onclick="ciAsk(this)">Something remote and untouched</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Beach, total privacy, no schedule</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Deeply cultural and historic</button>
+    <button class="ci-sug" onclick="ciAsk(this)">Surprise me entirely</button>
+  </div>
+
+  <div class="ci-input-row">
+    <input class="ci-input" id="ci-input" type="text" placeholder="Ask anything about travel\u2026" onkeydown="if(event.key==='Enter')ciSend()">
+    <button class="ci-send" onclick="ciSend()"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></button>
+  </div>
+
+</div>
+
+
+<!-- ══ CABIN PHOTO VIEWER ══ -->
+<div id="cabin-viewer" onclick="closeCabinViewer()" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.92);flex-direction:column;align-items:center;justify-content:center;cursor:pointer;">
+
+  <!-- Header -->
+  <div onclick="event.stopPropagation()" style="position:absolute;top:0;left:0;right:0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(to bottom,rgba(0,0,0,.6),transparent);z-index:2;">
+    <div>
+      <div id="cv-name" style="font-family:'Instrument Serif',serif;font-size:1.1rem;color:#fff;font-style:italic;"></div>
+      <div id="cv-counter" style="font-size:.65rem;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.06em;"></div>
+    </div>
+    <button onclick="closeCabinViewer()" style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="1" x2="11" y2="11"/><line x1="11" y1="1" x2="1" y2="11"/></svg>
+    </button>
+  </div>
+
+  <!-- Main image -->
+  <img id="cv-img" onclick="closeCabinViewer()" src="" alt="" style="max-width:92vw;max-height:78vh;object-fit:contain;border-radius:8px;box-shadow:0 8px 60px rgba(0,0,0,.5);transition:opacity .2s;cursor:pointer;" title="Click to close">
+
+  <!-- Nav arrows -->
+  <button id="cv-prev" onclick="event.stopPropagation();cvNav(-1)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><polyline points="9,2 4,7 9,12"/></svg>
+  </button>
+  <button id="cv-next" onclick="event.stopPropagation();cvNav(1)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"><polyline points="5,2 10,7 5,12"/></svg>
+  </button>
+
+  <!-- Thumbnail strip -->
+  <div id="cv-thumbs" onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;padding:14px 20px 20px;display:flex;justify-content:center;gap:8px;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);overflow-x:auto;"></div>
+
+  <!-- Tap anywhere (incl. photo) to close — controls stop propagation -->
+</div>
+
+<script>
+/* ── Cabin photo viewer ── */
+var cvPhotos = {};
+var cvCurrent = { cabin: '', idx: 0 };
+
+// Photo arrays from the property JSON. The gallery uses the special key __gallery__
+// so the same lightbox can render either a cabin's photos or the editorial gallery.
+cvPhotos['Panoramic Suite'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/19a363a6-3e80-4720-d777-8cfa03b16f00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/4d96d3d5-4d7e-4294-07f0-c349756a5100/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/96d39e6e-b51b-44b8-360c-a528ce7db100/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/d75ac815-0e2b-48f2-0080-815b200b0700/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/d2548a0e-af6c-4973-a3db-150004043900/public'
+];
+cvPhotos['Luxury Room'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/cc9a551b-602f-403c-4d42-f36c9963ff00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/5f925a95-648e-4695-6a79-c9ccbb515c00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/9b95bee3-4d81-408d-a770-4e39184bfc00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/28b5698a-8a80-413b-3633-f04625916b00/public'
+];
+cvPhotos['__gallery__'] = [
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/0a6501aa-1c3d-4bd0-a28f-c919eeefaf00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/c1f8bf3c-4a8d-4d93-19c1-41473cb49300/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/38942c98-52e1-4312-87ee-e49fd3127400/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/7b2caa59-e4c9-4781-edb7-0f9f1468ab00/public',
+  'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/14c3f45a-4530-4d9b-645b-756fee292800/public'
+];
+
+function openCabinPhotos(name) {
+  var photos = cvPhotos[name] || [];
+  if (!photos.length) return;
+  cvCurrent = { cabin: name, idx: 0 };
+  cvRender();
+  var v = document.getElementById('cabin-viewer');
+  v.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCabinViewer() {
+  document.getElementById('cabin-viewer').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function cvNav(dir) {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  cvCurrent.idx = (cvCurrent.idx + dir + photos.length) % photos.length;
+  cvRender();
+}
+
+function cvRender() {
+  var photos = cvPhotos[cvCurrent.cabin] || [];
+  var idx    = cvCurrent.idx;
+
+  // Main image
+  var img = document.getElementById('cv-img');
+  img.style.opacity = '0';
+  setTimeout(function() {
+    img.src = photos[idx];
+    img.style.opacity = '1';
+  }, 120);
+
+  // Name + counter
+  var displayName = cvCurrent.cabin === '__gallery__' ? 'A closer look' : cvCurrent.cabin;
+  document.getElementById('cv-name').textContent = displayName;
+  document.getElementById('cv-counter').textContent = (idx + 1) + ' of ' + photos.length + '  ·  tap outside to close';
+
+  // Show/hide arrows
+  document.getElementById('cv-prev').style.display = photos.length > 1 ? 'flex' : 'none';
+  document.getElementById('cv-next').style.display = photos.length > 1 ? 'flex' : 'none';
+
+  // Thumbnails
+  var strip = document.getElementById('cv-thumbs');
+  strip.innerHTML = '';
+  if (photos.length > 1) {
+    photos.forEach(function(src, i) {
+      var t = document.createElement('div');
+      t.style.cssText = 'width:52px;height:36px;border-radius:4px;overflow:hidden;cursor:pointer;flex-shrink:0;border:2px solid ' + (i === idx ? '#fff' : 'transparent') + ';transition:border-color .15s;';
+      var im = document.createElement('img');
+      im.src = src;
+      im.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      t.appendChild(im);
+      t.onclick = function(e) { e.stopPropagation(); cvCurrent.idx = i; cvRender(); };
+      strip.appendChild(t);
+    });
+  }
+}
+
+// Keyboard nav
+document.addEventListener('keydown', function(e) {
+  if (document.getElementById('cabin-viewer').style.display === 'none') return;
+  if (e.key === 'ArrowRight') cvNav(1);
+  if (e.key === 'ArrowLeft')  cvNav(-1);
+  if (e.key === 'Escape')     closeCabinViewer();
+});
+</script>
+
+
+<!-- ══ ACCOUNT OVERLAY ══ -->
+<div class="overlay" id="account-overlay" onclick="if(event.target===this)closeOverlay('account-overlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-grip" onclick="closeOverlay('account-overlay')"></div>
+    <div class="step-panel active" style="padding:24px 22px 40px;">
+
+      <div class="inq-kicker">The Bearing</div>
+      <div class="inq-title">Create your account</div>
+      <div class="inq-sub">Save properties, track your inquiries, and get personalised recommendations from your The Envoy.</div>
+
+      <div class="f-field">
+        <label class="f-lbl">Full name</label>
+        <input class="f-inp" id="acc-name" type="text" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Email address</label>
+        <input class="f-inp" id="acc-email" type="email" placeholder="you@email.com" autocomplete="email">
+      </div>
+      <div class="f-field">
+        <label class="f-lbl">Phone (optional)</label>
+        <input class="f-inp" id="acc-phone" type="tel" placeholder="+1 (000) 000-0000" autocomplete="tel">
+      </div>
+
+      <!-- Travel preferences -->
+      <div style="margin-bottom:14px;">
+        <label class="f-lbl" style="margin-bottom:8px;display:block;">Travel style</label>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button class="acc-pref-btn" onclick="togglePref(this)">Remote &amp; untouched</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Beach &amp; privacy</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Cultural &amp; historic</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Wilderness</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Luxury cruises</button>
+          <button class="acc-pref-btn" onclick="togglePref(this)">Design hotels</button>
+        </div>
+      </div>
+
+      <button class="f-next" onclick="submitAccount()">Create my account →</button>
+      <p class="f-note">Already have an account? <span style="color:var(--terra);cursor:pointer;text-decoration:underline;" onclick="toast('Sign in coming soon')">Sign in</span></p>
+
+    </div>
+  </div>
+</div>
+
+
+<div id="tb-checkout-overlay" onclick="if(event.target===this)tbCloseCheckout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(8px);">
+  <div id="tb-checkout-sheet" style="background:#fff;border-radius:24px;width:520px;max-width:94vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.25);animation:tbSlideUp .3s cubic-bezier(.32,.72,0,1);">
+
+    <!-- Header -->
+    <div style="padding:28px 28px 0;position:sticky;top:0;background:#fff;z-index:1;border-radius:24px 24px 0 0;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px;">
+        <div>
+          <div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra,#b05830);margin-bottom:5px;" id="tb-co-property-label">Property</div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;line-height:1.15;" id="tb-co-title">Book your stay</div>
+        </div>
+        <button onclick="tbCloseCheckout()" style="width:34px;height:34px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:background .15s;" onmouseover="this.style.background='#f5f0e8'" onmouseout="this.style.background='#fff'">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <!-- Step indicator -->
+      <div style="display:flex;gap:6px;padding:16px 0 14px;border-bottom:1px solid #f0ebe0;">
+        <div class="tb-step-pip" id="tb-pip-1" style="height:3px;flex:1;border-radius:100px;background:var(--terra,#b05830);transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-2" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+        <div class="tb-step-pip" id="tb-pip-3" style="height:3px;flex:1;border-radius:100px;background:#e5e0d8;transition:background .3s;"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Trip details -->
+    <div id="tb-step-1" style="padding:20px 28px 28px;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 1 of 3 — Trip details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
+          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option>1 adult</option>
+            <option selected>2 adults</option>
+            <option>3 adults</option>
+            <option>4 adults</option>
+            <option>2 adults, 1 child</option>
+            <option>2 adults, 2 children</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;" id="tb-co-room-label">Room / cabin type</label>
+          <select id="tb-co-room" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <!-- Populated dynamically per property -->
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Special requests or questions (optional)</label>
+        <textarea id="tb-co-notes" placeholder="Dietary requirements, anniversary celebration, arrival time, anything you'd like the property to know..." style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;resize:none;min-height:80px;line-height:1.55;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'"></textarea>
+      </div>
+
+      <!-- Price summary -->
+      <div id="tb-price-summary" style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;" id="tb-line-room">Select dates and room</span>
+          <span style="font-weight:600;" id="tb-line-total">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.8rem;">
+          <span style="color:#5a4e40;">TheBearing.io fee</span>
+          <span style="font-weight:600;color:#3a7055;">$0</span>
+        </div>
+        <div style="height:1px;background:#e5e0d8;margin:8px 0;"></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:.85rem;font-weight:700;">Booking deposit (10%)</span>
+          <span style="font-size:.85rem;font-weight:700;color:#b05830;" id="tb-deposit-amount">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-size:.75rem;color:#9a8e80;">Balance paid direct to property</span>
+          <span style="font-size:.75rem;color:#9a8e80;" id="tb-balance-amount">—</span>
+        </div>
+      </div>
+
+      <!-- How it works callout -->
+      <div style="background:#f0f7f4;border-radius:10px;padding:12px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <div style="font-size:.75rem;color:#2a5040;line-height:1.6;"><strong>How this works:</strong> You pay a 10% deposit to TheBearing.io now to secure your booking. The property will contact you directly within 24 hours to confirm and arrange the remaining 90% in their preferred way.</div>
+      </div>
+
+      <button onclick="tbGoStep(2)" id="tb-step1-btn" style="width:100%;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+        Continue to your details
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- Step 2: Guest details -->
+    <div id="tb-step-2" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 2 of 3 — Your details</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">First name</label>
+          <input type="text" id="tb-co-firstname" placeholder="Your first name" autocomplete="given-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+        <div>
+          <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Last name</label>
+          <input type="text" id="tb-co-lastname" placeholder="Your last name" autocomplete="family-name" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        </div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Email address</label>
+        <input type="email" id="tb-co-email" placeholder="you@email.com" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;">Your booking confirmation and the property's contact details will be sent here.</div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Phone number (optional)</label>
+        <input type="tel" id="tb-co-phone" placeholder="+1 (000) 000-0000" autocomplete="tel" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;outline:none;" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
+      </div>
+
+      <!-- Booking summary recap -->
+      <div style="background:#faf7f1;border-radius:12px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Booking summary</div>
+        <div style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:4px;" id="tb-step2-summary"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(1)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;transition:border-color .15s;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbGoStep(3)" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          Continue to payment
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Payment -->
+    <div id="tb-step-3" style="padding:20px 28px 28px;display:none;">
+      <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px;">Step 3 of 3 — Secure payment</div>
+
+      <!-- Stripe card element container -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:8px;">Card details</label>
+        <!-- In production: <div id="stripe-card-element"></div> -->
+        <!-- Demo UI that matches Stripe Elements styling -->
+        <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+          <input type="text" placeholder="1234 5678 9012 3456" maxlength="19" id="tb-co-card" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;letter-spacing:.05em;" oninput="tbFormatCard(this)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;">
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="MM / YY" maxlength="7" id="tb-co-expiry" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;" oninput="tbFormatExpiry(this)">
+          </div>
+          <div style="border:1px solid #ddd8cc;border-radius:10px;padding:12px 14px;background:#fff;">
+            <input type="text" placeholder="CVV" maxlength="4" id="tb-co-cvv" style="width:100%;border:none;font-family:'Geist',sans-serif;font-size:.9rem;color:#1e1810;outline:none;">
+          </div>
+        </div>
+        <div style="font-size:.65rem;color:#9a8e80;margin-top:6px;display:flex;align-items:center;gap:4px;">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          Secured by Stripe · 256-bit SSL · PCI DSS compliant
+        </div>
+      </div>
+
+      <!-- Final charge summary -->
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;margin-bottom:8px;">
+        <div style="font-size:.7rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Charge summary</div>
+        <div id="tb-step3-summary" style="font-size:.8rem;color:#5a4e40;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;"></div>
+        <div style="height:1px;background:#e5e0d8;margin-bottom:10px;"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:.9rem;font-weight:700;color:#1e1810;">Charged now</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:1.4rem;font-weight:600;color:#b05830;" id="tb-final-charge">—</span>
+        </div>
+        <div style="font-size:.68rem;color:#9a8e80;margin-top:4px;" id="tb-balance-note">—</div>
+      </div>
+
+      <!-- What happens next -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:.68rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens next</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</div>
+            <span>You'll receive an email confirmation with your booking reference and the property's direct contact details.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</div>
+            <span>The property contacts you directly within 24 hours to confirm your stay and arrange the balance.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start;font-size:.75rem;color:#5a4e40;">
+            <div style="width:18px;height:18px;border-radius:50%;background:#b05830;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</div>
+            <span>Your deposit is fully refundable if the property cannot confirm your dates.</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;">
+        <button onclick="tbGoStep(2)" style="padding:14px 20px;background:transparent;border:1.5px solid #ddd8cc;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;color:#5a4e40;cursor:pointer;" onmouseover="this.style.borderColor='#b05830'" onmouseout="this.style.borderColor='#ddd8cc'">← Back</button>
+        <button onclick="tbSubmitBooking()" id="tb-pay-btn" style="flex:1;padding:14px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s;" onmouseover="this.style.background='#8c4422'" onmouseout="this.style.background='#b05830'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <span id="tb-pay-btn-text">Pay deposit now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Confirmation -->
+    <div id="tb-step-4" style="padding:40px 28px;display:none;text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:#f0f7f4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#1e1810;margin-bottom:8px;">Booking confirmed</div>
+      <div style="font-size:.82rem;color:#5a4e40;line-height:1.65;margin-bottom:6px;" id="tb-confirm-msg">Your deposit has been received.</div>
+      <div style="font-family:monospace;font-size:.78rem;color:#9a8e80;background:#faf7f1;padding:8px 16px;border-radius:100px;display:inline-block;margin-bottom:24px;" id="tb-confirm-ref">TB-2025-XXXX</div>
+      <div style="background:#faf7f1;border-radius:12px;padding:16px;text-align:left;margin-bottom:24px;">
+        <div style="font-size:.72rem;font-weight:700;color:#9a8e80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">What happens now</div>
+        <div style="font-size:.78rem;color:#5a4e40;line-height:1.7;">
+          ✓ Confirmation email sent to <strong id="tb-confirm-email"></strong><br>
+          ✓ Property's direct contact details included<br>
+          ✓ The property will reach out within 24 hours<br>
+          ✓ Balance arranged directly with the property
+        </div>
+      </div>
+      <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:#1e1810;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Done</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+@keyframes tbSlideUp { from { opacity:0; transform:translateY(20px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes tbSlideUp { from { opacity:0; transform:translateY(20px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+</style>
+<div class="toast" id="toast-el"></div>
 </body>
 </html>
