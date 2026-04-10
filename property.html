@@ -22,12 +22,8 @@ function initScrollSpy(){
 }
 document.addEventListener('DOMContentLoaded',initScrollSpy);
 var _t;function toast(m){var e=document.getElementById('toast-el');if(!e)return;e.textContent=m;e.classList.add('show');clearTimeout(_t);_t=setTimeout(function(){e.classList.remove('show');},2800);}
-function openEnquiry(){document.getElementById('inq-overlay').classList.add('open');document.body.style.overflow='hidden';}
-function closeEnquiry(){document.getElementById('inq-overlay').classList.remove('open');document.body.style.overflow='';}
-function submitEnquiry(){
-  if(!document.getElementById('enq-name').value.trim()||!document.getElementById('enq-email').value.trim()){toast('Please enter your name and email.');return;}
-  closeEnquiry();toast('✓ Enquiry sent — we\'ll reply within 24 hours');
-}
+function openEnquiry(){openOverlay('inq-overlay');}
+function closeEnquiry(){closeOverlay('inq-overlay');}
 </script>
 <style>
 :root{--cream:#faf7f1;--linen:#f4efe4;--sand:#ece5d8;--border:rgba(80,60,30,.1);--border-hi:rgba(80,60,30,.18);--ink:#1e1810;--bark:#5a4e40;--stone:#9a8e80;--mist:#bdb4a8;--terra:#b05830;--terra-d:#8c4422;--terra-dim:rgba(176,88,48,.09);--gold:#9a7230;--sea:#2e6a8a;--moss:#3a7055;--r-sm:10px;--r-md:14px;--r-lg:18px;--r-xl:24px;}
@@ -866,7 +862,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="dbc-divider"></div>
         <div id="dbc-details"></div>
         <div class="dbc-divider"></div>
-        <button class="dbc-cta" onclick="openEnquiry()">
+        <button class="dbc-cta" id="dbc-book-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           Book now
         </button>
@@ -1053,24 +1049,7 @@ button{font-family:inherit;cursor:pointer;}
     </div>
   </div>
 </div>
-<!-- ENQUIRY OVERLAY -->
-<div class="overlay" id="inq-overlay" onclick="if(event.target===this)closeEnquiry()">
-  <div class="sheet">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <div style="font-size:.62rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;" id="enq-type"></div>
-        <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;" id="enq-prop"></div>
-      </div>
-      <button onclick="closeEnquiry()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--border-hi);background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--stone);">×</button>
-    </div>
-    <input class="f-inp" id="enq-name" placeholder="Your name">
-    <input class="f-inp" id="enq-email" type="email" placeholder="Email address">
-    <input class="f-inp" id="enq-dates" placeholder="Preferred dates (flexible is fine)">
-    <textarea class="f-inp" id="enq-msg" rows="3" placeholder="Any questions or special requests?" style="resize:vertical;"></textarea>
-    <button class="f-next" onclick="submitEnquiry()">Send enquiry →</button>
-    <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-top:10px;">We'll reply within 24 hours. No commitment required.</div>
-  </div>
-</div>
+<!-- Legacy simple-form enquiry overlay removed — real 3-step overlay lives below -->
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="if(event.target===this)lbClose()">
@@ -1225,6 +1204,52 @@ function renderProperty(p,slug){
   }
   if(heroUrls.length>1){setText('hero-count',heroUrls.length+' photos');show('hero-count');}
 
+  // ── ENQUIRY OVERLAY: dynamic property injection ──
+  // Overwrites all hardcoded Nour El Nil references in Step 2 (banner) and Step 3 (inbox thread)
+  // so every property shows its own name, hero image, type, location, and sender labels.
+  (function(){
+    var heroUrl = (heroUrls[0] && heroUrls[0].url) ? (typeof cfThumb==='function' ? cfThumb(heroUrls[0].url) : heroUrls[0].url) : '';
+    var pname = p.name || '';
+    var kicker = (r.type_pill||p.type||'') + (loc?' · '+loc:'');
+    var sub = r.duration_tagline || '';
+    var firstRoom = (p.rooms && p.rooms[0] && p.rooms[0].name) || '';
+    var bookingTitle = firstRoom ? (pname + ' · ' + firstRoom) : pname;
+
+    // Step 2 banner
+    if(heroUrl){
+      var bImg = document.getElementById('inq-banner-img'); if(bImg) bImg.src = heroUrl;
+      var ibImg = document.getElementById('inbox-booking-img'); if(ibImg) ibImg.src = heroUrl;
+    }
+    setText('inq-banner-kicker', kicker);
+    setText('inq-banner-name', pname);
+    setText('inq-banner-sub', sub);
+
+    // Step 3 header blurbs
+    setText('inq-sent-to', 'Sent directly to ' + pname + ' — no middlemen');
+    setText('inq-conv-name', pname);
+
+    // Inbox header (avatar letter + sender name)
+    setText('inbox-avatar-letter', (pname.charAt(0) || '·').toUpperCase());
+    setText('inbox-header-name', pname);
+
+    // Booking card inside inbox thread
+    setText('inbox-booking-title', bookingTitle);
+    setText('inbox-booking-sub', loc || '');
+
+    // Composer placeholder
+    setText('inbox-composer-fake', 'Message ' + pname + '…');
+
+    // All inbox sender labels
+    document.querySelectorAll('[data-prop-sender]').forEach(function(el){
+      el.textContent = pname;
+    });
+
+    // Welcome bubble: replace NEN-specific reply text with property-neutral copy
+    document.querySelectorAll('[data-prop-welcome]').forEach(function(el){
+      el.textContent = 'Thank you so much — we\'re genuinely thrilled to hear from you. A member of our team will reply personally within 24 hours with availability and full details. Welcome.';
+    });
+  })();
+
   // Breadcrumb + header
   setText('bc-name',p.name||'');
   var ts=(p.type||'').toLowerCase();
@@ -1330,6 +1355,23 @@ function renderProperty(p,slug){
     if(isCruise)document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
     // Build checkout rooms config for Select buttons
     var checkoutRooms=p.rooms.filter(function(rm){return rm.price;}).map(function(rm){return {name:rm.name,price:parseInt(rm.price)};});
+    // Wire the main "Book now" button in the desktop booking card to the checkout modal
+    var bookBtn=document.getElementById('dbc-book-btn');
+    if(bookBtn && checkoutRooms.length){
+      var _propLabel = (p.name||'') + ((p.render&&p.render.location_line) ? ' · '+p.render.location_line : (p.location?' · '+p.location:''));
+      bookBtn.onclick = function(){
+        tbOpenCheckout({
+          property: _propLabel,
+          title: isCruise ? 'Book your voyage' : 'Book your stay',
+          roomLabel: isCruise ? 'Cabin type' : 'Room type',
+          commissionRate: 0.10,
+          rooms: checkoutRooms
+        });
+      };
+    } else if (bookBtn) {
+      // No bookable rooms — fall back to the enquiry flow
+      bookBtn.onclick = function(){ openOverlay('inq-overlay'); };
+    }
     rl.innerHTML=p.rooms.map(function(rm){
       var meta=[rm.size?rm.size+(rm.size_unit==='sqft'?' ft²':' m²'):'',rm.beds||'',rm.max_occupancy?'Max '+rm.max_occupancy:''].filter(Boolean).join(' · ');
       var price=rm.price?'$'+parseInt(rm.price).toLocaleString():'POA';
@@ -2476,12 +2518,12 @@ loadProperty();
       <div class="inq-title">Your journey awaits.</div>
       <!-- Hero property banner -->
       <div style="position:relative;height:110px;border-radius:14px;overflow:hidden;margin-bottom:16px;">
-        <img src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;">
+        <img id="inq-banner-img" src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;">
         <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,6,3,.1) 0%,rgba(8,6,3,.72) 100%);"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:14px 18px;">
-          <div style="font-size:.58rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:3px;">River Cruise · Nile, Egypt</div>
-          <div style="font-family:'Instrument Serif',serif;font-size:1.2rem;color:#fff;font-style:italic;line-height:1.1;">Nour El Nil</div>
-          <div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px;">Esna → Aswan · 6 days · 5 nights · Dahabiya</div>
+          <div id="inq-banner-kicker" style="font-size:.58rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:3px;">River Cruise · Nile, Egypt</div>
+          <div id="inq-banner-name" style="font-family:'Instrument Serif',serif;font-size:1.2rem;color:#fff;font-style:italic;line-height:1.1;">Nour El Nil</div>
+          <div id="inq-banner-sub" style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:3px;">Esna → Aswan · 6 days · 5 nights · Dahabiya</div>
         </div>
         <!-- Pending badge -->
         <div style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);border-radius:100px;padding:4px 11px;display:flex;align-items:center;gap:6px;">
@@ -2528,7 +2570,7 @@ loadProperty();
         <div style="font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">What happens next</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:18px;height:18px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:.56rem;font-weight:700;color:#fff;">1</span></div>
-          <span style="font-size:.75rem;color:var(--bark);">Sent directly to Nour El Nil — no middlemen</span>
+          <span id="inq-sent-to" style="font-size:.75rem;color:var(--bark);">Sent directly to Nour El Nil — no middlemen</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="width:18px;height:18px;border-radius:50%;background:var(--terra);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="font-size:.56rem;font-weight:700;color:#fff;">2</span></div>
@@ -2554,7 +2596,7 @@ loadProperty();
         </div>
         <div style="flex:1;">
           <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
-          <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
+          <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
         </div>
         <a onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);return false;" href="#" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to channel
@@ -2566,9 +2608,9 @@ loadProperty();
       <div class="inbox-wrap">
 
         <div style="padding:10px 14px 9px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7a5820,#4a3010);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.85rem;">N</div>
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7a5820,#4a3010);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.85rem;" id="inbox-avatar-letter">N</div>
           <div style="flex:1;">
-            <div style="font-size:.79rem;font-weight:500;color:#fff;">Nour El Nil</div>
+            <div id="inbox-header-name" style="font-size:.79rem;font-weight:500;color:#fff;">Nour El Nil</div>
             <div style="font-size:.6rem;color:rgba(255,255,255,.3);">via The Bearing · encrypted</div>
           </div>
           <div class="inbox-badge">● Live</div>
@@ -2585,8 +2627,8 @@ loadProperty();
           </div>
 
           <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender">Nour El Nil</div>
-            <div class="inbox-bubble">Thank you so much — we're genuinely thrilled to hear from you. The Nile in October is extraordinary. A member of our team will reply personally within 24 hours with availability and full details. Welcome to Nour El Nil.</div>
+            <div class="inbox-sender" data-prop-sender>Nour El Nil</div>
+            <div class="inbox-bubble" data-prop-welcome>Thank you so much — we're genuinely thrilled to hear from you. The Nile in October is extraordinary. A member of our team will reply personally within 24 hours with availability and full details. Welcome.</div>
             <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">10:42 AM · Automatic reply</div>
           </div>
 
@@ -2596,11 +2638,11 @@ loadProperty();
           </div>
 
           <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender">Nour El Nil</div>
+            <div class="inbox-sender" data-prop-sender>Nour El Nil</div>
             <div class="inbox-bubble" style="padding:0;overflow:hidden;background:none;border:none;">
               <div class="booking-card" onclick="toast('Full booking details coming soon')">
                 <div style="height:88px;overflow:hidden;position:relative;">
-                  <img src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 62%;">
+                  <img id="inbox-booking-img" src="https://www.nourelnil.com/wp-content/uploads/2024/04/2439_NEN_Poppee_Room_Pan_1089.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 62%;">
                   <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(13,38,13,.82));"></div>
                   <div style="position:absolute;top:7px;right:8px;background:rgba(120,220,140,.15);border:1px solid rgba(120,220,140,.25);border-radius:100px;padding:2px 7px;display:flex;align-items:center;gap:3px;">
                     <div style="width:4px;height:4px;border-radius:50%;background:#4ade80;"></div>
@@ -2608,11 +2650,11 @@ loadProperty();
                   </div>
                   <div style="position:absolute;bottom:8px;left:11px;">
                     <div style="font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:1px;">Booking confirmation</div>
-                    <div style="font-family:'Instrument Serif',serif;font-size:.92rem;color:#fff;font-style:italic;">Nour El Nil · Deluxe Suite</div>
+                    <div id="inbox-booking-title" style="font-family:'Instrument Serif',serif;font-size:.92rem;color:#fff;font-style:italic;">Nour El Nil · Deluxe Suite</div>
                   </div>
                 </div>
                 <div style="background:rgba(13,38,13,.95);padding:6px 12px 7px;">
-                  <div style="font-size:.64rem;color:rgba(255,255,255,.4);">Esna → Aswan · Nile, Egypt</div>
+                  <div id="inbox-booking-sub" style="font-size:.64rem;color:rgba(255,255,255,.4);">Esna → Aswan · Nile, Egypt</div>
                 </div>
                 <div style="background:rgba(255,255,255,.06);padding:9px 12px;display:flex;border-top:1px solid rgba(255,255,255,.06);">
                   <div style="flex:1;border-right:1px solid rgba(255,255,255,.06);padding-right:10px;">
@@ -2639,7 +2681,7 @@ loadProperty();
         </div>
 
         <div class="inbox-input-row">
-          <div class="inbox-input-fake">Message Nour El Nil…</div>
+          <div class="inbox-input-fake" id="inbox-composer-fake">Message Nour El Nil…</div>
           <div class="inbox-send-btn"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
         </div>
       </div>
