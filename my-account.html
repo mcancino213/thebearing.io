@@ -353,6 +353,22 @@ var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deepl
 })();
 
 
+var ciOpen = false;
+var ciBusy = false;
+
+// Persist history across pages via sessionStorage
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+function ciClearOnFresh() {
+  // Only clear if no history exists yet (first visit)
+}
+
+var ciHistory = ciLoadHistory();
+
 function openEnvoy() {
   ciOpen = true;
   document.getElementById('ci-drawer').classList.add('open');
