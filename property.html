@@ -1678,7 +1678,8 @@ function populateReview(){
   var dateLabel = '';
   if (checkin && checkout) dateLabel = fmt(checkin) + ' → ' + fmt(checkout);
   else if (checkin) dateLabel = fmt(checkin);
-  else dateLabel = '15 October 2025';
+  else if (checkout) dateLabel = 'Departing ' + fmt(checkout);
+  else dateLabel = 'Dates flexible';
 
   setText('rv-name',  name);
   setText('rv-email', email);
@@ -1702,7 +1703,7 @@ function populateConfirmation(){
   var checkout = val('inq-checkout');
   var guests = val('inq-guests') || '2 guests';
 
-  // Format dates — use real values if provided, otherwise fallback demo dates
+  // Format dates — honest placeholders when user didn't provide them
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
   var checkIn, checkOut;
   if (checkin && checkout) {
@@ -1710,19 +1711,27 @@ function populateConfirmation(){
     checkOut = fmt(checkout);
   } else if (checkin) {
     checkIn = fmt(checkin);
-    var d = new Date(checkin+'T00:00'); d.setDate(d.getDate()+6);
-    checkOut = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    checkOut = 'TBD';
+  } else if (checkout) {
+    checkIn = 'TBD';
+    checkOut = fmt(checkout);
   } else {
-    checkIn = '15 Oct 2025';
-    checkOut = '21 Oct 2025';
+    checkIn = 'Flexible';
+    checkOut = 'Flexible';
   }
 
   // Build guest first message
+  var propNameEl = document.getElementById('prop-name');
+  var propName = propNameEl ? propNameEl.textContent.trim() : '';
   var guestMsg = 'Hi';
   if(name) guestMsg += ' — my name is ' + name;
-  guestMsg += '. I\'d like to inquire about the ' + cabin + ' on Nour El Nil';
+  guestMsg += '. I\'d like to inquire about the ' + cabin;
+  if(propName) guestMsg += ' at ' + propName;
   if(guests) guestMsg += ' for ' + guests;
-  if(checkin) guestMsg += ', arriving ' + checkIn;
+  if(checkin && checkout) guestMsg += ', arriving ' + checkIn + ' and departing ' + checkOut;
+  else if(checkin) guestMsg += ', arriving ' + checkIn;
+  else if(checkout) guestMsg += ', departing ' + checkOut;
+  else guestMsg += '. My dates are flexible';
   guestMsg += '. Please let me know availability and next steps.';
 
   var previewEl = document.getElementById('preview-msg');
@@ -2429,23 +2438,21 @@ loadProperty();
 
         <div class="f-row">
           <div class="f-field">
-            <label class="f-lbl" for="inq-checkin">Arrival</label>
+            <label class="f-lbl" for="inq-checkin">Arrival <span style="color:var(--stone);font-weight:400;">(optional)</span></label>
             <input class="f-inp" id="inq-checkin" name="checkin" type="date" onclick="try{this.showPicker()}catch(e){}" onchange="if(document.getElementById('inq-checkout').value && this.value > document.getElementById('inq-checkout').value){document.getElementById('inq-checkout').value=''}">
           </div>
           <div class="f-field">
-            <label class="f-lbl" for="inq-checkout">Departure</label>
+            <label class="f-lbl" for="inq-checkout">Departure <span style="color:var(--stone);font-weight:400;">(optional)</span></label>
             <input class="f-inp" id="inq-checkout" name="checkout" type="date" onclick="try{this.showPicker()}catch(e){}">
           </div>
         </div>
-        <div class="f-row">
-          <div class="f-field">
-            <label class="f-lbl" for="inq-guests">Guests</label>
-            <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
-          </div>
+        <div class="f-field">
+          <label class="f-lbl" for="inq-guests">Guests</label>
+          <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
         </div>
 
         <div class="f-field">
-          <label class="f-lbl" for="inq-cabin">Cabin preference</label>
+          <label class="f-lbl" for="inq-cabin">Room preference</label>
           <select class="f-inp f-select" id="inq-cabin" name="cabin">
             <option value="">Not sure yet</option>
             <option value="Luxury Room">Luxury Room — from $4,200/voyage</option>
