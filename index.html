@@ -32,6 +32,7 @@
     if(el){ el.classList.remove('open'); document.body.style.overflow=''; }
   }
   function setStype(el){ document.querySelectorAll('.stype').forEach(function(b){ b.classList.remove('active'); }); el.classList.add('active'); }
+  function getActiveStype(){ var el = document.querySelector('.stype.active'); return el ? (el.getAttribute('data-stype') || 'all') : 'all'; }
   function setFilter(el){ document.querySelectorAll('.fpill').forEach(function(p){ p.classList.remove('active'); }); el.classList.add('active'); }
   var toastT;
   function toast(msg){
@@ -1217,13 +1218,16 @@
     <p class="hero-sub">We search the world for boutique hideaways and intimate voyages that never appear on mass-market sites.</p>
     <div class="search-panel">
       <div class="stype-row">
-        <button class="stype active" onclick="setStype(this)">
+        <button class="stype active" data-stype="all" onclick="setStype(this)">
+          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>All
+        </button>
+        <button class="stype" data-stype="hotel" onclick="setStype(this)">
           <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-hotel"/></svg></span>Hotels
         </button>
-        <button class="stype" onclick="setStype(this)">
+        <button class="stype" data-stype="cruise" onclick="setStype(this)">
           <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-cruise"/></svg></span>Cruises
         </button>
-        <button class="stype" onclick="setStype(this)">
+        <button class="stype" data-stype="villa" onclick="setStype(this)">
           <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-villa"/></svg></span>Villas
         </button>
       </div>
@@ -1235,24 +1239,30 @@
             <input id="home-dest-input" type="text" placeholder="Anywhere in the world" autocomplete="off"
               style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:text;"
               oninput="homeDestAutocomplete(this.value)"
-              onkeydown="if(event.key==='Enter'){tcSearch(this.value)}"
+              onkeydown="if(event.key==='Enter'){tcSearchSubmit()}"
               onfocus="this.parentNode.parentNode.style.background='var(--linen)'"
               onblur="this.parentNode.parentNode.style.background=''">
           </div>
           <div id="home-dest-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(80,55,25,.12);z-index:300;max-height:220px;overflow-y:auto;scrollbar-width:none;"></div>
         </div>
         <div class="sfield-row">
-          <div class="sfield" onclick="toast('Pick dates')">
+          <div class="sfield" style="cursor:text;" onclick="document.getElementById('home-checkin').focus();try{document.getElementById('home-checkin').showPicker()}catch(e){}">
             <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-calendar"/></svg></span>
-            <div><div class="sfield-label">Check in</div><div class="sfield-val">Add date</div></div>
+            <div style="flex:1;">
+              <div class="sfield-label">Check in</div>
+              <input id="home-checkin" type="date" style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:pointer;" onchange="if(document.getElementById('home-checkout').value && this.value > document.getElementById('home-checkout').value){document.getElementById('home-checkout').value=''}">
+            </div>
           </div>
-          <div class="sfield" onclick="toast('Pick dates')">
+          <div class="sfield" style="cursor:text;" onclick="document.getElementById('home-checkout').focus();try{document.getElementById('home-checkout').showPicker()}catch(e){}">
             <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-moon"/></svg></span>
-            <div><div class="sfield-label">Check out</div><div class="sfield-val">Add date</div></div>
+            <div style="flex:1;">
+              <div class="sfield-label">Check out</div>
+              <input id="home-checkout" type="date" style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:pointer;">
+            </div>
           </div>
         </div>
       </div>
-      <button class="search-cta" onclick="tcSearch(document.getElementById('home-dest-input').value || 'egypt')">Explore The Bearing</button>
+      <button class="search-cta" onclick="tcSearchSubmit()">Explore The Bearing</button>
       <div style="text-align:center;padding:10px 12px 14px;display:flex;align-items:center;justify-content:center;gap:8px;">
         <span style="font-size:.72rem;color:var(--stone);">Don't know where yet?</span>
         <a href="/vibe-search.html" style="font-size:.72rem;font-weight:600;color:var(--terra);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
@@ -2189,14 +2199,32 @@ function submitAccount(){
 </div>
 
 <script>
+function tcSearchSubmit() {
+  var dest = (document.getElementById('home-dest-input') || {}).value || '';
+  var checkin = (document.getElementById('home-checkin') || {}).value || '';
+  var checkout = (document.getElementById('home-checkout') || {}).value || '';
+  var stype = (typeof getActiveStype === 'function') ? getActiveStype() : 'all';
+  // Swap if check-out is before check-in
+  if (checkin && checkout && checkout < checkin) { var t = checkin; checkin = checkout; checkout = t; }
+  var ctx = { destination: dest.trim(), checkin: checkin, checkout: checkout, stype: stype, ts: Date.now() };
+  try { sessionStorage.setItem('bearing_search', JSON.stringify(ctx)); } catch(e) {}
+  // Build query string for the results page
+  var params = [];
+  if (ctx.destination) params.push('q=' + encodeURIComponent(ctx.destination));
+  if (ctx.stype && ctx.stype !== 'all') params.push('type=' + encodeURIComponent(ctx.stype));
+  if (ctx.checkin) params.push('checkin=' + encodeURIComponent(ctx.checkin));
+  if (ctx.checkout) params.push('checkout=' + encodeURIComponent(ctx.checkout));
+  window.location = 'search.html' + (params.length ? '?' + params.join('&') : '');
+}
+// Legacy entry points preserved for any other callers
 function tcSearch(val) {
-  var q = (val || 'egypt').trim();
-  if (!q) q = 'egypt';
-  window.location = 'search.html';
+  if (val) { var el = document.getElementById('home-dest-input'); if (el) el.value = val; }
+  tcSearchSubmit();
 }
 function tcSearchFromInput(inputId) {
   var el = document.getElementById(inputId);
-  tcSearch(el ? el.value : 'egypt');
+  if (el) { var dest = document.getElementById('home-dest-input'); if (dest) dest.value = el.value; }
+  tcSearchSubmit();
 }
 
 var HOME_COUNTRIES = ["Afghanistan","Albania","Algeria","Andorra","Angola","Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Belgium","Bhutan","Bolivia","Brazil","Cambodia","Canada","Chile","China","Colombia","Croatia","Cuba","Cyprus","Czech Republic","Denmark","Ecuador","Egypt","Estonia","Ethiopia","Fiji","Finland","France","Georgia","Germany","Ghana","Greece","Guatemala","Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kuwait","Laos","Latvia","Lebanon","Libya","Lithuania","Luxembourg","Malaysia","Maldives","Malta","Mexico","Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia","Nepal","Netherlands","New Zealand","Nicaragua","Nigeria","Norway","Oman","Pakistan","Panama","Paraguay","Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia","Saudi Arabia","Senegal","Serbia","Seychelles","Singapore","Slovakia","Slovenia","South Africa","South Korea","Spain","Sri Lanka","Sudan","Sweden","Switzerland","Syria","Taiwan","Tanzania","Thailand","Tunisia","Turkey","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"];

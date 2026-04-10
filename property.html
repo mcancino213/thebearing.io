@@ -1668,14 +1668,21 @@ function val(id){ return (document.getElementById(id)||{}).value || ''; }
 function populateReview(){
   var name   = val('inq-name')   || 'Sarah Mitchell';
   var email  = val('inq-email')  || 'sarah.mitchell@gmail.com';
-  var date   = val('inq-date');
+  var checkin  = val('inq-checkin');
+  var checkout = val('inq-checkout');
   var guests = val('inq-guests') || '2 adults';
   var cabin  = val('inq-cabin')  || 'Deluxe Suite';
   var notes  = val('inq-notes');
 
+  var fmt = function(d){ return d ? new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : ''; };
+  var dateLabel = '';
+  if (checkin && checkout) dateLabel = fmt(checkin) + ' → ' + fmt(checkout);
+  else if (checkin) dateLabel = fmt(checkin);
+  else dateLabel = '15 October 2025';
+
   setText('rv-name',  name);
   setText('rv-email', email);
-  setText('rv-date',  date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) : '15 October 2025');
+  setText('rv-date',  dateLabel);
   setText('rv-guests', guests);
   setText('rv-cabin',  cabin);
 
@@ -1691,24 +1698,31 @@ function populateReview(){
 function populateConfirmation(){
   var name   = val('inq-name');
   var cabin  = val('inq-cabin') || 'Luxury Room';
-  var date   = val('inq-date');
+  var checkin  = val('inq-checkin');
+  var checkout = val('inq-checkout');
   var guests = val('inq-guests') || '2 guests';
 
-  // Format dates
-  var checkIn = date ? new Date(date+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '15 Oct 2025';
-  var checkOut = '';
-  if(date){
-    var d = new Date(date+'T00:00');
-    d.setDate(d.getDate()+6);
+  // Format dates — use real values if provided, otherwise fallback demo dates
+  var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+  var checkIn, checkOut;
+  if (checkin && checkout) {
+    checkIn = fmt(checkin);
+    checkOut = fmt(checkout);
+  } else if (checkin) {
+    checkIn = fmt(checkin);
+    var d = new Date(checkin+'T00:00'); d.setDate(d.getDate()+6);
     checkOut = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  } else { checkOut = '21 Oct 2025'; }
+  } else {
+    checkIn = '15 Oct 2025';
+    checkOut = '21 Oct 2025';
+  }
 
   // Build guest first message
   var guestMsg = 'Hi';
   if(name) guestMsg += ' — my name is ' + name;
   guestMsg += '. I\'d like to inquire about the ' + cabin + ' on Nour El Nil';
   if(guests) guestMsg += ' for ' + guests;
-  if(date) guestMsg += ', departing ' + checkIn;
+  if(checkin) guestMsg += ', arriving ' + checkIn;
   guestMsg += '. Please let me know availability and next steps.';
 
   var previewEl = document.getElementById('preview-msg');
@@ -2354,6 +2368,22 @@ function ciShowTyping() {
 if (sessionStorage.getItem('ci_was_open') === '1') {
   // Small delay to let page render
   setTimeout(openEnvoy, 100);
+
+// ── Prefill enquiry + checkout dates from home-page search, if present ──
+(function bearingSearchPrefill(){
+  try {
+    var raw = sessionStorage.getItem('bearing_search');
+    if (!raw) return;
+    var ctx = JSON.parse(raw);
+    if (!ctx || (!ctx.checkin && !ctx.checkout)) return;
+    var set = function(id, v){ var el = document.getElementById(id); if (el && v && !el.value) el.value = v; };
+    set('inq-checkin', ctx.checkin);
+    set('inq-checkout', ctx.checkout);
+    set('tb-co-arrival', ctx.checkin);
+    set('tb-co-departure', ctx.checkout);
+    if (typeof tbUpdateSummary === 'function') { try { tbUpdateSummary(); } catch(e) {} }
+  } catch(e) { console.log('[Search prefill]', e.message); }
+})();
 }
 window.addEventListener('beforeunload', function() {
   sessionStorage.setItem('ci_was_open', ciOpen ? '1' : '0');
@@ -2399,9 +2429,15 @@ loadProperty();
 
         <div class="f-row">
           <div class="f-field">
-            <label class="f-lbl" for="inq-date">Preferred dates</label>
-            <input class="f-inp" id="inq-date" name="date" type="date" onclick="try{this.showPicker()}catch(e){}">
+            <label class="f-lbl" for="inq-checkin">Arrival</label>
+            <input class="f-inp" id="inq-checkin" name="checkin" type="date" onclick="try{this.showPicker()}catch(e){}" onchange="if(document.getElementById('inq-checkout').value && this.value > document.getElementById('inq-checkout').value){document.getElementById('inq-checkout').value=''}">
           </div>
+          <div class="f-field">
+            <label class="f-lbl" for="inq-checkout">Departure</label>
+            <input class="f-inp" id="inq-checkout" name="checkout" type="date" onclick="try{this.showPicker()}catch(e){}">
+          </div>
+        </div>
+        <div class="f-row">
           <div class="f-field">
             <label class="f-lbl" for="inq-guests">Guests</label>
             <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
