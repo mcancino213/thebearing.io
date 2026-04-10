@@ -1168,6 +1168,7 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
               <div style="display:flex;gap:8px;">
                 <input class="pe-input" id="prop-slug-input" placeholder="e.g. singita-grumeti" style="flex:1;">
                 <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="propLoadBySlug()">Load slug</button>
+                <button class="btn btn-secondary btn-sm" style="white-space:nowrap;" onclick="openGeminiImport()" title="Paste a JSON blob from Gemini research">Import from Gemini</button>
               </div>
             </div>
             <div style="font-size:12px;color:var(--text3);line-height:1.5;padding-bottom:2px;">
@@ -3688,12 +3689,334 @@ function propLoadBySlug() {
   propLoad();
 }
 
+// ── GEMINI IMPORT ──────────────────────────────────────────────────────
+// Opens a modal, accepts a nested JSON blob from the Gemini research prompt,
+// converts it to the flat fields-dict shape that propRestore() expects,
+// and hydrates the form. HUMAN_REQUIRED sentinel values are stripped
+// (left blank) so the admin can fill them in by hand.
+
+function openGeminiImport() {
+  var m = document.getElementById('gemini-import-modal');
+  if (m) m.style.display = 'flex';
+  var ta = document.getElementById('gemini-import-textarea');
+  if (ta) { ta.value = ''; setTimeout(function(){ ta.focus(); }, 50); }
+  var err = document.getElementById('gemini-import-error');
+  if (err) err.textContent = '';
+}
+function closeGeminiImport() {
+  var m = document.getElementById('gemini-import-modal');
+  if (m) m.style.display = 'none';
+}
+
+// Strip "HUMAN_REQUIRED" sentinel values everywhere in the object, recursively
+function stripHumanRequired(v) {
+  if (v === 'HUMAN_REQUIRED') return '';
+  if (Array.isArray(v)) return v.map(stripHumanRequired);
+  if (v && typeof v === 'object') {
+    var out = {};
+    Object.keys(v).forEach(function(k){ out[k] = stripHumanRequired(v[k]); });
+    return out;
+  }
+  return v;
+}
+
+// Convert nested Gemini JSON → flat fields dict matching propRestore's expectation
+function geminiJsonToFields(j) {
+  j = stripHumanRequired(j || {});
+  var f = {};
+  var set = function(id, val){ if (val !== undefined && val !== null && val !== '') f[id] = val; };
+
+  // Core identity
+  set('f-name', j.name);
+  set('f-slug', j.slug);
+  set('f-type', j.type);
+  set('f-status', j.status || 'draft');
+  set('f-country', j.country);
+  set('f-region', j.region);
+  set('f-airport', j.airport);
+  set('f-tag', j.tag);
+  set('f-hook', j.hook);
+  if (j.experiential === true || j.experiential === false) f['f-experiential'] = j.experiential;
+
+  // Render block
+  var r = j.render || {};
+  set('f-location-line', r.location_line);
+  set('f-duration-tagline', r.duration_tagline);
+  set('f-type-pill', r.type_pill);
+  if (r.rating != null) set('f-rating', String(r.rating));
+  if (r.reviews != null) set('f-reviews', String(r.reviews));
+  if (r.verified === true) f['f-verified'] = true;
+
+  // Stats strip — up to 4 pairs
+  if (Array.isArray(r.stats)) {
+    r.stats.slice(0, 4).forEach(function(s, i){
+      var n = i + 1;
+      set('f-stat'+n+'-val', s && s.value);
+      set('f-stat'+n+'-label', s && s.label);
+    });
+  }
+
+  // Overview
+  var o = j.overview || {};
+  set('f-desc-short', o.p1);
+  set('f-desc-p2', o.p2);
+  set('f-desc-p3', o.p3);
+  set('f-desc-long', o.body);
+
+  // Verdict, quote, inclusions
+  set('f-verdict', j.verdict);
+  if (j.quote && j.quote.text) {
+    set('f-quote-text', j.quote.text);
+    set('f-quote-attr', j.quote.attribution);
+  }
+  if (Array.isArray(j.inclusions) && j.inclusions.length) {
+    f['f-inclusions'] = j.inclusions.join('\n');
+  }
+
+  // Details
+  var d = j.details || {};
+  set('f-rcount', d.total_rooms);
+  set('f-maxg', d.max_guests);
+  set('f-year', d.year);
+  set('f-awards', d.awards);
+  set('f-season', d.season);
+  set('f-getting-there', d.getting_there);
+  if (Array.isArray(d.tags)) f['__tags'] = d.tags;
+
+  // Private access
+  var pa = j.private_access || {};
+  set('f-access-name', pa.name);
+  set('f-access-desc', pa.description);
+  if (Array.isArray(pa.bullets)) {
+    set('f-access-b1', pa.bullets[0]);
+    set('f-access-b2', pa.bullets[1]);
+    set('f-access-b3', pa.bullets[2]);
+  }
+  set('f-access-photo', pa.photo);
+
+  // Contact
+  var c = j.contact || {};
+  set('f-cname', c.name);
+  set('f-ctitle', c.title);
+  set('f-cemail', c.email);
+  set('f-cphone', c.phone);
+  set('f-website', c.website);
+  set('f-ical', c.ical);
+
+  // SEO
+  var s = j.seo || {};
+  set('f-meta-title', s.meta_title);
+  set('f-meta-desc', s.meta_description);
+
+  // Notes
+  set('f-notes', j.notes);
+
+  // Commission / cancellation
+  set('f-commission', j.commission_rate);
+  set('f-cancel', j.cancellation);
+
+  // Rooms → __room-N objects with short-prefix keys expected by propRestore
+  if (Array.isArray(j.rooms) && j.rooms.length) {
+    f['__roomCount'] = j.rooms.length;
+    j.rooms.forEach(function(room, i){
+      var n = i + 1;
+      var photos = Array.isArray(room.photos)
+        ? room.photos.map(function(p){ return p && p.url ? p.url : (typeof p === 'string' ? p : ''); }).filter(Boolean)
+        : [];
+      f['__room-' + n] = {
+        rn: room.name || '',
+        rt: room.type || '',
+        rp: room.price != null ? String(room.price) : '',
+        ru: room.per || 'night',
+        rd: room.description || '',
+        rsz: room.size != null ? String(room.size) : '',
+        rszunit: room.size_unit || 'sqm',
+        rbed: room.beds || '',
+        rocc: room.max_occupancy != null ? String(room.max_occupancy) : '',
+        photos: photos
+      };
+    });
+  }
+
+  // Itinerary (cruises / experiential) — hand off to live itDays if available
+  if (j.itinerary && typeof j.itinerary === 'object') {
+    set('f-itin-duration', j.itinerary.duration);
+    set('f-itin-headline', j.itinerary.headline);
+    set('f-itin-note', j.itinerary.note);
+    // Stash the days array where a later pass can pick it up
+    f['__itin_days'] = Array.isArray(j.itinerary.days) ? j.itinerary.days : [];
+  }
+
+  // Lens experts — same deferred pattern
+  if (j.lens && Array.isArray(j.lens.experts)) {
+    f['__lens_experts'] = j.lens.experts;
+  }
+
+  return f;
+}
+
+// Module-level snapshot used for undo of the last import
+var _lastImportSnapshot = null;
+var _undoToastTimer = null;
+
+// Determine whether a form field is currently "blank" (safe to overwrite in merge mode)
+function _fieldIsBlank(id) {
+  var el = document.getElementById(id);
+  if (!el) return true;
+  if (el.type === 'checkbox') return !el.checked;
+  return !el.value || !String(el.value).trim();
+}
+
+// Filter a flat fields dict down to only the entries that would fill blank form fields
+function _filterFieldsForMerge(fields) {
+  var out = {};
+  Object.keys(fields).forEach(function(k){
+    // f-* simple fields: only import if currently blank
+    if (k.indexOf('f-') === 0) {
+      if (_fieldIsBlank(k)) out[k] = fields[k];
+      return;
+    }
+    // Tags: only import if no tags currently active
+    if (k === '__tags') {
+      var hasActive = document.querySelectorAll('.pe-tag.on').length > 0;
+      if (!hasActive) out[k] = fields[k];
+      return;
+    }
+    // Rooms: only import the whole list if the form has zero rooms right now
+    if (k === '__roomCount' || k.indexOf('__room-') === 0) {
+      if (typeof roomCount === 'undefined' || roomCount === 0) out[k] = fields[k];
+      return;
+    }
+    // Deferred arrays (itinerary days, lens experts): only import if empty
+    if (k === '__itin_days' || k === '__lens_experts') {
+      out[k] = fields[k];
+      return;
+    }
+    // Anything else: pass through
+    out[k] = fields[k];
+  });
+  return out;
+}
+
+function doGeminiImport(mode) {
+  mode = mode || 'overwrite';
+  var ta = document.getElementById('gemini-import-textarea');
+  var err = document.getElementById('gemini-import-error');
+  if (!ta || !err) return;
+  err.textContent = '';
+  var raw = (ta.value || '').trim();
+  if (!raw) { err.textContent = 'Paste a JSON blob first.'; return; }
+
+  // Strip markdown code fences if Gemini wrapped the output
+  raw = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '');
+
+  var obj;
+  try {
+    obj = JSON.parse(raw);
+  } catch (e) {
+    err.textContent = 'Not valid JSON: ' + e.message;
+    return;
+  }
+
+  if (!obj || typeof obj !== 'object') {
+    err.textContent = 'Expected a JSON object.';
+    return;
+  }
+
+  var fields;
+  try {
+    fields = geminiJsonToFields(obj);
+  } catch(e) {
+    err.textContent = 'Could not convert JSON to form fields: ' + e.message;
+    return;
+  }
+
+  // Snapshot the current form state BEFORE mutating so undo can restore it
+  try {
+    _lastImportSnapshot = (typeof propSnapshot === 'function') ? propSnapshot() : null;
+  } catch(e) {
+    _lastImportSnapshot = null;
+  }
+
+  // In merge mode, strip entries that would overwrite existing non-blank values
+  if (mode === 'merge') {
+    fields = _filterFieldsForMerge(fields);
+  }
+
+  try {
+    propRestore(fields);
+  } catch(e) {
+    err.textContent = 'Import failed during form hydration: ' + e.message;
+    _lastImportSnapshot = null;
+    return;
+  }
+
+  // Count how many fields were populated for the success toast
+  var populated = Object.keys(fields).filter(function(k){
+    var v = fields[k];
+    return v !== '' && v !== null && v !== undefined && !(Array.isArray(v) && !v.length);
+  }).length;
+
+  closeGeminiImport();
+
+  var msg = (mode === 'merge'
+    ? 'Filled ' + populated + ' blank fields from Gemini'
+    : 'Imported ' + populated + ' fields from Gemini');
+  showImportToastWithUndo(msg);
+
+  // Refresh the live preview if available
+  if (typeof updateJSON === 'function') try { updateJSON(); } catch(e) {}
+  if (typeof renderPreview === 'function') try { renderPreview(); } catch(e) {}
+}
+
+function undoGeminiImport() {
+  if (!_lastImportSnapshot) {
+    if (typeof showToast === 'function') showToast('Nothing to undo', 'warn');
+    return;
+  }
+  try {
+    propRestore(_lastImportSnapshot);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Undo failed: ' + e.message, 'error');
+    return;
+  }
+  _lastImportSnapshot = null;
+  // Clear any visible undo toast
+  var t = document.getElementById('gemini-import-toast');
+  if (t) t.remove();
+  if (_undoToastTimer) { clearTimeout(_undoToastTimer); _undoToastTimer = null; }
+  if (typeof showToast === 'function') showToast('Import undone', 'success');
+  if (typeof updateJSON === 'function') try { updateJSON(); } catch(e) {}
+  if (typeof renderPreview === 'function') try { renderPreview(); } catch(e) {}
+}
+
+// Custom toast with inline Undo action that stays visible for 20 seconds
+function showImportToastWithUndo(msg) {
+  // Remove any existing import toast first
+  var existing = document.getElementById('gemini-import-toast');
+  if (existing) existing.remove();
+  if (_undoToastTimer) { clearTimeout(_undoToastTimer); _undoToastTimer = null; }
+
+  var t = document.createElement('div');
+  t.id = 'gemini-import-toast';
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:14px 18px;border-radius:12px;font-size:13px;box-shadow:0 12px 36px rgba(0,0,0,.3);z-index:1100;display:flex;align-items:center;gap:16px;font-family:inherit;max-width:420px;';
+  t.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex:1;"><div style="width:18px;height:18px;border-radius:50%;background:rgba(5,150,105,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div><span>' + msg + '</span></div>'
+    + '<button onclick="undoGeminiImport()" style="background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:100px;font-family:inherit;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;">Undo</button>';
+  document.body.appendChild(t);
+
+  _undoToastTimer = setTimeout(function(){
+    t.style.transition = 'opacity .35s';
+    t.style.opacity = '0';
+    setTimeout(function(){ if (t.parentNode) t.remove(); }, 400);
+    _undoToastTimer = null;
+  }, 20000);
+}
+
 // Auto-load if ?slug= is in the URL
 (function() {
   var params = new URLSearchParams(location.search);
   var slug = params.get('slug');
   if (!slug) return;
-  // Retry until the slug input and propLoad are ready (handles cold edge loads)
   var attempts = 0;
   function tryLoad() {
     attempts++;
@@ -3708,6 +4031,29 @@ function propLoadBySlug() {
   setTimeout(tryLoad, 600);
 })();
 </script>
+<!-- GEMINI IMPORT MODAL -->
+<div id="gemini-import-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;width:620px;max-width:92vw;max-height:86vh;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column;">
+    <div style="padding:22px 24px 16px;border-bottom:1px solid #eee;display:flex;align-items:flex-start;justify-content:space-between;">
+      <div>
+        <div style="font-size:17px;font-weight:600;color:#111827;">Import from Gemini</div>
+        <div style="font-size:13px;color:#6b7280;margin-top:3px;line-height:1.5;">Paste the JSON output from the property research prompt. Choose <strong>Fill blanks only</strong> to preserve your existing edits, or <strong>Overwrite all</strong> to replace everything. HUMAN_REQUIRED fields are always left blank.</div>
+      </div>
+      <button onclick="closeGeminiImport()" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e7eb;background:none;cursor:pointer;font-size:18px;color:#6b7280;display:flex;align-items:center;justify-content:center;flex-shrink:0;">×</button>
+    </div>
+    <div style="padding:20px 24px;overflow-y:auto;flex:1;">
+      <textarea id="gemini-import-textarea" placeholder='{"name": "Amangiri", "country": "USA", ...}' style="width:100%;min-height:280px;padding:12px 14px;font-family:ui-monospace,'SF Mono',Consolas,monospace;font-size:12px;line-height:1.55;border:1.5px solid #e5e7eb;border-radius:10px;resize:vertical;outline:none;"></textarea>
+      <div id="gemini-import-error" style="font-size:12px;color:#dc2626;margin-top:10px;min-height:16px;"></div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:6px;line-height:1.6;">Markdown code fences (<code>```json</code>) are stripped automatically. Hero and gallery images cannot be imported — add them manually after. You can <strong>Undo</strong> for 20 seconds after importing.</div>
+    </div>
+    <div style="padding:16px 24px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;align-items:center;">
+      <button onclick="closeGeminiImport()" style="padding:10px 20px;background:transparent;border:1.5px solid #e5e7eb;border-radius:100px;font-family:inherit;font-size:.88rem;font-weight:500;color:#374151;cursor:pointer;">Cancel</button>
+      <div style="flex:1;"></div>
+      <button onclick="doGeminiImport('merge')" title="Only populate fields that are currently empty. Your existing edits are preserved." style="padding:10px 18px;background:#fff;border:1.5px solid var(--accent,#c17f3e);border-radius:100px;font-family:inherit;font-size:.88rem;font-weight:600;color:var(--accent,#c17f3e);cursor:pointer;">Fill blanks only</button>
+      <button onclick="doGeminiImport('overwrite')" title="Replace all form values with Gemini's JSON. Your current edits will be lost (but you can Undo for 20 seconds)." style="padding:10px 22px;background:var(--accent,#c17f3e);border:none;border-radius:100px;font-family:inherit;font-size:.88rem;font-weight:600;color:#fff;cursor:pointer;">Overwrite all</button>
+    </div>
+  </div>
+</div>
 <!-- DELETE CONFIRMATION MODAL -->
 <div id="editor-delete-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:1000;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;width:420px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden;">
