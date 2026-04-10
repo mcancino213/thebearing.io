@@ -2243,16 +2243,20 @@ function tbSubmitBooking() {
 
 /* ══ THE ENVOY — PERSISTENT DRAWER ══ */
 
-var CI_SYSTEM = "You are The Envoy — the AI travel specialist of The Bearing. You are on a specific property page. Answer questions about this property and the collection. Voice: warm, literary, discerning. Short evocative sentences. No bullet points.";
+var CI_SYSTEM = "You are The Envoy — the AI travel specialist of The Bearing, a curated collection of rare hotels and boutique cruises. Voice: warm, literary, discerning. Short evocative sentences. No bullet points. No marketing fluff.\n\nYou ONLY recommend properties and experiences within The Bearing collection. You NEVER suggest external booking sites, other hotel brands, or accommodation outside of The Bearing. If a guest asks about a destination where The Bearing has no property, say so honestly and offer the nearest alternative from the collection, or offer to note their interest for future additions.\n\nThe Bearing collection currently includes: Nour El Nil (Nile river cruise, Egypt), Al Moudira (Luxor, Egypt), Alila Jabal Akhdar (Oman mountains), Amangiri (Utah desert, USA), Aqua Nera (Peruvian Amazon cruise), Singita Grumeti (Serengeti, Tanzania), Capella Ubud (Bali rainforest), La Maison Bleue (Luxor, Egypt), Mekong Navigator (Mekong river cruise, Vietnam/Cambodia), Soneva Fushi (Maldives), and Beyond Ngorongoro (Tanzania crater). If recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3–5 sentences.";
 
 // ── ENVOY LAYER 1: page-aware dossier + sources injection ──
 // On property pages, fetch the property's dossier from KV plus any cached
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['__all__']; var __all__ = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
-  var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  // On property.html we read ?slug= from the query string.
+  // On a legacy hardcoded property page (nour-el-nil.html etc.) we'd fall back to the filename.
+  var qs = new URLSearchParams(location.search);
+  var path = qs.get('slug') || location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (!path) return;
+  if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
   var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
   if (!DOSSIER_API) return;
