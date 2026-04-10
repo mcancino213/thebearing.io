@@ -447,54 +447,6 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
     <div class="pe-progress-track"><div class="pe-progress-fill" id="comp-bar" style="width:0%;"></div></div>
   </div>
 
-  <!-- Completeness checklist -->
-  <div class="pe-checklist" id="pe-checklist" style="margin:12px 0 4px;display:flex;flex-direction:column;gap:4px;">
-    <div class="pe-chk-item" id="ci-name">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Property name</span>
-    </div>
-    <div class="pe-chk-item" id="ci-type">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Property type</span>
-    </div>
-    <div class="pe-chk-item" id="ci-hook">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Hook line</span>
-    </div>
-    <div class="pe-chk-item" id="ci-hero">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Hero photo</span>
-    </div>
-    <div class="pe-chk-item" id="ci-desc">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Intro paragraph</span>
-    </div>
-    <div class="pe-chk-item" id="ci-verdict">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">The Bearing Verdict</span>
-    </div>
-    <div class="pe-chk-item" id="ci-access">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Private Access</span>
-    </div>
-    <div class="pe-chk-item" id="ci-rooms">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Rooms &amp; pricing</span>
-    </div>
-    <div class="pe-chk-item" id="ci-contact">
-      <div class="pe-chk-dot"></div>
-      <svg width="9" height="9" style="opacity:0;transition:opacity .2s;flex-shrink:0;" viewBox="0 0 12 12" fill="none" stroke="var(--emerald,#3a7055)" stroke-width="2.5" stroke-linecap="round"><polyline points="2,6 5,10 10,2"/></svg>
-      <span class="pe-chk-label">Contact details</span>
-    </div>
-  </div>
 
   <div class="pe-shell fade-in-2">
 
@@ -1432,6 +1384,8 @@ function pgAdd(id, url, position) {
   }
   pgState[id].push({ url: url, position: position || 'center' });
   pgRender(id);
+  // Update preview card if hero image was added
+  if (id === 'hero' && typeof updatePreviewCard === 'function') updatePreviewCard();
   return true;
 }
 
@@ -1994,32 +1948,11 @@ function updateAll() {
 }
 
 function syncPublishTab() {
-  // Mirror checklist state from sidebar checklist to publish tab checklist
-  var keys = ['name','type','hook','hero','desc','verdict','access','contact','rooms'];
-  keys.forEach(function(key) {
-    var src = document.getElementById('ci-' + key);
-    var dst = document.getElementById('ci2-' + key);
-    if (!src || !dst) return;
-    var srcDot = src.querySelector('.pe-chk-dot');
-    var dstDot = dst.querySelector('.pe-chk-dot');
-    var srcSvg = src.querySelector('svg');
-    var dstSvg = dst.querySelector('svg');
-    var srcLbl = src.querySelector('.pe-chk-label');
-    var dstLbl = dst.querySelector('.pe-chk-label');
-    if (srcDot && dstDot) { dstDot.style.borderColor = srcDot.style.borderColor; dstDot.style.background = srcDot.style.background; }
-    if (srcSvg && dstSvg) dstSvg.style.opacity = srcSvg.style.opacity;
-    if (srcLbl && dstLbl) dstLbl.style.color = srcLbl.style.color;
-    if (src.classList.contains('done')) dst.classList.add('done');
-    else dst.classList.remove('done');
-  });
-  // Mirror completeness percentage
+  // updateCompleteness writes directly to ci2- elements in Settings panel
+  // Just sync the percentage display
   var pct = document.getElementById('comp-pct');
   var pct2 = document.getElementById('comp-pct-2');
   if (pct && pct2) pct2.textContent = pct.textContent;
-  // Mirror JSON output
-  var jsonOut = document.getElementById('json-out-2');
-  var jsonOut2 = document.getElementById('json-out-2');
-  if (jsonOut && jsonOut2) jsonOut2.textContent = jsonOut.textContent;
 }
 
 function updateCompleteness() {
@@ -2027,27 +1960,28 @@ function updateCompleteness() {
   REQUIRED.forEach(function(f) {
     var val = f.pgCheck ? (pgState[f.pgCheck] && pgState[f.pgCheck].length > 0 ? 'yes' : '') : getFieldVal(f.id);
     var hasVal = val.length > 0;
-    var ci = document.getElementById('ci-'+f.key);
+    // Use ci2- elements (Settings panel) — ci- sidebar elements no longer exist
+    var ci = document.getElementById('ci2-'+f.key) || document.getElementById('ci-'+f.key);
     if (ci) {
       var dot = ci.querySelector('.pe-chk-dot');
       var svg = ci.querySelector('svg');
       var lbl = ci.querySelector('.pe-chk-label');
       if (hasVal) {
-        dot.style.borderColor = 'var(--emerald)'; dot.style.background = 'var(--em-dim)';
-        svg.style.opacity = '1'; ci.classList.add('done'); lbl.style.color = 'var(--text)';
+        if(dot){dot.style.borderColor='var(--emerald)';dot.style.background='var(--em-dim)';}
+        if(svg) svg.style.opacity='1'; ci.classList.add('done'); if(lbl) lbl.style.color='var(--text)';
       } else {
-        dot.style.borderColor = 'var(--border2)'; dot.style.background = 'transparent';
-        svg.style.opacity = '0'; ci.classList.remove('done'); lbl.style.color = 'var(--text3)';
+        if(dot){dot.style.borderColor='var(--border2)';dot.style.background='transparent';}
+        if(svg) svg.style.opacity='0'; ci.classList.remove('done'); if(lbl) lbl.style.color='var(--text3)';
       }
       if (hasVal) filled++;
     }
   });
   var hasRoom = roomCount > 0 && document.getElementById('rn-1') && document.getElementById('rn-1').value;
-  var ci = document.getElementById('ci-rooms');
+  var ci = document.getElementById('ci2-rooms') || document.getElementById('ci-rooms');
   if (ci) {
     var dot = ci.querySelector('.pe-chk-dot'); var svg = ci.querySelector('svg'); var lbl = ci.querySelector('.pe-chk-label');
-    if (hasRoom) { dot.style.borderColor='var(--emerald)';dot.style.background='var(--em-dim)';svg.style.opacity='1';ci.classList.add('done');lbl.style.color='var(--text)';filled++; }
-    else { dot.style.borderColor='var(--border2)';dot.style.background='transparent';svg.style.opacity='0';ci.classList.remove('done');lbl.style.color='var(--text3)'; }
+    if (hasRoom) { if(dot){dot.style.borderColor='var(--emerald)';dot.style.background='var(--em-dim)';}if(svg)svg.style.opacity='1';ci.classList.add('done');if(lbl)lbl.style.color='var(--text)';filled++; }
+    else { if(dot){dot.style.borderColor='var(--border2)';dot.style.background='transparent';}if(svg)svg.style.opacity='0';ci.classList.remove('done');if(lbl)lbl.style.color='var(--text3)'; }
   }
   var total = REQUIRED.length + 1;
   var pct = Math.round((filled/total)*100);
@@ -2067,6 +2001,27 @@ function updatePreviewCard() {
   document.getElementById('prev-name').textContent = name;
   document.getElementById('prev-type').textContent = (loc || type);
   document.getElementById('prev-hook').textContent = '"' + hook.replace(/^["']|["']$/g,'') + '"';
+  // Hero image from pgState
+  var heroImgs = pgState['hero'] || [];
+  var previewImgEl = document.querySelector('.pe-preview-img img');
+  if (!previewImgEl) {
+    // Create it if it doesn't exist
+    var imgWrap = document.querySelector('.pe-preview-img');
+    if (imgWrap) {
+      previewImgEl = document.createElement('img');
+      previewImgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
+      imgWrap.appendChild(previewImgEl);
+    }
+  }
+  if (previewImgEl) {
+    var heroUrl = heroImgs.length > 0 ? heroImgs[0].url : '';
+    if (heroUrl) {
+      previewImgEl.src = heroUrl.replace(/\/public$|\/thumb$/, '/thumb');
+      previewImgEl.style.display = '';
+    } else {
+      previewImgEl.style.display = 'none';
+    }
+  }
   // Price from first room
   var priceText = 'From —';
   for (var i=1;i<=roomCount;i++) {
@@ -2076,9 +2031,9 @@ function updatePreviewCard() {
   }
   document.getElementById('prev-price').textContent = priceText;
   // Tags
-  var tags = Array.from(document.querySelectorAll('.pe-tag.on')).map(t=>t.textContent);
+  var tags = Array.from(document.querySelectorAll('.pe-tag.on')).map(function(t){return t.textContent;});
   var tEl = document.getElementById('prev-tags');
-  tEl.innerHTML = tags.slice(0,4).map(t=>'<span style="font-size:10px;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>').join('');
+  tEl.innerHTML = tags.slice(0,4).map(function(t){return '<span style="font-size:10px;padding:2px 8px;border-radius:100px;background:var(--surface3);color:var(--text2);">'+t+'</span>';}).join('');
   // Badge
   if (tag) {
     var existing = document.querySelector('.pe-preview-img .prev-badge');
