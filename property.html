@@ -572,6 +572,9 @@ button{font-family:inherit;cursor:pointer;}
   .ci-typing-msg span{width:6px;height:6px;border-radius:50%;background:#9a8e80;animation:ciDot 1.2s ease-in-out infinite;}
   .ci-typing-msg span:nth-child(2){animation-delay:.2s;}
   .ci-typing-msg span:nth-child(3){animation-delay:.4s;}
+  .ci-divider{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0;align-self:stretch;}
+  .ci-divider::before,.ci-divider::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.12);}
+  .ci-divider span{font-size:.65rem;font-family:'Geist',sans-serif;color:#9a8e80;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;}
   @keyframes ciDot{0%,80%,100%{transform:scale(.6);opacity:.4;}40%{transform:scale(1);opacity:1;}}
 
   /* Suggestions */
@@ -2283,9 +2286,27 @@ function tbSubmitBooking() {
         contextBlocks += '=== END SOURCE ' + (i+1) + ' ===\n\n';
       });
     }
-    CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n\n" + contextBlocks + CI_SYSTEM;
+    CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n5. CURRENT PROPERTY FOCUS: Unless the guest explicitly asks about a different property or destination, treat all questions as being about this property. 'What's the best room?' means the best room here. 'How far is the airport?' means from this property. Default to this property for every ambiguous question.\n\n" + contextBlocks + CI_SYSTEM;
     var counts = (hasDossier ? '1 dossier' : '0 dossier') + ' + ' + sources.length + ' source(s)';
     console.log('[Envoy] Loaded ' + counts + ' for ' + path + ' (' + contextBlocks.length + ' chars total context)');
+
+    // ── Context switch: inject a property-focus marker into conversation history ──
+    // Converts slug to display name: "nour-el-nil" → "Nour El Nil"
+    var displayName = path.replace(/-/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    var lastProp = sessionStorage.getItem('ci_property');
+    if (lastProp !== path) {
+      // Only inject if we have existing history (don't orphan a divider at the top of a fresh chat)
+      var existingHistory = ciLoadHistory();
+      var switchMsg = '[Context: Guest has navigated to the ' + displayName + ' property page. From this point, answer all property-specific questions — rooms, rates, location, logistics — about ' + displayName + ' unless the guest specifies otherwise. Prior conversation context above remains available.]';
+      if (existingHistory.length > 0) {
+        // Inject as a hidden user/assistant exchange — visible in history as a divider, not a bubble
+        existingHistory.push({ role: 'user', content: switchMsg, _type: 'context_switch', _label: displayName });
+        existingHistory.push({ role: 'assistant', content: 'Understood — I\'m now focused on ' + displayName + '. What would you like to know?', _type: 'context_switch_ack', _label: displayName });
+        ciSaveHistory(existingHistory);
+        ciHistory = existingHistory;
+      }
+      sessionStorage.setItem('ci_property', path);
+    }
   }).catch(function(e){ console.log('[Envoy] Context load error:', e.message); });
 })();
 
@@ -2334,12 +2355,26 @@ function ciRestoreMessages() {
     // First time — show welcome
     ciAddMsg('Hello — I know every property in our collection personally. Tell me what you are dreaming of. A mood, a landscape, a feeling. I will find the place made for you.', 'ai');
   } else {
-    // Restore previous conversation
+    // Restore previous conversation, rendering context switches as dividers
     ciHistory.forEach(function(m) {
-      ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+      if (m._type === 'context_switch') {
+        ciAddDivider(m._label);
+      } else if (m._type === 'context_switch_ack') {
+        // Skip the ack message — divider already communicates the switch
+      } else {
+        ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+      }
     });
   }
   msgs.scrollTop = msgs.scrollHeight;
+}
+
+function ciAddDivider(label) {
+  var msgs = document.getElementById('ci-messages');
+  var div = document.createElement('div');
+  div.className = 'ci-divider';
+  div.innerHTML = '<span>' + label + '</span>';
+  msgs.appendChild(div);
 }
 
 // Update context pill based on current page
