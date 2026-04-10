@@ -260,7 +260,7 @@ tbody tr:hover{background:var(--bg);}
     var data = await res.json();
     var members = data.members || [];
     if (!members.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They'll appear here automatically when users sign up.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
       return;
     }
     // Update count badge
