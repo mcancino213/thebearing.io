@@ -470,13 +470,27 @@ export default {
         let body;
         try { body = await request.json(); } catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
         if (!body.id) return jsonResponse({ error: 'id required' }, 400);
+        // Merge into existing record — admin edits must not wipe fields written by the Clerk webhook
+        const existingRaw = await env.DOSSIERS.get('member:' + body.id);
+        const existing = existingRaw ? JSON.parse(existingRaw) : {};
         const member = {
-          id: body.id, email: body.email || '', name: body.name || '',
-          provider: body.provider || 'email', tier: body.tier || 'member',
-          joined_at: body.joined_at || new Date().toISOString(),
+          // Webhook-owned fields: keep existing if present, fall back to body, then defaults
+          id: body.id,
+          email: existing.email || body.email || '',
+          name: body.name !== undefined ? body.name : (existing.name || ''),
+          provider: existing.provider || body.provider || 'email',
+          avatar: existing.avatar || body.avatar || '',
+          joined_at: existing.joined_at || body.joined_at || new Date().toISOString(),
+          // Admin-editable fields: body wins when present, otherwise keep existing
+          tier: body.tier !== undefined ? body.tier : (existing.tier || 'member'),
+          location: body.location !== undefined ? body.location : (existing.location || ''),
+          bookings: body.bookings !== undefined ? body.bookings : (existing.bookings || 0),
+          ltv: body.ltv !== undefined ? body.ltv : (existing.ltv || 0),
+          preferences: body.preferences !== undefined ? body.preferences : (existing.preferences || {}),
+          notes: body.notes !== undefined ? body.notes : (existing.notes || ''),
+          // System-managed
           last_active: new Date().toISOString(),
-          bookings: body.bookings || 0, ltv: body.ltv || 0,
-          location: body.location || '', avatar: body.avatar || '',
+          updated_at: new Date().toISOString(),
         };
         await env.DOSSIERS.put('member:' + body.id, JSON.stringify(member));
         const rawIndex = await env.DOSSIERS.get('__members_index');
@@ -552,16 +566,27 @@ async function handleClerkEvent(event, env) {
   if (type === 'user.created' || type === 'user.updated') {
     const email = (data.email_addresses || []).find(e => e.id === data.primary_email_address_id);
     const oauth = (data.external_accounts || [])[0];
+    // Read existing record so admin-edited fields (tier, notes, preferences, location, etc.) survive webhook updates
+    const existingRaw = await env.DOSSIERS.get('member:' + data.id);
+    const existing = existingRaw ? JSON.parse(existingRaw) : {};
     const member = {
+      // Clerk-owned fields — always refreshed from Clerk payload (source of truth)
       id: data.id,
-      email: email ? email.email_address : '',
-      name: [data.first_name, data.last_name].filter(Boolean).join(' ') || (email ? email.email_address.split('@')[0] : ''),
-      provider: oauth ? oauth.provider : 'email',
-      avatar: data.image_url || '',
-      tier: 'member',
-      joined_at: new Date(data.created_at).toISOString(),
+      email: email ? email.email_address : (existing.email || ''),
+      name: [data.first_name, data.last_name].filter(Boolean).join(' ') || (email ? email.email_address.split('@')[0] : (existing.name || '')),
+      provider: oauth ? oauth.provider : (existing.provider || 'email'),
+      avatar: data.image_url || existing.avatar || '',
+      joined_at: existing.joined_at || new Date(data.created_at).toISOString(),
+      // Admin-editable fields — preserved from existing record, or default on first-time creation
+      tier: existing.tier || 'member',
+      location: existing.location || '',
+      bookings: existing.bookings || 0,
+      ltv: existing.ltv || 0,
+      preferences: existing.preferences || {},
+      notes: existing.notes || '',
+      // System-managed
       last_active: new Date().toISOString(),
-      bookings: 0, ltv: 0, location: '',
+      updated_at: new Date().toISOString(),
     };
     await env.DOSSIERS.put('member:' + data.id, JSON.stringify(member));
     const rawIndex = await env.DOSSIERS.get('__members_index');

@@ -200,7 +200,7 @@ tbody tr:hover{background:var(--bg);}
 </aside>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Members</div><div class='topbar-sub'>1,284 registered members</div></div>
+  <div><div class="topbar-title">Members</div><div class='topbar-sub' id="header-member-count">Loading…</div></div>
   <div class="topbar-right"><button class="btn btn-ghost btn-sm">Export</button></div>
 </div>
 <div class="page-body">
@@ -211,10 +211,10 @@ tbody tr:hover{background:var(--bg);}
   <div class="page-subtitle">All Bearing members — their bookings, credits, and preferences.</div>
 </div>
 <div class="stats-grid cols-4">
-  <div class="stat-tile"><div class="stat-label">Total members</div><div class="stat-value">1,284</div><div class="stat-delta">↑ 47 this week</div></div>
-  <div class="stat-tile"><div class="stat-label">Founding members</div><div class="stat-value accent">142</div></div>
-  <div class="stat-tile"><div class="stat-label">Avg LTV</div><div class="stat-value" style="font-size:24px;">$8,240</div></div>
-  <div class="stat-tile"><div class="stat-label">Credits outstanding</div><div class="stat-value" style="font-size:24px;">$34K</div></div>
+  <div class="stat-tile"><div class="stat-label">Total members</div><div class="stat-value" id="stat-total">—</div><div class="stat-delta" id="stat-total-delta">&nbsp;</div></div>
+  <div class="stat-tile"><div class="stat-label">New this week</div><div class="stat-value accent" id="stat-new-week">—</div></div>
+  <div class="stat-tile"><div class="stat-label">Active last 7 days</div><div class="stat-value" id="stat-active-7d">—</div></div>
+  <div class="stat-tile"><div class="stat-label">Signups today</div><div class="stat-value" id="stat-today">—</div></div>
 </div>
 <div class="card">
   <div class="card-header">
@@ -259,14 +259,29 @@ tbody tr:hover{background:var(--bg);}
     var res = await fetch(api);
     var data = await res.json();
     var members = data.members || [];
+    // Compute real stats from the members array
+    var now = Date.now();
+    var DAY = 86400000;
+    var startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+    var startOfTodayMs = startOfToday.getTime();
+    var total = members.length;
+    var newThisWeek = members.filter(function(m){ return m.joined_at && (now - new Date(m.joined_at).getTime()) < 7 * DAY; }).length;
+    var activeLast7d = members.filter(function(m){ return m.last_active && (now - new Date(m.last_active).getTime()) < 7 * DAY; }).length;
+    var signupsToday = members.filter(function(m){ return m.joined_at && new Date(m.joined_at).getTime() >= startOfTodayMs; }).length;
+    var setStat = function(id, val){ var el = document.getElementById(id); if (el) el.textContent = val; };
+    setStat('stat-total', total.toLocaleString());
+    var header = document.getElementById('header-member-count');
+    if (header) header.textContent = total.toLocaleString() + ' registered member' + (total === 1 ? '' : 's');
+    setStat('stat-new-week', newThisWeek);
+    setStat('stat-active-7d', activeLast7d);
+    setStat('stat-today', signupsToday);
+    var deltaEl = document.getElementById('stat-total-delta');
+    if (deltaEl) deltaEl.textContent = newThisWeek > 0 ? ('↑ ' + newThisWeek + ' this week') : '\u00a0';
+
     if (!members.length) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
       return;
     }
-    // Update count badge
-    var countEl = document.querySelector('.stat-num');
-    if (countEl) countEl.textContent = members.length;
-
     tbody.innerHTML = members.map(function(m) {
       var initials = (m.name || m.email || '?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || '?';
       var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', {month:'short', year:'numeric'}) : '—';

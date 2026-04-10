@@ -200,24 +200,213 @@ tbody tr:hover{background:var(--bg);}
 </aside>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Sarah Alderton</div><div class='topbar-sub'>London, UK · Founding Member #0042</div></div>
-  <div class="topbar-right"></div>
+  <div><div class="topbar-title" id="tb-name">Loading…</div><div class='topbar-sub' id="tb-sub">&nbsp;</div></div>
+  <div class="topbar-right">
+    <a href="admin-guests.html" class="btn btn-ghost">← All members</a>
+    <button id="save-btn" class="btn btn-primary" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;">Save changes</button>
+  </div>
 </div>
 <div class="page-body">
 
+<div id="loading-state" class="card"><div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">Loading member…</div></div>
+
+<div id="member-content" style="display:none;">
 <div class="page-header">
-  <div class="page-eyebrow">London, UK · Founding Member #0042</div>
-  <div class="page-title">Sarah Alderton</div>
-  <div class="page-subtitle">Full member profile, travel preferences, booking history, credits ledger, and admin notes.</div>
+  <div class="page-eyebrow" id="ph-eyebrow">Member</div>
+  <div class="page-title" id="ph-title">—</div>
+  <div class="page-subtitle">Profile, travel preferences, and admin notes. Editable fields persist to the member record.</div>
 </div>
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Sarah Alderton</div>
-  <div class="empty-desc" style="margin-top:8px;">Full member profile, travel preferences, booking history, credits ledger, and admin notes.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="admin-dashboard.html" class="btn btn-ghost">← Dashboard</a>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start;">
+
+  <!-- LEFT: editable fields -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+
+    <div class="card"><div class="card-body" style="padding:24px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Profile</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <label style="font-size:12px;color:var(--text2);">Display name<input id="f-name" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="font-size:12px;color:var(--text2);">Location<input id="f-location" placeholder="City, Country" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="font-size:12px;color:var(--text2);">Tier
+          <select id="f-tier" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;">
+            <option value="member">Member</option>
+            <option value="founding">Founding Member</option>
+            <option value="vip">VIP</option>
+          </select>
+        </label>
+        <div style="font-size:12px;color:var(--text2);">Email<div style="margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:14px;color:var(--text2);" id="f-email-display">—</div></div>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="card-body" style="padding:24px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Travel preferences</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <label style="font-size:12px;color:var(--text2);">Preferred regions<input id="p-regions" placeholder="e.g. Mediterranean, Southeast Asia" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="font-size:12px;color:var(--text2);">Travel style<input id="p-style" placeholder="e.g. Cultural, adventure, wellness" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="font-size:12px;color:var(--text2);">Budget range<input id="p-budget" placeholder="e.g. $500–$1,500 / night" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="font-size:12px;color:var(--text2);">Typical party size<input id="p-party" placeholder="e.g. Couple, family of 4" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;"></label>
+        <label style="grid-column:1 / -1;font-size:12px;color:var(--text2);">Dietary & accessibility notes<textarea id="p-dietary" rows="2" placeholder="Allergies, accessibility requirements, dietary preferences…" style="display:block;width:100%;margin-top:6px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea></label>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="card-body" style="padding:24px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Admin notes</div>
+      <textarea id="f-notes" rows="6" placeholder="Private notes visible only to The Bearing team…" style="display:block;width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;line-height:1.55;"></textarea>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px;">Not visible to the member. Used internally for trip planning context, VIP flags, and relationship history.</div>
+    </div></div>
+
   </div>
-</div></div>
+
+  <!-- RIGHT: real data sidebar (no fake stats) -->
+  <div class="card"><div class="card-body" style="padding:22px;">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Account</div>
+    <div id="sidebar-stats" style="display:flex;flex-direction:column;gap:14px;font-size:13px;"></div>
+    <div style="font-size:11px;color:var(--text3);margin-top:18px;padding-top:14px;border-top:1px solid var(--border);line-height:1.5;">
+      Bookings, credits, and detailed usage analytics will appear here once those systems are wired in.
+    </div>
+  </div></div>
+
+</div>
+
+<div id="save-status" style="position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:10px;background:var(--text);color:#fff;font-size:13px;box-shadow:var(--shadow-md);display:none;z-index:1000;"></div>
+</div>
+
+</div>
+
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  var id = params.get('id');
+  var loadingEl = document.getElementById('loading-state');
+  var contentEl = document.getElementById('member-content');
+  var current = null;
+
+  if (!id) {
+    loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">No member id provided. <a href="admin-guests.html" style="color:var(--accent);">← Back to members</a></div>';
+    return;
+  }
+
+  function daysSince(iso) {
+    if (!iso) return null;
+    var ms = Date.now() - new Date(iso).getTime();
+    return Math.max(0, Math.floor(ms / 86400000));
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+  }
+  function providerLabel(p) {
+    if (p === 'oauth_google') return 'Google';
+    if (p === 'oauth_apple') return 'Apple';
+    if (p === 'google') return 'Google';
+    if (p === 'apple') return 'Apple';
+    return 'Email';
+  }
+
+  function populate(m) {
+    current = m;
+    // Topbar + header
+    document.getElementById('tb-name').textContent = m.name || m.email || '—';
+    document.getElementById('tb-sub').textContent = [m.location, m.tier === 'founding' ? 'Founding Member' : m.tier === 'vip' ? 'VIP' : 'Member'].filter(Boolean).join(' · ');
+    document.getElementById('ph-title').textContent = m.name || m.email || '—';
+    document.getElementById('ph-eyebrow').textContent = providerLabel(m.provider) + ' · ' + (m.email || '');
+    // Editable fields
+    document.getElementById('f-name').value = m.name || '';
+    document.getElementById('f-location').value = m.location || '';
+    document.getElementById('f-tier').value = m.tier || 'member';
+    document.getElementById('f-email-display').textContent = m.email || '—';
+    var prefs = m.preferences || {};
+    document.getElementById('p-regions').value = prefs.regions || '';
+    document.getElementById('p-style').value = prefs.style || '';
+    document.getElementById('p-budget').value = prefs.budget || '';
+    document.getElementById('p-party').value = prefs.party || '';
+    document.getElementById('p-dietary').value = prefs.dietary || '';
+    document.getElementById('f-notes').value = m.notes || '';
+    // Real-data sidebar
+    var sb = document.getElementById('sidebar-stats');
+    var daysJoined = daysSince(m.joined_at);
+    var daysActive = daysSince(m.last_active);
+    var rows = [
+      ['Joined', fmtDate(m.joined_at) + (daysJoined !== null ? ' · ' + daysJoined + 'd ago' : '')],
+      ['Last active', fmtDate(m.last_active) + (daysActive !== null ? ' · ' + daysActive + 'd ago' : '')],
+      ['Auth provider', providerLabel(m.provider)],
+      ['Tier', m.tier === 'founding' ? 'Founding Member' : m.tier === 'vip' ? 'VIP' : 'Member'],
+      ['Member ID', '<code style="font-size:11px;color:var(--text3);">' + (m.id || '—').slice(0, 20) + '…</code>'],
+      ['Last updated', m.updated_at ? fmtDate(m.updated_at) : 'Never edited'],
+    ];
+    sb.innerHTML = rows.map(function(r){
+      return '<div style="display:flex;justify-content:space-between;gap:12px;"><span style="color:var(--text2);">' + r[0] + '</span><span style="color:var(--text);font-weight:500;text-align:right;">' + r[1] + '</span></div>';
+    }).join('');
+    loadingEl.style.display = 'none';
+    contentEl.style.display = '';
+  }
+
+  function showStatus(msg, isError) {
+    var el = document.getElementById('save-status');
+    el.textContent = msg;
+    el.style.background = isError ? 'var(--red)' : 'var(--text)';
+    el.style.display = '';
+    setTimeout(function(){ el.style.display = 'none'; }, 3000);
+  }
+
+  async function load() {
+    try {
+      var res = await fetch('/api/members?id=' + encodeURIComponent(id));
+      var data = await res.json();
+      if (!data.exists) {
+        loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">Member not found. <a href="admin-guests.html" style="color:var(--accent);">← Back to members</a></div>';
+        return;
+      }
+      populate(Object.assign({ id: id }, data.data));
+    } catch(e) {
+      loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--red);">Failed to load member: ' + e.message + '</div>';
+    }
+  }
+
+  document.getElementById('save-btn').addEventListener('click', async function(){
+    if (!current) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    var payload = {
+      id: current.id,
+      name: document.getElementById('f-name').value,
+      location: document.getElementById('f-location').value,
+      tier: document.getElementById('f-tier').value,
+      notes: document.getElementById('f-notes').value,
+      preferences: {
+        regions: document.getElementById('p-regions').value,
+        style: document.getElementById('p-style').value,
+        budget: document.getElementById('p-budget').value,
+        party: document.getElementById('p-party').value,
+        dietary: document.getElementById('p-dietary').value,
+      },
+    };
+    try {
+      var res = await fetch('/api/members', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload),
+      });
+      var data = await res.json();
+      if (data.ok) {
+        populate(data.member);
+        showStatus('✓ Changes saved');
+      } else {
+        showStatus('Save failed: ' + (data.error || 'unknown'), true);
+      }
+    } catch(e) {
+      showStatus('Save failed: ' + e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save changes';
+    }
+  });
+
+  load();
+})();
+</script>
+
 </div>
 </div>
 </div>
