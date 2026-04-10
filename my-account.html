@@ -471,5 +471,90 @@ function submitAccount(){
   <div style="font-size:.68rem;color:rgba(255,255,255,.2);">© 2026 TheBearing.io</div>
   <a href="pp-login.html" style="font-size:.68rem;color:rgba(255,255,255,.22);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='rgba(255,255,255,.45)'" onmouseout="this.style.color='rgba(255,255,255,.22)'">Property partner? Sign in</a>
 </div>
+
+<!-- Clerk Auth SDK -->
+<script async crossorigin="anonymous" data-clerk-publishable-key="pk_test_bWVhc3VyZWQtam9leS0xNS5jbGVyay5hY2NvdW50cy5kZXYk"
+  src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+  type="text/javascript">
+</script>
+<script>
+window.addEventListener('load', async function() {
+  await window.Clerk.load({
+    appearance: {
+      variables: {
+        colorPrimary: '#b05830',
+        colorBackground: '#faf7f1',
+        colorText: '#1e1810',
+        fontFamily: 'Geist, sans-serif',
+        borderRadius: '10px',
+      },
+      elements: {
+        card: 'box-shadow:0 4px 40px rgba(80,55,25,.12);border:1px solid #e8dfd0;',
+        socialButtonsBlockButton: 'border:1.5px solid #e8dfd0;border-radius:10px;',
+        formButtonPrimary: 'background:#b05830;border-radius:10px;',
+      }
+    }
+  });
+
+  var user = window.Clerk.user;
+
+  if (user) {
+    // Populate profile area with real user data
+    var name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress.emailAddress.split('@')[0];
+    var email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+    var initials = name.split(' ').map(function(w){return w[0]||''}).join('').toUpperCase().slice(0,2);
+    var avatarUrl = user.imageUrl;
+
+    var avatarEl = document.querySelector('.sidebar-avatar');
+    if (avatarEl) {
+      if (avatarUrl) {
+        avatarEl.innerHTML = '<img src="'+avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      } else {
+        avatarEl.textContent = initials;
+      }
+    }
+    var nameEl = document.querySelector('.sidebar-name');
+    if (nameEl) nameEl.textContent = name;
+    var emailEl = document.querySelector('.sidebar-email');
+    if (emailEl) emailEl.textContent = email;
+
+    // Add sign-out button
+    var signOutBtn = document.createElement('button');
+    signOutBtn.textContent = 'Sign out';
+    signOutBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border:1px solid var(--border-hi,#e8dfd0);border-radius:8px;background:transparent;color:var(--stone,#9a8e80);font-family:Geist,sans-serif;font-size:.8rem;cursor:pointer;';
+    signOutBtn.onclick = async function() {
+      await window.Clerk.signOut();
+      window.location.reload();
+    };
+    var memberTag = document.querySelector('.sidebar-member');
+    if (memberTag && memberTag.parentNode) {
+      memberTag.parentNode.insertBefore(signOutBtn, memberTag.nextSibling);
+    }
+
+  } else {
+    // Not signed in — show sign-in overlay
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(250,247,241,.95);backdrop-filter:blur(8px);z-index:500;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;';
+    overlay.innerHTML = '<div style="font-family:Instrument Serif,serif;font-size:1.8rem;color:#1e1810;margin-bottom:4px;">Your Cove</div>'
+      + '<div style="font-size:.85rem;color:#9a8e80;margin-bottom:8px;">Sign in to access your account</div>'
+      + '<div id="clerk-signin-overlay" style="width:100%;max-width:420px;"></div>';
+    document.body.appendChild(overlay);
+
+    window.Clerk.mountSignIn(document.getElementById('clerk-signin-overlay'), {
+      afterSignInUrl: '/my-account.html',
+      afterSignUpUrl: '/my-account.html',
+      socialProvider: ['google', 'apple'],
+      signInUrl: '/my-account.html',
+    });
+  }
+
+  // Listen for state changes
+  window.Clerk.addListener(function(resources) {
+    if (resources.user && document.getElementById('clerk-signin-overlay')) {
+      window.location.reload();
+    }
+  });
+});
+</script>
 </body>
 </html>

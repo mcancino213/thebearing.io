@@ -233,12 +233,8 @@ tbody tr:hover{background:var(--bg);}
     <div class="table-wrap">
     <table>
       <thead><tr><th>Member</th><th>Tier</th><th>Location</th><th>Joined</th><th>Bookings</th><th>LTV</th><th>Credits</th><th>Last active</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm">SA</div><div><div style="font-size:14px;font-weight:600;">Sarah Alderton</div><div style="font-size:12px;color:var(--text2);">s.alderton@gmail.com</div></div></div></td><td><span class="badge badge-accent">Founding</span></td><td>London, UK</td><td>Mar 2025</td><td style="font-weight:600;">3</td><td style="font-weight:600;">$28,400</td><td>$420</td><td style="font-size:12px;color:var(--text2);">Today</td><td><a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div><div><div style="font-size:14px;font-weight:600;">Thomas Müller</div><div style="font-size:12px;color:var(--text2);">t.muller@outlook.de</div></div></div></td><td><span class="badge badge-gray">Member</span></td><td>Munich, DE</td><td>Jan 2025</td><td style="font-weight:600;">1</td><td style="font-weight:600;">$18,200</td><td>$180</td><td style="font-size:12px;color:var(--text2);">2 days ago</td><td><a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">PC</div><div><div style="font-size:14px;font-weight:600;">Patricia Chen</div><div style="font-size:12px;color:var(--text2);">p.chen@stanford.edu</div></div></div></td><td><span class="badge badge-accent">Founding</span></td><td>San Francisco, US</td><td>Feb 2025</td><td style="font-weight:600;">2</td><td style="font-weight:600;">$19,600</td><td>$240</td><td style="font-size:12px;color:var(--text2);">1 week ago</td><td><a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">JL</div><div><div style="font-size:14px;font-weight:600;">Jean-Luc Fontaine</div><div style="font-size:12px;color:var(--text2);">jl.fontaine@sfr.fr</div></div></div></td><td><span class="badge badge-gray">Member</span></td><td>Paris, FR</td><td>Nov 2024</td><td style="font-weight:600;">2</td><td style="font-weight:600;">$24,800</td><td>$0</td><td style="font-size:12px;color:var(--text2);">3 weeks ago</td><td><a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#dc2626,#f87171);">CS</div><div><div style="font-size:14px;font-weight:600;">Caroline Scott</div><div style="font-size:12px;color:var(--text2);">c.scott@hsbc.com</div></div></div></td><td><span class="badge badge-accent">Founding</span></td><td>Hong Kong</td><td>Oct 2024</td><td style="font-weight:600;">4</td><td style="font-weight:600;">$68,400</td><td>$840</td><td style="font-size:12px;color:var(--text2);">Yesterday</td><td><a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">View</a></td></tr>
+      <tbody id="members-tbody">
+        <tr id="members-loading"><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Loading members…</td></tr>
       </tbody>
     </table>
     </div>
@@ -249,5 +245,63 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 
+
+<script>
+(async function loadMembers() {
+  var api = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+    ? '/api/members' : null;
+  var tbody = document.getElementById('members-tbody');
+  if (!api) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Member data only available on the live site.</td></tr>';
+    return;
+  }
+  try {
+    var res = await fetch(api);
+    var data = await res.json();
+    var members = data.members || [];
+    if (!members.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They'll appear here automatically when users sign up.</td></tr>';
+      return;
+    }
+    // Update count badge
+    var countEl = document.querySelector('.stat-num');
+    if (countEl) countEl.textContent = members.length;
+
+    tbody.innerHTML = members.map(function(m) {
+      var initials = (m.name || m.email || '?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || '?';
+      var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', {month:'short', year:'numeric'}) : '—';
+      var lastActive = m.last_active ? new Date(m.last_active).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : '—';
+      var tierBadge = m.tier === 'founding'
+        ? '<span class="badge badge-accent">Founding</span>'
+        : m.tier === 'member'
+          ? '<span class="badge badge-blue">Member</span>'
+          : '<span class="badge">'+m.tier+'</span>';
+      var providerIcon = m.provider === 'google' ? '🔵' : m.provider === 'apple' ? '⚫' : '✉️';
+      var ltv = m.ltv ? '$' + parseInt(m.ltv).toLocaleString() : '—';
+      return '<tr>'
+        + '<td><div style="display:flex;align-items:center;gap:10px;">'
+        + (m.avatar ? '<img src="'+m.avatar+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
+                    : '<div class="avatar avatar-sm">'+initials+'</div>')
+        + '<div><div style="font-size:14px;font-weight:600;">'+escHtml(m.name||'—')+'</div>'
+        + '<div style="font-size:12px;color:var(--text2);">'+escHtml(m.email)+'</div></div></div></td>'
+        + '<td>'+tierBadge+'</td>'
+        + '<td style="font-size:13px;">'+(m.location||'—')+'</td>'
+        + '<td style="font-size:13px;">'+joined+'</td>'
+        + '<td style="font-weight:600;">'+(m.bookings||0)+'</td>'
+        + '<td style="font-weight:600;">'+ltv+'</td>'
+        + '<td style="font-size:12px;">'+providerIcon+'</td>'
+        + '<td style="font-size:12px;color:var(--text2);">'+lastActive+'</td>'
+        + '<td><a href="admin-guest-detail.html?id='+encodeURIComponent(m.id)+'" class="btn btn-ghost btn-sm">View</a></td>'
+        + '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Failed to load members: '+e.message+'</td></tr>';
+  }
+})();
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 </body>
 </html>

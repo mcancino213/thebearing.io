@@ -17,3 +17,8 @@ enabled = true
 [[kv_namespaces]]
 binding = "DOSSIERS"
 id = "aa0c885871474266966e50f0676dd019"
+
+# Clerk webhook secret — set via: wrangler secret put CLERK_WEBHOOK_SECRET
+# Get this from Clerk Dashboard → Webhooks → your endpoint → Signing Secret
+# [vars]
+# CLERK_PUBLISHABLE_KEY = "pk_live_..."  # Add to your HTML pages

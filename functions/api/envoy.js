@@ -462,3 +462,147 @@ function jsonResponse(obj, status = 200) {
     }
   });
 }
+
+    // ── /api/members — member list (read/write) ───────────────────────────
+    // Keys: member:{userId}  (JSON)
+    // Index: __members_index  (JSON array of userIds)
+    if (url.pathname === '/api/members') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // GET ?id=... → single member
+      // GET        → full list
+      if (request.method === 'GET') {
+        const id = url.searchParams.get('id');
+        if (id) {
+          const raw = await env.DOSSIERS.get('member:' + id);
+          const data = raw ? JSON.parse(raw) : null;
+          return jsonResponse({ id, data, exists: !!data });
+        }
+        const rawIndex = await env.DOSSIERS.get('__members_index');
+        const ids = rawIndex ? JSON.parse(rawIndex) : [];
+        const members = await Promise.all(ids.map(async (uid) => {
+          const raw = await env.DOSSIERS.get('member:' + uid);
+          return raw ? { id: uid, ...JSON.parse(raw) } : null;
+        }));
+        return jsonResponse({ members: members.filter(Boolean) });
+      }
+
+      // POST { id, email, name, provider, ... } → upsert member
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); } catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        if (!body.id) return jsonResponse({ error: 'id required' }, 400);
+        const member = {
+          id: body.id,
+          email: body.email || '',
+          name: body.name || '',
+          provider: body.provider || 'email',
+          tier: body.tier || 'member',
+          joined_at: body.joined_at || new Date().toISOString(),
+          last_active: new Date().toISOString(),
+          bookings: body.bookings || 0,
+          ltv: body.ltv || 0,
+          location: body.location || '',
+          avatar: body.avatar || '',
+        };
+        await env.DOSSIERS.put('member:' + body.id, JSON.stringify(member));
+        // Update index
+        const rawIndex = await env.DOSSIERS.get('__members_index');
+        let ids = rawIndex ? JSON.parse(rawIndex) : [];
+        if (!ids.includes(body.id)) { ids.push(body.id); await env.DOSSIERS.put('__members_index', JSON.stringify(ids)); }
+        return jsonResponse({ ok: true, member });
+      }
+
+      // DELETE ?id=...
+      if (request.method === 'DELETE') {
+        const id = url.searchParams.get('id');
+        if (!id) return jsonResponse({ error: 'id required' }, 400);
+        await env.DOSSIERS.delete('member:' + id);
+        const rawIndex = await env.DOSSIERS.get('__members_index');
+        let ids = rawIndex ? JSON.parse(rawIndex) : [];
+        ids = ids.filter(i => i !== id);
+        await env.DOSSIERS.put('__members_index', JSON.stringify(ids));
+        return jsonResponse({ ok: true, deleted: id });
+      }
+    }
+
+    // ── /api/clerk-webhook — receives Clerk user lifecycle events ─────────
+    // Verifies Svix signature, auto-creates member on user.created
+    if (url.pathname === '/api/clerk-webhook') {
+      if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
+      // Verify Svix webhook signature
+      const webhookSecret = env.CLERK_WEBHOOK_SECRET;
+      if (webhookSecret) {
+        const svixId        = request.headers.get('svix-id');
+        const svixTimestamp = request.headers.get('svix-timestamp');
+        const svixSignature = request.headers.get('svix-signature');
+        if (!svixId || !svixTimestamp || !svixSignature) {
+          return jsonResponse({ error: 'Missing svix headers' }, 400);
+        }
+        // Simple timestamp replay protection (5 min window)
+        const ts = parseInt(svixTimestamp);
+        if (Math.abs(Date.now() / 1000 - ts) > 300) {
+          return jsonResponse({ error: 'Timestamp too old' }, 400);
+        }
+        // Signature verification using Web Crypto
+        const body = await request.text();
+        const signedContent = svixId + '.' + svixTimestamp + '.' + body;
+        const secretBytes = Uint8Array.from(atob(webhookSecret.replace('whsec_', '')), c => c.charCodeAt(0));
+        const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+        const signatures = svixSignature.split(' ').map(s => s.split(',')[1]).filter(Boolean);
+        const msgBytes = new TextEncoder().encode(signedContent);
+        let verified = false;
+        for (const sig of signatures) {
+          const sigBytes = Uint8Array.from(atob(sig), c => c.charCodeAt(0));
+          if (await crypto.subtle.verify('HMAC', key, sigBytes, msgBytes)) { verified = true; break; }
+        }
+        if (!verified) return jsonResponse({ error: 'Invalid signature' }, 401);
+
+        let event;
+        try { event = JSON.parse(body); } catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        await handleClerkEvent(event, env);
+      } else {
+        // No secret set — just process (dev mode)
+        let event;
+        try { event = await request.json(); } catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        await handleClerkEvent(event, env);
+      }
+      return jsonResponse({ ok: true });
+    }
+
+async function handleClerkEvent(event, env) {
+  if (!env.DOSSIERS) return;
+  const type = event.type;
+  const data = event.data;
+
+  if (type === 'user.created' || type === 'user.updated') {
+    const email = (data.email_addresses || []).find(e => e.id === data.primary_email_address_id);
+    const oauth = (data.external_accounts || [])[0];
+    const member = {
+      id: data.id,
+      email: email ? email.email_address : '',
+      name: [data.first_name, data.last_name].filter(Boolean).join(' ') || (email ? email.email_address.split('@')[0] : ''),
+      provider: oauth ? oauth.provider : 'email',
+      avatar: data.image_url || '',
+      tier: 'member',
+      joined_at: new Date(data.created_at).toISOString(),
+      last_active: new Date().toISOString(),
+      bookings: 0,
+      ltv: 0,
+      location: '',
+    };
+    await env.DOSSIERS.put('member:' + data.id, JSON.stringify(member));
+    const rawIndex = await env.DOSSIERS.get('__members_index');
+    let ids = rawIndex ? JSON.parse(rawIndex) : [];
+    if (!ids.includes(data.id)) { ids.push(data.id); await env.DOSSIERS.put('__members_index', JSON.stringify(ids)); }
+  }
+
+  if (type === 'user.deleted') {
+    await env.DOSSIERS.delete('member:' + data.id);
+    const rawIndex = await env.DOSSIERS.get('__members_index');
+    let ids = rawIndex ? JSON.parse(rawIndex) : [];
+    ids = ids.filter(i => i !== data.id);
+    await env.DOSSIERS.put('__members_index', JSON.stringify(ids));
+  }
+}
