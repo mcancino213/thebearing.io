@@ -794,50 +794,6 @@
   .ci-drawer .ci-msg.ai p{color:#1e1810;}
   .ci-drawer .ci-msg.user p{color:#fff;}
   .ci-drawer input,.ci-drawer button,.ci-drawer div{box-sizing:border-box;}
-
-
-
-  /* ── H-CARD (KV listing cards) ── */
-
-
-
-  /* ── H-CARD (KV listing cards) ── */
-  .h-card{border-radius:var(--r-xl);overflow:hidden;background:#fff;border:1px solid var(--border);cursor:pointer;transition:box-shadow .25s,transform .25s;animation:fadeUp .5s ease both;}
-  .h-card:hover{box-shadow:0 12px 48px rgba(80,55,25,.13);transform:translateY(-3px);}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-  .h-card:nth-child(1){animation-delay:.05s}.h-card:nth-child(2){animation-delay:.1s}.h-card:nth-child(3){animation-delay:.15s}
-  .h-card:nth-child(4){animation-delay:.2s}.h-card:nth-child(5){animation-delay:.25s}.h-card:nth-child(6){animation-delay:.3s}
-  .h-card:nth-child(7){animation-delay:.35s}.h-card:nth-child(8){animation-delay:.4s}.h-card:nth-child(9){animation-delay:.45s}
-  
-  .h-card-img{height:220px;overflow:hidden;position:relative;}
-  .h-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s;}
-  .h-card:hover .h-card-img img{transform:scale(1.04);}
-  .h-card-badges{position:absolute;top:12px;left:12px;display:flex;gap:6px;}
-  .h-badge{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:100px;backdrop-filter:blur(8px);}
-  .h-badge-dark{background:rgba(10,8,4,.55);color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.15);}
-  .h-badge-gold{background:rgba(154,114,48,.85);color:#fff;}
-  .h-badge-terra{background:rgba(176,88,48,.85);color:#fff;}
-  .h-heart{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.85);backdrop-filter:blur(6px);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--stone);transition:all .2s;}
-  .h-heart:hover,.h-heart.saved{color:var(--terra);background:#fff;}
-  .h-card-body{padding:16px 18px 18px;}
-  .h-region{font-size:.58rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;}
-  .h-name{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);margin-bottom:2px;}
-  .h-loc{font-size:.72rem;color:var(--stone);margin-bottom:8px;display:flex;align-items:center;gap:4px;}
-  .h-hook{font-size:.78rem;color:var(--bark);line-height:1.55;margin-bottom:12px;font-style:italic;}
-  .h-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-  .h-tags{display:flex;gap:5px;flex-wrap:wrap;}
-  .h-tag{font-size:.6rem;padding:2px 8px;border-radius:100px;background:var(--sand);color:var(--bark);}
-  .h-price{font-size:.8rem;color:var(--terra);font-weight:600;white-space:nowrap;}
-  
-  .h-card
-  .h-card
-  .h-card
-</style>
-</head>
-<body>
-<nav class="nav">
-  <a class="nav-logo-wrap" href="/">
-    <div class="nav-logo">The Bearing
 </style><style>
 /* ── CINEMATIC VOYAGE CARDS ── */
 /* ── SPLIT EDITORIAL HERO ── */
@@ -1037,7 +993,7 @@
   .voyage-filters{padding:20px 24px 28px;}
 }
 </style></head><body><nav class="nav">
-  <a class="nav-logo-wrap" href="/">
+  <a class="nav-logo-wrap" href="/index.html">
     <div class="nav-logo">The Bearing<span class="dot">.io</span></div>
     <div class="nav-tagline">Pointing you to the extraordinary.</div>
   </a>
@@ -1099,79 +1055,7 @@
 </div>
 
 <!-- Voyage stack -->
-
-<!-- KV-driven listing — injected above static content -->
-<div id="kv-cruises-grid" style="display:none;">
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;" id="kv-cruises-cards"></div>
-</div>
-<script>
-(function() {
-  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
-  if (!PROP_API) return;
-
-  function cfThumb(url) {
-    if (!url) return url;
-    return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
-  }
-
-  function makeCard(p, slug) {
-    var hero = p.photos && p.photos.hero && p.photos.hero.length && cfThumb(p.photos.hero[0].url || p.photos.hero[0]);
-    var price = p.rooms && p.rooms.length && p.rooms[0].price ? 'From $' + parseInt(p.rooms[0].price).toLocaleString() + (p.rooms[0].per ? '/' + p.rooms[0].per : '') : '';
-    var tags = (p.details && p.details.tags || []).slice(0, 3);
-    var loc = (p.render && p.render.location_line) || [p.region, p.country].filter(Boolean).join(' · ');
-    var card = document.createElement('div');
-    card.className = 'h-card';
-    card.onclick = function() { window.location = '/property.html?slug=' + encodeURIComponent(slug); };
-    var imgHtml = hero
-      ? '<img src="' + hero + '" alt="' + (p.name || '').replace(/"/g, '') + '" loading="lazy">'
-      : '<div style="width:100%;height:100%;background:var(--sand);"></div>';
-    var badgeHtml = p.tag ? '<div class="h-card-badges"><span class="h-badge h-badge-gold">' + p.tag + '</span></div>' : '';
-    var tagsHtml = tags.map(function(t) { return '<span class="h-tag">' + t + '</span>'; }).join('');
-    var locHtml = loc ? '<div class="h-loc"><svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>' + loc + '</div>' : '';
-    card.innerHTML = [
-      '<div class="h-card-img">',
-        imgHtml, badgeHtml,
-        '<button class="h-heart" onclick="event.stopPropagation();this.classList.toggle(\'saved\')">',
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
-        '</button>',
-      '</div>',
-      '<div class="h-card-body">',
-        '<div class="h-region">' + (p.type || '') + '</div>',
-        '<div class="h-name">' + (p.name || slug) + '</div>',
-        locHtml,
-        p.hook ? '<div class="h-hook">&ldquo;' + p.hook + '&rdquo;</div>' : '',
-        '<div class="h-foot">',
-          '<div class="h-tags">' + tagsHtml + '</div>',
-          price ? '<div class="h-price">' + price + '</div>' : '',
-        '</div>',
-      '</div>'
-    ].join('');
-    return card;
-  }
-
-  fetch(PROP_API + '?slug=__index_cruises')
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(res) {
-      if (!res || !res.exists || !res.data || !res.data.slugs || !res.data.slugs.length) return;
-      return Promise.all(res.data.slugs.map(function(slug) {
-        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
-          .then(function(r) { return r.ok ? r.json() : null; })
-          .then(function(res) { return res && res.exists ? {slug:slug, data:res.data} : null; })
-          .catch(function(){ return null; });
-      })).then(function(props) {
-        var valid = props.filter(Boolean);
-        if (!valid.length) return;
-        var grid = document.getElementById('kv-cruises-cards');
-        var wrap = document.getElementById('kv-cruises-grid');
-        var staticEl = document.getElementById('static-cruises');
-        valid.forEach(function(p) { grid.appendChild(makeCard(p.data, p.slug)); });
-        wrap.style.display = '';
-        if (staticEl) staticEl.style.display = 'none';
-      });
-    }).catch(function(){});
-})();
-</script>
-<div id="static-cruises"><div class="voyage-stack">
+<div class="voyage-stack">
 
   <!-- 1: Nour El Nil -->
   <div class="voyage" onclick="window.location='/nour-el-nil.html'">
@@ -1392,49 +1276,6 @@
 </div>
 
 <script>
-var CI_SYSTEM = "You are the The Bearing The Envoy — a warm, discerning, deeply knowledgeable travel concierge helping guests find the perfect rare hotel or boutique cruise from the The Bearing collection.\n\nYour voice: thoughtful, unhurried, literary. Like a well-travelled friend who has slept at these places. Short, evocative sentences. No bullet points. Never sound like a brochure.\n\nYou ONLY recommend properties and experiences within the The Bearing collection. You never suggest external booking sites, other hotel brands, or accommodation outside of The Bearing.\n\nWhen recommending a property, describe it in one or two evocative sentences. Ask at most one clarifying question per reply. Keep responses to 3-5 sentences.";
-
-// ── ENVOY LAYER 1: page-aware dossier + sources injection ──
-// On property pages, fetch the property's dossier from KV plus any cached
-// source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
-// deep page-specific context.
-(function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
-  var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
-  if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
-  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
-  if (!DOSSIER_API) return;
-  // Fetch dossier and sources in parallel
-  Promise.all([
-    fetch(DOSSIER_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
-    fetch(SOURCE_API + '?slug=' + encodeURIComponent(path)).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
-  ]).then(function(results) {
-    var dossierData = results[0];
-    var sourceData = results[1];
-    var hasDossier = dossierData && dossierData.dossier;
-    var sources = (sourceData && sourceData.sources) || [];
-    if (!hasDossier && sources.length === 0) return;
-    var contextBlocks = '';
-    if (hasDossier) {
-      contextBlocks += '=== PROPERTY DOSSIER ===\n' + dossierData.dossier + '\n=== END DOSSIER ===\n\n';
-    }
-    if (sources.length > 0) {
-      sources.forEach(function(src, i) {
-        contextBlocks += '=== SOURCE ' + (i+1) + ': ' + (src.label || 'Reference') + ' ===\n';
-        contextBlocks += 'URL: ' + src.url + '\n';
-        contextBlocks += 'Cached: ' + src.fetchedAt + '\n';
-        contextBlocks += 'Content:\n' + src.content + '\n';
-        contextBlocks += '=== END SOURCE ' + (i+1) + ' ===\n\n';
-      });
-    }
-    CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n\n" + contextBlocks + CI_SYSTEM;
-    var counts = (hasDossier ? '1 dossier' : '0 dossier') + ' + ' + sources.length + ' source(s)';
-    console.log('[Envoy] Loaded ' + counts + ' for ' + path + ' (' + contextBlocks.length + ' chars total context)');
-  }).catch(function(e){ console.log('[Envoy] Context load error:', e.message); });
-})();
-
-
 function vfilt(el){document.querySelectorAll('.vfpill').forEach(function(p){p.classList.remove('active')});el.classList.add('active');}
 function tcSearch(){window.location='/search.html';}
 var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
@@ -1592,11 +1433,10 @@ async function ciSendMsg(text) {
   var t = ciShowTyping();
 
   try {
-    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
-    var res = await fetch(CI_API, {
+    var res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
     });
     var data = await res.json();
     var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
@@ -1653,8 +1493,6 @@ function submitAccount(){
   toast('Welcome to The Bearing' + (name ? ', ' + name.split(' ')[0] : '') + '! ✓');
 }
 </script>
-
-</div><!-- end static-cruises -->
 
 <!-- ══ QUICK ENQUIRY MODAL ══ -->
 <div id="quick-enquiry-overlay" onclick="if(event.target===this)closeQuickEnquiry()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(6px);">
