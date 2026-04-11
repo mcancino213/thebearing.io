@@ -8,12 +8,13 @@
 <style>
   /* ── CANONICAL NAV ── */
   .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+  .nav-links-desktop{display:none;}
+
   .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
   .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1;}
   .nav-logo .dot{color:var(--terra);font-family:'Geist',sans-serif;font-size:.75em;font-weight:400;}
   .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
-  .nav-links-desktop{display:none;}
-  .nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
+.nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
   .nav-link-d:hover{color:var(--ink);}
   .nav-link-d.featured{color:var(--terra);}
   .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
@@ -178,6 +179,9 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
   /* Page push */
   body.ci-open{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
   @media(min-width:768px){
+  .nav-links-desktop{display:flex;gap:22px;align-items:center;}
+  .nav-menu-btn{display:none!important;}
+
     body.ci-open{margin-right:clamp(320px,25vw,480px);}
     .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
   }
@@ -281,15 +285,13 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 <script src="/assets/envoy-prompt.js"></script>
 <style>
 @media(min-width:768px){
-  .nav-links-desktop{display:flex!important;}
-  .nav-menu-btn{display:none!important;}
+.nav-menu-btn{display:none!important;}
 }
 </style>
 <style>
 @media(max-width:767px){
   /* Nav */
-  .nav-links-desktop{display:none!important;}
-  .nav-menu-btn{display:flex!important;}
+.nav-menu-btn{display:flex!important;}
 
   /* Hero — prevent overly tall heroes on phones */
   .hero{min-height:65dvh!important;}
@@ -961,21 +963,30 @@ function ciAddPropertyCards(props) {
   var row = document.createElement('div');
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
-    var href = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
-      ? '/property?slug='+p.slug : '/property.html?slug='+p.slug;
-    var stars = p.rating ? '★'.repeat(p.rating) : '';
+    var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+      ? '/property?slug=' + p.slug : '/property.html?slug=' + p.slug;
+    var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
-    a.className = 'ci-prop-card'; a.href = href;
-    a.innerHTML = '<img src="'+p.img+'" alt="'+p.label+'" loading="lazy" onerror="this.style.display='none'">'
-      +'<div class="ci-prop-card-body">'
-      +'<span class="ci-prop-card-name">'+p.label+'</span>'
-      +'<span class="ci-prop-card-loc">'+p.loc+'</span>'
-      +(stars?'<span class="ci-prop-card-stars">'+stars+'</span>':'')
-      +'</div>';
-    row.appendChild(a);
+    a.className = 'ci-prop-card';
+    a.href = href;
+    var img = document.createElement('img');
+    img.src = p.img; img.alt = p.label; img.loading = 'lazy';
+    img.onerror = function(){ this.style.display='none'; };
+    var body = document.createElement('div');
+    body.className = 'ci-prop-card-body';
+    var nm = document.createElement('span');
+    nm.className = 'ci-prop-card-name'; nm.textContent = p.label;
+    var lc = document.createElement('span');
+    lc.className = 'ci-prop-card-loc'; lc.textContent = p.loc;
+    body.appendChild(nm); body.appendChild(lc);
+    if (stars) {
+      var st = document.createElement('span');
+      st.className = 'ci-prop-card-stars'; st.textContent = stars;
+      body.appendChild(st);
+    }
+    a.appendChild(img); a.appendChild(body); row.appendChild(a);
   });
-  msgs.appendChild(row);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
 }
 
 function openEnvoy() {

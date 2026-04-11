@@ -227,6 +227,9 @@
   /* Page push */
   body.ci-open{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
   @media(min-width:768px){
+  .nav-links-desktop{display:flex;gap:22px;align-items:center;}
+  .nav-menu-btn{display:none!important;}
+
     body.ci-open{margin-right:clamp(320px,25vw,480px);}
     .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
   }
@@ -596,21 +599,30 @@ function ciAddPropertyCards(props) {
   var row = document.createElement('div');
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
-    var href = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
-      ? '/property?slug='+p.slug : '/property.html?slug='+p.slug;
-    var stars = p.rating ? '★'.repeat(p.rating) : '';
+    var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+      ? '/property?slug=' + p.slug : '/property.html?slug=' + p.slug;
+    var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
-    a.className = 'ci-prop-card'; a.href = href;
-    a.innerHTML = '<img src="'+p.img+'" alt="'+p.label+'" loading="lazy" onerror="this.style.display='none'">'
-      +'<div class="ci-prop-card-body">'
-      +'<span class="ci-prop-card-name">'+p.label+'</span>'
-      +'<span class="ci-prop-card-loc">'+p.loc+'</span>'
-      +(stars?'<span class="ci-prop-card-stars">'+stars+'</span>':'')
-      +'</div>';
-    row.appendChild(a);
+    a.className = 'ci-prop-card';
+    a.href = href;
+    var img = document.createElement('img');
+    img.src = p.img; img.alt = p.label; img.loading = 'lazy';
+    img.onerror = function(){ this.style.display='none'; };
+    var body = document.createElement('div');
+    body.className = 'ci-prop-card-body';
+    var nm = document.createElement('span');
+    nm.className = 'ci-prop-card-name'; nm.textContent = p.label;
+    var lc = document.createElement('span');
+    lc.className = 'ci-prop-card-loc'; lc.textContent = p.loc;
+    body.appendChild(nm); body.appendChild(lc);
+    if (stars) {
+      var st = document.createElement('span');
+      st.className = 'ci-prop-card-stars'; st.textContent = stars;
+      body.appendChild(st);
+    }
+    a.appendChild(img); a.appendChild(body); row.appendChild(a);
   });
-  msgs.appendChild(row);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
 }
 
 function openEnvoy() {

@@ -1,12 +1,13 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Collections — The Bearing</title><link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet"><style>
   /* ── CANONICAL NAV ── */
   .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
+  .nav-links-desktop{display:none;}
+
   .nav-logo-wrap{display:flex;flex-direction:column;text-decoration:none;cursor:pointer;flex-shrink:0;}
   .nav-logo{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1;}
   .nav-logo .dot{color:var(--terra);font-family:'Geist',sans-serif;font-size:.75em;font-weight:400;}
   .nav-tagline{font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mist);margin-top:2px;}
-  .nav-links-desktop{display:none;}
-  .nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
+.nav-link-d{font-size:.78rem;font-weight:400;color:var(--bark);text-decoration:none;white-space:nowrap;transition:color .15s;}
   .nav-link-d:hover{color:var(--ink);}
   .nav-link-d.featured{color:var(--terra);}
   .nav-link-d.nav-vibe{color:var(--terra);font-weight:600;}
@@ -573,7 +574,10 @@
   .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#1c1610;border-left:1px solid rgba(180,140,70,.2);box-shadow:-12px 0 60px rgba(0,0,0,.45);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .42s cubic-bezier(.32,.72,0,1);}
   .ci-drawer.open{transform:translateX(0);}
   body{transition:margin-right .42s cubic-bezier(.32,.72,0,1);}
-  @media(min-width:768px){body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}}
+  @media(min-width:768px){
+  .nav-links-desktop{display:flex;gap:22px;align-items:center;}
+  .nav-menu-btn{display:none!important;}
+body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}}
   @media(max-width:767px){.ci-drawer{width:88vw;min-width:0;max-width:400px;}.ci-fab.drawer-open{right:calc(88vw + 12px);}}
   .ci-head{padding:18px 20px 14px;border-bottom:1px solid rgba(180,140,70,.14);display:flex;align-items:center;gap:12px;flex-shrink:0;background:linear-gradient(160deg,#261d0f 0%,#1c1610 100%);}
   .ci-avatar{width:38px;height:38px;border-radius:50%;background:rgba(180,140,70,.15);border:1px solid rgba(180,140,70,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -640,9 +644,7 @@
 
   /* ── Nav ── */
   .nav-menu-btn { display:none !important; }
-  .nav-links-desktop { display:flex !important; }
-
-  /* ── Hero ── */
+/* ── Hero ── */
   .hero { min-height: 100dvh; }
   .hero-content {
     padding: 0 60px 64px;
@@ -849,8 +851,7 @@
 <style>
 @media(max-width:767px){
   /* Nav */
-  .nav-links-desktop{display:none!important;}
-  .nav-menu-btn{display:flex!important;}
+.nav-menu-btn{display:flex!important;}
 
   /* Hero — prevent overly tall heroes on phones */
   .hero{min-height:65dvh!important;}
@@ -1294,23 +1295,29 @@ function ciAddPropertyCards(props) {
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
     var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-      ? '/property?slug=' + p.slug
-      : '/property.html?slug=' + p.slug;
-    var stars = p.rating ? '★'.repeat(p.rating) : '';
+      ? '/property?slug=' + p.slug : '/property.html?slug=' + p.slug;
+    var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
     a.className = 'ci-prop-card';
     a.href = href;
-    a.innerHTML =
-      '<img class="ci-prop-card-img" src="' + p.img + '" alt="' + p.label + '" loading="lazy" onerror="this.style.display='none'">' +
-      '<div class="ci-prop-card-body">' +
-        '<span class="ci-prop-card-name">' + p.label + '</span>' +
-        '<span class="ci-prop-card-loc">' + p.loc + '</span>' +
-        (stars ? '<span class="ci-prop-card-stars">' + stars + '</span>' : '') +
-      '</div>';
-    row.appendChild(a);
+    var img = document.createElement('img');
+    img.src = p.img; img.alt = p.label; img.loading = 'lazy';
+    img.onerror = function(){ this.style.display='none'; };
+    var body = document.createElement('div');
+    body.className = 'ci-prop-card-body';
+    var nm = document.createElement('span');
+    nm.className = 'ci-prop-card-name'; nm.textContent = p.label;
+    var lc = document.createElement('span');
+    lc.className = 'ci-prop-card-loc'; lc.textContent = p.loc;
+    body.appendChild(nm); body.appendChild(lc);
+    if (stars) {
+      var st = document.createElement('span');
+      st.className = 'ci-prop-card-stars'; st.textContent = stars;
+      body.appendChild(st);
+    }
+    a.appendChild(img); a.appendChild(body); row.appendChild(a);
   });
-  msgs.appendChild(row);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
 }
 
 async function ciSendMsg(text) {
