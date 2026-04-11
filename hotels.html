@@ -1178,6 +1178,18 @@ function tcSearch(val){window.location='/search.html';}
 
 </div>
 <script>
+var ciOpen = false;
+var ciBusy = false;
+
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+
+var ciHistory = ciLoadHistory();
+
 function openEnvoy() {
   ciOpen = true;
   document.getElementById('ci-drawer').classList.add('open');
