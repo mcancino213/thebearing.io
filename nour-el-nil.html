@@ -857,27 +857,38 @@
   <div class="nav-menu-panel">
     <div class="menu-header">
       <div class="menu-logo">The Bearing<span class="dot">.io</span></div>
-      <button class="menu-close" onclick="closeMenu()">✕</button>
+      <button class="menu-close" onclick="closeMenu()" aria-label="Close menu">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>
+      </button>
     </div>
     <div class="menu-links">
       <div class="menu-section-label">Explore</div>
-      <button class="menu-link featured" onclick="closeMenu()">The Advisor <span style="font-family:'Geist',sans-serif;font-size:.65rem;background:rgba(120,220,140,.15);color:#1a8a4a;padding:2px 7px;border-radius:100px;margin-left:6px;font-weight:600;">AI</span></button>
-      <button class="menu-link" onclick="closeMenu()">Hotels</button>
-      <button class="menu-link" onclick="closeMenu()">Cruises</button>
-      <button class="menu-link" onclick="closeMenu()">Villas</button>
+      <button class="menu-link featured" onclick="closeMenu();openEnvoy()"><span>The Envoy</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/hotels.html'"><span>Hotels</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/cruises.html'"><span>Cruises</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/villas.html'"><span>Villas</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/collections.html'"><span>Collections</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/vibe-search.html'"><span>✦ Vibe Search</span><span class="menu-link-arr">›</span></button>
       <div class="menu-divider"></div>
-      <div class="menu-section-label">Collections</div>
-      <button class="menu-link" onclick="closeMenu()">Honeymoon Escapes</button>
-      <button class="menu-link" onclick="closeMenu()">Adults Only</button>
-      <button class="menu-link" onclick="closeMenu()">Wilderness & Adventure</button>
-      <button class="menu-link" onclick="closeMenu()">Design Hotels</button>
+      <div class="menu-section-label">Learn</div>
+      <button class="menu-link" onclick="closeMenu();window.location='/how-we-choose.html'"><span>How we choose</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/journal.html'"><span>Journal</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/about.html'"><span>About</span><span class="menu-link-arr">›</span></button>
+      <div class="menu-divider"></div>
+      <div class="menu-section-label">Account</div>
+      <button class="menu-link" onclick="closeMenu();window.location='/my-account.html'"><span>My Account</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/bookings.html'"><span>My Bookings</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/saved.html'"><span>Saved</span><span class="menu-link-arr">›</span></button>
     </div>
     <div class="menu-footer">
+      <div class="menu-footer-txt">Every property visited. Every stay curated. Commission-free.</div>
       <div class="menu-cta-row">
-        <button class="menu-cta primary" onclick="closeMenu();openOverlay('inq-overlay')">Inquire about this journey</button>
+        <button class="menu-cta primary" onclick="closeMenu();openEnvoy()">Ask The Envoy</button>
+        <button class="menu-cta secondary" onclick="closeMenu();window.location='/search.html'">Search</button>
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <!-- ══ HERO — scrollable 3-row mosaic ══ -->
