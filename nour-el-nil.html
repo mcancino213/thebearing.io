@@ -537,6 +537,14 @@
   .ci-divider{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0;align-self:stretch;}
   .ci-divider::before,.ci-divider::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.12);}
   .ci-divider span{font-size:.65rem;font-family:'Geist',sans-serif;color:#9a8e80;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase;}
+  .ci-prop-cards{display:flex;gap:7px;align-self:flex-start;width:100%;margin-top:4px;}
+  .ci-prop-card{flex:1;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;height:108px;border:1px solid rgba(0,0,0,.08);transition:transform .18s,box-shadow .18s;text-decoration:none;display:block;min-width:0;}
+  .ci-prop-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.18);}
+  .ci-prop-card-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .ci-prop-card-grad{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,7,3,.85) 0%,rgba(10,7,3,.08) 65%);}
+  .ci-prop-card-body{position:absolute;bottom:0;left:0;right:0;padding:7px 8px;}
+  .ci-prop-card-name{font-size:.67rem;font-weight:600;color:#fff;line-height:1.2;font-family:'Geist',sans-serif;}
+  .ci-prop-card-loc{font-size:.58rem;color:rgba(255,255,255,.58);margin-top:1px;font-family:'Geist',sans-serif;}
 
   /* Suggestions */
   .ci-sugs{padding:0 16px 10px;display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
@@ -2084,6 +2092,55 @@ function ciSend() {
   ciSendMsg(q);
 }
 
+
+var CI_PROPERTIES = {
+  'nour el nil':        { slug:'nour-el-nil',          label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',          img:'https://images.unsplash.com/photo-1548177461-bb86d867e28e?w=600&q=80&fit=crop' },
+  'al moudira':         { slug:'al-moudira',            label:'Al Moudira',          loc:'Luxor · Egypt',                      img:'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80&fit=crop' },
+  'la maison bleue':    { slug:'la-maison-bleue',       label:'La Maison Bleue',     loc:'Luxor · Egypt',                      img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
+  'alila jabal akhdar': { slug:'alila-jabal-akhdar',    label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',           img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
+  'amangiri':           { slug:'amangiri',              label:'Amangiri',            loc:'Utah Desert · USA',                  img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
+  'aqua nera':          { slug:'aqua-nera',             label:'Aqua Nera',           loc:'Peruvian Amazon Cruise',                  img:'https://d20knvk822eu5a.cloudfront.net/s3fs-public-optimized/static-assets/ships/aqua-nera/suites/suite-with-daybed.webp.webp?format=auto&width=600&quality=80' },
+  'singita grumeti':    { slug:'singita-grumeti',       label:'Singita Grumeti',     loc:'Serengeti · Tanzania',               img:'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=600&q=80&fit=crop' },
+  'beyond ngorongoro':  { slug:'beyond-ngorongoro',     label:'\u0026Beyond Ngorongoro', loc:'Ngorongoro Crater · Tanzania',  img:'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=600&q=80&fit=crop' },
+  'capella ubud':       { slug:'capella-ubud',          label:'Capella Ubud',        loc:'Bali Rainforest · Indonesia',        img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&fit=crop' },
+  'mekong navigator':   { slug:'mekong-navigator',      label:'Mekong Navigator',    loc:'Vietnam \u0026 Cambodia Cruise',         img:'https://d1jxe9bpbkcsev.cloudfront.net/2024/07/Gypsy-gallery-11.jpg' },
+  'soneva fushi':       { slug:'soneva-fushi',          label:'Soneva Fushi',        loc:'Maldives',                                img:'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=600&q=80&fit=crop' }
+};
+
+function ciDetectProperties(text) {
+  var lower = text.toLowerCase();
+  var found = [], seen = {};
+  Object.keys(CI_PROPERTIES).forEach(function(key) {
+    if (lower.indexOf(key) > -1 && !seen[key]) { seen[key] = true; found.push(CI_PROPERTIES[key]); }
+  });
+  return found;
+}
+
+function ciAddPropertyCards(props) {
+  if (!props || props.length === 0) return;
+  var msgs = document.getElementById('ci-messages');
+  var row = document.createElement('div');
+  row.className = 'ci-prop-cards';
+  props.forEach(function(p) {
+    var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
+      ? '/property?slug=' + p.slug
+      : '/property.html?slug=' + p.slug;
+    var a = document.createElement('a');
+    a.className = 'ci-prop-card';
+    a.href = href;
+    a.innerHTML =
+      '<img class="ci-prop-card-img" src="' + p.img + '" alt="' + p.label + '" loading="lazy">' +
+      '<div class="ci-prop-card-grad"></div>' +
+      '<div class="ci-prop-card-body">' +
+        '<div class="ci-prop-card-name">' + p.label + '</div>' +
+        '<div class="ci-prop-card-loc">' + p.loc + '</div>' +
+      '</div>';
+    row.appendChild(a);
+  });
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
 async function ciSendMsg(text) {
   ciAddMsg(text, 'user');
   ciHistory.push({ role: 'user', content: text });
@@ -2106,6 +2163,9 @@ async function ciSendMsg(text) {
     ciAddMsg(reply, 'ai');
     ciHistory.push({ role: 'assistant', content: reply });
     ciSaveHistory(ciHistory);
+    // Detect and render property cards after AI reply
+    var detectedProps = ciDetectProperties(reply);
+    if (detectedProps.length > 0) ciAddPropertyCards(detectedProps);
   } catch(e) {
     t.remove();
     ciBusy = false;
