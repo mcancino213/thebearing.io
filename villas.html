@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Villas Option C — The Bearing</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   /* ── CANONICAL NAV ── */
   .nav{position:fixed;top:0;left:0;right:0;z-index:200;height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:rgba(250,247,241,.96);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(80,60,30,.1);}
@@ -940,6 +940,23 @@ body{background:var(--cream);color:var(--ink);}
   .module-inner,.h-scroll{padding-left:16px!important;padding-right:0!important;}
 }
 </style>
+<script>
+  function toggleMenu(){
+    var menu=document.getElementById('nav-menu');
+    var btn=document.getElementById('nav-menu-btn');
+    if(!menu||!btn) return;
+    var open=menu.classList.toggle('open');
+    btn.classList.toggle('open',open);
+    document.body.style.overflow=open?'hidden':'';
+  }
+  function closeMenu(){
+    var menu=document.getElementById('nav-menu');
+    var btn=document.getElementById('nav-menu-btn');
+    if(menu) menu.classList.remove('open');
+    if(btn) btn.classList.remove('open');
+    document.body.style.overflow='';
+  }
+</script>
 </head>
 <body>
 <nav class="nav">
