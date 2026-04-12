@@ -2153,8 +2153,9 @@ function ciRestoreMessages() {
   } else {
     var sugs = document.getElementById('ci-sugs');
     if (sugs) sugs.style.display = 'none';
-    // Restore previous conversation
+    // Restore previous conversation (filter hidden context-switch messages)
     ciHistory.forEach(function(m) {
+      if (m._type === 'context_switch' || m._type === 'context_switch_ack') return;
       ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
     });
   }
@@ -2164,11 +2165,21 @@ function ciRestoreMessages() {
 // Update context pill based on current page
 (function() {
   var path = window.location.pathname;
+  var params = new URLSearchParams(window.location.search);
+  var slug = params.get('slug');
   var ctx = 'Browsing The Bearing';
-  if (path.indexOf('nour-el-nil') > -1) ctx = 'Viewing: Nour El Nil · Egypt';
-  else if (path.indexOf('hideaway') > -1) ctx = 'Browsing all properties';
+  if (slug) {
+    // Convert slug to display name: "nour-el-nil" → "Nour El Nil"
+    var name = slug.replace(/-/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    ctx = 'Viewing: ' + name;
+  } else if (path.indexOf('nour-el-nil') > -1) {
+    ctx = 'Viewing: Nour El Nil · Egypt';
+  }
   var el = document.getElementById('ci-context-txt');
   if (el) el.textContent = ctx;
+  // Also update when propData loads (gets proper name from KV)
+  var orig = window.renderProperty;
+  window._ciContextSlug = slug;
 })();
 
 function ciAsk(btn) {
