@@ -109,15 +109,27 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 .loading-sub{font-size:.78rem;color:var(--stone);margin-top:6px;}
 
 /* ── RESULTS ── */
-.vibe-results{display:none;max-width:900px;margin:0 auto;padding:0 24px 80px;background:var(--cream);}
+.vibe-results{display:none;background:var(--cream);padding:0 0 80px;}
 .vibe-results.show{display:block;}
-.results-header{margin-bottom:32px;}
-.results-header h2{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--ink);margin-bottom:6px;}
-.results-header p{font-size:.82rem;color:var(--stone);line-height:1.6;}
-.results-vibe-echo{display:inline-block;padding:6px 14px;background:rgba(176,88,48,.12);border:1px solid rgba(176,88,48,.2);border-radius:100px;font-size:.72rem;color:var(--terra-d);margin-top:8px;font-style:italic;}
+
+/* Split layout */
+.vr-layout{display:grid;grid-template-columns:320px 1fr;gap:0;max-width:1200px;margin:0 auto;padding:64px 40px 0;align-items:start;}
+
+/* Sidebar */
+.vr-sidebar{position:sticky;top:86px;}
+.vr-sidebar-inner{padding-right:48px;}
+.vr-sidebar-eyebrow{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:10px;}
+.results-vibe-echo{display:block;padding:10px 14px;background:rgba(176,88,48,.08);border:1px solid rgba(176,88,48,.15);border-radius:var(--r-md);font-size:.82rem;color:var(--terra-d);font-style:italic;line-height:1.5;margin-bottom:20px;}
+.vr-match-count{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);margin-bottom:6px;}
+.vr-match-sub{font-size:.76rem;color:var(--stone);line-height:1.6;margin-bottom:24px;}
+.vr-new-search-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:none;border:1px solid var(--border-hi);border-radius:100px;font-family:'Geist',sans-serif;font-size:.74rem;color:var(--bark);cursor:pointer;transition:all .18s;margin-top:16px;}
+.vr-new-search-btn:hover{background:var(--linen);color:var(--ink);}
+
+/* Cards column */
+.vr-cards{display:flex;flex-direction:column;gap:20px;}
 
 /* Result cards — dark editorial style */
-.vibe-result-card{background:#fff;border:1px solid var(--border-hi);border-radius:22px;overflow:hidden;margin-bottom:20px;cursor:pointer;transition:box-shadow .2s,transform .2s;display:grid;grid-template-columns:260px 1fr;animation:fadeUp .5s ease both;box-shadow:0 2px 16px rgba(80,55,25,.06);}
+.vibe-result-card{background:#fff;border:1px solid var(--border-hi);border-radius:22px;overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .2s;display:grid;grid-template-columns:260px 1fr;animation:fadeUp .5s ease both;box-shadow:0 2px 16px rgba(80,55,25,.06);}
 .vibe-result-card:hover{box-shadow:0 10px 40px rgba(80,55,25,.12);transform:translateY(-2px);border-color:var(--border-hi);}
 .vibe-result-card:nth-child(1){animation-delay:.05s}.vibe-result-card:nth-child(2){animation-delay:.12s}.vibe-result-card:nth-child(3){animation-delay:.19s}.vibe-result-card:nth-child(4){animation-delay:.26s}
 .vrc-img{overflow:hidden;position:relative;}
@@ -150,12 +162,18 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 .vibe-no-results p{font-size:.82rem;color:var(--stone);}
 
 /* Refine bar (shown after results) */
-.refine-bar{display:none;align-items:center;gap:12px;padding:14px 20px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);margin-bottom:24px;box-shadow:0 2px 12px rgba(80,55,25,.06);}
+.refine-bar{display:none;flex-direction:column;gap:8px;padding:14px 16px;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-lg);box-shadow:0 2px 12px rgba(80,55,25,.06);}
 .refine-bar.show{display:flex;}
-.refine-bar input{flex:1;background:none;border:none;outline:none;font-family:'Geist',sans-serif;font-size:.85rem;color:var(--ink);}
+.refine-bar input{width:100%;background:none;border:none;outline:none;font-family:'Geist',sans-serif;font-size:.84rem;color:var(--ink);}
 .refine-bar input::placeholder{color:var(--mist);}
-.refine-btn{padding:8px 16px;background:rgba(176,88,48,.2);border:1px solid rgba(176,88,48,.3);border-radius:100px;color:var(--terra-d);font-family:'Geist',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;}
+.refine-btn{align-self:flex-end;padding:7px 16px;background:linear-gradient(135deg,var(--terra),var(--terra-d));border:none;border-radius:100px;color:#fff;font-family:'Geist',sans-serif;font-size:.74rem;font-weight:600;cursor:pointer;}
 
+@media(max-width:900px){
+  .vr-layout{grid-template-columns:1fr;padding:40px 24px 0;}
+  .vr-sidebar{position:static;}
+  .vr-sidebar-inner{padding-right:0;margin-bottom:32px;}
+  .vr-new-search-btn{display:none;}
+}
 @media(max-width:700px){
   .vibe-result-card{grid-template-columns:1fr;}
   .vrc-img img{min-height:220px;height:220px;}
@@ -511,19 +529,32 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 
 <!-- RESULTS -->
 <div class="vibe-results" id="vibe-results">
-  <div class="results-header">
-    <h2 id="results-title">Properties that match your vibe</h2>
-    <p id="results-desc">Ranked by aesthetic and emotional resonance, not star ratings.</p>
-    <div class="results-vibe-echo" id="vibe-echo"></div>
-  </div>
+  <div class="vr-layout">
 
-  <div class="refine-bar" id="refine-bar">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.5" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-    <input type="text" placeholder="Refine: add more to your vibe..." id="refine-input" onkeydown="if(event.key==='Enter')refineSearch()">
-    <button class="refine-btn" onclick="refineSearch()">Refine →</button>
-  </div>
+    <!-- Left: search context + refine -->
+    <div class="vr-sidebar">
+      <div class="vr-sidebar-inner">
+        <div class="vr-sidebar-eyebrow">Your vibe</div>
+        <div class="results-vibe-echo" id="vibe-echo"></div>
+        <div class="vr-match-count" id="results-title">Properties matched</div>
+        <p class="vr-match-sub" id="results-desc">Ranked by aesthetic and emotional resonance, not star ratings.</p>
 
-  <div id="results-container"></div>
+        <div class="refine-bar" id="refine-bar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+          <input type="text" placeholder="Refine your vibe..." id="refine-input" onkeydown="if(event.key==='Enter')refineSearch()">
+          <button class="refine-btn" onclick="refineSearch()">Refine →</button>
+        </div>
+
+        <button class="vr-new-search-btn" onclick="document.getElementById('hero-section').scrollIntoView({behavior:'smooth'});document.getElementById('vibe-input').focus();">
+          ← New search
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: result cards -->
+    <div class="vr-cards" id="results-container"></div>
+
+  </div>
 </div>
 
 <!-- NO RESULTS -->
@@ -864,7 +895,11 @@ function renderResults(results, vibe) {
       +'</div>';
   }).join('');
 
-  results[0] && document.getElementById('vibe-results').scrollIntoView({behavior:'smooth', block:'start'});
+  if (results[0]) {
+    var el = document.getElementById('vibe-results');
+    var y = el.getBoundingClientRect().top + window.scrollY - 80;
+    window.scrollTo({top: y, behavior: 'smooth'});
+  }
 }
 
 // ── Refine search (conversational) ───────────────────────────────────────
