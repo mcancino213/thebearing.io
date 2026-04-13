@@ -672,11 +672,12 @@ function submitQuickEnquiry() {
     var sourceData = results[1];
     var hasDossier = dossierData && dossierData.dossier;
     var sources = (sourceData && sourceData.sources) || [];
-    if (!hasDossier && sources.length === 0) return;
+    // Always inject property focus into CI_SYSTEM, even without a dossier
     var contextBlocks = '';
     if (hasDossier) {
       contextBlocks += '=== PROPERTY DOSSIER ===\n' + dossierData.dossier + '\n=== END DOSSIER ===\n\n';
     }
+    // Always set property focus regardless of dossier availability
     if (sources.length > 0) {
       sources.forEach(function(src, i) {
         contextBlocks += '=== SOURCE ' + (i+1) + ': ' + (src.label || 'Reference') + ' ===\n';
@@ -806,11 +807,15 @@ function ciRestoreMessages() {
   var slug = params.get('slug');
   var ctx = 'Browsing The Bearing';
   if (slug) {
-    // Convert slug to display name: "nour-el-nil" → "Nour El Nil"
     var name = slug.replace(/-/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
     ctx = 'Viewing: ' + name;
-  } else if (path.indexOf('nour-el-nil') > -1) {
-    ctx = 'Viewing: Nour El Nil · Egypt';
+  } else {
+    // Flagship property page — derive from filename
+    var pageName = path.split('/').pop().replace('.html','');
+    if (pageName && pageName !== 'index' && pageName !== 'property') {
+      var name = pageName.replace(/-/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+      ctx = 'Viewing: ' + name;
+    }
   }
   var el = document.getElementById('ci-context-txt');
   if (el) el.textContent = ctx;
