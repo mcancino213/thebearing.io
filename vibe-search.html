@@ -37,49 +37,48 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 /* ── NAV ── */
 
 /* ── HERO ── */
-.hero{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--nav-h) + 40px) 24px 60px;position:relative;overflow:visible;background:var(--cream);}
+.hero{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--nav-h) + 40px) 24px 60px;position:relative;overflow:visible;background:#1a1208;}
 
-/* Animated gradient background */
+/* Photo background */
 .hero-bg{position:absolute;inset:0;z-index:0;}
-.hero-bg-grad{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(176,88,48,.07) 0%,transparent 70%);}
-.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:orbFloat var(--d) ease-in-out infinite;animation-delay:var(--delay);opacity:.07;}
-.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(176,88,48,.6),transparent 70%);top:-10%;left:10%;--d:12s;--delay:0s;}
-.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(46,106,138,.5),transparent 70%);bottom:-5%;right:5%;--d:15s;--delay:-5s;}
-.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(154,114,48,.4),transparent 70%);top:40%;left:60%;--d:10s;--delay:-3s;}
-@keyframes orbFloat{0%,100%{transform:translate(0,0);}33%{transform:translate(30px,-20px);}66%{transform:translate(-20px,15px);}}
-
-/* Grain overlay */
-.hero-bg::after{content:'';position:absolute;inset:0;background-image:url("https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop");pointer-events:none;opacity:.4;}
+.hero-bg-img{position:absolute;inset:0;background-image:url("https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/9a31435b-4949-43ea-79d1-2c9e832af400/public");background-size:cover;background-position:center;opacity:.55;}
+.hero-bg-grad{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(20,14,7,.45) 0%,rgba(20,14,7,.3) 50%,rgba(20,14,7,.7) 100%);}
+.orb{display:none;}
+.orb1,.orb2,.orb3{display:none;}
 
 .hero-content{position:relative;z-index:1;width:100%;max-width:760px;text-align:center;}
 
 /* Badge */
-.vibe-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(176,88,48,.15);border:1px solid rgba(176,88,48,.3);border-radius:100px;font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--terra-d);margin-bottom:24px;animation:fadeUp .6s .1s both;}
-.vibe-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--terra);animation:pulse 2s ease-in-out infinite;}
+.vibe-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);margin-bottom:24px;animation:fadeUp .6s .1s both;backdrop-filter:blur(8px);}
+.vibe-badge-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
 
-.hero-h1{font-family:'Instrument Serif',serif;font-size:clamp(2.4rem,7vw,4.2rem);line-height:1.04;margin-bottom:10px;animation:fadeUp .6s .2s both;color:var(--ink);}
-.hero-h1 em{color:var(--terra);font-style:italic;}
-.hero-sub{font-size:.95rem;color:var(--stone);line-height:1.7;margin-bottom:44px;animation:fadeUp .6s .3s both;max-width:500px;margin-left:auto;margin-right:auto;}
+.hero-h1{font-family:'Instrument Serif',serif;font-size:clamp(2.4rem,7vw,4.2rem);line-height:1.04;margin-bottom:10px;animation:fadeUp .6s .2s both;color:#f5ede0;}
+.hero-h1 em{color:#e8a07a;font-style:italic;}
+.hero-sub{font-size:.95rem;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:44px;animation:fadeUp .6s .3s both;max-width:500px;margin-left:auto;margin-right:auto;}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── THE VIBE SEARCH INPUT ── */
-.vibe-box{background:#fff;border:1.5px solid var(--border-hi);border-radius:20px;padding:20px 24px;margin-bottom:16px;transition:border-color .2s,box-shadow .2s;animation:fadeUp .6s .4s both;position:relative;box-shadow:0 4px 24px rgba(80,55,25,.07);}
+.vibe-box{background:#fff;border:1.5px solid var(--border-hi);border-radius:20px;padding:20px 24px 16px;margin-bottom:16px;transition:border-color .2s,box-shadow .2s;animation:fadeUp .6s .4s both;position:relative;box-shadow:0 4px 24px rgba(80,55,25,.07);}
 .vibe-box:focus-within{border-color:rgba(176,88,48,.45);box-shadow:0 0 0 3px rgba(176,88,48,.07),0 4px 24px rgba(80,55,25,.1);}
 .vibe-label{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.vibe-textarea{width:100%;background:none;border:none;outline:none;font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);line-height:1.55;resize:none;min-height:72px;}
+.vibe-textarea{width:100%;background:none;border:none;outline:none;font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);line-height:1.55;resize:none;min-height:88px;margin-bottom:14px;}
 .vibe-textarea::placeholder{color:var(--mist);font-style:italic;}
-.vibe-char-count{position:absolute;bottom:16px;right:20px;font-size:.65rem;color:var(--mist);}
+.vibe-box-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.vibe-box-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.vibe-char-count{font-size:.62rem;color:var(--mist);white-space:nowrap;}
 
-/* Example prompts */
-.vibe-examples{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:28px;animation:fadeUp .6s .5s both;}
-.vibe-example{padding:7px 14px;background:#fff;border:1px solid var(--border-hi);border-radius:100px;font-size:.74rem;color:var(--bark);cursor:pointer;transition:all .2s;font-family:'Geist',sans-serif;}
+/* Example prompts — horizontal scroll strip */
+.vibe-examples-strip{display:flex;align-items:center;gap:10px;margin-bottom:0;animation:fadeUp .6s .5s both;overflow:hidden;}
+.vibe-examples-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);white-space:nowrap;flex-shrink:0;}
+.vibe-examples-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;-webkit-overflow-scrolling:touch;}
+.vibe-examples-scroll::-webkit-scrollbar{display:none;}
+.vibe-example{padding:7px 14px;background:#fff;border:1px solid var(--border-hi);border-radius:100px;font-size:.74rem;color:var(--bark);cursor:pointer;transition:all .2s;font-family:'Geist',sans-serif;white-space:nowrap;flex-shrink:0;}
 .vibe-example:hover{background:var(--linen);color:var(--ink);border-color:var(--terra-dim);}
 
-/* Search controls */
-.vibe-controls{display:flex;align-items:center;gap:12px;animation:fadeUp .6s .55s both;}
-.vibe-search-btn{flex:1;padding:15px 28px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-xl);font-family:'Geist',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:opacity .15s;position:relative;overflow:hidden;}
+/* Search button — inside the card footer */
+.vibe-search-btn{padding:11px 22px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s;white-space:nowrap;position:relative;overflow:hidden;}
 .vibe-search-btn:hover{opacity:.9;}
 .vibe-search-btn:disabled{opacity:.5;cursor:not-allowed;}
 .vibe-search-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);opacity:0;transition:opacity .2s;}
@@ -160,6 +159,10 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 @media(max-width:700px){
   .vibe-result-card{grid-template-columns:1fr;}
   .vrc-img img{min-height:220px;height:220px;}
+  .vibe-box-footer{flex-direction:column;align-items:stretch;gap:10px;}
+  .vibe-box-right{justify-content:space-between;}
+  .vibe-search-btn{flex:1;justify-content:center;padding:12px 18px;}
+  .vibe-examples-strip{margin-top:4px;}
 }
 
   /* The Envoy */
@@ -436,10 +439,8 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 <!-- HERO / SEARCH SECTION -->
 <section class="hero" id="hero-section">
   <div class="hero-bg">
+    <div class="hero-bg-img"></div>
     <div class="hero-bg-grad"></div>
-    <div class="orb orb1"></div>
-    <div class="orb orb2"></div>
-    <div class="orb orb3"></div>
   </div>
 
   <div class="hero-content">
@@ -451,45 +452,48 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
     <h1 class="hero-h1">Find hotels by<br><em>how they feel.</em></h1>
     <p class="hero-sub">Describe the aesthetic, the mood, the moment. Our AI reads between the lines and matches you to properties that actually feel that way.</p>
 
-    <!-- Main vibe input -->
-    <div class="vibe-box">
+    <!-- Unified search card -->
+    <div class="vibe-box" id="vibe-box">
       <div class="vibe-label">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
         Describe your vibe
       </div>
-      <textarea class="vibe-textarea" id="vibe-input" maxlength="400" rows="3"
+      <textarea class="vibe-textarea" id="vibe-input" maxlength="400" rows="4"
         placeholder="I want somewhere that feels like a French colonial novel. Ceiling fans, rattan furniture, a cocktail named after a dead poet..."
-        oninput="updateCharCount(this)"></textarea>
-      <div class="vibe-char-count" id="char-count">0 / 400</div>
-    </div>
-
-    <!-- Example prompts -->
-    <div class="vibe-examples">
-      <button class="vibe-example" onclick="setVibe(this)">Wes Anderson aesthetic, pastel walls, meticulous symmetry</button>
-      <button class="vibe-example" onclick="setVibe(this)">Raw brutalist architecture, espresso bar, design hotel</button>
-      <button class="vibe-example" onclick="setVibe(this)">Ancient ruins out every window, no other tourists, historians on staff</button>
-      <button class="vibe-example" onclick="setVibe(this)">Feels like someone's grandmother's palace, antiques everywhere</button>
-      <button class="vibe-example" onclick="setVibe(this)">Zero Wi-Fi, zero noise, complete sensory reset</button>
-      <button class="vibe-example" onclick="setVibe(this)">Waking up to the sound of water, floating, ancient river</button>
-    </div>
-
-    <!-- Controls -->
-    <div class="vibe-controls">
-      <div class="vibe-country-wrap" id="country-wrap">
-        <button class="vibe-country-btn" id="country-btn" onclick="toggleCountryDd()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-          <span id="country-label">Any destination</span>
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="4,6 8,10 12,6"/></svg>
-        </button>
-        <div class="country-dd" id="country-dd">
-          <input class="country-search-input" type="text" placeholder="Search country..." oninput="filterCountries(this.value)" id="country-filter-input">
-          <div id="country-list"></div>
+        oninput="updateCharCount(this)" onkeydown="if(event.key==='Enter'&&(event.metaKey||event.ctrlKey))runVibeSearch()"></textarea>
+      <div class="vibe-box-footer">
+        <div class="vibe-country-wrap" id="country-wrap">
+          <button class="vibe-country-btn" id="country-btn" onclick="toggleCountryDd()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            <span id="country-label">Any destination</span>
+            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="4,6 8,10 12,6"/></svg>
+          </button>
+          <div class="country-dd" id="country-dd">
+            <input class="country-search-input" type="text" placeholder="Search country..." oninput="filterCountries(this.value)" id="country-filter-input">
+            <div id="country-list"></div>
+          </div>
+        </div>
+        <div class="vibe-box-right">
+          <span class="vibe-char-count" id="char-count">0 / 400</span>
+          <button class="vibe-search-btn" id="search-btn" onclick="runVibeSearch()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
+            Search by vibe
+          </button>
         </div>
       </div>
-      <button class="vibe-search-btn" id="search-btn" onclick="runVibeSearch()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-        Search by vibe
-      </button>
+    </div>
+
+    <!-- Example prompts — horizontal scroll strip -->
+    <div class="vibe-examples-strip">
+      <span class="vibe-examples-label">Try:</span>
+      <div class="vibe-examples-scroll">
+        <button class="vibe-example" onclick="setVibe(this)">Wes Anderson aesthetic, pastel walls, meticulous symmetry</button>
+        <button class="vibe-example" onclick="setVibe(this)">Raw brutalist architecture, espresso bar, design hotel</button>
+        <button class="vibe-example" onclick="setVibe(this)">Ancient ruins out every window, no other tourists</button>
+        <button class="vibe-example" onclick="setVibe(this)">Someone's grandmother's palace, antiques everywhere</button>
+        <button class="vibe-example" onclick="setVibe(this)">Zero Wi-Fi, zero noise, complete sensory reset</button>
+        <button class="vibe-example" onclick="setVibe(this)">Waking up to the sound of water, floating, ancient river</button>
+      </div>
     </div>
   </div>
 </section>
