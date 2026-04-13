@@ -132,7 +132,9 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
 .vrc-region{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;}
 .vrc-name{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);margin-bottom:4px;}
 .vrc-loc{font-size:.72rem;color:var(--stone);margin-bottom:12px;}
-.vrc-why{font-size:.82rem;color:var(--bark);line-height:1.6;margin-bottom:14px;border-left:2px solid rgba(176,88,48,.3);padding-left:12px;font-style:italic;}
+.vrc-why-label{font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:5px;}
+.vrc-why{font-size:.8rem;color:var(--bark);line-height:1.65;margin-bottom:16px;background:rgba(176,88,48,.05);border:1px solid rgba(176,88,48,.15);border-radius:var(--r-md);padding:12px 14px;font-style:italic;position:relative;}
+.vrc-why::before{content:'\201C';font-family:'Instrument Serif',serif;font-size:2rem;color:rgba(176,88,48,.25);position:absolute;top:4px;left:10px;line-height:1;}
 .vrc-dna{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
 .vrc-dna-tag{font-size:.62rem;padding:3px 10px;border-radius:100px;background:var(--sand);border:1px solid var(--border);color:var(--bark);}
 .vrc-dna-tag.match{background:var(--terra-dim);border-color:rgba(176,88,48,.25);color:var(--terra-d);}
@@ -776,7 +778,7 @@ async function callVibeAI(vibe, country, properties) {
 
   var countryFilter = country ? ' The user wants properties in or near ' + country + '. Prioritise these, but include others if strongly relevant.' : '';
 
-  var userMessage = 'Vibe query: "' + vibe + '"' + countryFilter + '\n\nProperties to match against:\n' + propList + '\n\nReturn a JSON array (no markdown, no backticks, raw JSON only) of matched properties ranked by relevance. Include only properties that genuinely match — exclude ones that don\'t fit. Format:\n[{"id":"property-id","matchScore":95,"whyItMatches":"One vivid sentence explaining the match in The Bearing voice — specific, not generic.","matchingTags":["tag1","tag2","tag3"]}]\n\nBe selective. 2–5 results max. If nothing matches well, return an empty array [].';
+  var userMessage = 'Vibe query: "' + vibe + '"' + countryFilter + '\n\nProperties to match against:\n' + propList + '\n\nReturn a JSON array (no markdown, no backticks, raw JSON only) of matched properties ranked by relevance. Include only properties that genuinely match — exclude ones that don\'t fit. Format:\n[{"id":"property-id","matchScore":95,"whyItMatches":"2-3 sentences in The Bearing voice explaining WHY this property matches the vibe. Be specific — name the quality, the feeling, or the detail that creates the match. Start with what the vibe asked for, connect it to something real and sensory about this property. Never generic.","matchingTags":["tag1","tag2","tag3"]}]\n\nBe selective. 2–5 results max. If nothing matches well, return an empty array [].';
 
   conversationHistory.push({ role: 'user', content: userMessage });
 
@@ -846,7 +848,7 @@ function renderResults(results, vibe) {
       +'<div class="vrc-region">'+p.region+'</div>'
       +'<div class="vrc-name">'+p.name+'</div>'
       +'<div class="vrc-loc">'+p.loc+'</div>'
-      +'<div class="vrc-why">'+r.whyItMatches+'</div>'
+      +(r.whyItMatches ? '<div class="vrc-why-label">Why this matches</div><div class="vrc-why">'+r.whyItMatches+'</div>' : '')
       +'<div class="vrc-dna">'+tags+'</div>'
       +'</div>'
       +'<div class="vrc-foot">'
