@@ -2168,6 +2168,7 @@ function ciRestoreMessages() {
         // Skip the ack — divider communicates the switch
       } else {
         ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+        if (m._cards && m._cards.length > 0) ciAddPropertyCards(m._cards);
       }
     });
   }
@@ -2282,20 +2283,26 @@ async function ciSendMsg(text) {
 
   try {
     var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    // Strip metadata fields before sending to API
+    var apiMessages = ciHistory.map(function(m) {
+      return { role: m.role, content: m.content };
+    });
     var res = await fetch(CI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: apiMessages })
     });
     var data = await res.json();
+    if (data.error) { console.error('[Envoy] API error:', data.error); }
     var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
     t.remove();
     ciBusy = false;
     ciAddMsg(reply, 'ai');
-    ciHistory.push({ role: 'assistant', content: reply });
-    ciSaveHistory(ciHistory);
-    // Detect and render property cards after AI reply
     var detectedProps = ciDetectProperties(reply);
+    var histEntry = { role: 'assistant', content: reply };
+    if (detectedProps.length > 0) histEntry._cards = detectedProps;
+    ciHistory.push(histEntry);
+    ciSaveHistory(ciHistory);
     if (detectedProps.length > 0) ciAddPropertyCards(detectedProps);
   } catch(e) {
     t.remove();

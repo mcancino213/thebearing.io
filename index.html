@@ -2167,6 +2167,7 @@ function ciRestoreMessages() {
     ciHistory.forEach(function(m) {
       if (m._type === 'context_switch' || m._type === 'context_switch_ack') return;
       ciAddMsg(m.content, m.role === 'user' ? 'user' : 'ai');
+      if (m._cards && m._cards.length > 0) ciAddPropertyCards(m._cards);
     });
   }
   msgs.scrollTop = msgs.scrollHeight;
@@ -2216,12 +2217,17 @@ async function ciSendMsg(text) {
 
   try {
     var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    // Strip metadata fields before sending to API
+    var apiMessages = ciHistory.map(function(m) {
+      return { role: m.role, content: m.content };
+    });
     var res = await fetch(CI_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: ciHistory })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, system: CI_SYSTEM, messages: apiMessages })
     });
     var data = await res.json();
+    if (data.error) { console.error('[Envoy] API error:', data.error); }
     var reply = (data.content && data.content[0] && data.content[0].text) || 'I lost my connection briefly — please try again.';
     t.remove();
     ciBusy = false;
