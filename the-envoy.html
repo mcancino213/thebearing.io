@@ -1390,7 +1390,7 @@ async function sendDemoMsg() {
 
 var CI_PROPERTIES = {
   'nour el nil':        { slug:'nour-el-nil',         label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',       rating:5, img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&fit=crop' },
-  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80&fit=crop' },
+  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80&fit=crop' },
   'la maison bleue':    { slug:'la-maison-bleue',      label:'La Maison Bleue',     loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
   'alila jabal akhdar': { slug:'alila-jabal-akhdar',   label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',        rating:5, img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
   'amangiri':           { slug:'amangiri',             label:'Amangiri',            loc:'Utah Desert · USA',               rating:5, img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
@@ -1415,7 +1415,7 @@ function ciAddPropertyCards(props) {
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
     var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-      ? '/property?slug=' + p.slug : '/property.html?slug=' + p.slug;
+      ? '/property.html?slug=' + p.slug : '/property.html?slug=' + p.slug;
     var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
     a.className = 'ci-prop-card';
@@ -1490,7 +1490,8 @@ function ciRestoreMessages() {
   } else {
     // Flagship property page — derive from filename
     var pageName = path.split('/').pop().replace('.html','');
-    if (pageName && pageName !== 'index' && pageName !== 'property') {
+    var nonPropertyPages = ['index','property','404','about','hotels','cruises','villas','collections','journal','how-we-choose','founding-member','the-bearing','the-envoy','vibe-search','search','bookings','saved','lens','preferences','settings','my-account','channels','vibe-search'];
+    if (pageName && nonPropertyPages.indexOf(pageName) === -1) {
       var name = pageName.replace(/-/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
       ctx = 'Viewing: ' + name;
     }
