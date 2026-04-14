@@ -1752,6 +1752,12 @@ function submitQuickEnquiry() {
       border-radius:20px 20px 0 0!important;
       width:100vw!important;max-width:100vw!important;
       max-height:85dvh!important;
+      animation:none!important;
+      transform:translateY(100%);
+      transition:transform .38s cubic-bezier(.32,.72,0,1)!important;
+    }
+    #tb-checkout-overlay.open #tb-checkout-sheet{
+      transform:translateY(0);
     }
   }
 </style>
@@ -1803,11 +1809,18 @@ function tbOpenCheckout(config) {
 
   var el = document.getElementById('tb-checkout-overlay');
   el.style.display = 'flex';
+  // Small delay so display:flex renders before the class triggers transition
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    el.classList.add('open');
+  }); });
   document.body.style.overflow = 'hidden';
 }
 
 function tbCloseCheckout() {
-  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  var el = document.getElementById('tb-checkout-overlay');
+  el.classList.remove('open');
+  // Wait for slide-down transition before hiding
+  setTimeout(function(){ el.style.display = 'none'; }, 380);
   document.body.style.overflow = '';
 }
 

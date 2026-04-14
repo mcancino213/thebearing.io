@@ -612,17 +612,50 @@
     z-index:10;flex-shrink:0;transition:background .15s;
   }
   .sheet-x-btn:hover{background:var(--sand,#ece5d8);}
-  /* ── Mobile overlay: bottom sheet, not full screen ── */
+  /* ── Mobile: slide-up bottom drawer ── */
   @media(max-width:767px){
-    .overlay{align-items:flex-end;}
-    .sheet{
-      width:100vw!important;max-width:100vw!important;
-      border-radius:20px 20px 0 0!important;
-      max-height:82dvh!important;
-      padding-bottom:env(safe-area-inset-bottom,0px);
+    .overlay{
+      align-items:flex-end;
+      /* Don't fade the backdrop in — just let sheet slide up */
     }
-    .sheet-grip{display:block!important;width:36px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:10px auto 4px;cursor:pointer;flex-shrink:0;}
+    .sheet{
+      width:100vw!important;
+      max-width:100vw!important;
+      border-radius:20px 20px 0 0!important;
+      max-height:85dvh!important;
+      padding-bottom:env(safe-area-inset-bottom,16px);
+      /* Override the scale animation — use translateY slide-up instead */
+      transform:translateY(100%)!important;
+      opacity:1!important;
+      transition:transform .38s cubic-bezier(.32,.72,0,1)!important;
+    }
+    .overlay.open .sheet{
+      transform:translateY(0)!important;
+    }
+    .sheet-grip{
+      display:block!important;
+      width:36px;height:4px;
+      background:rgba(0,0,0,.15);
+      border-radius:2px;
+      margin:12px auto 4px;
+      cursor:pointer;
+      flex-shrink:0;
+    }
     .sheet-x-btn{display:flex!important;}
+    /* Checkout: slide-up bottom drawer */
+    #tb-checkout-overlay{align-items:flex-end!important;}
+    #tb-checkout-sheet{
+      border-radius:20px 20px 0 0!important;
+      width:100vw!important;
+      max-width:100vw!important;
+      max-height:85dvh!important;
+      animation:none!important;
+      transform:translateY(100%);
+      transition:transform .38s cubic-bezier(.32,.72,0,1)!important;
+    }
+    #tb-checkout-overlay.open #tb-checkout-sheet{
+      transform:translateY(0);
+    }
   }
 </style>
 <style>
@@ -2742,6 +2775,12 @@ function submitQuickEnquiry() {
       border-radius:20px 20px 0 0!important;
       width:100vw!important;max-width:100vw!important;
       max-height:85dvh!important;
+      animation:none!important;
+      transform:translateY(100%);
+      transition:transform .38s cubic-bezier(.32,.72,0,1)!important;
+    }
+    #tb-checkout-overlay.open #tb-checkout-sheet{
+      transform:translateY(0);
     }
   }
 </style>
@@ -2793,11 +2832,18 @@ function tbOpenCheckout(config) {
 
   var el = document.getElementById('tb-checkout-overlay');
   el.style.display = 'flex';
+  // Small delay so display:flex renders before the class triggers transition
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){
+    el.classList.add('open');
+  }); });
   document.body.style.overflow = 'hidden';
 }
 
 function tbCloseCheckout() {
-  document.getElementById('tb-checkout-overlay').style.display = 'none';
+  var el = document.getElementById('tb-checkout-overlay');
+  el.classList.remove('open');
+  // Wait for slide-down transition before hiding
+  setTimeout(function(){ el.style.display = 'none'; }, 380);
   document.body.style.overflow = '';
 }
 
