@@ -217,6 +217,8 @@
   .book-bar-btn-icon svg{width:13px;height:13px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin-left:1px;}
   .book-bar-btn:hover{opacity:.92;}
   .book-bar-btn:active{transform:scale(.97);}
+  .book-bar-enq-btn{flex-shrink:0;padding:11px 16px;background:transparent;border:1.5px solid var(--terra);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;color:var(--terra);cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .book-bar-enq-btn:hover{background:var(--terra);color:#fff;}
   .book-bar-perks{display:flex;align-items:center;gap:4px;font-size:.65rem;color:var(--moss);font-weight:500;margin-top:2px;}
   .book-bar-perks svg{width:11px;height:11px;}
 
@@ -889,12 +891,17 @@
       Commission-free · same price as booking direct
     </div>
   </div>
-  <button class="book-bar-btn" onclick="openOverlay('inq-overlay')">
-    <div class="book-bar-btn-icon">
-      <svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg>
-    </div>
-    Start your journey
-  </button>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button class="book-bar-btn" onclick="var d=document.querySelector('.dbc-cta');if(d)d.click();else tbOpenCheckout({property:document.querySelector('.prop-name')?document.querySelector('.prop-name').textContent:'This property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard',price:0}]})">
+      <div class="book-bar-btn-icon">
+        <svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg>
+      </div>
+      Book now
+    </button>
+    <button class="book-bar-enq-btn" onclick="openOverlay('inq-overlay')">
+      Enquire
+    </button>
+  </div>
 </div>
 
 <!-- ══ BODY ══ -->
