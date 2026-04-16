@@ -1194,6 +1194,9 @@ body{background:var(--cream);color:var(--ink);}
 
 
 
+<!-- Dynamic villas from KV -->
+<div id="dynamic-villas"></div>
+
 <div class="vc-footer-cta">
   <h2>Not sure which villa?</h2>
   <p>Tell The Envoy what you're looking for — they'll find the right match.</p>
@@ -1205,6 +1208,80 @@ body{background:var(--cream);color:var(--ink);}
 
 <script>
 function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.classList.remove('active');});el.classList.add('active');}
+
+// ── Dynamic villa loader from KV ──────────────────────────────────────
+(function(){
+  var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  var EXISTING = ['amangiri-villas','la-maison-bleue','al-moudira-estate','soneva-fushi'];
+
+  Promise.all([
+    fetch(PROP_API + '?slug=__index_villas').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(PROP_API).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ])
+  .then(function(both){
+    var curatedRes = both[0];
+    var masterRes = both[1];
+    var slugs;
+    if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
+      slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; });
+    } else {
+      slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; }) : [];
+    }
+    if (!slugs.length) return null;
+    return Promise.all(slugs.map(function(slug){
+      return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; });
+    }));
+  })
+  .then(function(results){
+    if (!results) return;
+    var container = document.getElementById('dynamic-villas');
+    if (!container) return;
+    results.forEach(function(res){
+      if (!res || !res.data) return;
+      var p = res.data;
+      var type = (p.type||'').toLowerCase();
+      var isVilla = type.indexOf('villa')>-1 || type.indexOf('exclusive')>-1 ||
+                    type.indexOf('estate')>-1 || type.indexOf('private')>-1;
+      if (!isVilla) return;
+      var slug = res.slug;
+      var href = '/property.html?slug=' + encodeURIComponent(slug);
+      var img = (p.photos && p.photos.hero && p.photos.hero.length) ? p.photos.hero[0].url : (p.hero_img || '');
+      var price = p.price_from ? 'From $' + parseInt(p.price_from).toLocaleString() : '';
+      var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
+      var tagline = p.tagline || p.bearing_edit || '';
+
+      var el = document.createElement('div');
+      el.className = 'vc-villa';
+      el.style.marginTop = '32px';
+      el.innerHTML =
+        '<div class="vc-villa-bg">' +
+          (img ? '<img src="' + img + '" alt="' + (p.name||slug) + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' : '') +
+          '<div class="vc-villa-scrim"></div>' +
+        '</div>' +
+        '<div class="vc-villa-content">' +
+          '<div class="vc-villa-panel">' +
+            '<div class="vc-villa-type">' + (p.type||'Villa') + '</div>' +
+            '<div class="vc-villa-name">' + (p.name||slug) + '</div>' +
+            (loc ? '<div class="vc-villa-loc">' + loc + '</div>' : '') +
+            (tagline ? '<div class="vc-villa-tagline">' + tagline + '</div>' : '') +
+            (price ? '<div class="vc-villa-price">' + price + '</div>' : '') +
+            '<div class="vc-villa-ctas">' +
+              '<button class="vc-cta" onclick="window.location=\'' + href + '\'">View villa →</button>' +
+              '<button onclick="event.stopPropagation();tbOpenCheckout({property:\'' + (p.name||slug) + '\',title:\'Book this villa\',roomLabel:\'Villa type\',commissionRate:0.10,rooms:[{name:\'Villa — exclusive use\',price:' + (p.price_from||4000) + '}]})" style="padding:12px 20px;background:var(--terra,#b05830);color:#fff;border:none;border-radius:100px;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;">Book now</button>' +
+              '<button onclick="event.stopPropagation();openQuickEnquiry(\'' + (p.name||slug) + '\')" style="padding:12px 20px;background:rgba(255,255,255,.12);color:#fff;border:1.5px solid rgba(255,255,255,.25);border-radius:100px;font-family:\'Geist\',sans-serif;font-size:.84rem;cursor:pointer;">Enquire</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      container.appendChild(el);
+    });
+  })
+  .catch(function(e){ console.log('[Villas] KV load error:', e); });
+})();
 </script>
 
 <footer style="background:var(--ink);padding:48px 20px 40px;margin-top:60px;">

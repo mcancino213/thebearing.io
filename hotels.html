@@ -1257,6 +1257,9 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   </div>
 </div>
 
+<!-- Dynamic hotels from KV -->
+<div id="dynamic-hotels"></div>
+
 <script>
 function hfilt(el){
   document.querySelectorAll('.hfpill').forEach(function(p){p.classList.remove('active');});
@@ -1275,13 +1278,22 @@ function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.
     'amangiri','amangiri-villas','beyond-ngorongoro','capella-ubud','alila-jabal-akhdar',
     'la-maison-bleue','nour-el-nil'];
 
-  fetch(PROP_API)
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(res){
-      if (!res || !res.slugs) return;
-      var newSlugs = res.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
-      if (!newSlugs.length) return;
-      return Promise.all(newSlugs.map(function(slug){
+  // First try curated __index_hotels order; fall back to master index
+  Promise.all([
+    fetch(PROP_API + '?slug=__index_hotels').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(PROP_API).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ])
+    .then(function(both){
+      var curatedRes = both[0];
+      var masterRes = both[1];
+      var slugs;
+      if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
+        slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      } else {
+        slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; }) : [];
+      }
+      if (!slugs.length) return null;
+      return Promise.all(slugs.map(function(slug){
         return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
           .then(function(r){ return r.ok ? r.json() : null; })
           .catch(function(){ return null; });
@@ -1289,9 +1301,8 @@ function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.
     })
     .then(function(results){
       if (!results) return;
-      var container = document.querySelector('.h-list') || document.querySelector('[class*="h-grid"]');
+      var container = document.getElementById('dynamic-hotels');
       if (!container) {
-        // Find the last h-card and append after it
         var cards = document.querySelectorAll('.h-card');
         container = cards.length ? cards[cards.length-1].parentNode : null;
       }

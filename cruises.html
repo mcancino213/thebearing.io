@@ -1470,15 +1470,24 @@ var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el
   // Slugs already hardcoded on this page — don't duplicate them
   var EXISTING = ['nour-el-nil','aqua-nera','mekong-navigator'];
 
-  fetch(PROP_API)
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(res){
-      if (!res || !res.slugs) return;
-      var newSlugs = res.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
-      if (!newSlugs.length) return;
-
-      // Fetch each new property and render if it's a cruise
-      return Promise.all(newSlugs.map(function(slug){
+  // First try the curated __index_cruises order; fall back to master index
+  Promise.all([
+    fetch(PROP_API + '?slug=__index_cruises').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+    fetch(PROP_API).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+  ])
+    .then(function(both){
+      var curatedRes = both[0];
+      var masterRes = both[1];
+      // Use curated list if it exists and has slugs
+      var slugs;
+      if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
+        slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      } else {
+        // Fall back: master index, new slugs only
+        slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; }) : [];
+      }
+      if (!slugs.length) return null;
+      return Promise.all(slugs.map(function(slug){
         return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
           .then(function(r){ return r.ok ? r.json() : null; })
           .catch(function(){ return null; });
