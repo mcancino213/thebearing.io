@@ -838,52 +838,52 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 </style><style>
 /* ── CINEMATIC VOYAGE CARDS ── */
 /* ── SPLIT EDITORIAL HERO ── */
-.voyages-header{background:var(--cream);border-bottom:1px solid var(--border-hi);}
-
-/* Photo strip */
-.vh-photo{position:relative;height:340px;overflow:hidden;background:#c8b898;}
-.vh-photo img{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;}
-.vh-photo-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(30,24,16,.32) 100%);}
-.vh-pills{position:absolute;bottom:20px;left:40px;display:flex;gap:8px;flex-wrap:wrap;}
-.vh-pill{
-  background:rgba(250,247,241,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
-  border:1px solid rgba(80,55,25,.12);border-radius:100px;
-  padding:5px 13px;font-size:.68rem;color:var(--bark);
-  display:flex;align-items:center;gap:6px;
+.voyages-header{position:relative;min-height:76vh;overflow:hidden;background:#1a120a;display:flex;align-items:flex-end;}
+.vh-photo{position:absolute;inset:0;}
+.vh-photo img{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;animation:vhZoom 16s ease-out forwards;}
+@keyframes vhZoom{from{transform:scale(1.05)}to{transform:scale(1)}}
+.vh-photo-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,7,3,.88) 0%,rgba(10,7,3,.4) 45%,rgba(10,7,3,.15) 100%);}
+.vh-content{position:relative;z-index:2;width:100%;padding:0 56px 56px;}
+.vh-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
+  border-radius:100px;padding:6px 14px;
+  font-size:.65rem;color:rgba(255,255,255,.75);
+  margin-bottom:24px;
 }
-.vh-pill-dot{width:5px;height:5px;border-radius:50%;background:var(--terra);flex-shrink:0;}
-
-/* Text + stats bar */
-.vh-bar{
-  display:flex;align-items:center;justify-content:space-between;gap:32px;
-  padding:26px 40px;border-top:1px solid var(--border-hi);
-}
-.vh-text{}
+.vh-badge-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;}
 .vh-kicker{
-  font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--terra);margin-bottom:8px;
-  display:flex;align-items:center;gap:8px;
+  font-size:.58rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(210,160,80,.9);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
 }
-.vh-kicker::before{content:'';width:18px;height:1px;background:var(--terra);opacity:.5;}
+.vh-kicker::before{content:'';width:22px;height:1px;background:rgba(210,160,80,.6);}
 .vh-h1{
   font-family:'Instrument Serif',serif;
-  font-size:clamp(1.7rem,2.8vw,2.4rem);line-height:1.05;color:var(--ink);
+  font-size:clamp(2.8rem,4.5vw,4.2rem);line-height:1.02;
+  color:#fff;margin-bottom:16px;
 }
-.vh-h1 em{color:var(--terra);font-style:italic;}
-.vh-p{font-size:.8rem;color:var(--stone);line-height:1.7;max-width:460px;margin-top:8px;}
-.vh-stats{display:flex;gap:0;flex-shrink:0;}
-.vh-stat{padding:0 28px;border-left:1px solid var(--border-hi);text-align:right;}
-.vh-stat-val{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--ink);line-height:1;margin-bottom:2px;}
-.vh-stat-lbl{font-size:.58rem;color:var(--stone);letter-spacing:.08em;text-transform:uppercase;}
+.vh-h1 em{color:rgba(210,160,80,.95);font-style:italic;}
+.vh-p{font-size:.88rem;color:rgba(255,255,255,.52);line-height:1.75;max-width:440px;margin-bottom:36px;}
+.vh-stats{display:flex;gap:40px;}
+.vh-stat-val{font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;margin-bottom:3px;}
+.vh-stat-lbl{font-size:.58rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;}
+.vh-pills{position:absolute;top:calc(var(--nav-h,66px) + 20px);right:40px;display:flex;gap:8px;flex-direction:column;align-items:flex-end;}
+.vh-pill{
+  background:rgba(10,7,3,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.15);border-radius:100px;
+  padding:5px 13px;font-size:.65rem;color:rgba(255,255,255,.7);
+  display:flex;align-items:center;gap:6px;
+}
+.vh-pill-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 
 /* Mobile */
 @media(max-width:767px){
-  .vh-photo{height:240px;}
-  .vh-pills{left:16px;bottom:14px;}
-  .vh-bar{flex-direction:column;align-items:flex-start;gap:20px;padding:20px 20px;}
-  .vh-stats{gap:0;width:100%;}
-  .vh-stat{flex:1;padding:0 0 0 16px;text-align:left;}
-  .vh-stat:first-child{padding-left:0;border-left:none;}
+  .voyages-header{min-height:88vh;}
+  .vh-content{padding:0 20px 40px;}
+  .vh-h1{font-size:2.6rem;}
+  .vh-pills{top:auto;bottom:auto;right:16px;top:calc(var(--nav-h,66px)+14px);}
+  .vh-stats{gap:24px;}
   .vh-stat-val{font-size:1.3rem;}
 }
 
@@ -1157,26 +1157,25 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
     </div>
   </div>
 </div>
-<!-- Header: photo strip + text/stats bar -->
+<!-- Header: full-bleed cinematic -->
 <div class="voyages-header">
   <div class="vh-photo">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80&fit=crop" alt="Boutique cruises">
+    <img src="https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/2d9c0e5f-bce6-4c15-1489-92c680639300/public" alt="Boutique cruises">
     <div class="vh-photo-scrim"></div>
-    <div class="vh-pills">
-      <div class="vh-pill"><div class="vh-pill-dot"></div>Nile · Egypt</div>
-      <div class="vh-pill"><div class="vh-pill-dot" style="background:var(--gold,#9a7230)"></div>Mekong · SE Asia</div>
-    </div>
   </div>
-  <div class="vh-bar">
-    <div class="vh-text">
-      <div class="vh-kicker">Boutique Cruises</div>
-      <div class="vh-h1">The slow way, <em>is the right way.</em></div>
-      <div class="vh-p">We only list cruises where the vessel itself is the destination. Small ships, intimate departures, rivers and seas the large operators can't reach — and never more than 50 guests.</div>
-    </div>
+  <div class="vh-pills">
+    <div class="vh-pill"><div class="vh-pill-dot" style="background:#4ade80"></div>Nile · Egypt — open now</div>
+    <div class="vh-pill"><div class="vh-pill-dot" style="background:rgba(210,160,80,.9)"></div>Mekong · SE Asia — open now</div>
+  </div>
+  <div class="vh-content">
+    <div class="vh-badge"><div class="vh-badge-dot"></div>2 voyages now booking</div>
+    <div class="vh-kicker">Boutique Cruises</div>
+    <div class="vh-h1">The slow way<br><em>is the right way.</em></div>
+    <div class="vh-p">We only list cruises where the vessel itself is the destination. Small ships, intimate departures, rivers and seas the large operators can't reach — and never more than 50 guests.</div>
     <div class="vh-stats">
-      <div class="vh-stat"><div class="vh-stat-val">2</div><div class="vh-stat-lbl">Active voyages</div></div>
-      <div class="vh-stat"><div class="vh-stat-val">≤50</div><div class="vh-stat-lbl">Max guests</div></div>
-      <div class="vh-stat"><div class="vh-stat-val">0%</div><div class="vh-stat-lbl">Booking fees</div></div>
+      <div><div class="vh-stat-val">2</div><div class="vh-stat-lbl">Active voyages</div></div>
+      <div><div class="vh-stat-val">≤50</div><div class="vh-stat-lbl">Max guests</div></div>
+      <div><div class="vh-stat-val">0%</div><div class="vh-stat-lbl">Booking fees</div></div>
     </div>
   </div>
 </div>
