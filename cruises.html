@@ -838,90 +838,55 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 </style><style>
 /* ── CINEMATIC VOYAGE CARDS ── */
 /* ── SPLIT EDITORIAL HERO ── */
-.voyages-intro{
-  position:relative;
-  min-height:72vh;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  align-items:stretch;
-  overflow:hidden;
-}
-/* Left — cream text panel */
-.voyages-intro-content{
-  background:var(--cream);
-  padding:calc(var(--nav-h,66px) + 64px) 56px 64px;
-  display:flex;
-  flex-direction:column;
-  justify-content:flex-end;
-  position:relative;
-  z-index:2;
-}
-/* Subtle texture on cream side */
-.voyages-intro-content::before{
-  content:'';
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse 80% 60% at 0% 70%, rgba(176,88,48,.05) 0%, transparent 65%);
-  pointer-events:none;
-}
-.voyages-intro .kicker{
-  font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--terra);margin-bottom:14px;
-  display:flex;align-items:center;gap:8px;position:relative;
-}
-.voyages-intro .kicker::before{content:'';width:20px;height:1px;background:var(--terra);opacity:.6;}
-.voyages-intro h1{
-  font-family:'Instrument Serif',serif;
-  font-size:clamp(2.6rem,3.8vw,4rem);
-  color:var(--ink);line-height:1.03;margin-bottom:18px;position:relative;
-}
-.voyages-intro h1 em{color:var(--terra);font-style:italic;}
-.voyages-intro p{font-size:.92rem;color:var(--stone);line-height:1.78;max-width:400px;margin-bottom:32px;position:relative;}
-.voyages-intro-meta{display:flex;gap:32px;position:relative;}
-.vi-stat-val{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);line-height:1;margin-bottom:3px;}
-.vi-stat-lbl{font-size:.6rem;color:var(--mist);letter-spacing:.06em;text-transform:uppercase;}
+.voyages-header{background:var(--cream);border-bottom:1px solid var(--border-hi);}
 
-/* Hard vertical divider line */
-.voyages-intro-divider{
-  position:absolute;top:0;bottom:0;left:50%;
-  width:1px;background:var(--border);
-  z-index:3;
-}
-
-/* Right — full bleed photo */
-.voyages-intro-photo{
-  position:relative;overflow:hidden;
-}
-.voyages-intro-photo img{
-  width:100%;height:100%;
-  object-fit:cover;object-position:center 35%;
-  display:block;
-  animation:splitZoom 14s ease-out forwards;
-}
-@keyframes splitZoom{from{transform:scale(1.04)}to{transform:scale(1)}}
-.voyages-intro-photo-overlay{
-  position:absolute;inset:0;
-  background:linear-gradient(to right, rgba(250,247,241,.12) 0%, transparent 30%);
-}
-/* Caption bottom-right */
-.vi-photo-caption{
-  position:absolute;bottom:20px;right:20px;
-  background:rgba(250,247,241,.88);backdrop-filter:blur(8px);
-  border:1px solid rgba(80,55,25,.1);border-radius:100px;
-  padding:6px 14px;
-  font-size:.65rem;color:var(--bark);
+/* Photo strip */
+.vh-photo{position:relative;height:340px;overflow:hidden;background:#c8b898;}
+.vh-photo img{width:100%;height:100%;object-fit:cover;object-position:center 40%;display:block;}
+.vh-photo-scrim{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 45%,rgba(30,24,16,.32) 100%);}
+.vh-pills{position:absolute;bottom:20px;left:40px;display:flex;gap:8px;flex-wrap:wrap;}
+.vh-pill{
+  background:rgba(250,247,241,.9);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(80,55,25,.12);border-radius:100px;
+  padding:5px 13px;font-size:.68rem;color:var(--bark);
   display:flex;align-items:center;gap:6px;
 }
+.vh-pill-dot{width:5px;height:5px;border-radius:50%;background:var(--terra);flex-shrink:0;}
 
-/* Scroll hint */
-.voyages-scroll-hint{
-  position:absolute;bottom:24px;left:56px;z-index:3;
-  display:flex;align-items:center;gap:8px;
-  color:var(--mist);font-size:.65rem;letter-spacing:.06em;
-  animation:fadeIn 1s 1.5s both;
+/* Text + stats bar */
+.vh-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:32px;
+  padding:26px 40px;border-top:1px solid var(--border-hi);
 }
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.vh-text{}
+.vh-kicker{
+  font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--terra);margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.vh-kicker::before{content:'';width:18px;height:1px;background:var(--terra);opacity:.5;}
+.vh-h1{
+  font-family:'Instrument Serif',serif;
+  font-size:clamp(1.7rem,2.8vw,2.4rem);line-height:1.05;color:var(--ink);
+}
+.vh-h1 em{color:var(--terra);font-style:italic;}
+.vh-p{font-size:.8rem;color:var(--stone);line-height:1.7;max-width:460px;margin-top:8px;}
+.vh-stats{display:flex;gap:0;flex-shrink:0;}
+.vh-stat{padding:0 28px;border-left:1px solid var(--border-hi);text-align:right;}
+.vh-stat-val{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--ink);line-height:1;margin-bottom:2px;}
+.vh-stat-lbl{font-size:.58rem;color:var(--stone);letter-spacing:.08em;text-transform:uppercase;}
 
-/* Filter strip */
+/* Mobile */
+@media(max-width:767px){
+  .vh-photo{height:240px;}
+  .vh-pills{left:16px;bottom:14px;}
+  .vh-bar{flex-direction:column;align-items:flex-start;gap:20px;padding:20px 20px;}
+  .vh-stats{gap:0;width:100%;}
+  .vh-stat{flex:1;padding:0 0 0 16px;text-align:left;}
+  .vh-stat:first-child{padding-left:0;border-left:none;}
+  .vh-stat-val{font-size:1.3rem;}
+}
+
 .voyage-filters{
   display:flex;gap:8px;flex-wrap:wrap;
   padding:20px 56px 28px;
@@ -1028,9 +993,6 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   .voyage-left{max-width:100%;padding-right:0;margin-bottom:28px;}
   .voyage-right{width:100%;}
   .voyage-num{font-size:3rem;}
-  .voyages-intro{grid-template-columns:1fr;min-height:auto;padding:calc(var(--nav-h,66px) + 36px) 24px 48px;gap:40px;}
-  .vi-photo-back{display:none;}
-  .voyages-intro h1{font-size:2.4rem;}
   .voyage-filters{padding:20px 24px 28px;}
 }
 </style><script src="/assets/envoy-prompt.js"></script>
@@ -1195,30 +1157,27 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
     </div>
   </div>
 </div>
-<!-- Intro -->
-<div class="voyages-intro">
-  <div class="voyages-intro-content">
-    <div class="kicker">Boutique Cruises</div>
-    <h1>The slow way<br><em>is the right way.</em></h1>
-    <p>We only list cruises where the vessel itself is the destination. Small ships, intimate departures, rivers and seas the large operators can't reach — and never more than 50 guests.</p>
-    <div class="voyages-intro-meta">
-      <div class="vi-stat"><div class="vi-stat-val">4</div><div class="vi-stat-lbl">Active voyages</div></div>
-      <div class="vi-stat"><div class="vi-stat-val">50</div><div class="vi-stat-lbl">Max guests</div></div>
-      <div class="vi-stat"><div class="vi-stat-val">4</div><div class="vi-stat-lbl">Continents</div></div>
+<!-- Header: photo strip + text/stats bar -->
+<div class="voyages-header">
+  <div class="vh-photo">
+    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1600&q=80&fit=crop" alt="Boutique cruises">
+    <div class="vh-photo-scrim"></div>
+    <div class="vh-pills">
+      <div class="vh-pill"><div class="vh-pill-dot"></div>Nile · Egypt</div>
+      <div class="vh-pill"><div class="vh-pill-dot" style="background:var(--gold,#9a7230)"></div>Mekong · SE Asia</div>
     </div>
   </div>
-  <div class="voyages-intro-divider"></div>
-  <div class="voyages-intro-photo">
-    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil Najafa — Upper Deck" style="width:100%;height:100%;object-fit:cover;object-position:0% 40%;">
-    <div class="voyages-intro-photo-overlay"></div>
-    <div class="vi-photo-caption">
-      <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
-      Nour El Nil · Esna to Aswan, Egypt
+  <div class="vh-bar">
+    <div class="vh-text">
+      <div class="vh-kicker">Boutique Cruises</div>
+      <div class="vh-h1">The slow way, <em>is the right way.</em></div>
+      <div class="vh-p">We only list cruises where the vessel itself is the destination. Small ships, intimate departures, rivers and seas the large operators can't reach — and never more than 50 guests.</div>
     </div>
-  </div>
-  <div class="voyages-scroll-hint">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-    Scroll to explore voyages
+    <div class="vh-stats">
+      <div class="vh-stat"><div class="vh-stat-val">2</div><div class="vh-stat-lbl">Active voyages</div></div>
+      <div class="vh-stat"><div class="vh-stat-val">≤50</div><div class="vh-stat-lbl">Max guests</div></div>
+      <div class="vh-stat"><div class="vh-stat-val">0%</div><div class="vh-stat-lbl">Booking fees</div></div>
+    </div>
   </div>
 </div>
 
