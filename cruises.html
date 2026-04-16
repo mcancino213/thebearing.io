@@ -1448,6 +1448,8 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
       </div>
     </div>
   </div>
+  <!-- Dynamic cruises from KV -->
+  <div id="dynamic-voyages"></div>
   <div class="voyage-divider"></div><div class="voyages-footer">
   <h2>Not sure which voyage?</h2>
   <p>Tell The Envoy what you're looking for — they'll match you to the right route.</p>
@@ -1458,6 +1460,84 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 function vfilt(el){document.querySelectorAll('.vfpill').forEach(function(p){p.classList.remove('active')});el.classList.add('active');}
 function tcSearch(){window.location='/search.html';}
 var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
+
+// ── Dynamic cruise loader from KV ──────────────────────────────────────
+(function(){
+  var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  // Slugs already hardcoded on this page — don't duplicate them
+  var EXISTING = ['nour-el-nil','aqua-nera','mekong-navigator'];
+
+  fetch(PROP_API)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(res){
+      if (!res || !res.slugs) return;
+      var newSlugs = res.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      if (!newSlugs.length) return;
+
+      // Fetch each new property and render if it's a cruise
+      return Promise.all(newSlugs.map(function(slug){
+        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .catch(function(){ return null; });
+      }));
+    })
+    .then(function(results){
+      if (!results) return;
+      var container = document.getElementById('dynamic-voyages');
+      var count = 0;
+      results.forEach(function(res){
+        if (!res || !res.data) return;
+        var p = res.data;
+        var type = (p.type||'').toLowerCase();
+        var isCruise = type.indexOf('cruise')>-1 || type.indexOf('river')>-1 ||
+                       type.indexOf('yacht')>-1 || type.indexOf('sail')>-1 ||
+                       type.indexOf('navigator')>-1 || type.indexOf('dahabiya')>-1;
+        if (!isCruise) return;
+
+        count++;
+        var slug = res.slug;
+        var href = '/property.html?slug=' + encodeURIComponent(slug);
+        var img = (p.images && p.images[0]) ? p.images[0] :
+                  (p.hero_img || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop');
+        var price = p.price_from ? '$' + parseInt(p.price_from).toLocaleString() : '';
+        var tagline = p.tagline || p.bearing_edit || '';
+        var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
+
+        var card = document.createElement('div');
+        card.innerHTML = '<div class="voyage-divider"></div>' +
+          '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
+            '<div class="voyage-bg">' +
+              '<img src="' + img + '" alt="' + (p.name||slug) + '" loading="lazy">' +
+              '<div class="voyage-bg-scrim"></div>' +
+            '</div>' +
+            '<div class="voyage-content">' +
+              '<div class="voyage-left">' +
+                '<div class="voyage-meta-top">' +
+                  '<span class="voyage-type">' + (p.type||'Cruise') + '</span>' +
+                  '<span class="voyage-status voyage-status-live">✦ Bookable now</span>' +
+                '</div>' +
+                '<div class="voyage-name">' + (p.name||slug) + '</div>' +
+                (tagline ? '<div class="voyage-tagline">' + tagline + '</div>' : '') +
+                (loc ? '<div class="voyage-route"><span class="voyage-port">' + loc + '</span></div>' : '') +
+                (price ? '<div class="voyage-stats"><div class="vstat"><div class="vstat-lbl">From</div><div class="vstat-val">' + price + '</div></div></div>' : '') +
+                '<button class="voyage-cta" onclick="event.stopPropagation();window.location=\'' + href + '\'">View voyage →</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+        container.appendChild(card);
+      });
+
+      // Update the active voyages counter
+      if (count > 0) {
+        var counter = document.querySelector('.vi-stat-val');
+        if (counter) counter.textContent = (parseInt(counter.textContent)||0) + count;
+      }
+    })
+    .catch(function(e){ console.log('[Cruises] KV load error:', e); });
+})();
 </script>
 <div id="toast-el" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.82rem;padding:10px 20px;border-radius:100px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap;"></div>
 <footer style="background:var(--ink);padding:48px 20px 40px;margin-top:60px;">

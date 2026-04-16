@@ -1264,6 +1264,73 @@ function hfilt(el){
 }
 var toastT;
 function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
+
+// ── Dynamic hotel loader from KV ──────────────────────────────────────
+(function(){
+  var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
+    ? '/api/property' : null;
+  if (!PROP_API) return;
+
+  var EXISTING = ['al-moudira','al-moudira-estate','singita-grumeti','soneva-fushi',
+    'amangiri','amangiri-villas','beyond-ngorongoro','capella-ubud','alila-jabal-akhdar',
+    'la-maison-bleue','nour-el-nil'];
+
+  fetch(PROP_API)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(res){
+      if (!res || !res.slugs) return;
+      var newSlugs = res.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      if (!newSlugs.length) return;
+      return Promise.all(newSlugs.map(function(slug){
+        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .catch(function(){ return null; });
+      }));
+    })
+    .then(function(results){
+      if (!results) return;
+      var container = document.querySelector('.h-list') || document.querySelector('[class*="h-grid"]');
+      if (!container) {
+        // Find the last h-card and append after it
+        var cards = document.querySelectorAll('.h-card');
+        container = cards.length ? cards[cards.length-1].parentNode : null;
+      }
+      if (!container) return;
+
+      results.forEach(function(res){
+        if (!res || !res.data) return;
+        var p = res.data;
+        var type = (p.type||'').toLowerCase();
+        // Skip cruises — they belong on cruises.html
+        var isCruise = type.indexOf('cruise')>-1 || type.indexOf('river')>-1 ||
+                       type.indexOf('yacht')>-1 || type.indexOf('dahabiya')>-1;
+        if (isCruise) return;
+
+        var slug = res.slug;
+        var href = '/property.html?slug=' + encodeURIComponent(slug);
+        var img = (p.images && p.images[0]) ? p.images[0] : (p.hero_img || '');
+        var price = p.price_from ? 'From $' + parseInt(p.price_from).toLocaleString() + '/night' : '';
+        var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
+
+        var card = document.createElement('div');
+        card.className = 'h-card';
+        card.onclick = function(){ window.location = href; };
+        card.innerHTML =
+          '<div class="h-card-img"><img src="' + img + '" alt="' + (p.name||slug) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;"></div>' +
+          '<div class="h-card-body">' +
+            '<div class="h-region">' + (p.type||'Hotel') + '</div>' +
+            '<div class="h-name">' + (p.name||slug) + '</div>' +
+            '<div class="h-loc">' + loc + '</div>' +
+            '<div class="h-foot">' +
+              (price ? '<div class="h-price">' + price + '</div>' : '') +
+              '<button onclick="event.stopPropagation();window.location=\'' + href + '\'" style="flex-shrink:0;padding:6px 14px;background:var(--terra);color:#fff;border:none;border-radius:100px;font-family:\'Geist\',sans-serif;font-size:.72rem;font-weight:600;cursor:pointer;">View →</button>' +
+            '</div>' +
+          '</div>';
+        container.appendChild(card);
+      });
+    })
+    .catch(function(e){ console.log('[Hotels] KV load error:', e); });
+})();
 </script>
 <div id="toast-el" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.82rem;padding:10px 20px;border-radius:100px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap;"></div>
 <footer style="background:var(--ink);padding:48px 20px 40px;margin-top:60px;">
