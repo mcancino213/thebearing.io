@@ -1268,58 +1268,52 @@ function hfilt(el){
 var toastT;
 function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
 
-// ── Dynamic hotel loader from KV ──────────────────────────────────────
+// ── Dynamic Hotels loader from KV ──────────────────────────────────────
 (function(){
   var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
     ? '/api/property' : null;
   if (!PROP_API) return;
 
-  var EXISTING = ['al-moudira','al-moudira-estate','singita-grumeti','soneva-fushi',
-    'amangiri','amangiri-villas','beyond-ngorongoro','capella-ubud','alila-jabal-akhdar',
-    'la-maison-bleue','nour-el-nil'];
+  var HARDCODED = ['al-moudira', 'al-moudira-estate', 'singita-grumeti', 'soneva-fushi', 'amangiri', 'amangiri-villas', 'beyond-ngorongoro', 'capella-ubud', 'alila-jabal-akhdar', 'la-maison-bleue', 'nour-el-nil'];
 
-  // First try curated __index_hotels order; fall back to master index
+  // Fetch curated order + all properties in parallel
   Promise.all([
     fetch(PROP_API + '?slug=__index_hotels').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
     fetch(PROP_API).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
   ])
-    .then(function(both){
-      var curatedRes = both[0];
-      var masterRes = both[1];
-      var hasCurated = curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length;
-      var slugs;
-      if (hasCurated) {
-        document.querySelectorAll('.h-card').forEach(function(el){ el.style.display='none'; });
-        slugs = curatedRes.data.slugs;
-      } else {
-        slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; }) : [];
-      }
-      if (!slugs.length) return null;
-      return Promise.all(slugs.map(function(slug){
-        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
-          .then(function(r){ return r.ok ? r.json() : null; })
-          .catch(function(){ return null; });
-      }));
-    })
-    .then(function(results){
-      if (!results) return;
-      var container = document.getElementById('dynamic-hotels');
-      if (!container) {
-        var cards = document.querySelectorAll('.h-card');
-        container = cards.length ? cards[cards.length-1].parentNode : null;
-      }
-      if (!container) return;
+  .then(function(both){
+    var curatedRes = both[0];
+    var masterRes  = both[1];
+    var curatedSlugs = (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs)
+      ? curatedRes.data.slugs : [];
+    var allSlugs = (masterRes && masterRes.slugs) ? masterRes.slugs.filter(function(s){ return !s.startsWith('__'); }) : [];
 
-      results.forEach(function(res){
-        if (!res || !res.data) return;
-        var p = res.data;
-        var type = (p.type||'').toLowerCase();
-        // Skip cruises — they belong on cruises.html
-        var isCruise = type.indexOf('cruise')>-1 || type.indexOf('river')>-1 ||
-                       type.indexOf('yacht')>-1 || type.indexOf('dahabiya')>-1;
-        if (isCruise) return;
+    // Build final ordered list:
+    // 1. Curated slugs first (in admin-set order), excluding hardcoded ones already on page
+    // 2. Then any remaining matching slugs not yet in the list
+    var orderedNew = curatedSlugs.filter(function(s){ return HARDCODED.indexOf(s)===-1; });
+    var alreadyShown = HARDCODED.concat(orderedNew);
+    var remainingSlugs = allSlugs.filter(function(s){ return alreadyShown.indexOf(s)===-1; });
 
-        var slug = res.slug;
+    var toFetch = orderedNew.concat(remainingSlugs);
+    if (!toFetch.length) return null;
+
+    return Promise.all(toFetch.map(function(slug){
+      return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; });
+    }));
+  })
+  .then(function(results){
+    if (!results) return;
+    var container = document.getElementById('dynamic-hotels');
+    if (!container) return;
+    results.forEach(function(res){
+      if (!res || !res.data) return;
+      var p = res.data;
+      var type = (p.type||'').toLowerCase();
+      if (!(!(type.indexOf('cruise')>-1 || type.indexOf('river')>-1 || type.indexOf('yacht')>-1 || type.indexOf('dahabiya')>-1 || type.indexOf('villa')>-1 || type.indexOf('exclusive')>-1))) return;
+      var slug = res.slug;
         var href = '/property.html?slug=' + encodeURIComponent(slug);
         var img = (p.photos && p.photos.hero && p.photos.hero.length) ? (p.photos.hero[0].url || p.photos.hero[0]) : (p.hero_img || p.images && p.images[0] || '');
         var price = p.price_from ? 'From $' + parseInt(p.price_from).toLocaleString() + '/night' : '';
@@ -1340,9 +1334,9 @@ function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.
             '</div>' +
           '</div>';
         container.appendChild(card);
-      });
-    })
-    .catch(function(e){ console.log('[Hotels] KV load error:', e); });
+    });
+  })
+  .catch(function(e){ console.log('[Hotels] KV load error:', e); });
 })();
 </script>
 <div id="toast-el" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:.82rem;padding:10px 20px;border-radius:100px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;white-space:nowrap;"></div>

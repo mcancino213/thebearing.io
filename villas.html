@@ -1209,13 +1209,13 @@ body{background:var(--cream);color:var(--ink);}
 <script>
 function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.classList.remove('active');});el.classList.add('active');}
 
-// ── Dynamic villa loader from KV ──────────────────────────────────────
+// ── Dynamic Villas loader from KV ──────────────────────────────────────
 (function(){
   var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
     ? '/api/property' : null;
   if (!PROP_API) return;
 
-  var EXISTING = ['amangiri-villas','la-maison-bleue','al-moudira-estate','soneva-fushi'];
+  var HARDCODED = ['amangiri-villas', 'la-maison-bleue', 'al-moudira-estate', 'soneva-fushi'];
 
   Promise.all([
     fetch(PROP_API + '?slug=__index_villas').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
@@ -1223,17 +1223,16 @@ function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.clas
   ])
   .then(function(both){
     var curatedRes = both[0];
-    var masterRes = both[1];
-    var hasCurated = curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length;
-    var slugs;
-    if (hasCurated) {
-      document.querySelectorAll('.vc-villa').forEach(function(el){ el.style.display='none'; });
-      slugs = curatedRes.data.slugs;
-    } else {
-      slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; }) : [];
-    }
-    if (!slugs.length) return null;
-    return Promise.all(slugs.map(function(slug){
+    var masterRes  = both[1];
+    var curatedSlugs = (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs)
+      ? curatedRes.data.slugs : [];
+    var allSlugs = (masterRes && masterRes.slugs) ? masterRes.slugs.filter(function(s){ return !s.startsWith('__'); }) : [];
+    var orderedNew = curatedSlugs.filter(function(s){ return HARDCODED.indexOf(s)===-1; });
+    var alreadyShown = HARDCODED.concat(orderedNew);
+    var remainingSlugs = allSlugs.filter(function(s){ return alreadyShown.indexOf(s)===-1; });
+    var toFetch = orderedNew.concat(remainingSlugs);
+    if (!toFetch.length) return null;
+    return Promise.all(toFetch.map(function(slug){
       return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
@@ -1247,9 +1246,7 @@ function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.clas
       if (!res || !res.data) return;
       var p = res.data;
       var type = (p.type||'').toLowerCase();
-      var isVilla = type.indexOf('villa')>-1 || type.indexOf('exclusive')>-1 ||
-                    type.indexOf('estate')>-1 || type.indexOf('private')>-1;
-      if (!isVilla) return;
+      if (!(type.indexOf('villa')>-1 || type.indexOf('exclusive')>-1 || type.indexOf('estate')>-1 || type.indexOf('private')>-1)) return;
       var slug = res.slug;
       var href = '/property.html?slug=' + encodeURIComponent(slug);
       var img = (p.photos && p.photos.hero && p.photos.hero.length) ? p.photos.hero[0].url : (p.hero_img || '');
@@ -1280,6 +1277,9 @@ function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.clas
           '</div>' +
         '</div>';
       container.appendChild(el);
+    });
+  })
+  .catch(function(e){ console.log('[Villas] KV load error:', e);
     });
   })
   .catch(function(e){ console.log('[Villas] KV load error:', e); });
