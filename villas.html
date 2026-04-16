@@ -1224,9 +1224,11 @@ function vcf(el){document.querySelectorAll('.vcpill').forEach(function(p){p.clas
   .then(function(both){
     var curatedRes = both[0];
     var masterRes = both[1];
+    var hasCurated = curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length;
     var slugs;
-    if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
-      slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; });
+    if (hasCurated) {
+      document.querySelectorAll('.vc-villa').forEach(function(el){ el.style.display='none'; });
+      slugs = curatedRes.data.slugs;
     } else {
       slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; }) : [];
     }

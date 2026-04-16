@@ -1470,7 +1470,7 @@ var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el
   // Slugs already hardcoded on this page — don't duplicate them
   var EXISTING = ['nour-el-nil','aqua-nera','mekong-navigator'];
 
-  // First try the curated __index_cruises order; fall back to master index
+  // Load curated __index_cruises order; fall back to master index for new properties
   Promise.all([
     fetch(PROP_API + '?slug=__index_cruises').then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
     fetch(PROP_API).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
@@ -1478,12 +1478,16 @@ var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el
     .then(function(both){
       var curatedRes = both[0];
       var masterRes = both[1];
-      // Use curated list if it exists and has slugs
+      var hasCurated = curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length;
       var slugs;
-      if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
-        slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      if (hasCurated) {
+        // Curated list: show ALL slugs in this order (don't filter EXISTING)
+        // Hide the hardcoded voyage stack since we control order fully
+        var hardcodedStack = document.querySelector('.voyage-stack');
+        if (hardcodedStack) hardcodedStack.style.display = 'none';
+        slugs = curatedRes.data.slugs;
       } else {
-        // Fall back: master index, new slugs only
+        // No curated list: just append new properties not already hardcoded
         slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; }) : [];
       }
       if (!slugs.length) return null;
@@ -1509,8 +1513,8 @@ var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el
         count++;
         var slug = res.slug;
         var href = '/property.html?slug=' + encodeURIComponent(slug);
-        var img = (p.images && p.images[0]) ? p.images[0] :
-                  (p.hero_img || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop');
+        var img = (p.photos && p.photos.hero && p.photos.hero.length) ? (p.photos.hero[0].url || p.photos.hero[0]) :
+                  (p.hero_img || p.images && p.images[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop');
         var price = p.price_from ? '$' + parseInt(p.price_from).toLocaleString() : '';
         var tagline = p.tagline || p.bearing_edit || '';
         var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');

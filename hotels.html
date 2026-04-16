@@ -1286,11 +1286,13 @@ function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.
     .then(function(both){
       var curatedRes = both[0];
       var masterRes = both[1];
+      var hasCurated = curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length;
       var slugs;
-      if (curatedRes && curatedRes.exists && curatedRes.data && curatedRes.data.slugs && curatedRes.data.slugs.length) {
-        slugs = curatedRes.data.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; });
+      if (hasCurated) {
+        document.querySelectorAll('.h-card').forEach(function(el){ el.style.display='none'; });
+        slugs = curatedRes.data.slugs;
       } else {
-        slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s) === -1; }) : [];
+        slugs = masterRes && masterRes.slugs ? masterRes.slugs.filter(function(s){ return EXISTING.indexOf(s)===-1; }) : [];
       }
       if (!slugs.length) return null;
       return Promise.all(slugs.map(function(slug){
@@ -1319,7 +1321,7 @@ function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.
 
         var slug = res.slug;
         var href = '/property.html?slug=' + encodeURIComponent(slug);
-        var img = (p.images && p.images[0]) ? p.images[0] : (p.hero_img || '');
+        var img = (p.photos && p.photos.hero && p.photos.hero.length) ? (p.photos.hero[0].url || p.photos.hero[0]) : (p.hero_img || p.images && p.images[0] || '');
         var price = p.price_from ? 'From $' + parseInt(p.price_from).toLocaleString() + '/night' : '';
         var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
 

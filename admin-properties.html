@@ -1240,6 +1240,19 @@ async function saveListingOrder() {
     toast('Save failed: ' + e.message);
   }
 }
+
+function toast(msg, dur) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function() {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+  }, dur || 2800);
+}
 </script>
 <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0f1117;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
 </body>
