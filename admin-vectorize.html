@@ -293,7 +293,7 @@ function log(msg,type){
 }
 
 function splitText(text,maxLen){
-  var chunks=[];var sentences=text.match(/[^.!?]+[.!?]+/g)||[text]\s+/);var current='';
+  var chunks=[];var sentences=text.match(/[^.!?]+[.!?]+/g)||[text];var current='';
   sentences.forEach(function(s){
     if((current+' '+s).length>maxLen&&current.length>0){chunks.push(current.trim());current=s;}
     else{current+=(current?' ':'')+s;}
