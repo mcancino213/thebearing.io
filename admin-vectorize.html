@@ -176,8 +176,8 @@ tbody tr:hover{background:var(--bg);}
 .stat-card{background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;}
 .stat-val{font-family:'Instrument Serif',serif;font-size:1.9rem;color:var(--text);line-height:1;margin-bottom:3px;}
 .stat-lbl{font-size:.68rem;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;}
-.prop-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--border);}
-.prop-row:last-child{border-bottom:none;}
+.prop-row{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border);}
+.prop-row:last-child{border-bottom:none;padding-bottom:20px;}
 .prop-thumb{width:42px;height:42px;border-radius:8px;object-fit:cover;background:var(--bg2);flex-shrink:0;}
 .prop-info{flex:1;min-width:0;}
 .prop-name{font-size:.88rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -194,11 +194,12 @@ tbody tr:hover{background:var(--bg);}
 .index-all-btn:disabled{opacity:.4;cursor:not-allowed;}
 .progress-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:12px;display:none;}
 .progress-fill{height:100%;background:var(--accent,#c17f3e);border-radius:2px;transition:width .3s;}
-.log{background:#0b0e14;border-radius:8px;padding:16px;font-family:monospace;font-size:.74rem;color:rgba(255,255,255,.6);max-height:220px;overflow-y:auto;display:none;}
+.log{background:#0b0e14;border-radius:8px;padding:16px;font-family:monospace;font-size:.74rem;color:rgba(255,255,255,.6);max-height:220px;overflow-y:auto;display:none;margin:0 20px 20px;}
 .log-line{margin-bottom:4px;line-height:1.5;}
 .log-line.ok{color:#4ade80;}
 .log-line.err{color:#f87171;}
 .log-line.info{color:rgba(255,255,255,.45);}
+#prop-list .prop-row:first-child{padding-top:20px;}
 </style>
 </head>
 <body>
@@ -264,7 +265,7 @@ tbody tr:hover{background:var(--bg);}
     <div class="card">
       <div class="card-header"><div class="card-title">Index log</div></div>
       <div class="log" id="log"></div>
-      <div style="font-size:.75rem;color:var(--text3);margin-top:4px;" id="log-empty">No indexing activity yet.</div>
+      <div style="font-size:.75rem;color:var(--text3);margin-top:4px;padding:0 20px 16px;" id="log-empty">No indexing activity yet.</div>
     </div>
 
   </div>
