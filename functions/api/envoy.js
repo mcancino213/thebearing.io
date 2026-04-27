@@ -31,12 +31,72 @@ export default {
       });
     }
 
-    // ── /api/envoy — Anthropic API proxy ──────────────────────────
+    // ── /api/envoy — Anthropic API proxy (RAG-enhanced) ──────────
     if (url.pathname === '/api/envoy') {
       if (request.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 });
       }
-      const body = await request.text();
+
+      let bodyText = await request.text();
+
+      // RAG: if VECTORIZE and AI are bound, embed the last user message
+      // and inject the top matching chunks into the system prompt
+      if (env.VECTORIZE && env.AI) {
+        try {
+          const bodyObj = JSON.parse(bodyText);
+          const messages = bodyObj.messages || [];
+
+          // Find the last user message
+          const lastUser = [...messages].reverse().find(m => m.role === 'user');
+          const query = lastUser
+            ? (typeof lastUser.content === 'string'
+                ? lastUser.content
+                : (lastUser.content || []).filter(b => b.type === 'text').map(b => b.text).join(' '))
+            : '';
+
+          if (query.trim().length > 10) {
+            // Embed the query using Workers AI
+            const embedRes = await env.AI.run('@cf/baai/bge-base-en-v1.5', {
+              text: [query.trim()]
+            });
+            const queryVector = embedRes.data[0];
+
+            // Query Vectorize for top 4 matching chunks
+            const vectorRes = await env.VECTORIZE.query(queryVector, {
+              topK: 4,
+              returnMetadata: 'all'
+            });
+
+            const chunks = (vectorRes.matches || [])
+              .filter(m => m.score > 0.5)
+              .map(m => m.metadata && m.metadata.text ? m.metadata.text : null)
+              .filter(Boolean);
+
+            if (chunks.length > 0) {
+              const ragContext = '\n\n---\nRELEVANT KNOWLEDGE BASE:\n' +
+                chunks.map((c, i) => `[${i + 1}] ${c}`).join('\n\n') +
+                '\n---\n';
+
+              // Inject into system prompt
+              if (bodyObj.system) {
+                if (typeof bodyObj.system === 'string') {
+                  bodyObj.system = bodyObj.system + ragContext;
+                } else if (Array.isArray(bodyObj.system)) {
+                  const lastText = [...bodyObj.system].reverse().find(b => b.type === 'text');
+                  if (lastText) lastText.text += ragContext;
+                }
+              } else {
+                bodyObj.system = ragContext;
+              }
+              bodyText = JSON.stringify(bodyObj);
+            }
+          }
+        } catch (e) {
+          // RAG failure is non-fatal — continue with original body
+          console.error('[RAG] error:', e.message);
+        }
+      }
+
       const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -44,7 +104,7 @@ export default {
           'x-api-key': env.ANTHROPIC_API_KEY,
           'anthropic-version': '2023-06-01'
         },
-        body: body
+        body: bodyText
       });
       return new Response(anthropicResponse.body, {
         status: anthropicResponse.status,
@@ -53,6 +113,81 @@ export default {
           'Access-Control-Allow-Origin': '*'
         }
       });
+    }
+
+    // ── /api/index — embed + upsert content into Vectorize ────────
+    // POST { slug, chunks: [{id, text}] } → embeds and upserts vectors
+    // Used by admin-vectorize.html to index property content
+    if (url.pathname === '/api/index') {
+      if (request.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405 });
+      }
+      if (!env.VECTORIZE || !env.AI) {
+        return jsonResponse({ error: 'VECTORIZE or AI binding not configured' }, 500);
+      }
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+      const { slug, chunks } = body;
+      if (!slug || !Array.isArray(chunks) || chunks.length === 0) {
+        return jsonResponse({ error: 'slug and chunks[] required' }, 400);
+      }
+
+      // Embed all chunks in one batch (max 100)
+      const texts = chunks.map(c => c.text);
+      const embedRes = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: texts });
+      const vectors = embedRes.data;
+
+      // Build Vectorize upsert payload
+      const upsertVectors = vectors.map((vec, i) => ({
+        id: `${slug}::${chunks[i].id}`,
+        values: vec,
+        metadata: {
+          slug,
+          chunkId: chunks[i].id,
+          text: chunks[i].text.substring(0, 1000) // metadata limit
+        }
+      }));
+
+      await env.VECTORIZE.upsert(upsertVectors);
+
+      // Track indexed slugs in KV
+      const indexedRaw = await env.DOSSIERS.get('__vectorized_slugs');
+      let indexedSlugs = indexedRaw ? JSON.parse(indexedRaw) : [];
+      if (!indexedSlugs.includes(slug)) {
+        indexedSlugs.push(slug);
+        await env.DOSSIERS.put('__vectorized_slugs', JSON.stringify(indexedSlugs));
+      }
+      await env.DOSSIERS.put(`${slug}:vectorized_at`, new Date().toISOString());
+
+      return jsonResponse({
+        ok: true,
+        slug,
+        chunksIndexed: upsertVectors.length
+      });
+    }
+
+    // ── /api/index DELETE — remove a slug's vectors ───────────────
+    if (url.pathname === '/api/index' && request.method === 'DELETE') {
+      if (!env.VECTORIZE) {
+        return jsonResponse({ error: 'VECTORIZE binding not configured' }, 500);
+      }
+      const slug = url.searchParams.get('slug');
+      if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+
+      // List and delete all vectors for this slug
+      // Vectorize doesn't support delete-by-metadata, so we track IDs in KV
+      const idsRaw = await env.DOSSIERS.get(`${slug}:vector_ids`);
+      if (idsRaw) {
+        const ids = JSON.parse(idsRaw);
+        await env.VECTORIZE.deleteByIds(ids);
+        await env.DOSSIERS.delete(`${slug}:vector_ids`);
+      }
+      await env.DOSSIERS.delete(`${slug}:vectorized_at`);
+
+      return jsonResponse({ ok: true, slug });
     }
 
     // ── /api/dossier — KV-backed dossier read/write ───────────────

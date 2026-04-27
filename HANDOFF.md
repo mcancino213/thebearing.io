@@ -53,7 +53,7 @@ TheBearing.io is a curated luxury travel platform. Miguel is founder and works h
 | `/api/itinerary` | GET/POST | Day-by-day itinerary JSON |
 | `/api/source` | GET/POST/DELETE | URL fetch + KV cache for dossier sources |
 | `/api/upload` | POST | Cloudflare Images upload |
-| `/api/members` | GET/POST/DELETE | Guest/member records |
+| `/api/index` | POST/DELETE | Embed + upsert content into Vectorize / delete vectors |
 | `/api/clerk-webhook` | POST | Clerk auth webhook handler |
 
 ### KV Key Conventions
@@ -150,7 +150,7 @@ Standard partner-facing pages: dashboard, listings, bookings, photos, rooms, ava
 | L1 | ✅ Done | Page-aware system prompts with per-property context |
 | L2 | ✅ Done | Dossier authoring tool in admin (interview-based) |
 | L3 | ✅ Done | AI-assisted dossier draft generation with web search |
-| L4 | 🔲 Next | RAG via Cloudflare Vectorize — blocked on index creation |
+| L4 | ✅ Done | RAG via Cloudflare Vectorize — index created, bindings added, worker updated |
 | L5 | 🔲 Pending | Cross-property index for compare/recommend queries |
 | L6 | 🔲 Pending | Persistent per-user conversational memory |
 

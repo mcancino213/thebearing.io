@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Envoy Knowledge Base — The Bearing Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--cream:#faf7f1;--ink:#1e1810;--terra:#b05830;--gold:#9a7230;--sand:#ece5d8;--stone:#7a6a58;--border:#e8dfd0;--r:10px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Geist',sans-serif;background:#f5f3ef;color:var(--ink);min-height:100vh;}
+
+/* Nav */
+.nav{background:var(--ink);padding:0 32px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-family:'Instrument Serif',serif;font-size:1.1rem;color:#fff;}
+.nav-logo span{color:var(--terra);}
+.nav-links{display:flex;gap:4px;}
+.nav-link{padding:6px 12px;border-radius:6px;font-size:.78rem;color:rgba(255,255,255,.6);text-decoration:none;transition:all .15s;}
+.nav-link:hover,.nav-link.active{background:rgba(255,255,255,.1);color:#fff;}
+
+/* Layout */
+.page{max-width:1000px;margin:0 auto;padding:32px 24px;}
+.page-header{margin-bottom:28px;}
+.page-title{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--ink);margin-bottom:4px;}
+.page-sub{font-size:.82rem;color:var(--stone);}
+
+/* Cards */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:16px;}
+.card-title{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;}
+
+/* Property list */
+.prop-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.prop-row:last-child{border-bottom:none;}
+.prop-thumb{width:40px;height:40px;border-radius:6px;object-fit:cover;background:var(--sand);flex-shrink:0;}
+.prop-info{flex:1;}
+.prop-name{font-size:.88rem;font-weight:500;color:var(--ink);}
+.prop-slug{font-size:.72rem;color:var(--stone);margin-top:1px;}
+.prop-status{font-size:.68rem;padding:3px 8px;border-radius:100px;font-weight:500;flex-shrink:0;}
+.status-indexed{background:#dcfce7;color:#166534;}
+.status-stale{background:#fef9c3;color:#854d0e;}
+.status-none{background:var(--sand);color:var(--stone);}
+.index-btn{padding:6px 14px;background:var(--terra);color:#fff;border:none;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;flex-shrink:0;transition:opacity .15s;}
+.index-btn:hover{opacity:.85;}
+.index-btn:disabled{opacity:.4;cursor:not-allowed;}
+.index-btn.indexing{background:var(--gold);}
+
+/* Index all */
+.index-all-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;}
+.index-all-btn{padding:10px 20px;background:var(--ink);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:opacity .15s;}
+.index-all-btn:hover{opacity:.85;}
+.index-all-btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* Progress */
+.progress-bar{height:4px;background:var(--sand);border-radius:2px;overflow:hidden;margin-top:8px;display:none;}
+.progress-fill{height:100%;background:var(--terra);border-radius:2px;transition:width .3s;}
+
+/* Log */
+.log{background:var(--ink);border-radius:8px;padding:16px;font-family:monospace;font-size:.75rem;color:rgba(255,255,255,.7);max-height:240px;overflow-y:auto;display:none;}
+.log-line{margin-bottom:4px;line-height:1.4;}
+.log-line.ok{color:#4ade80;}
+.log-line.err{color:#f87171;}
+.log-line.info{color:rgba(255,255,255,.5);}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;}
+.stat-val{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--ink);line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:.68rem;color:var(--stone);letter-spacing:.06em;text-transform:uppercase;}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">The Bearing<span>.io</span> <span style="color:rgba(255,255,255,.3);font-family:'Geist',sans-serif;font-size:.7rem;margin-left:8px;">Admin</span></div>
+  <div class="nav-links">
+    <a href="/admin-dashboard.html" class="nav-link">Dashboard</a>
+    <a href="/admin-properties.html" class="nav-link">Properties</a>
+    <a href="/admin-vectorize.html" class="nav-link active">Knowledge Base</a>
+    <a href="/admin-conversations.html" class="nav-link">Conversations</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <div class="page-title">Envoy Knowledge Base</div>
+    <div class="page-sub">Index property content into Vectorize so Envoy can retrieve relevant knowledge when answering guest questions.</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total properties</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-indexed">—</div><div class="stat-lbl">Indexed</div></div>
+    <div class="stat-card"><div class="stat-val" id="stat-chunks">—</div><div class="stat-lbl">Total chunks</div></div>
+  </div>
+
+  <div class="card">
+    <div class="index-all-bar">
+      <div>
+        <div style="font-size:.88rem;font-weight:500;color:var(--ink);">Index all properties</div>
+        <div style="font-size:.75rem;color:var(--stone);margin-top:2px;">Embeds dossier, sources, rooms, and itinerary for every property</div>
+      </div>
+      <button class="index-all-btn" id="index-all-btn" onclick="indexAll()">Index all</button>
+    </div>
+    <div class="progress-bar" id="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Properties</div>
+    <div id="prop-list"><div style="color:var(--stone);font-size:.82rem;padding:12px 0;">Loading properties…</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Index log</div>
+    <div class="log" id="log"></div>
+    <div style="font-size:.75rem;color:var(--stone);margin-top:8px;" id="log-empty">No indexing activity yet.</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var PROP_API = '/api/property';
+var INDEX_API = '/api/index';
+var properties = [];
+var vectorizedAt = {};
+var totalChunks = 0;
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(function() {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+  }, 2800);
+}
+
+function log(msg, type) {
+  var logEl = document.getElementById('log');
+  var emptyEl = document.getElementById('log-empty');
+  logEl.style.display = 'block';
+  emptyEl.style.display = 'none';
+  var line = document.createElement('div');
+  line.className = 'log-line ' + (type || 'info');
+  line.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// Build chunks from property data
+function buildChunks(slug, propData, dossier, sources) {
+  var chunks = [];
+  var p = propData || {};
+
+  // 1. Core property chunk
+  var core = [];
+  if (p.name) core.push('Property: ' + p.name);
+  if (p.type) core.push('Type: ' + p.type);
+  if (p.location) core.push('Location: ' + p.location);
+  if (p.price_from) core.push('Price from: $' + p.price_from);
+  if (p.tagline) core.push('Tagline: ' + p.tagline);
+  if (p.bearing_edit) core.push('The Bearing Edit: ' + p.bearing_edit);
+  if (p.description) core.push('Description: ' + p.description);
+  if (core.length) chunks.push({ id: 'core', text: core.join('\n') });
+
+  // 2. Rooms/cabins chunk
+  if (p.rooms && p.rooms.length) {
+    var roomText = (p.name || slug) + ' rooms and cabins:\n' +
+      p.rooms.map(function(r) {
+        return '- ' + r.name + (r.description ? ': ' + r.description : '') +
+               (r.price ? ' (from $' + r.price + ')' : '');
+      }).join('\n');
+    chunks.push({ id: 'rooms', text: roomText });
+  }
+
+  // 3. Included / what's included
+  if (p.included && p.included.length) {
+    chunks.push({ id: 'included', text: 'What\'s included at ' + (p.name || slug) + ':\n' + p.included.join('\n') });
+  }
+
+  // 4. Tags
+  if (p.tags && p.tags.length) {
+    chunks.push({ id: 'tags', text: (p.name || slug) + ' is ideal for: ' + p.tags.join(', ') });
+  }
+
+  // 5. Dossier — split into 800-char chunks
+  if (dossier && dossier.trim().length > 20) {
+    var dossierChunks = splitText(dossier, 800);
+    dossierChunks.forEach(function(chunk, i) {
+      chunks.push({ id: 'dossier_' + i, text: chunk });
+    });
+  }
+
+  // 6. Sources — split each into chunks
+  sources.forEach(function(src, si) {
+    if (!src || !src.content) return;
+    var srcChunks = splitText(src.content, 800);
+    srcChunks.slice(0, 6).forEach(function(chunk, i) { // max 6 chunks per source
+      chunks.push({ id: 'source_' + si + '_' + i, text: (src.label || 'Source') + ': ' + chunk });
+    });
+  });
+
+  // 7. Itinerary
+  if (p.itinerary && p.itinerary.days && p.itinerary.days.length) {
+    var itin = 'Itinerary for ' + (p.name || slug) + ':\n' +
+      p.itinerary.days.map(function(d) {
+        return 'Day ' + (d.day || '') + ' - ' + (d.title || '') + ': ' + (d.description || d.desc || '');
+      }).join('\n');
+    chunks.push({ id: 'itinerary', text: itin });
+  }
+
+  return chunks;
+}
+
+function splitText(text, maxLen) {
+  var chunks = [];
+  var sentences = text.split(/(?<=[.!?])\s+/);
+  var current = '';
+  sentences.forEach(function(s) {
+    if ((current + ' ' + s).length > maxLen && current.length > 0) {
+      chunks.push(current.trim());
+      current = s;
+    } else {
+      current += (current ? ' ' : '') + s;
+    }
+  });
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.filter(function(c) { return c.length > 20; });
+}
+
+async function indexProperty(slug, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Indexing…'; btnEl.classList.add('indexing'); }
+  log('Starting: ' + slug);
+
+  try {
+    // Fetch all data in parallel
+    var results = await Promise.all([
+      fetch(PROP_API + '?slug=' + encodeURIComponent(slug)).then(function(r){ return r.json(); }),
+      fetch('/api/dossier?slug=' + encodeURIComponent(slug)).then(function(r){ return r.json(); }),
+      fetch('/api/source?slug=' + encodeURIComponent(slug)).then(function(r){ return r.json(); }),
+    ]);
+
+    var propData = results[0].data || {};
+    var dossier = results[1].dossier || '';
+    var sources = results[2].sources || [];
+
+    var chunks = buildChunks(slug, propData, dossier, sources);
+    if (chunks.length === 0) {
+      log('No content to index for ' + slug, 'err');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Index'; btnEl.classList.remove('indexing'); }
+      return 0;
+    }
+
+    var res = await fetch(INDEX_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, chunks: chunks })
+    });
+    var data = await res.json();
+
+    if (data.ok) {
+      log('✓ ' + slug + ' — ' + data.chunksIndexed + ' chunks indexed', 'ok');
+      totalChunks += data.chunksIndexed;
+      document.getElementById('stat-chunks').textContent = totalChunks;
+      // Update status badge
+      var badge = document.getElementById('badge-' + slug.replace(/[^a-z0-9]/g, '-'));
+      if (badge) { badge.className = 'prop-status status-indexed'; badge.textContent = 'Indexed'; }
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Re-index'; btnEl.classList.remove('indexing'); }
+      return data.chunksIndexed;
+    } else {
+      log('✗ ' + slug + ': ' + (data.error || 'unknown error'), 'err');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry'; btnEl.classList.remove('indexing'); }
+      return 0;
+    }
+  } catch(e) {
+    log('✗ ' + slug + ': ' + e.message, 'err');
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry'; btnEl.classList.remove('indexing'); }
+    return 0;
+  }
+}
+
+async function indexAll() {
+  var btn = document.getElementById('index-all-btn');
+  btn.disabled = true;
+  btn.textContent = 'Indexing…';
+
+  var progressBar = document.getElementById('progress-bar');
+  var progressFill = document.getElementById('progress-fill');
+  progressBar.style.display = 'block';
+  progressFill.style.width = '0%';
+
+  var slugs = properties.map(function(p) { return p.slug; });
+  var done = 0;
+
+  for (var i = 0; i < slugs.length; i++) {
+    var slug = slugs[i];
+    var rowBtn = document.getElementById('btn-' + slug.replace(/[^a-z0-9]/g, '-'));
+    await indexProperty(slug, rowBtn);
+    done++;
+    progressFill.style.width = Math.round((done / slugs.length) * 100) + '%';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Index all';
+  toast('✓ All properties indexed');
+
+  // Update indexed count
+  var indexedCount = document.querySelectorAll('.status-indexed').length;
+  document.getElementById('stat-indexed').textContent = indexedCount;
+}
+
+async function loadProperties() {
+  try {
+    var res = await fetch(PROP_API);
+    var data = await res.json();
+    var slugs = data.slugs || [];
+    slugs = slugs.filter(function(s){ return !s.startsWith('__'); });
+
+    document.getElementById('stat-total').textContent = slugs.length;
+
+    // Fetch vectorized_at timestamps
+    var tsResults = await Promise.all(slugs.map(function(slug) {
+      return fetch(PROP_API + '?slug=' + encodeURIComponent(slug)).then(function(r){ return r.json(); });
+    }));
+
+    // Also check vectorized_at from KV (via a helper endpoint — use dossier endpoint trick)
+    var indexedRes = await fetch(PROP_API + '?slug=__vectorized_slugs');
+    var indexedData = await indexedRes.json();
+    var indexedSlugs = (indexedData.data && indexedData.data.slugs) ? indexedData.data.slugs : [];
+
+    properties = slugs.map(function(slug, i) {
+      return { slug: slug, data: tsResults[i].data || {} };
+    });
+
+    var listEl = document.getElementById('prop-list');
+    if (properties.length === 0) {
+      listEl.innerHTML = '<div style="color:var(--stone);font-size:.82rem;padding:12px 0;">No properties found. Add properties via the Property Editor first.</div>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    var indexedCount = 0;
+
+    properties.forEach(function(p) {
+      var isIndexed = indexedSlugs.indexOf(p.slug) > -1;
+      if (isIndexed) indexedCount++;
+
+      var img = (p.data.photos && p.data.photos.hero && p.data.photos.hero.length)
+        ? (p.data.photos.hero[0].url || p.data.photos.hero[0])
+        : (p.data.hero_img || '');
+
+      var safeId = p.slug.replace(/[^a-z0-9]/g, '-');
+      var row = document.createElement('div');
+      row.className = 'prop-row';
+      row.innerHTML = (img ? '<img class="prop-thumb" src="' + img + '" onerror="this.style.display=\'none\'">' : '<div class="prop-thumb"></div>') +
+        '<div class="prop-info">' +
+          '<div class="prop-name">' + (p.data.name || p.slug) + '</div>' +
+          '<div class="prop-slug">' + p.slug + (p.data.type ? ' · ' + p.data.type : '') + '</div>' +
+        '</div>' +
+        '<span class="prop-status ' + (isIndexed ? 'status-indexed' : 'status-none') + '" id="badge-' + safeId + '">' +
+          (isIndexed ? 'Indexed' : 'Not indexed') +
+        '</span>' +
+        '<button class="index-btn" id="btn-' + safeId + '" onclick="indexProperty(\'' + p.slug + '\', this)">' +
+          (isIndexed ? 'Re-index' : 'Index') +
+        '</button>';
+      listEl.appendChild(row);
+    });
+
+    document.getElementById('stat-indexed').textContent = indexedCount;
+  } catch(e) {
+    document.getElementById('prop-list').innerHTML = '<div style="color:#dc2626;font-size:.82rem;">Failed to load properties: ' + e.message + '</div>';
+  }
+}
+
+loadProperties();
+</script>
+</body>
+</html>
