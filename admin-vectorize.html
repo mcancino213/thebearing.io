@@ -435,7 +435,9 @@ async function loadProperties() {
 
     var indexedRes = await fetch(PROP_API + '?slug=__vectorized_slugs');
     var indexedData = await indexedRes.json();
-    var indexedSlugs = (indexedData.data && indexedData.data.slugs) ? indexedData.data.slugs : [];
+    var allIndexedSlugs = (indexedData.data && indexedData.data.slugs) ? indexedData.data.slugs : [];
+    // Only show indexed status for slugs that still exist in the property index
+    var indexedSlugs = allIndexedSlugs.filter(function(s) { return slugs.indexOf(s) > -1; });
 
     properties = slugs.map(function(s, i) { return { slug: s, data: propResults[i].data || {} }; });
 
