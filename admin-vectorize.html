@@ -279,135 +279,227 @@ var INDEX_API = '/api/index';
 var properties = [];
 var totalChunks = 0;
 
-function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.style.opacity='1';el.style.transform='translateY(0)';clearTimeout(window._tt);window._tt=setTimeout(function(){el.style.opacity='0';el.style.transform='translateY(10px)';},2800);}
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(function() { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, 2800);
+}
 
-function log(msg,type){
-  var logEl=document.getElementById('log');
-  document.getElementById('log-empty').style.display='none';
-  logEl.style.display='block';
-  var line=document.createElement('div');
-  line.className='log-line '+(type||'info');
-  line.textContent=new Date().toLocaleTimeString()+' — '+msg;
+function log(msg, type) {
+  var logEl = document.getElementById('log');
+  document.getElementById('log-empty').style.display = 'none';
+  logEl.style.display = 'block';
+  var line = document.createElement('div');
+  line.className = 'log-line ' + (type || 'info');
+  line.textContent = new Date().toLocaleTimeString() + ' — ' + msg;
   logEl.appendChild(line);
-  logEl.scrollTop=logEl.scrollHeight;
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
-function splitText(text,maxLen){
-  var chunks=[];var sentences=text.match(/[^.!?]+[.!?]+/g)||[text];var current='';
-  sentences.forEach(function(s){
-    if((current+' '+s).length>maxLen&&current.length>0){chunks.push(current.trim());current=s;}
-    else{current+=(current?' ':'')+s;}
+function splitText(text, maxLen) {
+  var chunks = [];
+  var sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  var current = '';
+  sentences.forEach(function(s) {
+    if ((current + ' ' + s).length > maxLen && current.length > 0) {
+      chunks.push(current.trim());
+      current = s;
+    } else {
+      current += (current ? ' ' : '') + s;
+    }
   });
-  if(current.trim())chunks.push(current.trim());
-  return chunks.filter(function(c){return c.length>20;});
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.filter(function(c) { return c.length > 20; });
 }
 
-function buildChunks(slug,p,dossier,sources){
-  var chunks=[];p=p||{};
-  var core=[];
-  if(p.name)core.push('Property: '+p.name);
-  if(p.type)core.push('Type: '+p.type);
-  if(p.location)core.push('Location: '+p.location);
-  if(p.price_from)core.push('Price from: $'+p.price_from);
-  if(p.tagline)core.push('Tagline: '+p.tagline);
-  if(p.bearing_edit)core.push('The Bearing Edit: '+p.bearing_edit);
-  if(p.description)core.push('Description: '+p.description);
-  if(core.length)chunks.push({id:'core',text:core.join('\n')});
-  if(p.rooms&&p.rooms.length){
-    chunks.push({id:'rooms',text:(p.name||slug)+' rooms:\n'+p.rooms.map(function(r){return'- '+r.name+(r.description?': '+r.description:'')+(r.price?' (from $'+r.price+')':'');}).join('\n')});
+function buildChunks(slug, p, dossier, sources) {
+  var chunks = [];
+  p = p || {};
+
+  var core = [];
+  if (p.name) core.push('Property: ' + p.name);
+  if (p.type) core.push('Type: ' + p.type);
+  if (p.location) core.push('Location: ' + p.location);
+  if (p.price_from) core.push('Price from: $' + p.price_from);
+  if (p.tagline) core.push('Tagline: ' + p.tagline);
+  if (p.bearing_edit) core.push('The Bearing Edit: ' + p.bearing_edit);
+  if (p.description) core.push('Description: ' + p.description);
+  if (core.length) chunks.push({ id: 'core', text: core.join('\n') });
+
+  if (p.rooms && p.rooms.length) {
+    var roomText = (p.name || slug) + ' rooms:\n' + p.rooms.map(function(r) {
+      return '- ' + r.name + (r.description ? ': ' + r.description : '') + (r.price ? ' (from $' + r.price + ')' : '');
+    }).join('\n');
+    chunks.push({ id: 'rooms', text: roomText });
   }
-  if(p.included&&p.included.length)chunks.push({id:'included',text:"What\'s included at "+(p.name||slug)+':\n'+p.included.join('\n')});
-  if(p.tags&&p.tags.length)chunks.push({id:'tags',text:(p.name||slug)+' is ideal for: '+p.tags.join(', ')});
-  if(dossier&&dossier.trim().length>20){splitText(dossier,800).forEach(function(c,i){chunks.push({id:'dossier_'+i,text:c});});}
-  sources.forEach(function(src,si){
-    if(!src||!src.content)return;
-    splitText(src.content,800).slice(0,6).forEach(function(c,i){chunks.push({id:'source_'+si+'_'+i,text:(src.label||'Source')+': '+c});});
+
+  if (p.included && p.included.length) {
+    chunks.push({ id: 'included', text: 'Included at ' + (p.name || slug) + ':\n' + p.included.join('\n') });
+  }
+
+  if (p.tags && p.tags.length) {
+    chunks.push({ id: 'tags', text: (p.name || slug) + ' is ideal for: ' + p.tags.join(', ') });
+  }
+
+  if (dossier && dossier.trim().length > 20) {
+    splitText(dossier, 800).forEach(function(c, i) {
+      chunks.push({ id: 'dossier_' + i, text: c });
+    });
+  }
+
+  sources.forEach(function(src, si) {
+    if (!src || !src.content) return;
+    splitText(src.content, 800).slice(0, 6).forEach(function(c, i) {
+      chunks.push({ id: 'source_' + si + '_' + i, text: (src.label || 'Source') + ': ' + c });
+    });
   });
+
   return chunks;
 }
 
-async function indexProperty(slug,btnEl){
-  if(btnEl){btnEl.disabled=true;btnEl.textContent='Indexing…';btnEl.classList.add('indexing');}
-  log('Starting: '+slug);
-  try{
-    var results=await Promise.all([
-      fetch(PROP_API+'?slug='+encodeURIComponent(slug)).then(function(r){return r.json();}),
-      fetch('/api/dossier?slug='+encodeURIComponent(slug)).then(function(r){return r.json();}),
-      fetch('/api/source?slug='+encodeURIComponent(slug)).then(function(r){return r.json();})
+async function indexProperty(slug, btnEl) {
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = 'Indexing...'; btnEl.classList.add('indexing'); }
+  log('Starting: ' + slug);
+  try {
+    var results = await Promise.all([
+      fetch(PROP_API + '?slug=' + encodeURIComponent(slug)).then(function(r) { return r.json(); }),
+      fetch('/api/dossier?slug=' + encodeURIComponent(slug)).then(function(r) { return r.json(); }),
+      fetch('/api/source?slug=' + encodeURIComponent(slug)).then(function(r) { return r.json(); })
     ]);
-    var propData=results[0].data||{};
-    var dossier=results[1].dossier||'';
-    var sources=results[2].sources||[];
-    var chunks=buildChunks(slug,propData,dossier,sources);
-    if(!chunks.length){log('No content for '+slug,'err');if(btnEl){btnEl.disabled=false;btnEl.textContent='Index';btnEl.classList.remove('indexing');}return 0;}
-    var res=await fetch(INDEX_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:slug,chunks:chunks})});
-    var data=await res.json();
-    if(data.ok){
-      log('✓ '+slug+' — '+data.chunksIndexed+' chunks','ok');
-      totalChunks+=data.chunksIndexed;
-      document.getElementById('stat-chunks').textContent=totalChunks;
-      var badge=document.getElementById('badge-'+slug.replace(/[^a-z0-9]/g,'-'));
-      if(badge){badge.className='prop-status status-indexed';badge.textContent='Indexed';}
-      if(btnEl){btnEl.disabled=false;btnEl.textContent='Re-index';btnEl.classList.remove('indexing');}
-      return data.chunksIndexed;
-    }else{
-      log('✗ '+slug+': '+(data.error||'error'),'err');
-      if(btnEl){btnEl.disabled=false;btnEl.textContent='Retry';btnEl.classList.remove('indexing');}
+    var propData = results[0].data || {};
+    var dossier = results[1].dossier || '';
+    var sources = results[2].sources || [];
+    var chunks = buildChunks(slug, propData, dossier, sources);
+    if (!chunks.length) {
+      log('No content for ' + slug, 'err');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Index'; btnEl.classList.remove('indexing'); }
       return 0;
     }
-  }catch(e){
-    log('✗ '+slug+': '+e.message,'err');
-    if(btnEl){btnEl.disabled=false;btnEl.textContent='Retry';btnEl.classList.remove('indexing');}
+    var res = await fetch(INDEX_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: slug, chunks: chunks })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      log('OK ' + slug + ' - ' + data.chunksIndexed + ' chunks', 'ok');
+      totalChunks += data.chunksIndexed;
+      document.getElementById('stat-chunks').textContent = totalChunks;
+      var badge = document.getElementById('badge-' + slug.replace(/[^a-z0-9]/g, '-'));
+      if (badge) { badge.className = 'prop-status status-indexed'; badge.textContent = 'Indexed'; }
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Re-index'; btnEl.classList.remove('indexing'); }
+      return data.chunksIndexed;
+    } else {
+      log('Error ' + slug + ': ' + (data.error || 'unknown'), 'err');
+      if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry'; btnEl.classList.remove('indexing'); }
+      return 0;
+    }
+  } catch(e) {
+    log('Error ' + slug + ': ' + e.message, 'err');
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry'; btnEl.classList.remove('indexing'); }
     return 0;
   }
 }
 
-async function indexAll(){
-  var btn=document.getElementById('index-all-btn');
-  btn.disabled=true;btn.textContent='Indexing…';
-  var pb=document.getElementById('progress-bar');var pf=document.getElementById('progress-fill');
-  pb.style.display='block';pf.style.width='0%';
-  var slugs=properties.map(function(p){return p.slug;});
-  for(var i=0;i<slugs.length;i++){
-    var rowBtn=document.getElementById('btn-'+slugs[i].replace(/[^a-z0-9]/g,'-'));
-    await indexProperty(slugs[i],rowBtn);
-    pf.style.width=Math.round(((i+1)/slugs.length)*100)+'%';
+async function indexAll() {
+  var btn = document.getElementById('index-all-btn');
+  btn.disabled = true; btn.textContent = 'Indexing...';
+  var pb = document.getElementById('progress-bar');
+  var pf = document.getElementById('progress-fill');
+  pb.style.display = 'block'; pf.style.width = '0%';
+  var slugs = properties.map(function(p) { return p.slug; });
+  for (var i = 0; i < slugs.length; i++) {
+    var rowBtn = document.getElementById('btn-' + slugs[i].replace(/[^a-z0-9]/g, '-'));
+    await indexProperty(slugs[i], rowBtn);
+    pf.style.width = Math.round(((i + 1) / slugs.length) * 100) + '%';
   }
-  btn.disabled=false;btn.textContent='Index all';
-  toast('✓ All properties indexed');
-  document.getElementById('stat-indexed').textContent=document.querySelectorAll('.status-indexed').length;
+  btn.disabled = false; btn.textContent = 'Index all';
+  toast('All properties indexed');
+  document.getElementById('stat-indexed').textContent = document.querySelectorAll('.status-indexed').length;
 }
 
-async function loadProperties(){
-  try{
-    var res=await fetch(PROP_API);
-    var data=await res.json();
-    var slugs=(data.slugs||[]).filter(function(s){return!s.startsWith('__');});
-    document.getElementById('stat-total').textContent=slugs.length;
-    var propResults=await Promise.all(slugs.map(function(s){return fetch(PROP_API+'?slug='+encodeURIComponent(s)).then(function(r){return r.json();});}));
-    var indexedRes=await fetch(PROP_API+'?slug=__vectorized_slugs');
-    var indexedData=await indexedRes.json();
-    var indexedSlugs=(indexedData.data&&indexedData.data.slugs)?indexedData.data.slugs:[];
-    properties=slugs.map(function(s,i){return{slug:s,data:propResults[i].data||{}};});
-    var listEl=document.getElementById('prop-list');
-    if(!properties.length){listEl.innerHTML='<div style="color:var(--text3);font-size:.82rem;padding:8px 0;">No properties found.</div>';return;}
-    listEl.innerHTML='';
-    var indexedCount=0;
-    properties.forEach(function(p){
-      var isIndexed=indexedSlugs.indexOf(p.slug)>-1;
-      if(isIndexed)indexedCount++;
-      var img=(p.data.photos&&p.data.photos.hero&&p.data.photos.hero.length)?(p.data.photos.hero[0].url||p.data.photos.hero[0]):(p.data.hero_img||'');
-      var safeId=p.slug.replace(/[^a-z0-9]/g,'-');
-      var row=document.createElement('div');row.className='prop-row';
-      row.innerHTML=(img?'<img class="prop-thumb" src="'+img+'" onerror="this.style.display='none'">':'<div class="prop-thumb"></div>')+
-        '<div class="prop-info"><div class="prop-name">'+(p.data.name||p.slug)+'</div><div class="prop-slug">'+p.slug+(p.data.type?' · '+p.data.type:'')+'</div></div>'+
-        '<span class="prop-status '+(isIndexed?'status-indexed':'status-none')+'" id="badge-'+safeId+'">'+(isIndexed?'Indexed':'Not indexed')+'</span>'+
-        '<button class="index-btn" id="btn-'+safeId+'" onclick="indexProperty(''+p.slug+'',this)">'+(isIndexed?'Re-index':'Index')+'</button>';
+async function loadProperties() {
+  try {
+    var res = await fetch(PROP_API);
+    var data = await res.json();
+    var slugs = (data.slugs || []).filter(function(s) { return !s.startsWith('__'); });
+    document.getElementById('stat-total').textContent = slugs.length;
+
+    var propResults = await Promise.all(slugs.map(function(s) {
+      return fetch(PROP_API + '?slug=' + encodeURIComponent(s)).then(function(r) { return r.json(); });
+    }));
+
+    var indexedRes = await fetch(PROP_API + '?slug=__vectorized_slugs');
+    var indexedData = await indexedRes.json();
+    var indexedSlugs = (indexedData.data && indexedData.data.slugs) ? indexedData.data.slugs : [];
+
+    properties = slugs.map(function(s, i) { return { slug: s, data: propResults[i].data || {} }; });
+
+    var listEl = document.getElementById('prop-list');
+    if (!properties.length) {
+      listEl.innerHTML = '<div style="color:var(--text3);font-size:.82rem;padding:8px 0;">No properties found.</div>';
+      return;
+    }
+    listEl.innerHTML = '';
+    var indexedCount = 0;
+
+    properties.forEach(function(p) {
+      var isIndexed = indexedSlugs.indexOf(p.slug) > -1;
+      if (isIndexed) indexedCount++;
+      var img = (p.data.photos && p.data.photos.hero && p.data.photos.hero.length)
+        ? (p.data.photos.hero[0].url || p.data.photos.hero[0])
+        : (p.data.hero_img || '');
+      var safeId = p.slug.replace(/[^a-z0-9]/g, '-');
+
+      var row = document.createElement('div');
+      row.className = 'prop-row';
+
+      if (img) {
+        var thumbImg = document.createElement('img');
+        thumbImg.className = 'prop-thumb';
+        thumbImg.src = img;
+        thumbImg.onerror = function() { this.style.display = 'none'; };
+        row.appendChild(thumbImg);
+      } else {
+        var thumbDiv = document.createElement('div');
+        thumbDiv.className = 'prop-thumb';
+        row.appendChild(thumbDiv);
+      }
+
+      var info = document.createElement('div');
+      info.className = 'prop-info';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'prop-name';
+      nameEl.textContent = p.data.name || p.slug;
+      var slugEl = document.createElement('div');
+      slugEl.className = 'prop-slug';
+      slugEl.textContent = p.slug + (p.data.type ? ' · ' + p.data.type : '');
+      info.appendChild(nameEl);
+      info.appendChild(slugEl);
+      row.appendChild(info);
+
+      var badge = document.createElement('span');
+      badge.className = 'prop-status ' + (isIndexed ? 'status-indexed' : 'status-none');
+      badge.id = 'badge-' + safeId;
+      badge.textContent = isIndexed ? 'Indexed' : 'Not indexed';
+      row.appendChild(badge);
+
+      var btn = document.createElement('button');
+      btn.className = 'index-btn';
+      btn.id = 'btn-' + safeId;
+      btn.textContent = isIndexed ? 'Re-index' : 'Index';
+      btn.onclick = (function(slug) { return function() { indexProperty(slug, this); }; })(p.slug);
+      row.appendChild(btn);
+
       listEl.appendChild(row);
     });
-    document.getElementById('stat-indexed').textContent=indexedCount;
-  }catch(e){
-    document.getElementById('prop-list').innerHTML='<div style="color:#dc2626;font-size:.82rem;">Failed: '+e.message+'</div>';
+
+    document.getElementById('stat-indexed').textContent = indexedCount;
+  } catch(e) {
+    document.getElementById('prop-list').innerHTML = '<div style="color:#dc2626;font-size:.82rem;">Failed: ' + e.message + '</div>';
   }
 }
 
