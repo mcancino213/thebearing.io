@@ -1264,6 +1264,8 @@ function vfilt(el){document.querySelectorAll('.vfpill').forEach(function(p){p.cl
 function tcSearch(){window.location='/search.html';}
 var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
 
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+
 // ── Dynamic Cruises loader from KV ──────────────────────────────────────
 (function(){
   var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
@@ -1317,25 +1319,52 @@ var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el
         var tagline = p.tagline || p.bearing_edit || '';
         var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
 
+        // Private access panel
+        var pa = p.private_access || {};
+        var hasPa = pa && pa.name;
+        var paImg = pa.photo || img;
+        var paHtml = hasPa
+          ? '<div class="voyage-right">' +
+              '<div class="voyage-panel">' +
+                '<div class="voyage-panel-img">' +
+                  '<img src="' + paImg + '" alt="' + esc(pa.name||'') + '" loading="lazy">' +
+                '</div>' +
+                '<div class="voyage-panel-exclusive">' +
+                  '<div class="vpe-lbl">✦ The Bearing Private Access</div>' +
+                  '<div class="vpe-txt">' + esc(pa.description||'') + '</div>' +
+                '</div>' +
+                '<div class="voyage-panel-price">' +
+                  '<div><div class="vpp-from">From per person</div><div class="vpp-unit">' + (p.nights ? p.nights + ' nights all-inclusive' : 'all-inclusive') + '</div></div>' +
+                  (price ? '<div style="text-align:right;"><div class="vpp-from">From</div><div class="vpp-val">' + price + '</div></div>' : '') +
+                '</div>' +
+              '</div>' +
+            '</div>'
+          : '';
+
         var card = document.createElement('div');
         card.innerHTML = '<div class="voyage-divider"></div>' +
           '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
             '<div class="voyage-bg">' +
-              '<img src="' + img + '" alt="' + (p.name||slug) + '" loading="lazy">' +
+              '<img src="' + img + '" alt="' + esc(p.name||slug) + '" loading="lazy">' +
               '<div class="voyage-bg-scrim"></div>' +
             '</div>' +
             '<div class="voyage-content">' +
               '<div class="voyage-left">' +
                 '<div class="voyage-meta-top">' +
-                  '<span class="voyage-type">' + (p.type||'Cruise') + '</span>' +
+                  '<span class="voyage-type">' + esc(p.type||'Cruise') + '</span>' +
                   '<span class="voyage-status voyage-status-live">✦ Bookable now</span>' +
                 '</div>' +
-                '<div class="voyage-name">' + (p.name||slug) + '</div>' +
-                (tagline ? '<div class="voyage-tagline">' + tagline + '</div>' : '') +
-                (loc ? '<div class="voyage-route"><span class="voyage-port">' + loc + '</span></div>' : '') +
+                '<div class="voyage-name">' + esc(p.name||slug) + '</div>' +
+                (tagline ? '<div class="voyage-tagline">' + esc(tagline) + '</div>' : '') +
+                (loc ? '<div class="voyage-route"><span class="voyage-port">' + esc(loc) + '</span></div>' : '') +
                 (price ? '<div class="voyage-stats"><div class="vstat"><div class="vstat-lbl">From</div><div class="vstat-val">' + price + '</div></div></div>' : '') +
-                '<button class="voyage-cta" onclick="event.stopPropagation();window.location=\'' + href + '\'">View voyage →</button>' +
+                '<div class="voyage-cta-row">' +
+                  '<button class="voyage-cta" onclick="event.stopPropagation();tbOpenCheckout({property:\'' + esc(p.name||slug) + '\',title:\'Book your voyage\',commissionRate:0.10,rooms:[{name:\'Standard cabin\',price:' + (p.price_from||0) + '}]})">Book now →</button>' +
+                  '<button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry(\'' + esc(p.name||slug) + '\')">Enquire first</button>' +
+                  (price ? '<span class="voyage-price-note">From ' + price + ' pp</span>' : '') +
+                '</div>' +
               '</div>' +
+              paHtml +
             '</div>' +
           '</div>';
         container.appendChild(card);
