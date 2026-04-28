@@ -961,8 +961,9 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .voyage-panel-img{border-radius:12px;overflow:hidden;height:180px;}
 .voyage-panel-img img{width:100%;height:100%;object-fit:cover;}
 .voyage-panel-exclusive{background:rgba(154,114,48,.15);border:1px solid rgba(154,114,48,.25);border-radius:10px;padding:12px 14px;}
+.voyage-panel-exclusive{padding:16px 18px;flex:1;overflow:hidden;}
 .vpe-lbl{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(154,114,48,.8);margin-bottom:5px;}
-.vpe-txt{font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5;}
+.vpe-txt{font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;}
 .voyage-panel-price{display:flex;justify-content:space-between;align-items:flex-end;}
 .vpp-from{font-size:.6rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;}
 .vpp-val{font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;}
@@ -1331,7 +1332,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
                 '</div>' +
                 '<div class="voyage-panel-exclusive">' +
                   '<div class="vpe-lbl">✦ The Bearing Private Access</div>' +
-                  '<div class="vpe-txt">' + esc(pa.description||'') + '</div>' +
+                  '<div class="vpe-txt">' + esc((pa.description||'').length > 180 ? pa.description.substring(0,180).trimEnd() + '…' : pa.description||'') + '</div>' +
                 '</div>' +
                 '<div class="voyage-panel-price">' +
                   '<div><div class="vpp-from">From per person</div><div class="vpp-unit">' + (p.nights ? p.nights + ' nights all-inclusive' : 'all-inclusive') + '</div></div>' +
