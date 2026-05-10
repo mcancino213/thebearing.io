@@ -825,31 +825,6 @@ View in admin: https://thebearing.io/admin-bookings.html
             return jsonResponse({ error: 'propertySlug and guestEmail required' }, 400);
           }
 
-          // ── Deduplication: check if an open conversation already exists ──
-          const guestKey = guestId || guestEmail;
-          const existingRaw = await env.DOSSIERS.get('guest:' + guestKey + ':convs');
-          const existingIds = existingRaw ? JSON.parse(existingRaw) : [];
-          for (let ei = 0; ei < existingIds.length; ei++) {
-            const existId = existingIds[ei];
-            const existConvRaw = await env.DOSSIERS.get('conversation:' + existId);
-            if (!existConvRaw) continue;
-            const existConv = JSON.parse(existConvRaw);
-            if (existConv.propertySlug === propertySlug && existConv.status === 'open') {
-              if (firstMessage) {
-                const msgsRaw = await env.DOSSIERS.get('conversation:' + existId + ':messages');
-                const msgs = msgsRaw ? JSON.parse(msgsRaw) : [];
-                const now = new Date().toISOString();
-                msgs.push({ id: 'msg_' + Date.now(), role: 'guest', text: firstMessage,
-                  senderName: guestName || guestEmail, sentAt: now, readAt: null });
-                existConv.lastMessageAt = now;
-                existConv.lastMessagePreview = firstMessage.substring(0, 100);
-                existConv.unreadAdmin = (existConv.unreadAdmin || 0) + 1;
-                await env.DOSSIERS.put('conversation:' + existId, JSON.stringify(existConv));
-                await env.DOSSIERS.put('conversation:' + existId + ':messages', JSON.stringify(msgs));
-              }
-              return jsonResponse({ ok: true, id: existId, conversation: existConv, deduplicated: true });
-            }
-          }
           // ── No existing conversation found — create new ──
           const id = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
           const now = new Date().toISOString();

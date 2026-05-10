@@ -2073,6 +2073,24 @@ function populateConfirmation(){
   var guestId = user ? user.id : email;
   var guestName = name || (user ? (user.firstName + ' ' + (user.lastName||'')).trim() : '') || email;
 
+  // Check for existing open conversation first (prevent duplicates)
+  var guestIdForCheck = (window.Clerk && window.Clerk.user) ? window.Clerk.user.id : email;
+  fetch('/api/conversation?guestId=' + encodeURIComponent(guestIdForCheck))
+    .then(function(r){ return r.json(); })
+    .then(function(existing){
+      var existingConv = (existing.conversations||[]).find(function(c){
+        return c.propertySlug === propSlug && c.status === 'open';
+      });
+      if (existingConv) {
+        closeOverlay('inq-overlay');
+        window.location = '/channels.html?id=' + existingConv.id;
+        return;
+      }
+      createNewConversation();
+    })
+    .catch(function(){ createNewConversation(); });
+
+  function createNewConversation() {
   fetch('/api/conversation', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
