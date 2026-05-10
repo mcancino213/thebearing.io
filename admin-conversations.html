@@ -296,7 +296,7 @@ function loadList() {
       return r.json();
     })
     .then(function(data){
-      conversations = data.conversations || [];
+      conversations = (data.conversations || []).filter(function(c){ return c.status !== 'archived'; });
       if (!conversations.length) {
         document.getElementById('conv-list').innerHTML = '<div style="padding:20px;color:var(--text3);font-size:.84rem;text-align:center;">No conversations yet.<br><br>Once a guest sends an enquiry it will appear here.</div>';
         return;

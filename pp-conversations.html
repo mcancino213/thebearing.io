@@ -255,7 +255,7 @@ function loadConvs() {
   fetch('/api/conversation?slug=' + PP_SLUG)
     .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(d) {
-      ppConvs = d.conversations || [];
+      ppConvs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
       renderConvList();
     })
     .catch(function(e) {

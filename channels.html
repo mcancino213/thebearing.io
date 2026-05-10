@@ -964,7 +964,7 @@ function initChannels(user) {
   fetch('/api/conversation?guestId=' + encodeURIComponent(guestId))
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(d){
-      chConvs = d.conversations || [];
+      chConvs = (d.conversations || []).filter(function(c) { return c.status !== 'archived'; });
       chRenderList();
       var urlId = new URLSearchParams(window.location.search).get('id');
       if (urlId) chOpen(urlId);
