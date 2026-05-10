@@ -2295,8 +2295,11 @@ function tbUpdateSummary() {
   var departure = document.getElementById('tb-co-departure').value;
   var roomSel   = document.getElementById('tb-co-room');
   var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
-  var guestsSel = document.getElementById('tb-co-guests');
-  var guests    = guestsSel ? (guestsSel.value.match(/\d+/) || [2])[0] : 2;
+  var adultsSelU = document.getElementById('tb-co-adults');
+  var childrenSelU = document.getElementById('tb-co-children');
+  var adultsNum = adultsSelU ? parseInt(adultsSelU.value)||2 : 2;
+  var childrenNum = childrenSelU ? parseInt(childrenSelU.value)||0 : 0;
+  var guests = adultsNum + childrenNum;
 
   var nights = 0;
   if (arrival && departure) {
@@ -2337,7 +2340,11 @@ function tbBuildStep2Summary() {
   var departure = document.getElementById('tb-co-departure').value;
   var roomSel   = document.getElementById('tb-co-room');
   var roomName  = roomSel ? roomSel.options[roomSel.selectedIndex]?.text.split('—')[0].trim() : '';
-  var guests    = document.getElementById('tb-co-guests').value;
+  var adultsSelS = document.getElementById('tb-co-adults');
+  var childrenSelS = document.getElementById('tb-co-children');
+  var adultsNumS = adultsSelS ? parseInt(adultsSelS.value)||2 : 2;
+  var childrenNumS = childrenSelS ? parseInt(childrenSelS.value)||0 : 0;
+  var guests    = adultsNumS + (adultsNumS===1?' adult':' adults') + (childrenNumS>0?', '+childrenNumS+(childrenNumS===1?' child':' children'):'');
   var nights    = (arrival && departure) ? Math.round((new Date(departure)-new Date(arrival))/(86400000)) : 0;
   var s = document.getElementById('tb-step2-summary');
   if (s) s.innerHTML = [
@@ -3660,7 +3667,13 @@ document.addEventListener('keydown', function(e) {
           ✓ Balance arranged directly with the property
         </div>
       </div>
-      <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:#1e1810;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;">Done</button>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+        <button onclick="window.location='/channels.html'" style="width:100%;padding:13px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h12v9H9l-3 3v-3H2z"/></svg>
+          Go to my conversation
+        </button>
+        <button onclick="tbCloseCheckout()" style="width:100%;padding:13px;background:transparent;border:1.5px solid #e5e0d8;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;color:#5a4e40;cursor:pointer;">Done</button>
+      </div>
     </div>
 
   </div>

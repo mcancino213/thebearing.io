@@ -745,6 +745,7 @@ View in admin: https://thebearing.io/admin-bookings.html
         await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
         return jsonResponse({ ok: true, ref });
       }
+      return jsonResponse({ error: 'method not allowed' }, 405);
     }
 
     // ── /api/members ──────────────────────────────────────────────

@@ -347,7 +347,11 @@ function updateStatus(ref, status) {
 async function loadBookings() {
   try {
     var res = await fetch('/api/booking');
+    if (!res.ok) {
+      throw new Error('HTTP ' + res.status + ' ' + res.statusText);
+    }
     var data = await res.json();
+    console.log('[Bookings] API response:', data);
     allBookings = data.bookings || [];
 
     // Stats
