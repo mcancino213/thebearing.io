@@ -392,41 +392,108 @@ function openConv(id) {
 }
 
 function renderThread(conv, messages) {
-  var enqHtml = '';
+  var thread = document.getElementById('conv-thread');
+  thread.innerHTML = '';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.className = 'thread-header';
+
+  var avatar = document.createElement('div');
+  avatar.style.cssText = 'width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent,#c17f3e),#d4924f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:600;flex-shrink:0;';
+  avatar.textContent = (conv.guestName || 'G')[0].toUpperCase();
+
+  var info = document.createElement('div');
+  var title = document.createElement('div');
+  title.className = 'thread-title';
+  title.textContent = conv.guestName || conv.guestEmail;
+  var sub = document.createElement('div');
+  sub.className = 'thread-sub';
+  sub.textContent = conv.guestEmail + ' · ' + (conv.propertyName || conv.propertySlug);
+  info.appendChild(title);
+  info.appendChild(sub);
+
+  var badge = document.createElement('span');
+  badge.style.cssText = 'margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;';
+  badge.textContent = conv.status || 'open';
+
+  hdr.appendChild(avatar);
+  hdr.appendChild(info);
+  hdr.appendChild(badge);
+  thread.appendChild(hdr);
+
+  // Messages
+  var wrap = document.createElement('div');
+  wrap.className = 'messages-wrap';
+  wrap.id = 'messages-wrap';
+
+  // Enquiry pill
   if (conv.enquiry) {
     var parts = [];
     if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
     if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
     if (conv.enquiry.arrival) parts.push(conv.enquiry.arrival + (conv.enquiry.departure ? ' → ' + conv.enquiry.departure : ''));
-    if (parts.length) enqHtml = '<div class="enq-pill">Enquiry: ' + parts.join(' · ') + '</div>';
+    if (parts.length) {
+      var pill = document.createElement('div');
+      pill.className = 'enq-pill';
+      pill.textContent = 'Enquiry: ' + parts.join(' · ');
+      wrap.appendChild(pill);
+    }
   }
 
-  var msgsHtml = enqHtml + messages.map(function(m) {
+  messages.forEach(function(m) {
     var role = m.role === 'guest' ? 'guest' : 'admin';
     var time = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + ' · ' + fmt(m.sentAt);
-    return '<div class="msg ' + role + '">' +
-      '<div class="msg-sender">' + (m.senderName || m.role) + '</div>' +
-      '<div class="msg-bubble">' + esc(m.text) + '</div>' +
-      '<div class="msg-time">' + time + '</div>' +
-    '</div>';
-  }).join('');
 
-  document.getElementById('conv-thread').innerHTML =
-    '<div class="thread-header">' +
-      '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent,#c17f3e),#d4924f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:600;flex-shrink:0;">' + (conv.guestName||'G')[0].toUpperCase() + '</div>' +
-      '<div>' +
-        '<div class="thread-title">' + (conv.guestName || conv.guestEmail) + '</div>' +
-        '<div class="thread-sub">' + conv.guestEmail + ' · ' + (conv.propertyName || conv.propertySlug) + '</div>' +
-      '</div>' +
-      '<span style="margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;">' + (conv.status || 'open') + '</span>' +
-    '</div>' +
-    '<div class="messages-wrap" id="messages-wrap">' + msgsHtml + '</div>' +
-    '<div class="reply-wrap">' +
-      '<textarea class="reply-input" id="reply-input" rows="2" placeholder="Reply to ' + (conv.guestName||'guest') + '…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply();}"></textarea>' +
-      '<button class="reply-btn" onclick="sendReply()">Send →</button>' +
-    '</div>';
+    var msgEl = document.createElement('div');
+    msgEl.className = 'msg ' + role;
 
-  setTimeout(function(){ var w=document.getElementById('messages-wrap'); if(w) w.scrollTop=w.scrollHeight; }, 50);
+    var sender = document.createElement('div');
+    sender.className = 'msg-sender';
+    sender.textContent = m.senderName || m.role;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = m.text;
+
+    var timeEl = document.createElement('div');
+    timeEl.className = 'msg-time';
+    timeEl.textContent = time;
+
+    msgEl.appendChild(sender);
+    msgEl.appendChild(bubble);
+    msgEl.appendChild(timeEl);
+    wrap.appendChild(msgEl);
+  });
+
+  thread.appendChild(wrap);
+
+  // Reply input
+  var replyWrap = document.createElement('div');
+  replyWrap.className = 'reply-wrap';
+
+  var textarea = document.createElement('textarea');
+  textarea.className = 'reply-input';
+  textarea.id = 'reply-input';
+  textarea.rows = 2;
+  textarea.placeholder = 'Reply to ' + (conv.guestName || 'guest') + '…';
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendReply();
+    }
+  });
+
+  var sendBtn = document.createElement('button');
+  sendBtn.className = 'reply-btn';
+  sendBtn.textContent = 'Send →';
+  sendBtn.addEventListener('click', sendReply);
+
+  replyWrap.appendChild(textarea);
+  replyWrap.appendChild(sendBtn);
+  thread.appendChild(replyWrap);
+
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 50);
 }
 
 function sendReply() {

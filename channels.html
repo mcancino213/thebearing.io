@@ -915,25 +915,32 @@ var chActiveId = null;
 var chPoll = null;
 
 window.addEventListener('load', function() {
+  // The page already loads Clerk above. Wait for it to be ready,
+  // then use addListener which fires reliably after Clerk initializes.
   function tryInit(attempts) {
-    if (window.Clerk && window.Clerk.user !== undefined) {
+    if (window.Clerk && typeof window.Clerk.addListener === 'function') {
+      // Clerk is ready — check current user
       var user = window.Clerk.user;
       if (user) {
         initChannels(user);
       } else {
-        // Confirmed not signed in — show the gate
+        // Listen for sign-in
+        window.Clerk.addListener(function(resources) {
+          if (resources.user) initChannels(resources.user);
+        });
+        // Show auth gate since not signed in
         var gate = document.getElementById('ch-auth-gate');
         if (gate) gate.style.display = 'flex';
       }
     } else if (attempts > 0) {
-      setTimeout(function() { tryInit(attempts - 1); }, 200);
+      setTimeout(function() { tryInit(attempts - 1); }, 250);
     } else {
-      // Timed out — show gate as fallback
       var gate = document.getElementById('ch-auth-gate');
       if (gate) gate.style.display = 'flex';
     }
   }
-  tryInit(20);
+  // Give the page's own Clerk.load() time to finish first
+  setTimeout(function() { tryInit(20); }, 500);
 });
 
 function initChannels(user) {
