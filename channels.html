@@ -1007,39 +1007,110 @@ function chOpen(id) {
 function chRenderThread(conv, msgs) {
   var thread = document.getElementById('ch-thread');
   if (!thread) return;
-  var ini = (conv.propertyName||'?')[0].toUpperCase();
-  var enq = '';
+  thread.innerHTML = '';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.className = 'ch-thread-hdr';
+
+  var av = document.createElement('div');
+  av.className = 'ch-avatar';
+  av.style.cssText = 'width:34px;height:34px;font-size:.85rem;';
+  av.textContent = (conv.propertyName||'?')[0].toUpperCase();
+
+  var info = document.createElement('div');
+  var name = document.createElement('div');
+  name.className = 'ch-thread-name';
+  name.textContent = conv.propertyName || conv.propertySlug;
+  var sub = document.createElement('div');
+  sub.className = 'ch-thread-sub';
+  sub.textContent = 'via The Bearing · private';
+  info.appendChild(name);
+  info.appendChild(sub);
+
+  var badge = document.createElement('span');
+  badge.style.cssText = 'margin-left:auto;font-size:.62rem;font-weight:600;padding:3px 9px;border-radius:100px;background:#dcfce7;color:#166534;';
+  badge.textContent = conv.status || 'open';
+
+  hdr.appendChild(av);
+  hdr.appendChild(info);
+  hdr.appendChild(badge);
+  thread.appendChild(hdr);
+
+  // Messages
+  var msgsWrap = document.createElement('div');
+  msgsWrap.className = 'ch-msgs';
+  msgsWrap.id = 'ch-msgs';
+
+  // Enquiry pill
   if (conv.enquiry) {
     var parts = [];
     if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
     if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
     if (conv.enquiry.arrival && conv.enquiry.departure) parts.push(conv.enquiry.arrival + ' → ' + conv.enquiry.departure);
-    if (parts.length) enq = '<div class="ch-enq-pill">Enquiry: ' + parts.join(' · ') + '</div>';
+    if (parts.length) {
+      var pill = document.createElement('div');
+      pill.className = 'ch-enq-pill';
+      pill.textContent = 'Enquiry: ' + parts.join(' · ');
+      msgsWrap.appendChild(pill);
+    }
   }
-  var msgsHtml = enq + msgs.map(function(m) {
-    var role = m.role==='guest' ? 'guest' : 'property';
+
+  msgs.forEach(function(m) {
+    var role = m.role === 'guest' ? 'guest' : 'property';
     var time = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    return '<div class="ch-msg ' + role + '">' +
-      (role==='property' ? '<div class="ch-msg-sender">' + (m.senderName||conv.propertyName) + '</div>' : '') +
-      '<div class="ch-bubble">' + chEsc(m.text) + '</div>' +
-      '<div class="ch-msg-time">' + time + '</div>' +
-    '</div>';
-  }).join('');
 
-  thread.innerHTML =
-    '<div class="ch-thread-hdr">' +
-      '<div class="ch-avatar" style="width:34px;height:34px;font-size:.85rem;">' + ini + '</div>' +
-      '<div><div class="ch-thread-name">' + (conv.propertyName||conv.propertySlug) + '</div>' +
-        '<div class="ch-thread-sub">via The Bearing · private</div></div>' +
-      '<span style="margin-left:auto;font-size:.62rem;font-weight:600;padding:3px 9px;border-radius:100px;background:#dcfce7;color:#166534;">' + (conv.status||'open') + '</span>' +
-    '</div>' +
-    '<div class="ch-msgs" id="ch-msgs">' + msgsHtml + '</div>' +
-    '<div class="ch-input-wrap">' +
-      '<textarea class="ch-input" id="ch-input" rows="1" placeholder="Message ' + (conv.propertyName||'the property') + '…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();chSend();}"></textarea>' +
-      '<button class="ch-send" onclick="chSend()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>' +
-    '</div>';
+    var msgEl = document.createElement('div');
+    msgEl.className = 'ch-msg ' + role;
 
-  setTimeout(function(){ var w=document.getElementById('ch-msgs'); if(w) w.scrollTop=w.scrollHeight; }, 50);
+    if (role === 'property') {
+      var sender = document.createElement('div');
+      sender.className = 'ch-msg-sender';
+      sender.textContent = m.senderName || conv.propertyName;
+      msgEl.appendChild(sender);
+    }
+
+    var bubble = document.createElement('div');
+    bubble.className = 'ch-bubble';
+    bubble.textContent = m.text;
+
+    var timeEl = document.createElement('div');
+    timeEl.className = 'ch-msg-time';
+    timeEl.textContent = time;
+
+    msgEl.appendChild(bubble);
+    msgEl.appendChild(timeEl);
+    msgsWrap.appendChild(msgEl);
+  });
+
+  thread.appendChild(msgsWrap);
+
+  // Input
+  var inputWrap = document.createElement('div');
+  inputWrap.className = 'ch-input-wrap';
+
+  var textarea = document.createElement('textarea');
+  textarea.className = 'ch-input';
+  textarea.id = 'ch-input';
+  textarea.rows = 1;
+  textarea.placeholder = 'Message ' + (conv.propertyName || 'the property') + '…';
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      chSend();
+    }
+  });
+
+  var sendBtn = document.createElement('button');
+  sendBtn.className = 'ch-send';
+  sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+  sendBtn.addEventListener('click', chSend);
+
+  inputWrap.appendChild(textarea);
+  inputWrap.appendChild(sendBtn);
+  thread.appendChild(inputWrap);
+
+  setTimeout(function() { msgsWrap.scrollTop = msgsWrap.scrollHeight; }, 50);
 }
 
 function chSend() {
