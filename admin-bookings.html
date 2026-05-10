@@ -312,8 +312,8 @@ function renderTable() {
       '<td style="font-weight:600;color:var(--accent,#c17f3e);">$' + ((b.depositAmount || 0).toLocaleString()) + '</td>' +
       '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
       '<td style="white-space:nowrap;">' +
-        (b.status !== 'confirmed' ? '<button class="action-btn action-confirm" onclick="updateStatus('' + b.ref + '','confirmed')">Confirm</button> ' : '') +
-        (b.status !== 'cancelled' ? '<button class="action-btn action-cancel" onclick="updateStatus('' + b.ref + '','cancelled')">Cancel</button>' : '') +
+        (b.status !== 'confirmed' ? '<button class="action-btn action-confirm" data-ref="' + b.ref + '" data-status="confirmed">Confirm</button> ' : '') +
+        (b.status !== 'cancelled' ? '<button class="action-btn action-cancel" data-ref="' + b.ref + '" data-status="cancelled">Cancel</button>' : '') +
       '</td>' +
     '</tr>';
 
@@ -324,6 +324,12 @@ function renderTable() {
 
   html += '</tbody></table></div>';
   wrap.innerHTML = html;
+  // Wire action buttons via delegation (avoids quote escaping issues)
+  wrap.querySelectorAll('[data-ref]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      updateStatus(this.getAttribute('data-ref'), this.getAttribute('data-status'));
+    });
+  });
 }
 
 function updateStatus(ref, status) {
