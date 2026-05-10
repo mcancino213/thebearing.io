@@ -488,7 +488,7 @@
 </style>
 
 <div id="ch-app" style="display:flex;flex:1;overflow:hidden;height:100%;">
-  <div class="ch-auth" id="ch-auth-gate">
+  <div class="ch-auth" id="ch-auth-gate" style="display:none;">
     <div class="ch-auth-title">Your conversations</div>
     <div class="ch-auth-sub">Sign in to view your messages with properties.</div>
     <button class="ch-auth-btn" onclick="window.location='/my-account.html'">Sign in</button>
@@ -915,21 +915,25 @@ var chActiveId = null;
 var chPoll = null;
 
 window.addEventListener('load', function() {
-  // Wait for Clerk to be fully initialized (it uses defer + load event)
   function tryInit(attempts) {
     if (window.Clerk && window.Clerk.user !== undefined) {
       var user = window.Clerk.user;
       if (user) {
         initChannels(user);
       } else {
-        // Not signed in — show sign in button (already showing)
-        document.getElementById('ch-auth-gate') && (document.getElementById('ch-auth-gate').style.display = 'flex');
+        // Confirmed not signed in — show the gate
+        var gate = document.getElementById('ch-auth-gate');
+        if (gate) gate.style.display = 'flex';
       }
     } else if (attempts > 0) {
       setTimeout(function() { tryInit(attempts - 1); }, 200);
+    } else {
+      // Timed out — show gate as fallback
+      var gate = document.getElementById('ch-auth-gate');
+      if (gate) gate.style.display = 'flex';
     }
   }
-  tryInit(20); // Try for up to 4 seconds
+  tryInit(20);
 });
 
 function initChannels(user) {
