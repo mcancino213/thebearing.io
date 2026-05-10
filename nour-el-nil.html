@@ -1649,7 +1649,7 @@
         <div class="f-row">
           <div class="f-field">
             <label class="f-lbl" for="inq-checkin">Arrival</label>
-            <input class="f-inp" id="inq-checkin" name="checkin" type="date" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('inq-checkout');if(this.value){dep.min=this.value;if(!dep.value||dep.value<this.value){dep.value='';setTimeout(function(){try{dep.showPicker()}catch(e){}},80);}}">
+            <input class="f-inp" id="inq-checkin" name="checkin" type="date" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('inq-checkout');if(this.value){dep.min=this.value;if(!dep.value||dep.value<=this.value){dep.value=this.value;dep.focus();setTimeout(function(){try{dep.showPicker()}catch(e){dep.click()}},120);dep.value='';dep.dataset.hint='1';}}">
           </div>
           <div class="f-field">
             <label class="f-lbl" for="inq-checkout">Departure</label>
