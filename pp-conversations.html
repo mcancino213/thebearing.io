@@ -208,83 +208,20 @@ tbody tr:hover{background:var(--bg);}
   <div class="page-subtitle">All guest message threads for Nour El Nil.</div>
 </div>
 
-<div style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:600px;">
-  <!-- Thread list -->
+<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:600px;">
+  <!-- Left: conversation list -->
   <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
     <div style="padding:16px;border-bottom:1px solid var(--border);">
-      <input class="filter-input" style="width:100%;" placeholder="Search conversations…">
+      <input class="filter-input" style="width:100%;" placeholder="Search conversations…" oninput="filterConvs(this.value)">
     </div>
-    <div style="overflow-y:auto;flex:1;">
-      <!-- Active thread -->
-      <div style="padding:16px;border-bottom:1px solid var(--border);background:var(--accent-bg);cursor:pointer;border-left:3px solid var(--accent);">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div class="avatar avatar-sm">SA</div>
-          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Sarah Alderton</div><div style="font-size:11px;color:var(--text2);">TB-2025-0847 · Apr 15–21</div></div>
-          <div style="font-size:11px;color:var(--text3);">2h ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Could we arrange the private Edfu sunrise you mentioned?</div>
-        <div style="margin-top:8px;"><span class="badge badge-accent">2 unread</span></div>
-      </div>
-      <div style="padding:16px;border-bottom:1px solid var(--border);cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div>
-          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Thomas Müller</div><div style="font-size:11px;color:var(--text2);">TB-2025-0901 · May 3–9</div></div>
-          <div style="font-size:11px;color:var(--text3);">1d ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Question about dietary requirements for our group</div>
-      </div>
-      <div style="padding:16px;border-bottom:1px solid var(--border);cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">PC</div>
-          <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">Patricia Chen</div><div style="font-size:11px;color:var(--text2);">TB-2025-0912 · May 18–24</div></div>
-          <div style="font-size:11px;color:var(--text3);">3d ago</div>
-        </div>
-        <div style="font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Wonderful, we're so excited for this journey!</div>
-      </div>
+    <div id="pp-conv-list" style="overflow-y:auto;flex:1;">
+      <div style="padding:20px;color:var(--text3);font-size:13px;">Loading conversations…</div>
     </div>
   </div>
-
-  <!-- Message thread -->
-  <div style="display:flex;flex-direction:column;">
-    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
-      <div class="avatar">SA</div>
-      <div>
-        <div style="font-size:15px;font-weight:600;">Sarah Alderton</div>
-        <div style="font-size:12px;color:var(--text2);">London, UK · Founding Member · Booking TB-2025-0847</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <a href="pp-booking-detail.html" class="btn btn-ghost btn-sm">View booking</a>
-      </div>
-    </div>
-    <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;background:#fafafa;">
-      <div style="display:flex;gap:12px;">
-        <div class="avatar avatar-sm">SA</div>
-        <div style="max-width:70%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Sarah Alderton · 12 Mar, 10:22 AM</div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Hello, thank you for your inquiry through The Bearing. We're delighted to welcome you aboard. We have availability October 15–21 in our Panoramic Suite on Poppee. Shall I hold this for you?</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;justify-content:flex-end;">
-        <div style="max-width:70%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;text-align:right;">You (Nour El Nil) · 12 Mar, 2:45 PM</div>
-          <div style="background:var(--accent);color:#fff;border-radius:12px 0 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Yes please — please hold those dates. We're very excited. Can we also arrange the private Edfu sunrise that The Bearing mentioned?</div>
-        </div>
-        <div class="avatar avatar-sm" style="background:var(--accent);">NG</div>
-      </div>
-      <div style="display:flex;gap:12px;">
-        <div class="avatar avatar-sm">SA</div>
-        <div style="max-width:70%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:5px;">Sarah Alderton · Today, 9:14 AM</div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;">Could we arrange the private Edfu sunrise you mentioned? It would mean so much to us. Also, my husband has a nut allergy — is that something you can accommodate?</div>
-        </div>
-      </div>
-    </div>
-    <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;">
-      <textarea style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:none;min-height:80px;outline:none;background:var(--bg);" placeholder="Reply to Sarah…"></textarea>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn btn-primary">Send</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;">Template</button>
-      </div>
+  <!-- Right: message thread -->
+  <div id="pp-conv-thread" style="display:flex;flex-direction:column;">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;">
+      Select a conversation to reply
     </div>
   </div>
 </div>
@@ -293,5 +230,258 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 
+<script>
+var PP_SLUG = 'nour-el-nil'; // Partner's property slug
+var ppConvs = [];
+var ppActiveId = null;
+var ppPoll = null;
+
+function esc(t) {
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function fmt(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function filterConvs(q) {
+  var items = document.querySelectorAll('#pp-conv-list [data-id]');
+  items.forEach(function(el) {
+    var text = el.textContent.toLowerCase();
+    el.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
+  });
+}
+
+function loadConvs() {
+  fetch('/api/conversation?slug=' + PP_SLUG)
+    .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d) {
+      ppConvs = d.conversations || [];
+      renderConvList();
+    })
+    .catch(function(e) {
+      document.getElementById('pp-conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:13px;">Error: ' + e.message + '</div>';
+    });
+}
+
+function renderConvList() {
+  var el = document.getElementById('pp-conv-list');
+  if (!ppConvs.length) {
+    el.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:13px;">No conversations yet.<br><br>Conversations from enquiries will appear here.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  ppConvs.forEach(function(c) {
+    var hasUnread = c.unreadAdmin > 0;
+    var item = document.createElement('div');
+    item.setAttribute('data-id', c.id);
+    item.style.cssText = 'padding:16px;border-bottom:1px solid var(--border);cursor:pointer;' + (c.id === ppActiveId ? 'background:var(--accent-bg);border-left:3px solid var(--accent);' : '');
+    item.addEventListener('click', function() { openConv(c.id); });
+
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:6px;';
+
+    var avatar = document.createElement('div');
+    avatar.className = 'avatar avatar-sm';
+    avatar.textContent = (c.guestName||'G').split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
+
+    var nameWrap = document.createElement('div');
+    nameWrap.style.cssText = 'flex:1;min-width:0;';
+    var gName = document.createElement('div');
+    gName.style.cssText = 'font-size:14px;font-weight:600;';
+    gName.textContent = c.guestName || c.guestEmail;
+    var gSub = document.createElement('div');
+    gSub.style.cssText = 'font-size:11px;color:var(--text2);';
+    gSub.textContent = (c.enquiry && c.enquiry.cabin ? c.enquiry.cabin + ' · ' : '') + fmt(c.lastMessageAt);
+    nameWrap.appendChild(gName);
+    nameWrap.appendChild(gSub);
+
+    var timeEl = document.createElement('div');
+    timeEl.style.cssText = 'font-size:11px;color:var(--text3);flex-shrink:0;';
+    timeEl.textContent = fmt(c.lastMessageAt);
+
+    row.appendChild(avatar);
+    row.appendChild(nameWrap);
+    row.appendChild(timeEl);
+
+    var preview = document.createElement('div');
+    preview.style.cssText = 'font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    preview.textContent = c.lastMessagePreview || '';
+
+    item.appendChild(row);
+    item.appendChild(preview);
+
+    if (hasUnread) {
+      var badge = document.createElement('div');
+      badge.style.cssText = 'margin-top:8px;';
+      badge.innerHTML = '<span class="badge badge-accent">' + c.unreadAdmin + ' unread</span>';
+      item.appendChild(badge);
+    }
+
+    el.appendChild(item);
+  });
+}
+
+function openConv(id) {
+  ppActiveId = id;
+  renderConvList();
+  fetch('/api/conversation', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,markReadFor:'admin'})});
+  fetch('/api/conversation?id=' + encodeURIComponent(id))
+    .then(function(r){ return r.json(); })
+    .then(function(d){ renderThread(d.conversation, d.messages||[]); startPoll(id); });
+}
+
+function renderThread(conv, messages) {
+  var thread = document.getElementById('pp-conv-thread');
+  thread.innerHTML = '';
+
+  // Header
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;';
+
+  var av = document.createElement('div');
+  av.className = 'avatar';
+  av.textContent = (conv.guestName||'G').split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
+
+  var info = document.createElement('div');
+  var n1 = document.createElement('div');
+  n1.style.cssText = 'font-size:15px;font-weight:600;';
+  n1.textContent = conv.guestName || conv.guestEmail;
+  var n2 = document.createElement('div');
+  n2.style.cssText = 'font-size:12px;color:var(--text2);';
+  n2.textContent = conv.guestEmail + (conv.enquiry && conv.enquiry.cabin ? ' · ' + conv.enquiry.cabin : '');
+  info.appendChild(n1);
+  info.appendChild(n2);
+
+  hdr.appendChild(av);
+  hdr.appendChild(info);
+  thread.appendChild(hdr);
+
+  // Messages
+  var msgsWrap = document.createElement('div');
+  msgsWrap.style.cssText = 'flex:1;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:#fafafa;';
+
+  // Enquiry pill
+  if (conv.enquiry) {
+    var parts = [];
+    if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
+    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
+    if (conv.enquiry.arrival && conv.enquiry.departure) parts.push(conv.enquiry.arrival + ' → ' + conv.enquiry.departure);
+    if (parts.length) {
+      var pill = document.createElement('div');
+      pill.style.cssText = 'text-align:center;font-size:12px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;align-self:center;';
+      pill.textContent = 'Enquiry: ' + parts.join(' · ');
+      msgsWrap.appendChild(pill);
+    }
+  }
+
+  messages.forEach(function(m) {
+    var isGuest = m.role === 'guest';
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:12px;' + (!isGuest ? 'justify-content:flex-end;' : '');
+
+    if (isGuest) {
+      var av2 = document.createElement('div');
+      av2.className = 'avatar avatar-sm';
+      av2.textContent = (conv.guestName||'G')[0].toUpperCase();
+      row.appendChild(av2);
+    }
+
+    var msgWrap = document.createElement('div');
+    msgWrap.style.maxWidth = '70%';
+
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:5px;' + (!isGuest ? 'text-align:right;' : '');
+    var time = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    meta.textContent = (m.senderName || (isGuest ? conv.guestName : 'You')) + ' · ' + time;
+
+    var bubble = document.createElement('div');
+    if (isGuest) {
+      bubble.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;';
+    } else {
+      bubble.style.cssText = 'background:var(--accent);color:#fff;border-radius:12px 0 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;';
+    }
+    bubble.textContent = m.text;
+
+    msgWrap.appendChild(meta);
+    msgWrap.appendChild(bubble);
+    row.appendChild(msgWrap);
+
+    if (!isGuest) {
+      var av3 = document.createElement('div');
+      av3.className = 'avatar avatar-sm';
+      av3.style.background = 'var(--accent)';
+      av3.textContent = 'NE';
+      row.appendChild(av3);
+    }
+
+    msgsWrap.appendChild(row);
+  });
+
+  thread.appendChild(msgsWrap);
+
+  // Reply input
+  var replyArea = document.createElement('div');
+  replyArea.style.cssText = 'padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;';
+
+  var ta = document.createElement('textarea');
+  ta.id = 'pp-reply-input';
+  ta.className = 'filter-input';
+  ta.style.cssText = 'flex:1;min-height:72px;resize:none;';
+  ta.placeholder = 'Reply to ' + (conv.guestName || 'guest') + '…';
+  ta.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
+  });
+
+  var btnCol = document.createElement('div');
+  btnCol.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+  var sendBtn = document.createElement('button');
+  sendBtn.className = 'btn btn-primary';
+  sendBtn.textContent = 'Send';
+  sendBtn.addEventListener('click', sendReply);
+
+  btnCol.appendChild(sendBtn);
+  replyArea.appendChild(ta);
+  replyArea.appendChild(btnCol);
+  thread.appendChild(replyArea);
+
+  setTimeout(function(){ msgsWrap.scrollTop = msgsWrap.scrollHeight; }, 50);
+}
+
+function sendReply() {
+  var input = document.getElementById('pp-reply-input');
+  var text = input ? input.value.trim() : '';
+  if (!text || !ppActiveId) return;
+  input.value = '';
+  input.disabled = true;
+
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({action:'message', id:ppActiveId, role:'partner', text:text, senderName:'Nour El Nil'})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    input.disabled = false;
+    if (d.ok) refreshThread();
+  })
+  .catch(function(){ input.disabled = false; });
+}
+
+function refreshThread() {
+  if (!ppActiveId) return;
+  fetch('/api/conversation?id=' + encodeURIComponent(ppActiveId))
+    .then(function(r){ return r.json(); })
+    .then(function(d){ renderThread(d.conversation, d.messages||[]); });
+}
+
+function startPoll(id) {
+  if (ppPoll) clearInterval(ppPoll);
+  ppPoll = setInterval(function(){ if(ppActiveId===id) refreshThread(); }, 5000);
+}
+
+loadConvs();
+</script>
 </body>
 </html>
