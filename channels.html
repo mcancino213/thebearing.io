@@ -491,7 +491,7 @@
   <div class="ch-auth" id="ch-auth-gate">
     <div class="ch-auth-title">Your conversations</div>
     <div class="ch-auth-sub">Sign in to view your messages with properties.</div>
-    <button class="ch-auth-btn" onclick="tbAuth.showSignIn({title:'Sign in',onSuccess:initChannels})">Sign in</button>
+    <button class="ch-auth-btn" onclick="window.location='/my-account.html'">Sign in</button>
   </div>
 </div>
 
@@ -914,11 +914,22 @@ var chConvs = [];
 var chActiveId = null;
 var chPoll = null;
 
-window.addEventListener('DOMContentLoaded', function() {
-  tbAuth.loadClerk(function() {
-    var user = tbAuth.getUser();
-    if (user) initChannels(user);
-  });
+window.addEventListener('load', function() {
+  // Wait for Clerk to be fully initialized (it uses defer + load event)
+  function tryInit(attempts) {
+    if (window.Clerk && window.Clerk.user !== undefined) {
+      var user = window.Clerk.user;
+      if (user) {
+        initChannels(user);
+      } else {
+        // Not signed in — show sign in button (already showing)
+        document.getElementById('ch-auth-gate') && (document.getElementById('ch-auth-gate').style.display = 'flex');
+      }
+    } else if (attempts > 0) {
+      setTimeout(function() { tryInit(attempts - 1); }, 200);
+    }
+  }
+  tryInit(20); // Try for up to 4 seconds
 });
 
 function initChannels(user) {
