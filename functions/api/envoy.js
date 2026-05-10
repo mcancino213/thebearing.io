@@ -748,6 +748,236 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ error: 'method not allowed' }, 405);
     }
 
+    // ── /api/conversation ─────────────────────────────────────────
+    // Conversation data model:
+    //   conversation:{id}          → { id, propertySlug, propertyName, guestId,
+    //                                  guestEmail, guestName, status, createdAt,
+    //                                  lastMessageAt, lastMessagePreview,
+    //                                  enquiry: { arrival, departure, guests, notes } }
+    //   conversation:{id}:messages → [ { id, role, text, senderName, sentAt, readAt } ]
+    //   __conversations_index      → [ id, ... ] (all, newest first)
+    //   guest:{guestId}:convs      → [ id, ... ] (per-guest)
+    //   prop:{slug}:convs          → [ id, ... ] (per-property)
+
+    if (url.pathname === '/api/conversation') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // GET — fetch one conversation + messages, or list
+      if (request.method === 'GET') {
+        const id = url.searchParams.get('id');
+        const guestId = url.searchParams.get('guestId');
+        const slug = url.searchParams.get('slug');
+
+        // Fetch single conversation with messages
+        if (id) {
+          const raw = await env.DOSSIERS.get('conversation:' + id);
+          if (!raw) return jsonResponse({ error: 'not found' }, 404);
+          const conv = JSON.parse(raw);
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
+          const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+          return jsonResponse({ conversation: conv, messages });
+        }
+
+        // List conversations for a guest
+        if (guestId) {
+          const rawIds = await env.DOSSIERS.get('guest:' + guestId + ':convs');
+          const ids = rawIds ? JSON.parse(rawIds) : [];
+          const convs = (await Promise.all(ids.map(async i => {
+            const r = await env.DOSSIERS.get('conversation:' + i);
+            return r ? JSON.parse(r) : null;
+          }))).filter(Boolean).reverse();
+          return jsonResponse({ conversations: convs });
+        }
+
+        // List conversations for a property
+        if (slug) {
+          const rawIds = await env.DOSSIERS.get('prop:' + slug + ':convs');
+          const ids = rawIds ? JSON.parse(rawIds) : [];
+          const convs = (await Promise.all(ids.map(async i => {
+            const r = await env.DOSSIERS.get('conversation:' + i);
+            return r ? JSON.parse(r) : null;
+          }))).filter(Boolean).reverse();
+          return jsonResponse({ conversations: convs });
+        }
+
+        // List all conversations (admin)
+        const rawIndex = await env.DOSSIERS.get('__conversations_index');
+        const ids = rawIndex ? JSON.parse(rawIndex) : [];
+        const convs = (await Promise.all(ids.slice(-50).map(async i => {
+          const r = await env.DOSSIERS.get('conversation:' + i);
+          return r ? JSON.parse(r) : null;
+        }))).filter(Boolean).reverse();
+        return jsonResponse({ conversations: convs });
+      }
+
+      // POST — create conversation or send message
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        // Create new conversation (from enquiry)
+        if (body.action === 'create') {
+          const { propertySlug, propertyName, guestId, guestEmail, guestName,
+                  enquiry, firstMessage } = body;
+
+          if (!propertySlug || !guestEmail) {
+            return jsonResponse({ error: 'propertySlug and guestEmail required' }, 400);
+          }
+
+          const id = 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+          const now = new Date().toISOString();
+
+          const conv = {
+            id, propertySlug, propertyName: propertyName || propertySlug,
+            guestId: guestId || guestEmail,
+            guestEmail, guestName: guestName || guestEmail,
+            status: 'open',
+            createdAt: now, lastMessageAt: now,
+            lastMessagePreview: firstMessage ? firstMessage.substring(0, 100) : '',
+            enquiry: enquiry || {},
+            unreadAdmin: 1, unreadGuest: 0
+          };
+
+          // First message
+          const messages = [];
+          if (firstMessage) {
+            messages.push({
+              id: 'msg_' + Date.now(),
+              role: 'guest',
+              text: firstMessage,
+              senderName: guestName || guestEmail,
+              sentAt: now,
+              readAt: null
+            });
+          }
+
+          // Save conversation + messages
+          await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+          await env.DOSSIERS.put('conversation:' + id + ':messages', JSON.stringify(messages));
+
+          // Update indexes
+          const allRaw = await env.DOSSIERS.get('__conversations_index');
+          const allIds = allRaw ? JSON.parse(allRaw) : [];
+          allIds.push(id);
+          await env.DOSSIERS.put('__conversations_index', JSON.stringify(allIds));
+
+          const guestRaw = await env.DOSSIERS.get('guest:' + (guestId||guestEmail) + ':convs');
+          const guestIds = guestRaw ? JSON.parse(guestRaw) : [];
+          guestIds.push(id);
+          await env.DOSSIERS.put('guest:' + (guestId||guestEmail) + ':convs', JSON.stringify(guestIds));
+
+          const propRaw = await env.DOSSIERS.get('prop:' + propertySlug + ':convs');
+          const propIds = propRaw ? JSON.parse(propRaw) : [];
+          propIds.push(id);
+          await env.DOSSIERS.put('prop:' + propertySlug + ':convs', JSON.stringify(propIds));
+
+          // Email admin/partner notification
+          if (env.RESEND_API_KEY && firstMessage) {
+            try {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  from: 'The Bearing <bookings@thebearing.io>',
+                  to: ['miguel@thebearing.io'],
+                  subject: `New enquiry — ${propertyName} from ${guestName || guestEmail}`,
+                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversation.html?id=${id}`
+                })
+              });
+            } catch(e) { console.error('[Conv] Admin email error:', e.message); }
+          }
+
+          return jsonResponse({ ok: true, id, conversation: conv, messages });
+        }
+
+        // Send a message to existing conversation
+        if (body.action === 'message') {
+          const { id, role, text, senderName, senderEmail } = body;
+          if (!id || !text) return jsonResponse({ error: 'id and text required' }, 400);
+
+          const convRaw = await env.DOSSIERS.get('conversation:' + id);
+          if (!convRaw) return jsonResponse({ error: 'conversation not found' }, 404);
+          const conv = JSON.parse(convRaw);
+
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
+          const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+
+          const now = new Date().toISOString();
+          const msg = {
+            id: 'msg_' + Date.now(),
+            role: role || 'guest',
+            text, senderName: senderName || role,
+            sentAt: now, readAt: null
+          };
+          messages.push(msg);
+
+          // Update conversation metadata
+          conv.lastMessageAt = now;
+          conv.lastMessagePreview = text.substring(0, 100);
+          if (role === 'guest') conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+          else conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+
+          await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+          await env.DOSSIERS.put('conversation:' + id + ':messages', JSON.stringify(messages));
+
+          // Email notification to the other party
+          if (env.RESEND_API_KEY) {
+            try {
+              if (role === 'admin' || role === 'partner') {
+                // Notify guest
+                const replyUrl = `https://thebearing.io/channels.html?id=${id}`;
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
+                    to: [conv.guestEmail],
+                    reply_to: `reply+${id}@thebearing.io`,
+                    subject: `New message from ${conv.propertyName}`,
+                    text: `${senderName || conv.propertyName} sent you a message:\n\n"${text}"\n\nReply here: ${replyUrl}\n\n— The Bearing`
+                  })
+                });
+              } else {
+                // Notify admin
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: 'The Bearing <bookings@thebearing.io>',
+                    to: ['miguel@thebearing.io'],
+                    subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
+                    text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversation.html?id=${id}`
+                  })
+                });
+              }
+            } catch(e) { console.error('[Conv] Notify email error:', e.message); }
+          }
+
+          return jsonResponse({ ok: true, message: msg });
+        }
+
+        return jsonResponse({ error: 'invalid action' }, 400);
+      }
+
+      // PATCH — mark messages read, update status
+      if (request.method === 'PATCH') {
+        let body;
+        try { body = await request.json(); }
+        catch(e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        const { id, markReadFor, status } = body;
+        if (!id) return jsonResponse({ error: 'id required' }, 400);
+        const convRaw = await env.DOSSIERS.get('conversation:' + id);
+        if (!convRaw) return jsonResponse({ error: 'not found' }, 404);
+        const conv = JSON.parse(convRaw);
+        if (markReadFor === 'admin') conv.unreadAdmin = 0;
+        if (markReadFor === 'guest') conv.unreadGuest = 0;
+        if (status) conv.status = status;
+        await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+        return jsonResponse({ ok: true });
+      }
+    }
+
     // ── /api/members ──────────────────────────────────────────────
     if (url.pathname === '/api/members') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);

@@ -2037,56 +2037,65 @@ function populateReview(){
 }
 
 function populateConfirmation(){
-  var name   = val('inq-name');
-  var cabin  = val('inq-cabin') || 'Luxury Room';
+  var name     = val('inq-name');
+  var email    = val('inq-email');
+  var cabin    = val('inq-cabin') || 'Luxury Room';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
   var adultsInq2 = parseInt(val('inq-adults')||'2')||2;
   var childrenInq2 = parseInt(val('inq-children')||'0')||0;
   var guests = adultsInq2 + (adultsInq2===1?' adult':' adults') + (childrenInq2>0?', '+childrenInq2+(childrenInq2===1?' child':' children'):'');
+  var notes = val('inq-notes');
 
-  // Format dates — honest placeholders when user didn't provide them
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
-  var checkIn, checkOut;
-  if (checkin && checkout) {
-    checkIn = fmt(checkin);
-    checkOut = fmt(checkout);
-  } else if (checkin) {
-    checkIn = fmt(checkin);
-    checkOut = 'TBD';
-  } else if (checkout) {
-    checkIn = 'TBD';
-    checkOut = fmt(checkout);
-  } else {
-    checkIn = 'Flexible';
-    checkOut = 'Flexible';
-  }
+  var checkIn = checkin ? fmt(checkin) : 'Flexible';
+  var checkOut = checkout ? fmt(checkout) : 'Flexible';
 
-  // Build guest first message
+  // Get property info from page
+  var propSlug = (typeof SLUG !== 'undefined') ? SLUG : '';
   var propNameEl = document.getElementById('prop-name');
-  var propName = propNameEl ? propNameEl.textContent.trim() : '';
+  var propName = propNameEl ? propNameEl.textContent.trim() : propSlug;
+
+  // Build first message
   var guestMsg = 'Hi';
   if(name) guestMsg += ' — my name is ' + name;
-  guestMsg += '. I\'d like to inquire about the ' + cabin;
+  guestMsg += '. I\'d like to enquire about the ' + cabin;
   if(propName) guestMsg += ' at ' + propName;
   if(guests) guestMsg += ' for ' + guests;
   if(checkin && checkout) guestMsg += ', arriving ' + checkIn + ' and departing ' + checkOut;
   else if(checkin) guestMsg += ', arriving ' + checkIn;
-  else if(checkout) guestMsg += ', departing ' + checkOut;
   else guestMsg += '. My dates are flexible';
+  if(notes) guestMsg += '. ' + notes;
   guestMsg += '. Please let me know availability and next steps.';
 
-  var previewEl = document.getElementById('preview-msg');
-  if(previewEl) previewEl.textContent = guestMsg;
+  // Get Clerk user
+  var user = tbAuth.getUser();
+  var guestId = user ? user.id : email;
+  var guestName = name || (user ? (user.firstName + ' ' + (user.lastName||'')).trim() : '') || email;
 
-  // Update booking card dates and cabin
-  var cardDetails = document.querySelectorAll('.booking-card [data-checkin]');
-  var checkInEls  = document.querySelectorAll('#inbox-thread .checkin-val');
-  var checkOutEls = document.querySelectorAll('#inbox-thread .checkout-val');
-  var cabinEls    = document.querySelectorAll('#inbox-thread .cabin-val');
-  checkInEls.forEach(function(el){ el.textContent = checkIn; });
-  checkOutEls.forEach(function(el){ el.textContent = checkOut; });
-  cabinEls.forEach(function(el){ el.textContent = cabin; });
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'create',
+      propertySlug: propSlug,
+      propertyName: propName,
+      guestId: guestId,
+      guestEmail: email,
+      guestName: guestName,
+      enquiry: { arrival: checkin, departure: checkout, guests: guests, cabin: cabin, notes: notes },
+      firstMessage: guestMsg
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.ok) {
+      window._lastConvId = data.id;
+      var goBtn = document.getElementById('inq-go-channel-btn');
+      if(goBtn) goBtn.href = '/channels.html?id=' + data.id;
+    }
+  })
+  .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
 }
 
 // setText already defined
@@ -3106,8 +3115,10 @@ loadProperty();
           <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
           <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
         </div>
-        <a onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);return false;" href="#" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
+        <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/channels.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to channel
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
+        </a>
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
       </div>

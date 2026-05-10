@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Conversations — The Bearing</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversations — The Bearing Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
 :root{
@@ -171,6 +171,51 @@ tbody tr:hover{background:var(--bg);}
 
 
 </style>
+<style>
+/* Two-panel layout */
+.conv-layout{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 56px);overflow:hidden;}
+.conv-list-panel{border-right:1px solid var(--border);overflow-y:auto;background:var(--card-bg,#fff);}
+.conv-thread-panel{display:flex;flex-direction:column;overflow:hidden;}
+
+/* List items */
+.conv-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;gap:10px;transition:background .12s;}
+.conv-item:hover,.conv-item.active{background:var(--bg);}
+.conv-item.active{border-left:3px solid var(--accent,#c17f3e);}
+.conv-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent,#c17f3e),#d4924f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:600;flex-shrink:0;}
+.conv-meta{flex:1;min-width:0;}
+.conv-guest-name{font-size:.84rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-prop-name{font-size:.72rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-preview{font-size:.72rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+.conv-time{font-size:.62rem;color:var(--text3);flex-shrink:0;}
+.conv-unread{width:7px;height:7px;border-radius:50%;background:var(--accent,#c17f3e);flex-shrink:0;margin-top:5px;}
+
+/* Thread */
+.thread-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--card-bg,#fff);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.thread-title{font-size:.92rem;font-weight:600;color:var(--text);}
+.thread-sub{font-size:.7rem;color:var(--text3);margin-top:1px;}
+.messages-wrap{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;}
+.msg{display:flex;flex-direction:column;max-width:70%;}
+.msg.guest{align-self:flex-start;}
+.msg.admin,.msg.partner{align-self:flex-end;align-items:flex-end;}
+.msg-sender{font-size:.62rem;font-weight:600;color:var(--text3);margin-bottom:3px;padding:0 4px;}
+.msg-bubble{padding:10px 14px;border-radius:16px;font-size:.84rem;line-height:1.6;}
+.msg.guest .msg-bubble{background:var(--bg);border:1px solid var(--border);color:var(--text);}
+.msg.admin .msg-bubble,.msg.partner .msg-bubble{background:var(--accent,#c17f3e);color:#fff;}
+.msg-time{font-size:.6rem;color:var(--text3);margin-top:3px;padding:0 4px;}
+
+/* Input */
+.reply-wrap{padding:14px 16px;border-top:1px solid var(--border);background:var(--card-bg,#fff);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;}
+.reply-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:12px;font-family:'Geist',sans-serif;font-size:.84rem;resize:none;outline:none;max-height:120px;transition:border-color .15s;}
+.reply-input:focus{border-color:var(--accent,#c17f3e);}
+.reply-btn{padding:10px 18px;background:var(--accent,#c17f3e);color:#fff;border:none;border-radius:10px;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;}
+.reply-btn:disabled{opacity:.4;}
+
+/* Enquiry summary */
+.enq-pill{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 14px;font-size:.72rem;color:var(--text2);margin-bottom:4px;align-self:center;text-align:center;}
+
+/* No selection */
+.no-selection{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);}
+</style>
 </head>
 <body>
 <div class="app">
@@ -198,119 +243,188 @@ tbody tr:hover{background:var(--bg);}
     </div>
   </div>
 </aside>
-<div class="main-area">
-<div class="topbar">
-  <div><div class="topbar-title">Conversations</div><div class='topbar-sub'>12 open · 3 urgent</div></div>
-  <div class="topbar-right"><div class="filter-tabs"><button class="filter-tab active">All</button><button class="filter-tab">Urgent</button><button class="filter-tab">Unassigned</button></div></div>
-</div>
-<div class="page-body">
+<div class="main-area" style="padding:0;overflow:hidden;">
+  <div class="conv-layout">
 
-<div class="page-header">
-  <div class="page-eyebrow">Guest communications</div>
-  <div class="page-title">Conversations</div>
-  <div class="page-subtitle">Monitor all guest ↔ property threads. Step in when needed.</div>
-</div>
-<div style="display:grid;grid-template-columns:360px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:640px;">
-  <div style="border-right:1px solid var(--border);">
-    <div style="padding:14px;border-bottom:1px solid var(--border);display:flex;gap:8px;">
-      <input class="filter-input" style="flex:1;" placeholder="Search…">
-      <div class="filter-tabs" style="flex-shrink:0;">
-        <button class="filter-tab active" style="padding:5px 10px;font-size:12px;">All</button>
-        <button class="filter-tab" style="padding:5px 10px;font-size:12px;">Urgent</button>
-      </div>
+    <!-- Left: conversation list -->
+    <div class="conv-list-panel">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);">All conversations</div>
+      <div id="conv-list"><div style="padding:20px;color:var(--text3);font-size:.84rem;">Loading…</div></div>
     </div>
-    <div>
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:#fef2f2;cursor:pointer;border-left:3px solid var(--red);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">RP</div><div style="font-size:14px;font-weight:600;">Rachel Park</div></div>
-          <span class="badge badge-red" style="font-size:10px;">4d no reply</span>
-        </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Soneva Fushi · TB-0876</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">We haven't heard back about the overwater villa upgrade…</div>
-      </div>
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">NV</div><div style="font-size:14px;font-weight:600;">Nicolas Vidal</div></div>
-          <span class="badge badge-amber" style="font-size:10px;">2d no reply</span>
-        </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Chablé Yucatan · Enquiry</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Is there a private cenote accessible only to their guests?</div>
-      </div>
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">SA</div><div style="font-size:14px;font-weight:600;">Sarah Alderton</div></div>
-          <span class="badge badge-gray" style="font-size:10px;">Active</span>
-        </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Nour El Nil · TB-0847</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Could we arrange the private Edfu sunrise?</div>
-      </div>
-      <div style="padding:14px 16px;cursor:pointer;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">LH</div><div style="font-size:14px;font-weight:600;">Lena Hoffmann</div></div>
-          <span class="badge badge-gray" style="font-size:10px;">Active</span>
-        </div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Aqua Nera · TB-0889</div>
-        <div style="font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Requesting dietary menu for full 7-night itinerary</div>
-      </div>
-    </div>
-  </div>
 
-  <div style="display:flex;flex-direction:column;">
-    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:#fef9f4;">
-      <div class="avatar">RP</div>
-      <div>
-        <div style="font-size:15px;font-weight:600;">Rachel Park ↔ Soneva Fushi</div>
-        <div style="font-size:12px;color:var(--text2);">Booking TB-0876 · Maldives · <span style="color:var(--red);">Property hasn't replied in 4 days</span></div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <a href="admin-guest-detail.html" class="btn btn-ghost btn-sm">Guest profile</a>
-        <button class="btn btn-sm" style="background:var(--amber-bg);color:var(--amber);border-color:transparent;">Monitor</button>
-        <button class="btn btn-primary btn-sm">Step in</button>
+    <!-- Right: message thread -->
+    <div class="conv-thread-panel" id="conv-thread">
+      <div class="no-selection">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin-bottom:12px;"><path d="M2 2h12v9H9l-3 3v-3H2z"/></svg>
+        <div>Select a conversation to reply</div>
       </div>
     </div>
-    <div style="flex:1;padding:24px;display:flex;flex-direction:column;gap:18px;background:#fafafa;overflow-y:auto;">
-      <div style="display:flex;gap:12px;">
-        <div class="avatar avatar-sm">RP</div>
-        <div style="max-width:65%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Rachel Park · 3 Apr, 11:30 AM</div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:12px 15px;font-size:14px;line-height:1.6;">Hi, we were wondering if it's possible to upgrade to the overwater villa for our second week? We'd love that extra privacy.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;">
-        <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2c7a7a,#1a5858);">SF</div>
-        <div style="max-width:65%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Soneva Fushi · 3 Apr, 3:14 PM</div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:12px 15px;font-size:14px;line-height:1.6;">Dear Rachel, thank you for reaching out. I'll check availability for the overwater villa and come back to you shortly.</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;">
-        <div class="avatar avatar-sm">RP</div>
-        <div style="max-width:65%;">
-          <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Rachel Park · Today, 10:02 AM</div>
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:12px 15px;font-size:14px;line-height:1.6;">We haven't heard back about the overwater villa upgrade — it's been 4 days now. Could someone please follow up?</div>
-        </div>
-      </div>
-      <div style="background:var(--amber-bg);border:1px solid rgba(217,119,6,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:8px;">
-        ⚠ Soneva Fushi has not responded in 4 days. Consider stepping in as The Bearing.
-      </div>
-    </div>
-    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;">
-      <div style="display:flex;gap:8px;margin-bottom:8px;width:100%;justify-content:flex-start;">
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;">Send as The Bearing</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;">Add staff note</button>
-        <button class="btn btn-ghost btn-sm" style="font-size:12px;">Flag for follow-up</button>
-      </div>
-    </div>
-    <div style="padding:0 20px 16px;display:flex;gap:10px;align-items:flex-end;">
-      <textarea style="flex:1;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:none;min-height:80px;outline:none;background:var(--bg);" placeholder="Send as The Bearing — Rachel will see this as coming from your team…"></textarea>
-      <button class="btn btn-primary">Send</button>
-    </div>
+
   </div>
 </div>
-
-</div>
-</div>
 </div>
 
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0b0e14;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
+
+<script>
+var conversations = [];
+var activeConvId = null;
+var pollInterval = null;
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(function() { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, 2800);
+}
+
+function esc(text) {
+  return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function fmt(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function loadList() {
+  fetch('/api/conversation')
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      conversations = data.conversations || [];
+      renderList();
+      // Update badge in sidebar
+      var badge = document.querySelector('.sb-badge');
+      if (badge) badge.textContent = conversations.filter(function(c){ return c.unreadAdmin > 0; }).length || '';
+    })
+    .catch(function(e){ document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.84rem;">Error: ' + e.message + '</div>'; });
+}
+
+function renderList() {
+  var el = document.getElementById('conv-list');
+  if (!conversations.length) {
+    el.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:.84rem;">No conversations yet</div>';
+    return;
+  }
+  el.innerHTML = conversations.map(function(c) {
+    var initial = (c.guestName || c.guestEmail || '?')[0].toUpperCase();
+    var hasUnread = c.unreadAdmin > 0;
+    return '<div class="conv-item' + (c.id === activeConvId ? ' active' : '') + '" onclick="openConv('' + c.id + '')">' +
+      '<div class="conv-avatar">' + initial + '</div>' +
+      '<div class="conv-meta">' +
+        '<div class="conv-guest-name">' + (c.guestName || c.guestEmail) + '</div>' +
+        '<div class="conv-prop-name">' + (c.propertyName || c.propertySlug) + '</div>' +
+        '<div class="conv-preview">' + (c.lastMessagePreview || '') + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+        '<span class="conv-time">' + fmt(c.lastMessageAt) + '</span>' +
+        (hasUnread ? '<div class="conv-unread"></div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openConv(id) {
+  activeConvId = id;
+  renderList();
+
+  // Mark read
+  fetch('/api/conversation', {
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({id: id, markReadFor: 'admin'})
+  });
+
+  var conv = conversations.find(function(c){ return c.id === id; });
+  if (conv) conv.unreadAdmin = 0;
+
+  fetch('/api/conversation?id=' + encodeURIComponent(id))
+    .then(function(r){ return r.json(); })
+    .then(function(data){ renderThread(data.conversation, data.messages || []); startPolling(id); });
+}
+
+function renderThread(conv, messages) {
+  var enqHtml = '';
+  if (conv.enquiry) {
+    var parts = [];
+    if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
+    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
+    if (conv.enquiry.arrival) parts.push(conv.enquiry.arrival + (conv.enquiry.departure ? ' → ' + conv.enquiry.departure : ''));
+    if (parts.length) enqHtml = '<div class="enq-pill">Enquiry: ' + parts.join(' · ') + '</div>';
+  }
+
+  var msgsHtml = enqHtml + messages.map(function(m) {
+    var role = m.role === 'guest' ? 'guest' : 'admin';
+    var time = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + ' · ' + fmt(m.sentAt);
+    return '<div class="msg ' + role + '">' +
+      '<div class="msg-sender">' + (m.senderName || m.role) + '</div>' +
+      '<div class="msg-bubble">' + esc(m.text) + '</div>' +
+      '<div class="msg-time">' + time + '</div>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('conv-thread').innerHTML =
+    '<div class="thread-header">' +
+      '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent,#c17f3e),#d4924f);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;font-weight:600;flex-shrink:0;">' + (conv.guestName||'G')[0].toUpperCase() + '</div>' +
+      '<div>' +
+        '<div class="thread-title">' + (conv.guestName || conv.guestEmail) + '</div>' +
+        '<div class="thread-sub">' + conv.guestEmail + ' · ' + (conv.propertyName || conv.propertySlug) + '</div>' +
+      '</div>' +
+      '<span style="margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;">' + (conv.status || 'open') + '</span>' +
+    '</div>' +
+    '<div class="messages-wrap" id="messages-wrap">' + msgsHtml + '</div>' +
+    '<div class="reply-wrap">' +
+      '<textarea class="reply-input" id="reply-input" rows="2" placeholder="Reply to ' + (conv.guestName||'guest') + '…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply();}"></textarea>' +
+      '<button class="reply-btn" onclick="sendReply()">Send →</button>' +
+    '</div>';
+
+  setTimeout(function(){ var w=document.getElementById('messages-wrap'); if(w) w.scrollTop=w.scrollHeight; }, 50);
+}
+
+function sendReply() {
+  var input = document.getElementById('reply-input');
+  var text = input ? input.value.trim() : '';
+  if (!text || !activeConvId) return;
+  input.value = '';
+  input.disabled = true;
+
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'message',
+      id: activeConvId,
+      role: 'admin',
+      text: text,
+      senderName: 'The Bearing Team'
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    input.disabled = false;
+    if (data.ok) { refreshThread(); toast('Reply sent'); }
+    else toast('Error sending reply');
+  })
+  .catch(function(){ input.disabled = false; toast('Connection error'); });
+}
+
+function refreshThread() {
+  if (!activeConvId) return;
+  fetch('/api/conversation?id=' + encodeURIComponent(activeConvId))
+    .then(function(r){ return r.json(); })
+    .then(function(data){ renderThread(data.conversation, data.messages || []); });
+}
+
+function startPolling(id) {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(function() {
+    if (activeConvId === id) refreshThread();
+  }, 5000);
+}
+
+loadList();
+</script>
 </body>
 </html>

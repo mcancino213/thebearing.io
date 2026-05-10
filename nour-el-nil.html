@@ -1783,7 +1783,7 @@
           <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
           <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
         </div>
-        <a onclick="closeOverlay('inq-overlay');goStep(1);window.location='/channels.html';return false;" href="/channels.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
+        <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/channels.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to channel
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
@@ -1794,7 +1794,7 @@
       <!-- Action row -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
         <button class="close-btn" onclick="closeOverlay('inq-overlay');goStep(1)" style="margin:0;padding:12px;">Close panel</button>
-        <button onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);" style="padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Go to my channel →</button>
+        <button onclick="var id=window._lastConvId;closeOverlay('inq-overlay');goStep(1);window.location='/channels.html'+(id?'?id='+id:'');" style="padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Go to my channel →</button>
       </div>
 
     </div>
@@ -2144,48 +2144,59 @@ function populateReview(){
 }
 
 function populateConfirmation(){
-  var name   = val('inq-name');
-  var cabin  = val('inq-cabin') || 'Luxury Room';
+  var name     = val('inq-name');
+  var email    = val('inq-email');
+  var cabin    = val('inq-cabin') || 'Luxury Room';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
   var adultsInq2 = parseInt(val('inq-adults')||'2')||2;
   var childrenInq2 = parseInt(val('inq-children')||'0')||0;
   var guests = adultsInq2 + (adultsInq2===1?' adult':' adults') + (childrenInq2>0?', '+childrenInq2+(childrenInq2===1?' child':' children'):'');
+  var notes = val('inq-notes');
 
-  // Format dates — use real values if provided, otherwise fallback demo dates
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
-  var checkIn, checkOut;
-  if (checkin && checkout) {
-    checkIn = fmt(checkin);
-    checkOut = fmt(checkout);
-  } else if (checkin) {
-    checkIn = fmt(checkin);
-    var d = new Date(checkin+'T00:00'); d.setDate(d.getDate()+6);
-    checkOut = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-  } else {
-    checkIn = '15 Oct 2025';
-    checkOut = '21 Oct 2025';
-  }
+  var checkIn = checkin ? fmt(checkin) : '';
+  var checkOut = checkout ? fmt(checkout) : '';
 
-  // Build guest first message
+  // Build the first message
   var guestMsg = 'Hi';
   if(name) guestMsg += ' — my name is ' + name;
-  guestMsg += '. I\'d like to inquire about the ' + cabin + ' on Nour El Nil';
+  guestMsg += '. I\'d like to enquire about the ' + cabin + ' at Nour El Nil';
   if(guests) guestMsg += ' for ' + guests;
-  if(date) guestMsg += ', departing ' + checkIn;
+  if(checkIn && checkOut) guestMsg += ', arriving ' + checkIn + ' and departing ' + checkOut;
+  if(notes) guestMsg += '. ' + notes;
   guestMsg += '. Please let me know availability and next steps.';
 
-  var previewEl = document.getElementById('preview-msg');
-  if(previewEl) previewEl.textContent = guestMsg;
+  // Get Clerk user
+  var user = tbAuth.getUser();
+  var guestId = user ? user.id : email;
+  var guestName = name || (user ? (user.firstName + ' ' + user.lastName).trim() : '') || email;
 
-  // Update booking card dates and cabin
-  var cardDetails = document.querySelectorAll('.booking-card [data-checkin]');
-  var checkInEls  = document.querySelectorAll('#inbox-thread .checkin-val');
-  var checkOutEls = document.querySelectorAll('#inbox-thread .checkout-val');
-  var cabinEls    = document.querySelectorAll('#inbox-thread .cabin-val');
-  checkInEls.forEach(function(el){ el.textContent = checkIn; });
-  checkOutEls.forEach(function(el){ el.textContent = checkOut; });
-  cabinEls.forEach(function(el){ el.textContent = cabin; });
+  // Create real conversation via API
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'create',
+      propertySlug: 'nour-el-nil',
+      propertyName: 'Nour El Nil',
+      guestId: guestId,
+      guestEmail: email,
+      guestName: guestName,
+      enquiry: { arrival: checkin, departure: checkout, guests: guests, cabin: cabin, notes: notes },
+      firstMessage: guestMsg
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.ok) {
+      // Store conversation ID for the "Go to channel" button
+      window._lastConvId = data.id;
+      var goBtn = document.getElementById('inq-go-channel-btn');
+      if(goBtn) goBtn.href = '/channels.html?id=' + data.id;
+    }
+  })
+  .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
 }
 
 function setText(id, txt){
