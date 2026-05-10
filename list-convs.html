@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>List Conversations</title></head>
+<body>
+<script>
+fetch('/api/conversation')
+.then(function(r){ return r.json(); })
+.then(function(d){ 
+  document.body.innerHTML = '<pre>' + JSON.stringify(d.conversations.map(function(c){
+    return {id: c.id, status: c.status, preview: c.lastMessagePreview, created: c.createdAt};
+  }), null, 2) + '</pre>'; 
+});
+</script>
+</body>
+</html>
