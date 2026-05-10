@@ -312,31 +312,64 @@ function loadList() {
 function renderList() {
   var el = document.getElementById('conv-list');
   if (!conversations.length) {
-    el.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:.84rem;">No conversations yet</div>';
+    el.innerHTML = '';
+    var empty = document.createElement('div');
+    empty.style.cssText = 'padding:32px 16px;text-align:center;color:var(--text3);font-size:.84rem;';
+    empty.textContent = 'No conversations yet';
+    el.appendChild(empty);
     return;
   }
-  el.innerHTML = conversations.map(function(c) {
+  el.innerHTML = '';
+  conversations.forEach(function(c) {
     var initial = (c.guestName || c.guestEmail || '?')[0].toUpperCase();
     var hasUnread = c.unreadAdmin > 0;
-    return '<div class="conv-item' + (c.id === activeConvId ? ' active' : '') + '" data-id="' + c.id + '">' +
-      '<div class="conv-avatar">' + initial + '</div>' +
-      '<div class="conv-meta">' +
-        '<div class="conv-guest-name">' + (c.guestName || c.guestEmail) + '</div>' +
-        '<div class="conv-prop-name">' + (c.propertyName || c.propertySlug) + '</div>' +
-        '<div class="conv-preview">' + (c.lastMessagePreview || '') + '</div>' +
-      '</div>' +
-      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
-        '<span class="conv-time">' + fmt(c.lastMessageAt) + '</span>' +
-        (hasUnread ? '<div class="conv-unread"></div>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
 
-  // Wire clicks via delegation
-  el.querySelectorAll('.conv-item[data-id]').forEach(function(item) {
-    item.addEventListener('click', function() {
-      openConv(this.getAttribute('data-id'));
-    });
+    var item = document.createElement('div');
+    item.className = 'conv-item' + (c.id === activeConvId ? ' active' : '');
+    item.setAttribute('data-id', c.id);
+    item.addEventListener('click', function() { openConv(c.id); });
+
+    var avatar = document.createElement('div');
+    avatar.className = 'conv-avatar';
+    avatar.textContent = initial;
+
+    var meta = document.createElement('div');
+    meta.className = 'conv-meta';
+
+    var guestName = document.createElement('div');
+    guestName.className = 'conv-guest-name';
+    guestName.textContent = c.guestName || c.guestEmail || '';
+
+    var propName = document.createElement('div');
+    propName.className = 'conv-prop-name';
+    propName.textContent = c.propertyName || c.propertySlug || '';
+
+    var preview = document.createElement('div');
+    preview.className = 'conv-preview';
+    preview.textContent = c.lastMessagePreview || '';
+
+    meta.appendChild(guestName);
+    meta.appendChild(propName);
+    meta.appendChild(preview);
+
+    var right = document.createElement('div');
+    right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;';
+
+    var time = document.createElement('span');
+    time.className = 'conv-time';
+    time.textContent = fmt(c.lastMessageAt);
+    right.appendChild(time);
+
+    if (hasUnread) {
+      var dot = document.createElement('div');
+      dot.className = 'conv-unread';
+      right.appendChild(dot);
+    }
+
+    item.appendChild(avatar);
+    item.appendChild(meta);
+    item.appendChild(right);
+    el.appendChild(item);
   });
 }
 function openConv(id) {
