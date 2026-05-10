@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head><title>Unarchive Conversation</title></head>
+<body>
+<script>
+fetch('/api/conversation', {
+  method: 'PATCH',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({id: 'conv_1778426339986_81iqg', status: 'open'})
+})
+.then(function(r){ return r.json(); })
+.then(function(d){ document.body.innerHTML = '<h2>Done: ' + JSON.stringify(d) + '</h2>'; })
+.catch(function(e){ document.body.innerHTML = '<h2>Error: ' + e.message + '</h2>'; });
+</script>
+<p>Unarchiving conversation...</p>
+</body>
+</html>
