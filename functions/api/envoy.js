@@ -927,6 +927,7 @@ View in admin: https://thebearing.io/admin-bookings.html
               if (role === 'admin' || role === 'partner') {
                 // Notify guest
                 const replyUrl = `https://thebearing.io/channels.html?id=${id}`;
+                const displaySender = senderName || conv.propertyName;
                 await fetch('https://api.resend.com/emails', {
                   method: 'POST',
                   headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -934,8 +935,8 @@ View in admin: https://thebearing.io/admin-bookings.html
                     from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
                     to: [conv.guestEmail],
                     reply_to: `reply+${id}@thebearing.io`,
-                    subject: `New message from ${conv.propertyName} — The Bearing`,
-                    text: `${conv.propertyName} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation channel here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io`
+                    subject: `New message about your ${conv.propertyName} enquiry`,
+                    text: `${displaySender} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation channel here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io`
                   })
                 });
               } else {
