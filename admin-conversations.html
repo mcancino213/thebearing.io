@@ -291,15 +291,22 @@ function fmt(d) {
 
 function loadList() {
   fetch('/api/conversation')
-    .then(function(r){ return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data){
+      console.log('[Convs] loaded:', data);
       conversations = data.conversations || [];
       renderList();
-      // Update badge in sidebar
+      var unread = conversations.filter(function(c){ return c.unreadAdmin > 0; }).length;
       var badge = document.querySelector('.sb-badge');
-      if (badge) badge.textContent = conversations.filter(function(c){ return c.unreadAdmin > 0; }).length || '';
+      if (badge) badge.textContent = unread || '';
     })
-    .catch(function(e){ document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.84rem;">Error: ' + e.message + '</div>'; });
+    .catch(function(e){
+      console.error('[Convs] loadList error:', e);
+      document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.84rem;">Error loading: ' + e.message + '</div>';
+    });
 }
 
 function renderList() {
