@@ -829,12 +829,12 @@ View in admin: https://thebearing.io/admin-bookings.html
           const guestKey = guestId || guestEmail;
           const existingRaw = await env.DOSSIERS.get('guest:' + guestKey + ':convs');
           const existingIds = existingRaw ? JSON.parse(existingRaw) : [];
-          for (const existId of existingIds) {
+          for (let ei = 0; ei < existingIds.length; ei++) {
+            const existId = existingIds[ei];
             const existConvRaw = await env.DOSSIERS.get('conversation:' + existId);
             if (!existConvRaw) continue;
             const existConv = JSON.parse(existConvRaw);
             if (existConv.propertySlug === propertySlug && existConv.status === 'open') {
-              // Reuse existing conversation — just add the message if new
               if (firstMessage) {
                 const msgsRaw = await env.DOSSIERS.get('conversation:' + existId + ':messages');
                 const msgs = msgsRaw ? JSON.parse(msgsRaw) : [];
