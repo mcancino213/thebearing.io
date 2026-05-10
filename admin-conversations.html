@@ -527,9 +527,16 @@ function sendReply() {
 
 function refreshThread() {
   if (!activeConvId) return;
+  var input = document.getElementById('reply-input');
+  var draft = input ? input.value : '';
   fetch('/api/conversation?id=' + encodeURIComponent(activeConvId))
     .then(function(r){ return r.json(); })
-    .then(function(data){ renderThread(data.conversation, data.messages || []); });
+    .then(function(data){
+      renderThread(data.conversation, data.messages || []);
+      // Restore draft after re-render
+      var newInput = document.getElementById('reply-input');
+      if (newInput && draft) newInput.value = draft;
+    });
 }
 
 function startPolling(id) {

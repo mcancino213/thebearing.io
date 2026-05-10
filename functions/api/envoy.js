@@ -934,8 +934,8 @@ View in admin: https://thebearing.io/admin-bookings.html
                     from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
                     to: [conv.guestEmail],
                     reply_to: `reply+${id}@thebearing.io`,
-                    subject: `New message from ${conv.propertyName}`,
-                    text: `${senderName || conv.propertyName} sent you a message:\n\n"${text}"\n\nReply here: ${replyUrl}\n\n— The Bearing`
+                    subject: `New message from ${conv.propertyName} — The Bearing`,
+                    text: `${conv.propertyName} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation channel here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io`
                   })
                 });
               } else {
@@ -976,6 +976,98 @@ View in admin: https://thebearing.io/admin-bookings.html
         await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
         return jsonResponse({ ok: true });
       }
+    }
+
+    // ── /api/inbound-email ────────────────────────────────────────
+    // Resend inbound webhook — parses email replies and saves to conversation
+    // Setup: In Resend dashboard → Inbound → Add route for reply+*@thebearing.io
+    // Webhook URL: https://thebearing.io/api/inbound-email
+    if (url.pathname === '/api/inbound-email') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      let body;
+      try { body = await request.json(); }
+      catch(e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+      // Resend inbound email format:
+      // body.to = ["reply+conv_xxx@thebearing.io"]
+      // body.from = "guest@email.com"
+      // body.text = email body text
+      // body.subject = "Re: New message from..."
+
+      const toAddresses = body.to || [];
+      let convId = null;
+
+      // Extract conversation ID from reply+{id}@thebearing.io
+      for (const addr of toAddresses) {
+        const m = addr.match(/reply\+([a-zA-Z0-9_]+)@thebearing\.io/);
+        if (m) { convId = m[1]; break; }
+      }
+
+      if (!convId) return jsonResponse({ error: 'no conversation ID in recipient' }, 400);
+
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+      if (!convRaw) return jsonResponse({ error: 'conversation not found' }, 404);
+      const conv = JSON.parse(convRaw);
+
+      // Extract reply text — strip quoted content (lines starting with >)
+      let text = (body.text || '').trim();
+      // Remove quoted reply content
+      text = text.split('\n')
+        .filter(line => !line.trim().startsWith('>'))
+        .join('\n')
+        .trim();
+      // Remove common email signature separators
+      const sigSeparators = ['--\n', '— The Bearing', 'On ', 'Sent from'];
+      for (const sep of sigSeparators) {
+        const idx = text.indexOf(sep);
+        if (idx > 20) { text = text.substring(0, idx).trim(); break; }
+      }
+
+      if (!text || text.length < 2) {
+        return jsonResponse({ ok: true, skipped: 'empty reply' });
+      }
+
+      // Save message as guest reply
+      const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+      const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+      const now = new Date().toISOString();
+      const msg = {
+        id: 'msg_' + Date.now(),
+        role: 'guest',
+        text,
+        senderName: conv.guestName || body.from || 'Guest',
+        sentAt: now,
+        readAt: null,
+        source: 'email'
+      };
+      messages.push(msg);
+
+      conv.lastMessageAt = now;
+      conv.lastMessagePreview = text.substring(0, 100);
+      conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+
+      await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+      await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+
+      // Notify admin
+      if (env.RESEND_API_KEY) {
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'The Bearing <bookings@thebearing.io>',
+              to: ['miguel@thebearing.io'],
+              subject: `Email reply from ${conv.guestName} — ${conv.propertyName}`,
+              text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html`
+            })
+          });
+        } catch(e) { console.error('[Inbound] Notify error:', e.message); }
+      }
+
+      return jsonResponse({ ok: true, convId, messageId: msg.id });
     }
 
     // ── /api/members ──────────────────────────────────────────────
