@@ -983,22 +983,53 @@ function chRenderList() {
     el.innerHTML = '<div class="ch-empty">No conversations yet.<br><br>Send an enquiry from a property page to get started.</div>';
     return;
   }
-  el.innerHTML = chConvs.map(function(c) {
+  el.innerHTML = '';
+  chConvs.forEach(function(c) {
     var ini = (c.propertyName||c.propertySlug||'?')[0].toUpperCase();
     var time = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
     var unread = c.unreadGuest > 0;
-    return '<div class="ch-item' + (c.id===chActiveId?' active':'') + '" onclick="chOpen(\'' + c.id + '\')">' +
-      '<div class="ch-avatar">' + ini + '</div>' +
-      '<div class="ch-meta">' +
-        '<div class="ch-prop">' + (c.propertyName||c.propertySlug) + '</div>' +
-        '<div class="ch-preview">' + (c.lastMessagePreview||'No messages yet') + '</div>' +
-      '</div>' +
-      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
-        '<span class="ch-time">' + time + '</span>' +
-        (unread ? '<div class="ch-dot"></div>' : '') +
-      '</div>' +
-    '</div>';
-  }).join('');
+
+    var item = document.createElement('div');
+    item.className = 'ch-item' + (c.id===chActiveId?' active':'');
+    item.addEventListener('click', function(){ chOpen(c.id); });
+
+    var av = document.createElement('div');
+    av.className = 'ch-avatar';
+    av.textContent = ini;
+
+    var meta = document.createElement('div');
+    meta.className = 'ch-meta';
+
+    var prop = document.createElement('div');
+    prop.className = 'ch-prop';
+    prop.textContent = c.propertyName||c.propertySlug;
+
+    var preview = document.createElement('div');
+    preview.className = 'ch-preview';
+    preview.textContent = c.lastMessagePreview||'No messages yet';
+
+    meta.appendChild(prop);
+    meta.appendChild(preview);
+
+    var right = document.createElement('div');
+    right.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;';
+
+    var timeEl = document.createElement('span');
+    timeEl.className = 'ch-time';
+    timeEl.textContent = time;
+    right.appendChild(timeEl);
+
+    if (unread) {
+      var dot = document.createElement('div');
+      dot.className = 'ch-dot';
+      right.appendChild(dot);
+    }
+
+    item.appendChild(av);
+    item.appendChild(meta);
+    item.appendChild(right);
+    el.appendChild(item);
+  });
 }
 
 function chOpen(id) {
