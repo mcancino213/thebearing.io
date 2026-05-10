@@ -207,9 +207,9 @@ tbody tr:hover{background:var(--bg);}
   <div style="font-size:1.1rem;font-weight:600;color:var(--text);margin-top:2px;">Conversations</div>
 </div>
 
-<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;flex:1;min-height:0;">
+<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:calc(100vh - 200px);min-height:500px;">
   <!-- Left: conversation list -->
-  <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
+  <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
     <div style="padding:16px;border-bottom:1px solid var(--border);">
       <input class="filter-input" style="width:100%;" placeholder="Search conversations…" oninput="filterConvs(this.value)">
     </div>
@@ -218,7 +218,7 @@ tbody tr:hover{background:var(--bg);}
     </div>
   </div>
   <!-- Right: message thread -->
-  <div id="pp-conv-thread" style="display:flex;flex-direction:column;overflow:hidden;">
+  <div id="pp-conv-thread" style="display:flex;flex-direction:column;overflow:hidden;height:100%;">
     <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;">
       Select a conversation to reply
     </div>
@@ -422,7 +422,7 @@ function renderThread(conv, messages) {
 
   // Reply input
   var replyArea = document.createElement('div');
-  replyArea.style.cssText = 'padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;';
+  replyArea.style.cssText = 'padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;background:var(--surface);';
 
   var ta = document.createElement('textarea');
   ta.id = 'pp-reply-input';
