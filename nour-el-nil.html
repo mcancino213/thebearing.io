@@ -1658,8 +1658,23 @@
         </div>
         <div class="f-row">
           <div class="f-field">
-            <label class="f-lbl" for="inq-guests">Guests</label>
-            <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
+            <label class="f-lbl" for="inq-adults">Adults</label>
+            <select class="f-inp" id="inq-adults" name="adults">
+              <option value="1">1 adult</option>
+              <option value="2" selected>2 adults</option>
+              <option value="3">3 adults</option>
+              <option value="4">4 adults</option>
+              <option value="5">5 adults</option>
+              <option value="6">6 adults</option>
+            </select>
+            <label class="f-lbl" for="inq-children" style="margin-top:10px;">Children (optional)</label>
+            <select class="f-inp" id="inq-children" name="children">
+              <option value="0">No children</option>
+              <option value="1">1 child</option>
+              <option value="2">2 children</option>
+              <option value="3">3 children</option>
+              <option value="4">4 children</option>
+            </select>
           </div>
         </div>
 
@@ -1768,93 +1783,13 @@
           <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
           <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
         </div>
-        <a onclick="toast('Opening your channel…');closeOverlay('inq-overlay');goStep(1);return false;" href="#" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
+        <a onclick="closeOverlay('inq-overlay');goStep(1);window.location='/channels.html';return false;" href="/channels.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to channel
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
       </div>
 
-      <!-- iPhone-style conversation -->
-      <div class="inbox-wrap">
 
-        <div style="padding:10px 14px 9px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7a5820,#4a3010);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.85rem;">N</div>
-          <div style="flex:1;">
-            <div style="font-size:.79rem;font-weight:500;color:#fff;">Nour El Nil</div>
-            <div style="font-size:.6rem;color:rgba(255,255,255,.3);">via The Bearing · encrypted</div>
-          </div>
-          <div class="inbox-badge">● Live</div>
-        </div>
-
-        <div class="inbox-thread" id="inbox-thread" style="max-height:400px;overflow-y:auto;">
-          <div style="text-align:center;margin:4px 0 8px;">
-            <span style="font-size:.57rem;color:rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:3px 10px;border-radius:100px;">Today</span>
-          </div>
-
-          <div class="inbox-msg guest">
-            <div class="inbox-bubble" id="preview-msg">Hi — I'd like to inquire about the Deluxe Suite on Nour El Nil for 2 guests, departing 15 October 2025. Please let me know availability and next steps.</div>
-            <div class="inbox-time">10:42 AM · Delivered ✓✓</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender">Nour El Nil</div>
-            <div class="inbox-bubble">Thank you so much — we're genuinely thrilled to hear from you. The Nile in October is extraordinary. A member of our team will reply personally within 24 hours with availability and full details. Welcome to Nour El Nil.</div>
-            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">10:42 AM · Automatic reply</div>
-          </div>
-
-          <div class="inbox-msg guest" style="margin-top:12px;">
-            <div class="inbox-bubble">That's perfect — I've reviewed everything and I'm ready to confirm. Please go ahead and hold the Deluxe Suite for those dates.</div>
-            <div class="inbox-time">11:18 AM · Delivered ✓✓</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender">Nour El Nil</div>
-            <div class="inbox-bubble" style="padding:0;overflow:hidden;background:none;border:none;">
-              <div class="booking-card" onclick="toast('Full booking details coming soon')">
-                <div style="height:88px;overflow:hidden;position:relative;">
-                  <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&fit=crop" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 62%;">
-                  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(13,38,13,.82));"></div>
-                  <div style="position:absolute;top:7px;right:8px;background:rgba(120,220,140,.15);border:1px solid rgba(120,220,140,.25);border-radius:100px;padding:2px 7px;display:flex;align-items:center;gap:3px;">
-                    <div style="width:4px;height:4px;border-radius:50%;background:#4ade80;"></div>
-                    <span style="font-size:.54rem;font-weight:600;color:rgba(120,220,140,.9);letter-spacing:.07em;">CONFIRMED</span>
-                  </div>
-                  <div style="position:absolute;bottom:8px;left:11px;">
-                    <div style="font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:1px;">Booking confirmation</div>
-                    <div style="font-family:'Instrument Serif',serif;font-size:.92rem;color:#fff;font-style:italic;">Nour El Nil · Deluxe Suite</div>
-                  </div>
-                </div>
-                <div style="background:rgba(13,38,13,.95);padding:6px 12px 7px;">
-                  <div style="font-size:.64rem;color:rgba(255,255,255,.4);">Esna → Aswan · Nile, Egypt</div>
-                </div>
-                <div style="background:rgba(255,255,255,.06);padding:9px 12px;display:flex;border-top:1px solid rgba(255,255,255,.06);">
-                  <div style="flex:1;border-right:1px solid rgba(255,255,255,.06);padding-right:10px;">
-                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check in</div>
-                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkin-val">15 Oct 2025</div>
-                  </div>
-                  <div style="flex:1;padding-left:10px;">
-                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check out</div>
-                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkout-val">21 Oct 2025</div>
-                  </div>
-                </div>
-                <div style="background:rgba(255,255,255,.04);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.05);">
-                  <div style="font-size:.65rem;color:rgba(255,255,255,.4);">2 guests · 6 days</div>
-                  <div style="font-size:.65rem;color:rgba(120,220,140,.7);font-weight:500;display:flex;align-items:center;gap:3px;">View details <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg></div>
-                </div>
-              </div>
-            </div>
-            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">11:19 AM</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:8px;">
-            <div class="inbox-typing"><div class="inbox-dot"></div><div class="inbox-dot"></div><div class="inbox-dot"></div></div>
-          </div>
-        </div>
-
-        <div class="inbox-input-row">
-          <div class="inbox-input-fake">Message Nour El Nil…</div>
-          <div class="inbox-send-btn"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
-        </div>
-      </div>
 
       <!-- Action row -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
@@ -2181,7 +2116,9 @@ function populateReview(){
   var email  = val('inq-email')  || 'sarah.mitchell@gmail.com';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
-  var guests = val('inq-guests') || '2 adults';
+  var adultsInq = parseInt(val('inq-adults')||'2')||2;
+  var childrenInq = parseInt(val('inq-children')||'0')||0;
+  var guests = adultsInq + (adultsInq===1?' adult':' adults') + (childrenInq>0?', '+childrenInq+(childrenInq===1?' child':' children'):'');
   var cabin  = val('inq-cabin')  || 'Deluxe Suite';
   var notes  = val('inq-notes');
 
@@ -2211,7 +2148,9 @@ function populateConfirmation(){
   var cabin  = val('inq-cabin') || 'Luxury Room';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
-  var guests = val('inq-guests') || '2 guests';
+  var adultsInq2 = parseInt(val('inq-adults')||'2')||2;
+  var childrenInq2 = parseInt(val('inq-children')||'0')||0;
+  var guests = adultsInq2 + (adultsInq2===1?' adult':' adults') + (childrenInq2>0?', '+childrenInq2+(childrenInq2===1?' child':' children'):'');
 
   // Format dates — use real values if provided, otherwise fallback demo dates
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
@@ -2692,24 +2631,24 @@ function tcSearchFromInput(inputId) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
-          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('tb-co-departure');if(this.value){dep.min=this.value;if(!dep.value||dep.value<this.value){dep.value='';try{dep.showPicker()}catch(e){}}}tbUpdateSummary();" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
         </div>
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
-          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('tb-co-departure');if(this.value){dep.min=this.value;if(!dep.value||dep.value<this.value){dep.value='';try{dep.showPicker()}catch(e){}}}tbUpdateSummary();" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
-          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
-            <option>1 adult</option>
-            <option selected>2 adults</option>
-            <option>3 adults</option>
-            <option>4 adults</option>
-            <option>2 adults, 1 child</option>
-            <option>2 adults, 2 children</option>
+          <select id="tb-co-adults" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option value="1">1 adult</option>
+            <option value="2" selected>2 adults</option>
+            <option value="3">3 adults</option>
+            <option value="4">4 adults</option>
+            <option value="5">5 adults</option>
+            <option value="6">6 adults</option>
           </select>
         </div>
         <div>
@@ -2718,6 +2657,17 @@ function tcSearchFromInput(inputId) {
             <!-- Populated dynamically per property -->
           </select>
         </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Children (optional)</label>
+        <select id="tb-co-children" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+          <option value="0">No children</option>
+          <option value="1">1 child</option>
+          <option value="2">2 children</option>
+          <option value="3">3 children</option>
+          <option value="4">4 children</option>
+        </select>
       </div>
 
       <div style="margin-bottom:16px;">
@@ -3128,7 +3078,11 @@ function tbSubmitBooking() {
   var roomSel = document.getElementById('tb-co-room');
   var room = roomSel ? roomSel.options[roomSel.selectedIndex].text : '';
   var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
-  var guests = (document.getElementById('tb-co-guests') || {}).value || '2 adults';
+  var adultsEl = document.getElementById('tb-co-adults');
+  var childrenEl = document.getElementById('tb-co-children');
+  var adultsVal = adultsEl ? parseInt(adultsEl.value)||2 : 2;
+  var childrenVal = childrenEl ? parseInt(childrenEl.value)||0 : 0;
+  var guests = adultsVal + (adultsVal===1?' adult':' adults') + (childrenVal>0?', '+childrenVal+(childrenVal===1?' child':' children'):'');
   var notes = (document.getElementById('tb-co-notes') || {}).value || '';
 
   var slug = (typeof SLUG !== 'undefined') ? SLUG : '';
@@ -3176,7 +3130,8 @@ function tbSubmitBooking() {
     btn.style.opacity = '1';
     btn.style.pointerEvents = 'auto';
     btnText.textContent = 'Pay deposit now';
-    alert('Connection error — please check your internet and try again.');
+    console.error('[Booking] Error:', e);
+    alert('Connection error: ' + e.message + ' — please try again.');
   });
 }
 

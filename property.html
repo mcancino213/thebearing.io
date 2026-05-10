@@ -2008,7 +2008,9 @@ function populateReview(){
   var email  = val('inq-email')  || 'sarah.mitchell@gmail.com';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
-  var guests = val('inq-guests') || '2 adults';
+  var adultsInq = parseInt(val('inq-adults')||'2')||2;
+  var childrenInq = parseInt(val('inq-children')||'0')||0;
+  var guests = adultsInq + (adultsInq===1?' adult':' adults') + (childrenInq>0?', '+childrenInq+(childrenInq===1?' child':' children'):'');
   var cabin  = val('inq-cabin')  || 'Deluxe Suite';
   var notes  = val('inq-notes');
 
@@ -2039,7 +2041,9 @@ function populateConfirmation(){
   var cabin  = val('inq-cabin') || 'Luxury Room';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
-  var guests = val('inq-guests') || '2 guests';
+  var adultsInq2 = parseInt(val('inq-adults')||'2')||2;
+  var childrenInq2 = parseInt(val('inq-children')||'0')||0;
+  var guests = adultsInq2 + (adultsInq2===1?' adult':' adults') + (childrenInq2>0?', '+childrenInq2+(childrenInq2===1?' child':' children'):'');
 
   // Format dates — honest placeholders when user didn't provide them
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
@@ -2434,7 +2438,11 @@ function tbSubmitBooking() {
   var roomSel = document.getElementById('tb-co-room');
   var room = roomSel ? roomSel.options[roomSel.selectedIndex].text : '';
   var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
-  var guests = (document.getElementById('tb-co-guests') || {}).value || '2 adults';
+  var adultsEl = document.getElementById('tb-co-adults');
+  var childrenEl = document.getElementById('tb-co-children');
+  var adultsVal = adultsEl ? parseInt(adultsEl.value)||2 : 2;
+  var childrenVal = childrenEl ? parseInt(childrenEl.value)||0 : 0;
+  var guests = adultsVal + (adultsVal===1?' adult':' adults') + (childrenVal>0?', '+childrenVal+(childrenVal===1?' child':' children'):'');
   var notes = (document.getElementById('tb-co-notes') || {}).value || '';
 
   var slug = (typeof SLUG !== 'undefined') ? SLUG : '';
@@ -3453,24 +3461,24 @@ document.addEventListener('keydown', function(e) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Arrival date</label>
-          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-arrival" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('tb-co-departure');if(this.value){dep.min=this.value;if(!dep.value||dep.value<this.value){dep.value='';try{dep.showPicker()}catch(e){}}}tbUpdateSummary();" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
         </div>
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Departure date</label>
-          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc';tbUpdateSummary()">
+          <input type="date" id="tb-co-departure" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;transition:border-color .15s;cursor:pointer;" onclick="try{this.showPicker()}catch(e){}" onchange="var dep=document.getElementById('tb-co-departure');if(this.value){dep.min=this.value;if(!dep.value||dep.value<this.value){dep.value='';try{dep.showPicker()}catch(e){}}}tbUpdateSummary();" onfocus="this.style.borderColor='#b05830'" onblur="this.style.borderColor='#ddd8cc'">
         </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
         <div>
           <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Guests</label>
-          <select id="tb-co-guests" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
-            <option>1 adult</option>
-            <option selected>2 adults</option>
-            <option>3 adults</option>
-            <option>4 adults</option>
-            <option>2 adults, 1 child</option>
-            <option>2 adults, 2 children</option>
+          <select id="tb-co-adults" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+            <option value="1">1 adult</option>
+            <option value="2" selected>2 adults</option>
+            <option value="3">3 adults</option>
+            <option value="4">4 adults</option>
+            <option value="5">5 adults</option>
+            <option value="6">6 adults</option>
           </select>
         </div>
         <div>
@@ -3479,6 +3487,17 @@ document.addEventListener('keydown', function(e) {
             <!-- Populated dynamically per property -->
           </select>
         </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:.72rem;font-weight:600;color:#1e1810;display:block;margin-bottom:5px;">Children (optional)</label>
+        <select id="tb-co-children" style="width:100%;padding:10px 12px;border:1px solid #ddd8cc;border-radius:10px;font-family:'Geist',sans-serif;font-size:.84rem;color:#1e1810;outline:none;background:#fff;" onchange="tbUpdateSummary()">
+          <option value="0">No children</option>
+          <option value="1">1 child</option>
+          <option value="2">2 children</option>
+          <option value="3">3 children</option>
+          <option value="4">4 children</option>
+        </select>
       </div>
 
       <div style="margin-bottom:16px;">
