@@ -2953,7 +2953,7 @@ function tbUpdateSummary() {
     if (nights < 0) nights = 0;
   }
 
-  var total   = roomPrice * parseInt(guests) * (nights || 1);
+  var total   = roomPrice; // Price is per trip, already all-inclusive
   var deposit = Math.round(total * tbCheckout.commissionRate);
   var balance = total - deposit;
   tbCheckout.totalAmount   = total;
