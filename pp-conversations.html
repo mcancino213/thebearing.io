@@ -31,8 +31,8 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 
 /* ── LAYOUT ── */
 .app{display:flex;min-height:100vh;}
-.main-area{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
-.page-body{flex:1;padding:36px 40px;overflow-y:auto;}
+.main-area{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+.page-body{flex:1;padding:36px 40px;overflow:hidden;display:flex;flex-direction:column;}
 
 /* ── TOPBAR ── */
 .topbar{height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:50;}
@@ -200,15 +200,14 @@ tbody tr:hover{background:var(--bg);}
   <div><div class="topbar-title">Conversations</div><div class=topbar-sub>3 unread threads</div></div>
   <div class="topbar-right"></div>
 </div>
-<div class="page-body">
+<div class="page-body" style="padding:16px 32px 16px;display:flex;flex-direction:column;">
 
-<div class="page-header">
-  <div class="page-eyebrow">Guest communications</div>
-  <div class="page-title">Conversations</div>
-  <div class="page-subtitle">All guest message threads for Nour El Nil.</div>
+<div style="margin-bottom:12px;">
+  <div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);">Guest communications</div>
+  <div style="font-size:1.1rem;font-weight:600;color:var(--text);margin-top:2px;">Conversations</div>
 </div>
 
-<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;min-height:600px;">
+<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;flex:1;min-height:0;">
   <!-- Left: conversation list -->
   <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;">
     <div style="padding:16px;border-bottom:1px solid var(--border);">
