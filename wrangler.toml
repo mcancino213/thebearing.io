@@ -26,6 +26,7 @@ index_name = "thebearing-properties"
 binding = "AI"
 
 # Clerk webhook secret — set via: wrangler secret put CLERK_WEBHOOK_SECRET
-# Get this from Clerk Dashboard → Webhooks → your endpoint → Signing Secret
+# Resend API key for booking emails — set via: wrangler secret put RESEND_API_KEY
+# Get Resend key at: https://resend.com → API Keys
 # [vars]
 # CLERK_PUBLISHABLE_KEY = "pk_live_..."  # Add to your HTML pages

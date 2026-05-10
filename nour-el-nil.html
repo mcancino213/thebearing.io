@@ -3074,21 +3074,26 @@ function tbSubmitBooking() {
   var btnText = document.getElementById('tb-pay-btn-text');
 
   // Validation
-  var card = document.getElementById('tb-co-card').value.replace(/\s/g,'');
-  var expiry = document.getElementById('tb-co-expiry').value;
-  var cvv = document.getElementById('tb-co-cvv').value;
-  var email = document.getElementById('tb-co-email').value;
-  var firstname = document.getElementById('tb-co-firstname').value;
+  var email = document.getElementById('tb-co-email').value.trim();
+  var firstname = document.getElementById('tb-co-firstname').value.trim();
+  var lastname = (document.getElementById('tb-co-lastname') || {}).value || '';
+  var phone = (document.getElementById('tb-co-phone') || {}).value || '';
+  var arrival = document.getElementById('tb-co-arrival').value;
+  var departure = document.getElementById('tb-co-departure').value;
 
-  if (!firstname || !email || card.length < 15 || !expiry || !cvv) {
-    alert('Please fill in all required fields before proceeding.');
+  if (!firstname || !email) {
+    alert('Please fill in your name and email before proceeding.');
+    return;
+  }
+  if (!arrival || !departure) {
+    alert('Please select arrival and departure dates.');
     return;
   }
 
   // Loading state
   btnText.textContent = 'Processing…';
   btn.style.opacity = '0.7';
-  btn.style.pointerEvents = 'none';
+  btn.style.pointerEvents = 'auto';
 
   // ── STRIPE INTEGRATION POINT ──────────────────────────────────────
   // In production, replace this setTimeout with:
@@ -3114,18 +3119,65 @@ function tbSubmitBooking() {
   // const result = await stripe.confirmCardPayment(clientSecret);
   // ─────────────────────────────────────────────────────────────────
 
-  // Demo: simulate payment processing
-  setTimeout(function() {
-    var ref = 'TB-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*9000);
-    document.getElementById('tb-confirm-ref').textContent = ref;
-    document.getElementById('tb-confirm-msg').textContent =
-      'Your $'+tbCheckout.depositAmount.toLocaleString()+' deposit for '+tbCheckout.property+' has been received. The property will contact you directly within 24 hours.';
-    document.getElementById('tb-confirm-email').textContent = email;
-    tbGoStep(4);
+  // Calculate nights
+  var arr = new Date(arrival);
+  var dep = new Date(departure);
+  var nights = Math.max(1, Math.round((dep - arr) / (1000*60*60*24)));
+
+  // Get room selection
+  var roomSel = document.getElementById('tb-co-room');
+  var room = roomSel ? roomSel.options[roomSel.selectedIndex].text : '';
+  var roomPrice = roomSel ? parseInt(roomSel.value) || 0 : 0;
+  var guests = (document.getElementById('tb-co-guests') || {}).value || '2 adults';
+  var notes = (document.getElementById('tb-co-notes') || {}).value || '';
+
+  var slug = (typeof SLUG !== 'undefined') ? SLUG : '';
+
+  var bookingData = {
+    property: tbCheckout.property,
+    slug: slug,
+    arrival: arrival,
+    departure: departure,
+    nights: nights,
+    guests: guests,
+    room: room,
+    roomPrice: roomPrice,
+    totalAmount: tbCheckout.totalAmount || roomPrice * nights,
+    depositAmount: tbCheckout.depositAmount || Math.round(roomPrice * nights * (tbCheckout.commissionRate || 0.10)),
+    firstname: firstname,
+    lastname: lastname,
+    email: email,
+    phone: phone,
+    notes: notes
+  };
+
+  fetch('/api/booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bookingData)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
     btn.style.opacity = '1';
     btn.style.pointerEvents = 'auto';
     btnText.textContent = 'Pay deposit now';
-  }, 1800);
+    if (data.ok) {
+      document.getElementById('tb-confirm-ref').textContent = data.ref;
+      document.getElementById('tb-confirm-msg').textContent =
+        'Your booking request for ' + tbCheckout.property + ' has been received. ' +
+        'The property will contact you at ' + email + ' within 24 hours to confirm your dates.';
+      document.getElementById('tb-confirm-email').textContent = email;
+      tbGoStep(4);
+    } else {
+      alert('Something went wrong: ' + (data.error || 'please try again'));
+    }
+  })
+  .catch(function(e) {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    btnText.textContent = 'Pay deposit now';
+    alert('Connection error — please check your internet and try again.');
+  });
 }
 
 // ── KV HYDRATION — live content from Property Editor ─────────────────

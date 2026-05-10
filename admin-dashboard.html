@@ -212,10 +212,10 @@ tbody tr:hover{background:var(--bg);}
 </div>
 
 <div class="stats-grid cols-4">
-  <div class="stat-tile"><div class="stat-label">Live properties</div><div class="stat-value accent">34</div><div class="stat-delta">↑ 3 this month</div></div>
-  <div class="stat-tile"><div class="stat-label">Active members</div><div class="stat-value">1,284</div><div class="stat-delta">↑ 47 this week</div></div>
-  <div class="stat-tile"><div class="stat-label">GMV this month</div><div class="stat-value" style="font-size:24px;">$284K</div><div class="stat-delta">↑ 31% YoY</div></div>
-  <div class="stat-tile"><div class="stat-label">Open conversations</div><div class="stat-value" style="color:var(--amber);">12</div><div class="stat-delta" style="color:var(--amber);">3 need attention</div></div>
+  <div class="stat-tile"><div class="stat-label">Live properties</div><div class="stat-value accent" id="dash-properties">—</div><div class="stat-delta" id="dash-properties-sub"></div></div>
+  <div class="stat-tile"><div class="stat-label">Active members</div><div class="stat-value" id="dash-members">—</div><div class="stat-delta" id="dash-members-sub"></div></div>
+  <div class="stat-tile"><div class="stat-label">Total bookings</div><div class="stat-value" id="dash-bookings" style="font-size:24px;">—</div><div class="stat-delta" id="dash-bookings-sub"></div></div>
+  <div class="stat-tile"><div class="stat-label">Pending bookings</div><div class="stat-value" id="dash-pending" style="color:var(--amber);">—</div><div class="stat-delta" id="dash-pending-sub" style="color:var(--amber);"></div></div>
 </div>
 
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
@@ -289,5 +289,35 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 
+<script>
+// Load real stats from KV
+(async function() {
+  try {
+    var [propsRes, membersRes, bookingsRes] = await Promise.all([
+      fetch('/api/property').then(function(r) { return r.json(); }),
+      fetch('/api/members').then(function(r) { return r.json(); }),
+      fetch('/api/booking').then(function(r) { return r.json(); })
+    ]);
+
+    var props = (propsRes.slugs || []).filter(function(s) { return !s.startsWith('__'); });
+    document.getElementById('dash-properties').textContent = props.length;
+    document.getElementById('dash-properties-sub').textContent = props.length + ' published';
+
+    var members = membersRes.members || [];
+    document.getElementById('dash-members').textContent = members.length;
+    document.getElementById('dash-members-sub').textContent = 'registered members';
+
+    var bookings = bookingsRes.bookings || [];
+    var pending = bookings.filter(function(b) { return b.status === 'pending'; });
+    var confirmed = bookings.filter(function(b) { return b.status === 'confirmed'; });
+    document.getElementById('dash-bookings').textContent = bookings.length;
+    document.getElementById('dash-bookings-sub').textContent = confirmed.length + ' confirmed';
+    document.getElementById('dash-pending').textContent = pending.length;
+    document.getElementById('dash-pending-sub').textContent = pending.length ? 'need attention' : 'all clear';
+  } catch(e) {
+    console.log('[Dashboard] Stats error:', e.message);
+  }
+})();
+</script>
 </body>
 </html>

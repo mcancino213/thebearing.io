@@ -583,6 +583,170 @@ export default {
       });
     }
 
+    // ── /api/booking ──────────────────────────────────────────────
+    if (url.pathname === '/api/booking') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // GET — list all bookings or fetch one
+      if (request.method === 'GET') {
+        const ref = url.searchParams.get('ref');
+        if (ref) {
+          const raw = await env.DOSSIERS.get('booking:' + ref);
+          const data = raw ? JSON.parse(raw) : null;
+          return jsonResponse({ ref, data, exists: !!data });
+        }
+        const rawIndex = await env.DOSSIERS.get('__bookings_index');
+        const refs = rawIndex ? JSON.parse(rawIndex) : [];
+        const bookings = await Promise.all(refs.map(async (r) => {
+          const raw = await env.DOSSIERS.get('booking:' + r);
+          return raw ? { ref: r, ...JSON.parse(raw) } : null;
+        }));
+        return jsonResponse({ bookings: bookings.filter(Boolean).reverse() });
+      }
+
+      // POST — create a booking
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const { property, slug, arrival, departure, guests, room, roomPrice,
+                totalAmount, depositAmount, firstname, lastname, email, phone,
+                notes, nights } = body;
+
+        if (!email || !firstname || !property) {
+          return jsonResponse({ error: 'email, firstname and property required' }, 400);
+        }
+
+        // Generate booking reference
+        const year = new Date().getFullYear();
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        const ref = 'TB-' + year + '-' + rand;
+        const createdAt = new Date().toISOString();
+
+        const booking = {
+          ref, property, slug: slug || '',
+          arrival, departure, nights: nights || '',
+          guests, room, roomPrice: roomPrice || 0,
+          totalAmount: totalAmount || 0,
+          depositAmount: depositAmount || 0,
+          firstname, lastname, email, phone: phone || '',
+          notes: notes || '',
+          status: 'pending', // pending → confirmed → cancelled
+          paymentStatus: 'deposit_due', // deposit_due → deposit_paid → paid → refunded
+          createdAt,
+          updatedAt: createdAt,
+        };
+
+        // Save booking
+        await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+
+        // Update index
+        const rawIndex = await env.DOSSIERS.get('__bookings_index');
+        const refs = rawIndex ? JSON.parse(rawIndex) : [];
+        refs.push(ref);
+        await env.DOSSIERS.put('__bookings_index', JSON.stringify(refs));
+
+        // Send email notification via Resend (if key is set)
+        if (env.RESEND_API_KEY) {
+          try {
+            const guestEmailBody = `
+Hi ${firstname},
+
+Your booking request has been received. Here are the details:
+
+Reference: ${ref}
+Property: ${property}
+Dates: ${arrival} → ${departure} (${nights} nights)
+Guests: ${guests}
+Room: ${room}
+Deposit due: $${depositAmount}
+
+The property will contact you at ${email} within 24 hours to confirm your stay.
+
+— The Bearing
+https://thebearing.io
+            `.trim();
+
+            const adminEmailBody = `
+New booking request — ${ref}
+
+Guest: ${firstname} ${lastname}
+Email: ${email}
+Phone: ${phone || 'not provided'}
+Property: ${property}
+Dates: ${arrival} → ${departure} (${nights} nights)
+Guests: ${guests}
+Room: ${room}
+Total: $${totalAmount} | Deposit: $${depositAmount}
+Notes: ${notes || 'none'}
+
+View in admin: https://thebearing.io/admin-bookings.html
+            `.trim();
+
+            await Promise.all([
+              fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  from: 'The Bearing <bookings@thebearing.io>',
+                  to: [email],
+                  subject: `Booking request received — ${ref} · ${property}`,
+                  text: guestEmailBody
+                })
+              }),
+              fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  from: 'The Bearing Bookings <bookings@thebearing.io>',
+                  to: ['miguel@thebearing.io'],
+                  subject: `New booking — ${ref} · ${firstname} ${lastname} · ${property}`,
+                  text: adminEmailBody
+                })
+              })
+            ]);
+          } catch (emailErr) {
+            console.error('[Booking] Email error:', emailErr.message);
+            // Non-fatal — booking is still saved
+          }
+        }
+
+        return jsonResponse({ ok: true, ref, booking });
+      }
+
+      // PATCH — update booking status
+      if (request.method === 'PATCH') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        const { ref, status, paymentStatus, notes } = body;
+        if (!ref) return jsonResponse({ error: 'ref required' }, 400);
+        const raw = await env.DOSSIERS.get('booking:' + ref);
+        if (!raw) return jsonResponse({ error: 'booking not found' }, 404);
+        const booking = JSON.parse(raw);
+        if (status) booking.status = status;
+        if (paymentStatus) booking.paymentStatus = paymentStatus;
+        if (notes !== undefined) booking.adminNotes = notes;
+        booking.updatedAt = new Date().toISOString();
+        await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+        return jsonResponse({ ok: true, ref, booking });
+      }
+
+      // DELETE — cancel a booking
+      if (request.method === 'DELETE') {
+        const ref = url.searchParams.get('ref');
+        if (!ref) return jsonResponse({ error: 'ref required' }, 400);
+        const raw = await env.DOSSIERS.get('booking:' + ref);
+        if (!raw) return jsonResponse({ error: 'booking not found' }, 404);
+        const booking = JSON.parse(raw);
+        booking.status = 'cancelled';
+        booking.updatedAt = new Date().toISOString();
+        await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+        return jsonResponse({ ok: true, ref });
+      }
+    }
+
     // ── /api/members ──────────────────────────────────────────────
     if (url.pathname === '/api/members') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);

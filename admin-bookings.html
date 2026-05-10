@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bookings — The Bearing</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookings — The Bearing Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 
 :root{
@@ -171,6 +171,31 @@ tbody tr:hover{background:var(--bg);}
 
 
 </style>
+<style>
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--card-bg,#fff);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.stat-val{font-family:"Instrument Serif",serif;font-size:1.8rem;color:var(--text);line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:.68rem;color:var(--text3);letter-spacing:.06em;text-transform:uppercase;}
+.booking-filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.filter-pill{padding:6px 14px;border:1px solid var(--border);border-radius:100px;font-size:.76rem;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;}
+.filter-pill.active,.filter-pill:hover{background:var(--accent,#c17f3e);border-color:var(--accent,#c17f3e);color:#fff;}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:10px 14px;font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);text-align:left;}
+tbody td{padding:14px;font-size:.84rem;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:var(--bg2);}
+.status-badge{padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:600;}
+.status-pending{background:#fef3c7;color:#92400e;}
+.status-confirmed{background:#dcfce7;color:#166534;}
+.status-cancelled{background:#fee2e2;color:#991b1b;}
+.action-btn{padding:5px 12px;border-radius:6px;font-size:.72rem;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;}
+.action-btn:hover{opacity:.8;}
+.action-confirm{background:#dcfce7;color:#166534;}
+.action-cancel{background:#fee2e2;color:#991b1b;}
+.booking-ref{font-family:monospace;font-size:.76rem;color:var(--text3);}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
+.empty-state svg{margin-bottom:16px;opacity:.3;}
+</style>
 </head>
 <body>
 <div class="app">
@@ -199,28 +224,150 @@ tbody tr:hover{background:var(--bg);}
   </div>
 </aside>
 <div class="main-area">
-<div class="topbar">
-  <div><div class="topbar-title">Bookings</div><div class='topbar-sub'>All bookings across The Bearing</div></div>
-  <div class="topbar-right"></div>
-</div>
-<div class="page-body">
-
-<div class="page-header">
-  <div class="page-eyebrow">All bookings across The Bearing</div>
-  <div class="page-title">Bookings</div>
-  <div class="page-subtitle">Full booking ledger with status, GMV, and property breakdown.</div>
-</div>
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Bookings</div>
-  <div class="empty-desc" style="margin-top:8px;">Full booking ledger with status, GMV, and property breakdown.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="admin-dashboard.html" class="btn btn-ghost">← Dashboard</a>
+  <div class="topbar">
+    <div class="topbar-title">Bookings</div>
   </div>
-</div></div>
-</div>
+  <div class="page-body">
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-val" id="stat-total">—</div><div class="stat-lbl">Total bookings</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-pending">—</div><div class="stat-lbl">Pending</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-confirmed">—</div><div class="stat-lbl">Confirmed</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-gmv">—</div><div class="stat-lbl">Total GMV</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">All bookings</div>
+        <div class="booking-filters">
+          <button class="filter-pill active" onclick="filterBookings('all', this)">All</button>
+          <button class="filter-pill" onclick="filterBookings('pending', this)">Pending</button>
+          <button class="filter-pill" onclick="filterBookings('confirmed', this)">Confirmed</button>
+          <button class="filter-pill" onclick="filterBookings('cancelled', this)">Cancelled</button>
+        </div>
+      </div>
+      <div id="bookings-wrap">
+        <div style="padding:20px;color:var(--text3);font-size:.84rem;">Loading bookings…</div>
+      </div>
+    </div>
+
+  </div>
 </div>
 </div>
 
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0b0e14;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
+
+<script>
+var allBookings = [];
+var currentFilter = 'all';
+
+function toast(msg) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._tt);
+  window._tt = setTimeout(function() { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, 2800);
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function filterBookings(status, btn) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-pill').forEach(function(p) { p.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  var filtered = currentFilter === 'all'
+    ? allBookings
+    : allBookings.filter(function(b) { return b.status === currentFilter; });
+
+  var wrap = document.getElementById('bookings-wrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="2.5" width="13" height="12" rx="1.5"/><path d="M1.5 6.5h13M5 1v3M11 1v3"/></svg><div>No bookings yet</div></div>';
+    return;
+  }
+
+  var html = '<div style="overflow-x:auto;"><table><thead><tr>' +
+    '<th>Reference</th><th>Guest</th><th>Property</th>' +
+    '<th>Dates</th><th>Guests</th><th>Deposit</th><th>Status</th><th>Actions</th>' +
+    '</tr></thead><tbody>';
+
+  filtered.forEach(function(b) {
+    var statusClass = 'status-' + (b.status || 'pending');
+    var statusLabel = (b.status || 'pending').charAt(0).toUpperCase() + (b.status || 'pending').slice(1);
+    html += '<tr>' +
+      '<td><span class="booking-ref">' + b.ref + '</span></td>' +
+      '<td><div style="font-weight:500;">' + (b.firstname || '') + ' ' + (b.lastname || '') + '</div>' +
+        '<div style="font-size:.72rem;color:var(--text3);">' + (b.email || '') + '</div></td>' +
+      '<td><div style="font-weight:500;">' + (b.property || '—') + '</div>' +
+        '<div style="font-size:.72rem;color:var(--text3);">' + (b.room || '') + '</div></td>' +
+      '<td><div>' + fmt(b.arrival) + '</div><div style="font-size:.72rem;color:var(--text3);">→ ' + fmt(b.departure) + ' (' + (b.nights || '?') + 'n)</div></td>' +
+      '<td>' + (b.guests || '—') + '</td>' +
+      '<td style="font-weight:600;color:var(--accent,#c17f3e);">$' + ((b.depositAmount || 0).toLocaleString()) + '</td>' +
+      '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
+      '<td style="white-space:nowrap;">' +
+        (b.status !== 'confirmed' ? '<button class="action-btn action-confirm" onclick="updateStatus('' + b.ref + '','confirmed')">Confirm</button> ' : '') +
+        (b.status !== 'cancelled' ? '<button class="action-btn action-cancel" onclick="updateStatus('' + b.ref + '','cancelled')">Cancel</button>' : '') +
+      '</td>' +
+    '</tr>';
+
+    if (b.notes) {
+      html += '<tr><td colspan="8" style="padding:6px 14px 14px;font-size:.75rem;color:var(--text3);border-bottom:1px solid var(--border);">Notes: ' + b.notes + '</td></tr>';
+    }
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function updateStatus(ref, status) {
+  fetch('/api/booking', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: ref, status: status })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.ok) {
+      var b = allBookings.find(function(x) { return x.ref === ref; });
+      if (b) b.status = status;
+      renderTable();
+      toast(ref + ' marked as ' + status);
+    }
+  })
+  .catch(function(e) { toast('Error: ' + e.message); });
+}
+
+async function loadBookings() {
+  try {
+    var res = await fetch('/api/booking');
+    var data = await res.json();
+    allBookings = data.bookings || [];
+
+    // Stats
+    var pending = allBookings.filter(function(b) { return b.status === 'pending'; }).length;
+    var confirmed = allBookings.filter(function(b) { return b.status === 'confirmed'; }).length;
+    var gmv = allBookings.reduce(function(sum, b) { return sum + (b.totalAmount || 0); }, 0);
+
+    document.getElementById('stat-total').textContent = allBookings.length;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-confirmed').textContent = confirmed;
+    document.getElementById('stat-gmv').textContent = '$' + gmv.toLocaleString();
+
+    renderTable();
+  } catch(e) {
+    document.getElementById('bookings-wrap').innerHTML =
+      '<div style="padding:20px;color:#dc2626;font-size:.84rem;">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+loadBookings();
+</script>
 </body>
 </html>
