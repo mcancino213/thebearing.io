@@ -1145,7 +1145,46 @@ function chRefresh() {
   if (!chActiveId) return;
   fetch('/api/conversation?id=' + encodeURIComponent(chActiveId))
     .then(function(r){ return r.json(); })
-    .then(function(d){ chRenderThread(d.conversation, d.messages||[]); });
+    .then(function(d){ chRefreshMessages(d.conversation, d.messages||[]); });
+}
+
+function chRefreshMessages(conv, msgs) {
+  var wrap = document.getElementById('ch-msgs');
+  if (!wrap) return; // thread not open
+  wrap.innerHTML = '';
+  if (conv.enquiry) {
+    var parts = [];
+    if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
+    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
+    if (conv.enquiry.arrival && conv.enquiry.departure) parts.push(conv.enquiry.arrival + ' → ' + conv.enquiry.departure);
+    if (parts.length) {
+      var pill = document.createElement('div');
+      pill.className = 'ch-enq-pill';
+      pill.textContent = 'Enquiry: ' + parts.join(' · ');
+      wrap.appendChild(pill);
+    }
+  }
+  msgs.forEach(function(m) {
+    var role = m.role === 'guest' ? 'guest' : 'property';
+    var msgEl = document.createElement('div');
+    msgEl.className = 'ch-msg ' + role;
+    if (role === 'property') {
+      var sender = document.createElement('div');
+      sender.className = 'ch-msg-sender';
+      sender.textContent = m.senderName || conv.propertyName;
+      msgEl.appendChild(sender);
+    }
+    var bubble = document.createElement('div');
+    bubble.className = 'ch-bubble';
+    bubble.textContent = m.text;
+    var timeEl = document.createElement('div');
+    timeEl.className = 'ch-msg-time';
+    timeEl.textContent = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    msgEl.appendChild(bubble);
+    msgEl.appendChild(timeEl);
+    wrap.appendChild(msgEl);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
 function chStartPoll(id) {

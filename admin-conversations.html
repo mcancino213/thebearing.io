@@ -527,16 +527,47 @@ function sendReply() {
 
 function refreshThread() {
   if (!activeConvId) return;
-  var input = document.getElementById('reply-input');
-  var draft = input ? input.value : '';
   fetch('/api/conversation?id=' + encodeURIComponent(activeConvId))
     .then(function(r){ return r.json(); })
-    .then(function(data){
-      renderThread(data.conversation, data.messages || []);
-      // Restore draft after re-render
-      var newInput = document.getElementById('reply-input');
-      if (newInput && draft) newInput.value = draft;
-    });
+    .then(function(data){ refreshMessages(data.conversation, data.messages || []); });
+}
+
+function refreshMessages(conv, messages) {
+  var wrap = document.getElementById('messages-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (conv.enquiry) {
+    var parts = [];
+    if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
+    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
+    if (conv.enquiry.arrival) parts.push(conv.enquiry.arrival + (conv.enquiry.departure ? ' → ' + conv.enquiry.departure : ''));
+    if (parts.length) {
+      var pill = document.createElement('div');
+      pill.className = 'enq-pill';
+      pill.textContent = 'Enquiry: ' + parts.join(' · ');
+      wrap.appendChild(pill);
+    }
+  }
+  messages.forEach(function(m) {
+    var role = m.role === 'guest' ? 'guest' : 'admin';
+    var msgEl = document.createElement('div');
+    msgEl.className = 'msg ' + role;
+    var sender = document.createElement('div');
+    sender.className = 'msg-sender';
+    sender.textContent = m.senderName || m.role;
+    var bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = m.text;
+    var timeEl = document.createElement('div');
+    timeEl.className = 'msg-time';
+    var t = new Date(m.sentAt);
+    timeEl.textContent = t.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) + ' · ' + t.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    msgEl.appendChild(sender);
+    msgEl.appendChild(bubble);
+    msgEl.appendChild(timeEl);
+    wrap.appendChild(msgEl);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
 function startPolling(id) {
