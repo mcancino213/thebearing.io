@@ -921,13 +921,13 @@
     </div>
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0;">
-    <button class="book-bar-btn" onclick="var d=document.querySelector('.dbc-cta');if(d)d.click();else tbOpenCheckout({property:document.querySelector('.prop-name')?document.querySelector('.prop-name').textContent:'This property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard',price:0}]})">
+    <button class="book-bar-btn" onclick="tbAuth.requireUser(function(){var d=document.querySelector('.dbc-cta');if(d)d.click();},{title:'Sign in to book',subtitle:'Create a free account to continue your booking.'});else tbOpenCheckout({property:document.querySelector('.prop-name')?document.querySelector('.prop-name').textContent:'This property',title:'Book your stay',commissionRate:0.10,rooms:[{name:'Standard',price:0}]})">
       <div class="book-bar-btn-icon">
         <svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg>
       </div>
       Book now
     </button>
-    <button class="book-bar-enq-btn" onclick="openOverlay('inq-overlay')">
+    <button class="book-bar-enq-btn" onclick="tbAuthEnquire()">
       Enquire
     </button>
   </div>
@@ -950,12 +950,12 @@
             <!-- ── DUAL CTA: Book now + Enquire ── -->
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
         <!-- Primary: Instant Book -->
-        <button class="dbc-cta" onclick="tbOpenCheckout({property:'Nour El Nil · Nile, Egypt',title:'Book your voyage',roomLabel:'Cabin type',commissionRate:0.10,rooms:[{name:'Luxury Room',price:4200},{name:'Panoramic Suite',price:8150}]})" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <button class="dbc-cta" onclick="tbAuthBook({property:'Nour El Nil · Nile, Egypt',title:'Book your voyage',roomLabel:'Cabin type',commissionRate:0.10,rooms:[{name:'Luxury Room',price:4200},{name:'Panoramic Suite',price:8150}]})" style="display:flex;align-items:center;justify-content:center;gap:8px;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           Book now
         </button>
         <!-- Secondary: Enquire first -->
-        <button onclick="openOverlay('inq-overlay')" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:var(--r-xl);font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)';" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)';">
+        <button onclick="tbAuthEnquire()" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:var(--r-xl);font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)';" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)';">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           Send an enquiry first
         </button>
@@ -1043,7 +1043,7 @@
         </div>
       </div>
 
-      <button onclick="openOverlay('inq-overlay')" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
+      <button onclick="tbAuthEnquire()" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
         Claim your private access →
       </button>
     </div>
@@ -1571,7 +1571,7 @@
       <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>Complimentary on-board credit.</strong> Book through The Bearing and receive a $150 on-board credit toward excursions or wine.</div></div>
       <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>If something goes wrong, we fix it.</strong> We're reachable 24/7 during your journey. Nour El Nil knows our guests get priority.</div></div>
     </div>
-    <button class="promise-btn" onclick="openOverlay('inq-overlay')">Start your inquiry — no commitment</button>
+    <button class="promise-btn" onclick="tbAuthEnquire()">Start your inquiry — no commitment</button>
   </div>
 
   <!-- Similar -->
@@ -2882,6 +2882,28 @@ var tbCheckout = {
   commissionRate: 0.10  // 10% — configurable per property
 };
 
+
+// ── Auth-gated actions ─────────────────────────────────────────────────
+function tbAuthEnquire(propertyName) {
+  tbAuth.requireUser(
+    function(user) { openOverlay('inq-overlay'); },
+    {
+      title: 'Sign in to enquire',
+      subtitle: 'Create a free account or sign in to send your enquiry to ' + (propertyName || 'this property') + '. No payment required.'
+    }
+  );
+}
+
+function tbAuthBook(config) {
+  tbAuth.requireUser(
+    function(user) { tbOpenCheckout(config); },
+    {
+      title: 'Sign in to book',
+      subtitle: 'Create a free account or sign in with Google or Apple to continue your booking.'
+    }
+  );
+}
+
 function tbOpenCheckout(config) {
   // config = { property, label, rooms, pricePerNight, roomLabel }
   tbCheckout.property    = config.property    || 'this property';
@@ -3256,5 +3278,6 @@ function tbSubmitBooking() {
 })();
 </script>
 
+<script src="/assets/auth.js"></script>
 </body>
 </html>

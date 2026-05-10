@@ -151,6 +151,22 @@ Standard partner-facing pages: dashboard, listings, bookings, photos, rooms, ava
 | L2 | ✅ Done | Dossier authoring tool in admin (interview-based) |
 | L3 | ✅ Done | AI-assisted dossier draft generation with web search |
 | L4 | ✅ Done | RAG via Cloudflare Vectorize — index created, bindings added, worker updated |
+
+## Auth System (Clerk)
+- Clerk test key: pk_test_bWVhc3VyZWQtam9leS0xNS5jbGVyay5hY2NvdW50cy5kZXYk
+- Clerk domain: measured-joey-15.clerk.accounts.dev
+- Shared auth helper: assets/auth.js
+- tbAuth.requireUser(cb, opts) — checks Clerk, shows slide-up sign-in modal if not authed
+- tbAuthEnquire(propertyName) — auth-gated enquiry opener
+- tbAuthBook(config) — auth-gated booking opener
+- All enquiry + book buttons on property pages gated
+
+## Booking System
+- /api/booking — POST saves to KV, GET lists all, PATCH updates status
+- KV key: booking:{ref}, index: __bookings_index
+- Email via Resend (RESEND_API_KEY secret in worker)
+- admin-bookings.html — real KV data, filter/confirm/cancel
+- Pricing: roomPrice is per-trip flat rate
 | L5 | 🔲 Pending | Cross-property index for compare/recommend queries |
 | L6 | 🔲 Pending | Persistent per-user conversational memory |
 

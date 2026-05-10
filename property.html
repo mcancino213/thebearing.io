@@ -1138,7 +1138,7 @@ button{font-family:inherit;cursor:pointer;}
       </div>
     </div>
     <div style="display:flex;gap:8px;flex-shrink:0;">
-      <button class="book-bar-btn" onclick="var d=document.querySelector('.dbc-cta');if(d)d.click();">
+      <button class="book-bar-btn" onclick="tbAuth.requireUser(function(){var d=document.querySelector('.dbc-cta');if(d)d.click();},{title:'Sign in to book',subtitle:'Create a free account to continue your booking.'});">
         <div class="book-bar-btn-icon"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
         Book now
       </button>
@@ -1216,7 +1216,7 @@ button{font-family:inherit;cursor:pointer;}
         <div id="access-name" style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;"></div>
         <div id="access-desc" style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;"></div>
         <div id="access-bullets" style="display:none;flex-direction:column;gap:7px;margin-bottom:18px;"></div>
-        <button onclick="openOverlay('inq-overlay')" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
+        <button onclick="tbAuthEnquire()" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
           Claim your private access &#8594;
         </button>
       </div>
@@ -1336,7 +1336,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>If something goes wrong, we fix it.</strong> We're reachable 24/7 during your journey. Our properties know our guests get priority.</div></div>
         <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>No hidden fees, ever.</strong> 0% commission added to your booking. What you see is what you pay.</div></div>
       </div>
-      <button class="promise-btn" onclick="openOverlay('inq-overlay')">Start your inquiry — no commitment</button>
+      <button class="promise-btn" onclick="tbAuthEnquire()">Start your inquiry — no commitment</button>
     </div>
 
     <!-- SIMILAR PROPERTIES -->
@@ -2235,6 +2235,28 @@ var tbCheckout = {
   depositAmount: 0,
   commissionRate: 0.10  // 10% — configurable per property
 };
+
+
+// ── Auth-gated actions ─────────────────────────────────────────────────
+function tbAuthEnquire(propertyName) {
+  tbAuth.requireUser(
+    function(user) { openOverlay('inq-overlay'); },
+    {
+      title: 'Sign in to enquire',
+      subtitle: 'Create a free account or sign in to send your enquiry to ' + (propertyName || 'this property') + '. No payment required.'
+    }
+  );
+}
+
+function tbAuthBook(config) {
+  tbAuth.requireUser(
+    function(user) { tbOpenCheckout(config); },
+    {
+      title: 'Sign in to book',
+      subtitle: 'Create a free account or sign in with Google or Apple to continue your booking.'
+    }
+  );
+}
 
 function tbOpenCheckout(config) {
   // config = { property, label, rooms, pricePerNight, roomLabel }
@@ -3699,5 +3721,6 @@ document.addEventListener('keydown', function(e) {
   }
 </style>
 <div class="toast" id="toast-el"></div>
+<script src="/assets/auth.js"></script>
 </body>
 </html>
