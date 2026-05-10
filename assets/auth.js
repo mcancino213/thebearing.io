@@ -78,10 +78,10 @@ var tbAuth = (function() {
 
     var overlay = document.createElement('div');
     overlay.id = 'tb-auth-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);';
 
     var sheet = document.createElement('div');
-    sheet.style.cssText = 'background:#faf7f1;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:32px 28px 40px;box-shadow:0 -20px 60px rgba(0,0,0,.2);transform:translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);';
+    sheet.style.cssText = 'background:#faf7f1;border-radius:20px;width:100%;max-width:480px;padding:32px 28px 40px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .28s ease;margin:20px;';
 
     // Header
     var title = opts.title || 'Sign in to continue';
@@ -103,10 +103,11 @@ var tbAuth = (function() {
     document.body.appendChild(overlay);
     _modalEl = overlay;
 
-    // Slide up
+    // Animate in
     requestAnimationFrame(function() {
       requestAnimationFrame(function() {
-        sheet.style.transform = 'translateY(0)';
+        sheet.style.transform = 'scale(1)';
+        sheet.style.opacity = '1';
       });
     });
 
@@ -149,10 +150,10 @@ var tbAuth = (function() {
   function dismiss() {
     if (_modalEl) {
       var sheet = _modalEl.querySelector('div');
-      if (sheet) sheet.style.transform = 'translateY(100%)';
+      if (sheet) { sheet.style.transform = 'scale(.96)'; sheet.style.opacity = '0'; }
       setTimeout(function() {
         if (_modalEl) { _modalEl.remove(); _modalEl = null; }
-      }, 400);
+      }, 300);
     }
   }
 
