@@ -296,16 +296,18 @@ function loadList() {
       return r.json();
     })
     .then(function(data){
-      console.log('[Convs] loaded:', data);
       conversations = data.conversations || [];
+      if (!conversations.length) {
+        document.getElementById('conv-list').innerHTML = '<div style="padding:20px;color:var(--text3);font-size:.84rem;text-align:center;">No conversations yet.<br><br>Once a guest sends an enquiry it will appear here.</div>';
+        return;
+      }
       renderList();
       var unread = conversations.filter(function(c){ return c.unreadAdmin > 0; }).length;
       var badge = document.querySelector('.sb-badge');
       if (badge) badge.textContent = unread || '';
     })
     .catch(function(e){
-      console.error('[Convs] loadList error:', e);
-      document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.84rem;">Error loading: ' + e.message + '</div>';
+      document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.82rem;">Error: ' + e.message + '<br><br>Try: <a href="/api/conversation" target="_blank" style="color:#dc2626;">/api/conversation</a></div>';
     });
 }
 

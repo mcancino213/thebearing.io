@@ -908,7 +908,6 @@ window.addEventListener('load', async function() {
 });
 </script>
 
-<script src="/assets/auth.js"></script>
 <script>
 var chConvs = [];
 var chActiveId = null;
@@ -944,7 +943,7 @@ window.addEventListener('load', function() {
 });
 
 function initChannels(user) {
-  if (!user) user = tbAuth.getUser();
+  if (!user) user = window.Clerk && window.Clerk.user;
   if (!user) return;
   var app = document.getElementById('ch-app');
   app.innerHTML =
@@ -958,8 +957,9 @@ function initChannels(user) {
       '</div>' +
     '</div>';
 
-  fetch('/api/conversation?guestId=' + encodeURIComponent(user.id))
-    .then(function(r){ return r.json(); })
+  var guestId = user.id;
+  fetch('/api/conversation?guestId=' + encodeURIComponent(guestId))
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(d){
       chConvs = d.conversations || [];
       chRenderList();
@@ -967,7 +967,10 @@ function initChannels(user) {
       if (urlId) chOpen(urlId);
       else if (chConvs.length === 1) chOpen(chConvs[0].id);
     })
-    .catch(function(e){ document.getElementById('ch-list').innerHTML = '<div class="ch-empty">Failed to load</div>'; });
+    .catch(function(e){ 
+      var el = document.getElementById('ch-list');
+      if(el) el.innerHTML = '<div class="ch-empty" style="color:#dc2626;">Error: ' + e.message + '</div>';
+    });
 }
 
 function chRenderList() {
@@ -1118,7 +1121,7 @@ function chSend() {
   var text = input ? input.value.trim() : '';
   if (!text || !chActiveId) return;
   input.value = '';
-  var user = tbAuth.getUser();
+  var user = window.Clerk && window.Clerk.user;
   var name = user ? ((user.firstName||'') + ' ' + (user.lastName||'')).trim() : 'Guest';
   // Optimistic
   var msgs = document.getElementById('ch-msgs');
@@ -1131,7 +1134,7 @@ function chSend() {
   }
   fetch('/api/conversation', {
     method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({action:'message',id:chActiveId,role:'guest',text:text,senderName:name,senderEmail:user?user.emailAddresses[0]?.emailAddress:''})
+    body: JSON.stringify({action:'message',id:chActiveId,role:'guest',text:text,senderName:name,senderEmail:user&&user.emailAddresses&&user.emailAddresses[0]?user.emailAddresses[0].emailAddress:''})
   }).then(function(r){ return r.json(); }).then(function(d){ if(d.ok) chRefresh(); });
 }
 
