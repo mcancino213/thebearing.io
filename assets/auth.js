@@ -97,7 +97,7 @@ var tbAuth = (function() {
       '</button>' +
     '</div>' +
     '<div style="font-size:.8rem;color:#7a6a58;line-height:1.6;margin-bottom:20px;">' + subtitle + '</div>' +
-    '<div id="tb-clerk-mount" style="min-height:60px;"></div>';
+    '<div id="tb-clerk-mount" style="min-height:200px;display:flex;align-items:center;justify-content:center;"><div style="color:#9a8e80;font-size:.8rem;">Loading sign-in…</div></div>';
 
     overlay.appendChild(sheet);
     document.body.appendChild(overlay);
@@ -122,27 +122,36 @@ var tbAuth = (function() {
       if (!mountEl) return;
 
       if (window.Clerk.user) {
-        // Already signed in — call success immediately
         tbAuth.dismiss();
         if (opts.onSuccess) opts.onSuccess(window.Clerk.user);
         return;
       }
 
-      // Mount Clerk's built-in sign-in component
-      window.Clerk.mountSignIn(mountEl, {
-        routing: 'virtual',
-        afterSignInUrl: window.location.href,
-        afterSignUpUrl: window.location.href,
-      });
+      // Use Clerk's hosted sign-in page in an iframe as fallback
+      // First try mountSignIn, fall back to redirect
+      try {
+        window.Clerk.mountSignIn(mountEl, {
+          routing: 'virtual',
+          afterSignInUrl: window.location.href,
+          afterSignUpUrl: window.location.href,
+        });
+      } catch(e) {
+        // Fallback: show a simple iframe with Clerk hosted UI
+        mountEl.innerHTML = '<div style="text-align:center;padding:16px 0;">' +
+          '<a href="' + CLERK_DOMAIN + '/sign-in?redirect_url=' + encodeURIComponent(window.location.href) + '" ' +
+          'style="display:inline-block;padding:12px 28px;background:#b05830;color:#fff;border-radius:100px;font-family:Geist,sans-serif;font-size:.88rem;font-weight:600;text-decoration:none;">Continue with Google or email →</a>' +
+          '<div style="font-size:.7rem;color:#9a8e80;margin-top:10px;">You\'ll be returned here after signing in.</div>' +
+        '</div>';
+      }
 
       // Poll for sign-in completion
       var pollInterval = setInterval(function() {
-        if (window.Clerk.user) {
+        if (window.Clerk && window.Clerk.user) {
           clearInterval(pollInterval);
           tbAuth.dismiss();
           if (opts.onSuccess) opts.onSuccess(window.Clerk.user);
         }
-      }, 500);
+      }, 800);
     });
   }
 
