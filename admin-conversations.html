@@ -419,9 +419,30 @@ function renderThread(conv, messages) {
   badge.style.cssText = 'margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;';
   badge.textContent = conv.status || 'open';
 
+  var archiveBtn = document.createElement('button');
+  archiveBtn.textContent = 'Archive';
+  archiveBtn.style.cssText = 'margin-left:8px;padding:3px 10px;border-radius:100px;font-size:.68rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text3);';
+  archiveBtn.addEventListener('click', function() {
+    if (!confirm('Archive this conversation? It will be hidden from all views.')) return;
+    fetch('/api/conversation', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({id: conv.id, status: 'archived'})
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) {
+        conversations = conversations.filter(function(c){ return c.id !== conv.id; });
+        activeConvId = null;
+        renderList();
+        document.getElementById('conv-thread').innerHTML = '<div class="no-selection"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="margin-bottom:12px;opacity:.2;"><path d="M2 2h12v9H9l-3 3v-3H2z"/></svg><div>Select a conversation to reply</div></div>';
+        toast('Conversation archived');
+      }
+    });
+  });
+
   hdr.appendChild(avatar);
   hdr.appendChild(info);
   hdr.appendChild(badge);
+  hdr.appendChild(archiveBtn);
   thread.appendChild(hdr);
 
   // Messages
