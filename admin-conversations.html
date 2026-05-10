@@ -318,7 +318,7 @@ function renderList() {
   el.innerHTML = conversations.map(function(c) {
     var initial = (c.guestName || c.guestEmail || '?')[0].toUpperCase();
     var hasUnread = c.unreadAdmin > 0;
-    return '<div class="conv-item' + (c.id === activeConvId ? ' active' : '') + '" onclick="openConv('' + c.id + '')">' +
+    return '<div class="conv-item' + (c.id === activeConvId ? ' active' : '') + '" data-id="' + c.id + '">' +
       '<div class="conv-avatar">' + initial + '</div>' +
       '<div class="conv-meta">' +
         '<div class="conv-guest-name">' + (c.guestName || c.guestEmail) + '</div>' +
@@ -331,8 +331,14 @@ function renderList() {
       '</div>' +
     '</div>';
   }).join('');
-}
 
+  // Wire clicks via delegation
+  el.querySelectorAll('.conv-item[data-id]').forEach(function(item) {
+    item.addEventListener('click', function() {
+      openConv(this.getAttribute('data-id'));
+    });
+  });
+}
 function openConv(id) {
   activeConvId = id;
   renderList();
