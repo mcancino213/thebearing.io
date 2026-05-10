@@ -358,6 +358,7 @@ function renderThread(conv, messages) {
 
   // Messages
   var msgsWrap = document.createElement('div');
+  msgsWrap.id = 'pp-msgs-wrap';
   msgsWrap.style.cssText = 'flex:1;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:#fafafa;';
 
   // Enquiry pill
@@ -475,9 +476,8 @@ function refreshThread() {
 }
 
 function refreshMessages(conv, messages) {
-  // Only update messages area - don't touch the input
-  var msgsWrap = document.querySelector('#pp-conv-thread [style*="flex:1;padding:24px"]');
-  if (!msgsWrap) { renderThread(conv, messages); return; }
+  var msgsWrap = document.getElementById('pp-msgs-wrap');
+  if (!msgsWrap) return; // thread not open yet
   
   // Clear and re-render just messages
   msgsWrap.innerHTML = '';
