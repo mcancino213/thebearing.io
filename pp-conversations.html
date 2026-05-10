@@ -218,7 +218,7 @@ tbody tr:hover{background:var(--bg);}
     </div>
   </div>
   <!-- Right: message thread -->
-  <div id="pp-conv-thread" style="display:flex;flex-direction:column;">
+  <div id="pp-conv-thread" style="display:flex;flex-direction:column;overflow:hidden;">
     <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;">
       Select a conversation to reply
     </div>
@@ -359,7 +359,7 @@ function renderThread(conv, messages) {
   // Messages
   var msgsWrap = document.createElement('div');
   msgsWrap.id = 'pp-msgs-wrap';
-  msgsWrap.style.cssText = 'flex:1;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:#fafafa;';
+  msgsWrap.style.cssText = 'flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:#fafafa;';
 
   // Enquiry pill
   if (conv.enquiry) {
