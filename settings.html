@@ -26,6 +26,11 @@
     }
     if(n) n.textContent=d.name||'';
     if(e) e.textContent=d.email||'';
+    var nav=document.querySelector('.nav-avatar');
+    if(nav){
+      if(d.avatarUrl){nav.innerHTML='<img src="'+d.avatarUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';}
+      else{nav.textContent=d.initials||'';}
+    }
     var p=document.querySelector('.sidebar-profile'); if(p) p.classList.add('tb-ready');
     populated=true;
   }
@@ -273,7 +278,7 @@
     <a class="nav-link-d" href="/journal.html">Journal</a>
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
   </div>
-  <div class="nav-right"><div class="nav-avatar">S</div></div>
+  <div class="nav-right"><a class="nav-avatar" href="/my-account.html" title="My account" style="text-decoration:none;"></a></div>
     <button class="nav-menu-btn" id="nav-menu-btn" onclick="toggleMenu()" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>

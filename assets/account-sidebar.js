@@ -39,6 +39,16 @@
       emailEl.textContent = data.email || '';
     }
 
+    // Top-right nav avatar
+    var navAvatar = document.querySelector('.nav-avatar');
+    if (navAvatar) {
+      if (data.avatarUrl) {
+        navAvatar.innerHTML = '<img src="' + data.avatarUrl + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+      } else {
+        navAvatar.textContent = data.initials || '';
+      }
+    }
+
     wireSignOut();
 
     var profile = document.querySelector('.sidebar-profile');
