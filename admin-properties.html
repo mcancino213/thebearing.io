@@ -1031,10 +1031,12 @@ function loadListingData() {
         .then(function(res) {
           if (!res || !res.exists || !res.data) return null;
           var d = res.data;
+          // Skip phantom/empty records — must have a real name to show in listing
+          if (!d.name) return null;
           var heroUrl = d.photos && d.photos.hero && d.photos.hero.length && cfThumb(d.photos.hero[0].url || d.photos.hero[0]);
           return {
             slug: slug,
-            name: d.name || slug,
+            name: d.name,
             type: d.type || '',
             heroUrl: heroUrl || ''
           };
