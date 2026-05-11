@@ -1122,9 +1122,22 @@ View in admin: https://thebearing.io/admin-bookings.html
         }
       }
 
-      // Strip HTML if only HTML is available
+      // Strip HTML if only HTML is available — preserve line breaks
       if (!text && html) {
-        text = html.replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
+        text = html
+          .replace(/<style[\s\S]*?<\/style>/gi, '')
+          .replace(/<script[\s\S]*?<\/script>/gi, '')
+          .replace(/<\/(p|div|br|tr|li|h[1-6])>/gi, '\n')
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/\n\s*\n\s*\n+/g, '\n\n')
+          .trim();
       }
       text = text.trim();
 
@@ -1134,16 +1147,22 @@ View in admin: https://thebearing.io/admin-bookings.html
         .join('\n')
         .trim();
 
-      // Strip "On <date>, <name> wrote:" attribution lines and everything after
-      // Examples:
-      //   "On May 11, 2026, at 8:15 AM, Foo wrote:"
-      //   "On Mon, May 11, 2026 at 8:15 AM Foo <a@b.com> wrote:"
-      const attribMatch = text.match(/\n\s*On\s+[^\n]+?\s+wrote:/i);
-      if (attribMatch) {
+      // Strip "On <date/day>... wrote:" attribution — works whether or not it's on its own line
+      const attribMatch = text.match(/\s*On\s+(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2})[\s\S]{0,300}?wrote:/);
+      if (attribMatch && typeof attribMatch.index === 'number') {
         text = text.substring(0, attribMatch.index).trim();
       }
 
-      // Strip common signature/quote separators (but only if they appear after some content)
+      // Strip our own sender markers like "Nour El Nil via The Bearing <bookings@thebearing.io>"
+      const bearingMatch = text.match(/\s+(Nour El Nil|The Bearing)[\s\S]{0,100}?(via The Bearing|<bookings@thebearing)/);
+      if (bearingMatch && typeof bearingMatch.index === 'number') {
+        text = text.substring(0, bearingMatch.index).trim();
+      }
+
+      // Strip trailing quote artifacts
+      text = text.replace(/\s+>+\s*$/g, '').trim();
+
+      // Strip common signature/quote separators
       const sigSeparators = ['\n-- \n', '\n--\n', '\n— The Bearing', '\nSent from my', '\n________', '\nFrom:'];
       for (const sep of sigSeparators) {
         const idx = text.indexOf(sep);
