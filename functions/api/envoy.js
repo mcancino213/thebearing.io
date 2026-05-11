@@ -1048,64 +1048,88 @@ View in admin: https://thebearing.io/admin-bookings.html
 
     // ── /api/inbound-email ────────────────────────────────────────
     // Resend inbound webhook — parses email replies and saves to conversation
-    // Setup: In Resend dashboard → Inbound → Add route for reply+*@thebearing.io
-    // Webhook URL: https://thebearing.io/api/inbound-email
+    // Setup: Resend dashboard → Domains → thebearing.io → enable Receiving
+    // Then add webhook endpoint: https://thebearing.io/api/inbound-email
     if (url.pathname === '/api/inbound-email') {
       if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
       let body;
       try { body = await request.json(); }
       catch(e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
 
-      // Resend inbound email format:
-      // body.to = ["reply+conv_xxx@thebearing.io"]
-      // body.from = "guest@email.com"
-      // body.text = email body text
-      // body.subject = "Re: New message from..."
+      // Log full payload for debugging (visible in Cloudflare Worker logs)
+      console.log('[Inbound] Received:', JSON.stringify(body).substring(0, 500));
 
-      const toAddresses = body.to || [];
+      // Collect all possible "to" addresses from various payload shapes
+      // Resend may send: body.to, body.recipient, body.envelope.to, body.data.to
+      const toAddresses = [];
+      function collectAddresses(value) {
+        if (!value) return;
+        if (typeof value === 'string') toAddresses.push(value);
+        else if (Array.isArray(value)) value.forEach(collectAddresses);
+        else if (value.email) toAddresses.push(value.email);
+        else if (value.address) toAddresses.push(value.address);
+      }
+      collectAddresses(body.to);
+      collectAddresses(body.recipient);
+      if (body.envelope) collectAddresses(body.envelope.to);
+      if (body.data) {
+        collectAddresses(body.data.to);
+        collectAddresses(body.data.recipient);
+        if (body.data.envelope) collectAddresses(body.data.envelope.to);
+      }
+
       let convId = null;
-
-      // Extract conversation ID from reply+{id}@thebearing.io
       for (const addr of toAddresses) {
-        const m = addr.match(/reply\+([a-zA-Z0-9_]+)@thebearing\.io/);
+        const m = String(addr).match(/reply\+([a-zA-Z0-9_]+)@thebearing\.io/i);
         if (m) { convId = m[1]; break; }
       }
 
-      if (!convId) return jsonResponse({ error: 'no conversation ID in recipient' }, 400);
+      if (!convId) {
+        console.log('[Inbound] No conv ID found. Addresses:', toAddresses);
+        return jsonResponse({ error: 'no conversation ID in recipient', addresses: toAddresses }, 400);
+      }
 
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
 
       const convRaw = await env.DOSSIERS.get('conversation:' + convId);
-      if (!convRaw) return jsonResponse({ error: 'conversation not found' }, 404);
+      if (!convRaw) return jsonResponse({ error: 'conversation not found', convId }, 404);
       const conv = JSON.parse(convRaw);
 
-      // Extract reply text — strip quoted content (lines starting with >)
-      let text = (body.text || '').trim();
-      // Remove quoted reply content
+      // Get email body — try multiple field names
+      let text = body.text || body.plain || (body.data && body.data.text) || (body.data && body.data.plain) || '';
+      // Strip HTML if only HTML is present
+      if (!text && (body.html || (body.data && body.data.html))) {
+        const html = body.html || body.data.html;
+        text = html.replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
+      }
+      text = text.trim();
+
+      // Strip quoted reply content (lines starting with >)
       text = text.split('\n')
         .filter(line => !line.trim().startsWith('>'))
         .join('\n')
         .trim();
-      // Remove common email signature separators
-      const sigSeparators = ['--\n', '— The Bearing', 'On ', 'Sent from'];
+      // Remove common email signature/quote separators
+      const sigSeparators = ['\n--\n', '\n— The Bearing', '\nOn ', '\nSent from', '________', '\n>From:'];
       for (const sep of sigSeparators) {
         const idx = text.indexOf(sep);
         if (idx > 20) { text = text.substring(0, idx).trim(); break; }
       }
 
       if (!text || text.length < 2) {
-        return jsonResponse({ ok: true, skipped: 'empty reply' });
+        return jsonResponse({ ok: true, skipped: 'empty reply', convId });
       }
 
       // Save message as guest reply
       const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
       const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
       const now = new Date().toISOString();
+      const fromAddr = body.from || (body.data && body.data.from) || '';
       const msg = {
         id: 'msg_' + Date.now(),
         role: 'guest',
         text,
-        senderName: conv.guestName || body.from || 'Guest',
+        senderName: conv.guestName || fromAddr || 'Guest',
         sentAt: now,
         readAt: null,
         source: 'email'
@@ -1118,6 +1142,13 @@ View in admin: https://thebearing.io/admin-bookings.html
 
       await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
       await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+
+      // Record guest's lastreply timestamp for presence
+      const nowMs = Date.now();
+      const guestKey = conv.guestId || conv.guestEmail;
+      if (guestKey) {
+        await env.DOSSIERS.put('lastreply:guest:' + guestKey, String(nowMs), { expirationTtl: 2592000 });
+      }
 
       // Notify admin
       if (env.RESEND_API_KEY) {
