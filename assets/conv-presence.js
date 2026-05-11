@@ -33,10 +33,10 @@
       canvas.width = 32; canvas.height = 32;
       var ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0, 32, 32);
-      // Red dot in top-right
+      // Green dot in top-right
       ctx.beginPath();
       ctx.arc(24, 8, 7, 0, 2 * Math.PI);
-      ctx.fillStyle = '#dc2626';
+      ctx.fillStyle = '#16a34a';
       ctx.fill();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
@@ -46,11 +46,11 @@
         link.href = dotFaviconCache;
         if (!link.parentNode) document.head.appendChild(link);
       } catch(e) {
-        // CORS or canvas tainted — fallback to a generated red dot only
+        // CORS or canvas tainted — fallback to pure green dot
         var c2 = document.createElement('canvas');
         c2.width = 32; c2.height = 32;
         var ctx2 = c2.getContext('2d');
-        ctx2.fillStyle = '#dc2626';
+        ctx2.fillStyle = '#16a34a';
         ctx2.beginPath();
         ctx2.arc(16, 16, 14, 0, 2 * Math.PI);
         ctx2.fill();
@@ -60,11 +60,11 @@
       }
     };
     img.onerror = function() {
-      // Fallback: pure red dot favicon
+      // Fallback: pure green dot favicon
       var c2 = document.createElement('canvas');
       c2.width = 32; c2.height = 32;
       var ctx2 = c2.getContext('2d');
-      ctx2.fillStyle = '#dc2626';
+      ctx2.fillStyle = '#16a34a';
       ctx2.beginPath();
       ctx2.arc(16, 16, 14, 0, 2 * Math.PI);
       ctx2.fill();
@@ -75,16 +75,47 @@
     img.src = origFaviconHref;
   }
 
-  // ── Title with unread count ──
+  // ── Title with unread count + blinking when tab not focused ──
   var origTitle = null;
+  var blinkInterval = null;
+  var blinkToggle = false;
+
   function setUnreadInTitle(count) {
-    if (!origTitle) origTitle = document.title.replace(/^\(\d+\)\s*/, '');
+    if (!origTitle) origTitle = document.title.replace(/^\(\d+\)\s*/, '').replace(/^💬\s*New message[s]?!\s*/, '');
+    
+    // Stop any existing blink
+    if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
+    
     if (count > 0) {
-      document.title = '(' + count + ') ' + origTitle;
+      // If tab is not focused, blink between count and "New message!" alert
+      if (document.hidden) {
+        blinkToggle = false;
+        blinkInterval = setInterval(function() {
+          blinkToggle = !blinkToggle;
+          document.title = blinkToggle
+            ? '💬 New message' + (count > 1 ? 's!' : '!')
+            : '(' + count + ') ' + origTitle;
+        }, 1000);
+        document.title = '💬 New message' + (count > 1 ? 's!' : '!');
+      } else {
+        // Tab is focused — just show count without blinking
+        document.title = '(' + count + ') ' + origTitle;
+      }
     } else {
       document.title = origTitle;
     }
   }
+
+  // Re-trigger title update when tab visibility changes
+  document.addEventListener('visibilitychange', function() {
+    // If we have unread state, refresh title to start/stop blinking
+    var match = document.title.match(/^\((\d+)\)/);
+    var hasUnread = match || document.title.indexOf('New message') >= 0;
+    if (hasUnread) {
+      var count = match ? parseInt(match[1]) : 1;
+      setUnreadInTitle(count);
+    }
+  });
 
   // ── Heartbeat (presence) ──
   var heartbeatInterval = null;
