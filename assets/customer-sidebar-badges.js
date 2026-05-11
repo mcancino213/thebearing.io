@@ -1,52 +1,45 @@
-// Customer-side sidebar badge updater
-// Sets real unread counts for Bookings & Conversations sidebar items
+// Customer sidebar — Conversations badge uses lean /api/unread-count
+// Bookings badge still hits /api/booking (less frequently)
 (function() {
-  function updateBadges() {
-    var user = window.Clerk && window.Clerk.user;
-    if (!user) return;
+  var inFlight = false;
 
-    // Conversations badge
-    fetch('/api/conversation?guestId=' + encodeURIComponent(user.id))
+  function updateConvBadge() {
+    var user = window.Clerk && window.Clerk.user;
+    if (!user || inFlight || document.hidden) return;
+    inFlight = true;
+    fetch('/api/unread-count?role=guest&guestId=' + encodeURIComponent(user.id), { cache: 'no-store' })
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        var convs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
-        var unread = convs.reduce(function(sum, c){ return sum + (c.unreadGuest || 0); }, 0);
-        // Find the Conversations badge specifically
+        var unread = d.unread || 0;
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
           if (link.getAttribute('href') === '/conversations.html' || link.textContent.indexOf('Conversations') >= 0) {
             var badge = link.querySelector('.sidebar-badge');
             if (badge) {
-              if (unread > 0) {
-                badge.textContent = unread;
-                badge.style.display = '';
-              } else {
-                badge.style.display = 'none';
-              }
+              if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
+              else badge.style.display = 'none';
             }
           }
         });
       })
-      .catch(function(){});
+      .catch(function(){})
+      .finally(function(){ inFlight = false; });
+  }
 
-    // Bookings badge
+  function updateBookingsBadge() {
+    var user = window.Clerk && window.Clerk.user;
+    if (!user) return;
     fetch('/api/booking?guestId=' + encodeURIComponent(user.id))
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        var bookings = (d.bookings || []);
-        // Count active bookings (not cancelled)
-        var count = bookings.filter(function(b){ return b.status !== 'cancelled'; }).length;
+        var count = (d.bookings || []).filter(function(b){ return b.status !== 'cancelled'; }).length;
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
           if (link.getAttribute('href') === '/bookings.html' || link.textContent.indexOf('Bookings') >= 0) {
             var badge = link.querySelector('.sidebar-badge');
             if (badge) {
-              if (count > 0) {
-                badge.textContent = count;
-                badge.style.display = '';
-              } else {
-                badge.style.display = 'none';
-              }
+              if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+              else badge.style.display = 'none';
             }
           }
         });
@@ -55,17 +48,19 @@
   }
 
   function init() {
-    // Wait for Clerk to be ready
     var attempts = 0;
     var t = setInterval(function() {
       attempts++;
       if (window.Clerk && window.Clerk.user) {
         clearInterval(t);
-        updateBadges();
-        setInterval(updateBadges, 8000);
-        window.addEventListener('focus', updateBadges);
-        document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateBadges(); });
-        window.refreshCustomerBadges = updateBadges;
+        updateConvBadge();
+        updateBookingsBadge();
+        // Convs poll fast (lean endpoint), bookings poll slow (heavier endpoint)
+        setInterval(updateConvBadge, 4000);
+        setInterval(updateBookingsBadge, 60000);
+        window.addEventListener('focus', updateConvBadge);
+        document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateConvBadge(); });
+        window.refreshCustomerBadges = updateConvBadge;
       } else if (attempts > 25) {
         clearInterval(t);
       }

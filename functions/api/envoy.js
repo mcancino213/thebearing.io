@@ -748,6 +748,32 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ error: 'method not allowed' }, 405);
     }
 
+    // ── /api/unread-count ─────────────────────────────────────────
+    // Returns lightweight unread counts. Reads a single aggregated KV key
+    // instead of scanning every conversation. Designed for fast polling (~2-5s).
+    // Query params:
+    //   role=admin                          → returns { unread: N } (total open convs with unreadAdmin>0)
+    //   role=guest&guestId=xxx              → returns { unread: N } for that guest
+    //   role=partner&slug=xxx               → returns { unread: N } for that property
+    if (url.pathname === '/api/unread-count') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      const role = url.searchParams.get('role') || 'admin';
+      const counterRaw = await env.DOSSIERS.get('__unread_counters');
+      const counter = counterRaw ? JSON.parse(counterRaw) : { admin: 0, guests: {}, props: {} };
+
+      let unread = 0;
+      if (role === 'admin') {
+        unread = counter.admin || 0;
+      } else if (role === 'guest') {
+        const guestId = url.searchParams.get('guestId');
+        unread = (guestId && counter.guests && counter.guests[guestId]) || 0;
+      } else if (role === 'partner') {
+        const slug = url.searchParams.get('slug');
+        unread = (slug && counter.props && counter.props[slug]) || 0;
+      }
+      return jsonResponse({ unread });
+    }
+
     // ── /api/conversation ─────────────────────────────────────────
     // Conversation data model:
     //   conversation:{id}          → { id, propertySlug, propertyName, guestId,
@@ -874,6 +900,9 @@ View in admin: https://thebearing.io/admin-bookings.html
           propIds.push(id);
           await env.DOSSIERS.put('prop:' + propertySlug + ':convs', JSON.stringify(propIds));
 
+          // Update aggregate counters
+          await recomputeUnreadCounters(env);
+
           // Email admin/partner notification
           if (env.RESEND_API_KEY && firstMessage && conv.notifyAdmin !== false) {
             try {
@@ -932,6 +961,9 @@ View in admin: https://thebearing.io/admin-bookings.html
             const guestKey = conv.guestId || conv.guestEmail;
             if (guestKey) await env.DOSSIERS.put('lastreply:guest:' + guestKey, String(nowMs), { expirationTtl: 2592000 });
           }
+
+          // Update aggregate counters
+          await recomputeUnreadCounters(env);
 
           // Email notification to the other party
           if (env.RESEND_API_KEY) {
@@ -993,6 +1025,7 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (markReadFor === 'guest') conv.unreadGuest = 0;
         if (status) conv.status = status;
         await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+        await recomputeUnreadCounters(env);
         return jsonResponse({ ok: true });
       }
     }
@@ -1305,6 +1338,7 @@ View in admin: https://thebearing.io/admin-bookings.html
 
       await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
       await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+      await recomputeUnreadCounters(env);
 
       // Record guest's lastreply timestamp for presence
       const nowMs = Date.now();
@@ -1442,6 +1476,34 @@ function jsonResponse(obj, status = 200) {
       'Access-Control-Allow-Origin': '*'
     }
   });
+}
+
+// Recomputes the aggregated unread counters from all conversations.
+// Cheap because conv list is small and KV ops are bulk-readable.
+async function recomputeUnreadCounters(env) {
+  if (!env.DOSSIERS) return;
+  try {
+    const idxRaw = await env.DOSSIERS.get('__conversations_index');
+    const ids = idxRaw ? JSON.parse(idxRaw) : [];
+    let admin = 0;
+    const guests = {};
+    const props = {};
+    for (const id of ids) {
+      const cRaw = await env.DOSSIERS.get('conversation:' + id);
+      if (!cRaw) continue;
+      const c = JSON.parse(cRaw);
+      if (c.status === 'archived') continue;
+      if ((c.unreadAdmin || 0) > 0) admin++;
+      if ((c.unreadGuest || 0) > 0 && c.guestId) {
+        guests[c.guestId] = (guests[c.guestId] || 0) + (c.unreadGuest || 0);
+      }
+      // Partner unread piggybacks on unreadAdmin (same recipient pool currently)
+      if ((c.unreadAdmin || 0) > 0 && c.propertySlug) {
+        props[c.propertySlug] = (props[c.propertySlug] || 0) + 1;
+      }
+    }
+    await env.DOSSIERS.put('__unread_counters', JSON.stringify({ admin, guests, props }), { expirationTtl: 86400 });
+  } catch(e) { console.error('[Counters] recompute error:', e.message); }
 }
 
 async function handleClerkEvent(event, env) {

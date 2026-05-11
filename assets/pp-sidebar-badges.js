@@ -1,15 +1,15 @@
-// Partner portal sidebar badge updater
+// Partner portal — Conversations badge uses lean /api/unread-count
 (function() {
-  var PP_SLUG = 'nour-el-nil'; // TODO: replace with real partner auth context
+  var PP_SLUG = 'nour-el-nil';
+  var inFlight = false;
 
-  function updateBadges() {
-    // Conversations
-    fetch('/api/conversation?slug=' + PP_SLUG)
+  function updateConvBadge() {
+    if (inFlight || document.hidden) return;
+    inFlight = true;
+    fetch('/api/unread-count?role=partner&slug=' + PP_SLUG, { cache: 'no-store' })
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        var convs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
-        // For partner portal, unread = unreadAdmin (messages from guest waiting for partner reply)
-        var unread = convs.reduce(function(sum, c){ return sum + (c.unreadAdmin || 0); }, 0);
+        var unread = d.unread || 0;
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
           if (link.getAttribute('href') === 'pp-conversations.html') {
@@ -21,9 +21,11 @@
           }
         });
       })
-      .catch(function(){});
+      .catch(function(){})
+      .finally(function(){ inFlight = false; });
+  }
 
-    // Bookings
+  function updateBookingsBadge() {
     fetch('/api/booking?slug=' + PP_SLUG)
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
@@ -42,13 +44,19 @@
       .catch(function(){});
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateBadges);
-  } else {
-    updateBadges();
+  function init() {
+    updateConvBadge();
+    updateBookingsBadge();
+    setInterval(updateConvBadge, 4000);
+    setInterval(updateBookingsBadge, 60000);
+    window.addEventListener('focus', updateConvBadge);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateConvBadge(); });
+    window.refreshPpBadges = updateConvBadge;
   }
-  setInterval(updateBadges, 8000);
-  window.addEventListener('focus', updateBadges);
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateBadges(); });
-  window.refreshPpBadges = updateBadges;
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
