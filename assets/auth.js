@@ -127,18 +127,31 @@ var tbAuth = (function() {
         return;
       }
 
+      // Determine where to land after sign-in:
+      //   - Property pages, enquiry flows, conversation threads → stay (so flow continues)
+      //   - Homepage and generic browse pages → go to my-account
+      //   - Already on an account page → stay
+      var path = window.location.pathname || '/';
+      var stayInPlacePaths = [
+        '/property.html', '/nour-el-nil.html',
+        '/my-account.html', '/conversations.html', '/bookings.html',
+        '/saved.html', '/lens.html', '/preferences.html', '/settings.html'
+      ];
+      var stayInPlace = stayInPlacePaths.some(function(p) { return path === p || path.indexOf(p) === 0; });
+      var afterUrl = stayInPlace ? window.location.href : '/my-account.html';
+
       // Use Clerk's hosted sign-in page in an iframe as fallback
       // First try mountSignIn, fall back to redirect
       try {
         window.Clerk.mountSignIn(mountEl, {
           routing: 'virtual',
-          afterSignInUrl: window.location.href,
-          afterSignUpUrl: window.location.href,
+          afterSignInUrl: afterUrl,
+          afterSignUpUrl: afterUrl,
         });
       } catch(e) {
         // Fallback: show a simple iframe with Clerk hosted UI
         mountEl.innerHTML = '<div style="text-align:center;padding:16px 0;">' +
-          '<a href="' + CLERK_DOMAIN + '/sign-in?redirect_url=' + encodeURIComponent(window.location.href) + '" ' +
+          '<a href="' + CLERK_DOMAIN + '/sign-in?redirect_url=' + encodeURIComponent(afterUrl) + '" ' +
           'style="display:inline-block;padding:12px 28px;background:#b05830;color:#fff;border-radius:100px;font-family:Geist,sans-serif;font-size:.88rem;font-weight:600;text-decoration:none;">Continue with Google or email →</a>' +
           '<div style="font-size:.7rem;color:#9a8e80;margin-top:10px;">You\'ll be returned here after signing in.</div>' +
         '</div>';
