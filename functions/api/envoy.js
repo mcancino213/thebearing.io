@@ -1151,8 +1151,19 @@ View in admin: https://thebearing.io/admin-bookings.html
       text = text.trim();
 
       if (!text || text.length < 2) {
-        console.log('[Inbound] Empty reply after stripping. Original text:', (body.text||'').substring(0,500));
-        return jsonResponse({ ok: true, skipped: 'empty reply', convId });
+        console.log('[Inbound] Empty reply after stripping. Full body received:', JSON.stringify(body));
+        return jsonResponse({ 
+          ok: true, 
+          skipped: 'empty reply', 
+          convId,
+          debug: {
+            receivedKeys: Object.keys(body),
+            dataKeys: body.data ? Object.keys(body.data) : null,
+            rawTextLength: (body.text||(body.data&&body.data.text)||'').length,
+            rawHtmlLength: (body.html||(body.data&&body.data.html)||'').length,
+            samplePayload: JSON.stringify(body).substring(0, 1000)
+          }
+        });
       }
 
       // Save message as guest reply
