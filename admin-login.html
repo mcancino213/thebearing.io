@@ -253,15 +253,14 @@ window.addEventListener('load', async function() {
     }
   });
 
-  // If already signed in: verify admin and redirect to dashboard, OR show denial + force sign-out
+  // If already signed in: verify admin and redirect to dashboard, OR show denial (without signing them out — they're still a valid customer)
   if (window.Clerk.user) {
     if (isAdminUser(window.Clerk.user)) {
       window.location.href = '/admin-dashboard.html';
       return;
     } else {
-      // Signed in but not an admin — sign them out and show message
+      // Signed in but not an admin — show message; don't sign them out
       showDenialMessage('not_authorized');
-      try { await window.Clerk.signOut(); } catch(e) {}
     }
   }
 
@@ -277,9 +276,8 @@ window.addEventListener('load', async function() {
       if (isAdminUser(resources.user)) {
         window.location.href = '/admin-dashboard.html';
       } else {
-        // Not an admin — sign out and show denial
+        // Not an admin — just show denial; they remain signed in as a customer
         showDenialMessage('not_authorized');
-        window.Clerk.signOut().catch(function(){});
       }
     }
   });
