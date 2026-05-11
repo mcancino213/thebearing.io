@@ -922,6 +922,15 @@ View in admin: https://thebearing.io/admin-bookings.html
           await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
           await env.DOSSIERS.put('conversation:' + id + ':messages', JSON.stringify(messages));
 
+          // Record last-reply timestamps for presence tracking
+          const nowMs = Date.now();
+          if (role === 'admin' || role === 'partner') {
+            await env.DOSSIERS.put('lastreply:property:' + conv.propertySlug, String(nowMs), { expirationTtl: 2592000 });
+          } else if (role === 'guest') {
+            const guestKey = conv.guestId || conv.guestEmail;
+            if (guestKey) await env.DOSSIERS.put('lastreply:guest:' + guestKey, String(nowMs), { expirationTtl: 2592000 });
+          }
+
           // Email notification to the other party
           if (env.RESEND_API_KEY) {
             try {
@@ -978,6 +987,63 @@ View in admin: https://thebearing.io/admin-bookings.html
         await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
         return jsonResponse({ ok: true });
       }
+    }
+
+    // ── /api/presence ─────────────────────────────────────────────
+    // Heartbeat-based online presence. Clients POST every 30s.
+    // POST { role: 'admin'|'partner'|'guest', slug?: string, guestId?: string }
+    // GET ?slug=X returns property's last_seen for guest view
+    // GET ?guestId=X returns guest's last_seen for admin/partner view
+    if (url.pathname === '/api/presence') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); } catch(e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        const now = Date.now();
+        let key = null;
+        if (body.role === 'admin') key = 'presence:admin';
+        else if (body.role === 'partner' && body.slug) key = 'presence:partner:' + body.slug;
+        else if (body.role === 'guest' && body.guestId) key = 'presence:guest:' + body.guestId;
+        if (!key) return jsonResponse({ error: 'role + identifier required' }, 400);
+        await env.DOSSIERS.put(key, String(now), { expirationTtl: 3600 });
+        return jsonResponse({ ok: true, ts: now });
+      }
+
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        const guestId = url.searchParams.get('guestId');
+        const result = {};
+
+        if (slug) {
+          // Last seen for property = max(partner heartbeat, admin heartbeat, last partner/admin reply)
+          const partnerRaw = await env.DOSSIERS.get('presence:partner:' + slug);
+          const adminRaw = await env.DOSSIERS.get('presence:admin');
+          const lastReplyRaw = await env.DOSSIERS.get('lastreply:property:' + slug);
+          const candidates = [
+            partnerRaw ? parseInt(partnerRaw) : 0,
+            adminRaw ? parseInt(adminRaw) : 0,
+            lastReplyRaw ? parseInt(lastReplyRaw) : 0
+          ];
+          result.lastSeen = Math.max(...candidates) || null;
+          result.online = result.lastSeen && (Date.now() - result.lastSeen < 60000);
+        }
+
+        if (guestId) {
+          const guestRaw = await env.DOSSIERS.get('presence:guest:' + guestId);
+          const lastReplyRaw = await env.DOSSIERS.get('lastreply:guest:' + guestId);
+          const candidates = [
+            guestRaw ? parseInt(guestRaw) : 0,
+            lastReplyRaw ? parseInt(lastReplyRaw) : 0
+          ];
+          result.guestLastSeen = Math.max(...candidates) || null;
+          result.guestOnline = result.guestLastSeen && (Date.now() - result.guestLastSeen < 60000);
+        }
+
+        return jsonResponse(result);
+      }
+
+      return jsonResponse({ error: 'method not allowed' }, 405);
     }
 
     // ── /api/inbound-email ────────────────────────────────────────

@@ -911,6 +911,7 @@ window.addEventListener('load', async function() {
 });
 </script>
 
+<script src="/assets/conv-presence.js"></script>
 <script>
 var chConvs = [];
 var chActiveId = null;
@@ -948,6 +949,16 @@ window.addEventListener('load', function() {
 function initChannels(user) {
   if (!user) user = window.Clerk && window.Clerk.user;
   if (!user) return;
+
+  // Start heartbeat & unread tracking
+  if (window.ConvPresence) {
+    window.ConvPresence.startHeartbeat({ role: 'guest', guestId: user.id });
+    window.ConvPresence.onVisible(function() {
+      // When user returns to tab, clear title/favicon
+      window.ConvPresence.setUnreadInTitle(0);
+      window.ConvPresence.drawFaviconDot(false);
+    });
+  }
   var app = document.getElementById('ch-app');
   app.innerHTML =
     '<div class="ch-layout">' +
@@ -966,6 +977,7 @@ function initChannels(user) {
     .then(function(d){
       chConvs = (d.conversations || []).filter(function(c) { return c.status !== 'archived'; });
       chRenderList();
+      chUpdateUnreadIndicator();
       var urlId = new URLSearchParams(window.location.search).get('id');
       if (urlId) chOpen(urlId);
       else if (chConvs.length === 1) chOpen(chConvs[0].id);
@@ -974,6 +986,27 @@ function initChannels(user) {
       var el = document.getElementById('ch-list');
       if(el) el.innerHTML = '<div class="ch-empty" style="color:#dc2626;">Error: ' + e.message + '</div>';
     });
+
+  // Refresh list every 15s to catch new messages
+  setInterval(function() {
+    fetch('/api/conversation?guestId=' + encodeURIComponent(guestId))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        chConvs = (d.conversations || []).filter(function(c) { return c.status !== 'archived'; });
+        chRenderList();
+        chUpdateUnreadIndicator();
+      }).catch(function(){});
+  }, 15000);
+}
+
+function chUpdateUnreadIndicator() {
+  if (!window.ConvPresence) return;
+  var total = 0;
+  chConvs.forEach(function(c) { total += (c.unreadGuest || 0); });
+  // Only show indicator if tab is hidden, or always show?
+  // Show always - lets user know even when on page they have unread
+  window.ConvPresence.setUnreadInTitle(total);
+  window.ConvPresence.drawFaviconDot(total > 0);
 }
 
 function chRenderList() {
@@ -996,6 +1029,19 @@ function chRenderList() {
     var av = document.createElement('div');
     av.className = 'ch-avatar';
     av.textContent = ini;
+    av.style.position = 'relative';
+
+    // Online dot on avatar — fetched async per property
+    var onlineDot = document.createElement('span');
+    onlineDot.style.cssText = 'position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#16a34a;border:2px solid #fff;display:none;';
+    onlineDot.setAttribute('data-presence-dot', c.propertySlug);
+    av.appendChild(onlineDot);
+
+    if (window.ConvPresence) {
+      window.ConvPresence.fetchPresence({ slug: c.propertySlug }).then(function(p) {
+        if (p.online) onlineDot.style.display = 'block';
+      }).catch(function(){});
+    }
 
     var meta = document.createElement('div');
     meta.className = 'ch-meta';
@@ -1038,7 +1084,43 @@ function chOpen(id) {
   fetch('/api/conversation', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,markReadFor:'guest'})});
   fetch('/api/conversation?id=' + encodeURIComponent(id))
     .then(function(r){ return r.json(); })
-    .then(function(d){ chRenderThread(d.conversation, d.messages||[]); chStartPoll(id); });
+    .then(function(d){
+      chRenderThread(d.conversation, d.messages||[]);
+      chStartPoll(id);
+      chUpdatePresence(d.conversation);
+      if (chPresenceInterval) clearInterval(chPresenceInterval);
+      chPresenceInterval = setInterval(function(){ chUpdatePresence(d.conversation); }, 30000);
+    });
+}
+
+var chPresenceInterval = null;
+
+// Property timezone map — TODO: move into property KV records
+var chPropertyTimezones = {
+  'nour-el-nil': 'Africa/Cairo'
+};
+
+function chUpdatePresence(conv) {
+  if (!window.ConvPresence) return;
+  var line = document.getElementById('ch-presence-line');
+  if (!line) return;
+
+  window.ConvPresence.fetchPresence({ slug: conv.propertySlug }).then(function(p) {
+    var parts = [];
+    if (p.online) {
+      parts.push('<span style="color:#16a34a;">● Online</span>');
+    } else if (p.lastSeen) {
+      parts.push('Last seen ' + window.ConvPresence.timeAgo(p.lastSeen));
+    } else {
+      parts.push('via The Bearing · private');
+    }
+    var tz = chPropertyTimezones[conv.propertySlug];
+    if (tz) {
+      var local = window.ConvPresence.propertyLocalTime(tz);
+      if (local) parts.push('Local time ' + local);
+    }
+    line.innerHTML = parts.join(' · ');
+  }).catch(function(){});
 }
 
 function chRenderThread(conv, msgs) {
@@ -1052,7 +1134,7 @@ function chRenderThread(conv, msgs) {
 
   var av = document.createElement('div');
   av.className = 'ch-avatar';
-  av.style.cssText = 'width:34px;height:34px;font-size:.85rem;';
+  av.style.cssText = 'width:34px;height:34px;font-size:.85rem;position:relative;';
   av.textContent = (conv.propertyName||'?')[0].toUpperCase();
 
   var info = document.createElement('div');
@@ -1061,6 +1143,7 @@ function chRenderThread(conv, msgs) {
   name.textContent = conv.propertyName || conv.propertySlug;
   var sub = document.createElement('div');
   sub.className = 'ch-thread-sub';
+  sub.id = 'ch-presence-line';
   sub.textContent = 'via The Bearing · private';
   info.appendChild(name);
   info.appendChild(sub);

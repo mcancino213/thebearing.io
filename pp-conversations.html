@@ -229,6 +229,7 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 
+<script src="/assets/conv-presence.js"></script>
 <script>
 var PP_SLUG = 'nour-el-nil'; // Partner's property slug
 var ppConvs = [];
@@ -257,6 +258,7 @@ function loadConvs() {
     .then(function(d) {
       ppConvs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
       renderConvList();
+      if (typeof ppUpdateUnreadIndicator === 'function') ppUpdateUnreadIndicator();
     })
     .catch(function(e) {
       document.getElementById('pp-conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:13px;">Error: ' + e.message + '</div>';
@@ -348,7 +350,21 @@ function renderThread(conv, messages) {
   n1.textContent = conv.guestName || conv.guestEmail;
   var n2 = document.createElement('div');
   n2.style.cssText = 'font-size:12px;color:var(--text2);';
+  n2.id = 'pp-presence-line';
   n2.textContent = conv.guestEmail + (conv.enquiry && conv.enquiry.cabin ? ' · ' + conv.enquiry.cabin : '');
+
+  // Fetch guest presence and update sub line
+  if (window.ConvPresence && conv.guestId) {
+    window.ConvPresence.fetchPresence({ guestId: conv.guestId }).then(function(p) {
+      var line = document.getElementById('pp-presence-line');
+      if (!line) return;
+      var status = '';
+      if (p.guestOnline) status = '<span style="color:#16a34a;font-weight:600;">● Online</span>';
+      else if (p.guestLastSeen) status = 'Last seen ' + window.ConvPresence.timeAgo(p.guestLastSeen);
+      var base = conv.guestEmail + (conv.enquiry && conv.enquiry.cabin ? ' · ' + conv.enquiry.cabin : '');
+      line.innerHTML = base + (status ? ' · ' + status : '');
+    }).catch(function(){});
+  }
   info.appendChild(n1);
   info.appendChild(n2);
 
@@ -534,6 +550,33 @@ function startPoll(id) {
   if (ppPoll) clearInterval(ppPoll);
   ppPoll = setInterval(function(){ if(ppActiveId===id) refreshThread(); }, 5000);
 }
+
+// ── Presence ──
+if (window.ConvPresence) {
+  window.ConvPresence.startHeartbeat({ role: 'partner', slug: PP_SLUG });
+  window.ConvPresence.onVisible(function() {
+    window.ConvPresence.setUnreadInTitle(0);
+    window.ConvPresence.drawFaviconDot(false);
+  });
+}
+
+function ppUpdateUnreadIndicator() {
+  if (!window.ConvPresence) return;
+  var total = 0;
+  ppConvs.forEach(function(c) { total += (c.unreadAdmin || 0); });
+  window.ConvPresence.setUnreadInTitle(total);
+  window.ConvPresence.drawFaviconDot(total > 0);
+}
+
+// Periodic list refresh
+setInterval(function() {
+  fetch('/api/conversation?slug=' + PP_SLUG)
+    .then(function(r){ return r.json(); })
+    .then(function(d) {
+      ppConvs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
+      ppUpdateUnreadIndicator();
+    }).catch(function(){});
+}, 15000);
 
 loadConvs();
 </script>
