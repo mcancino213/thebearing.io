@@ -31,24 +31,33 @@
       emailEl.textContent = email;
     }
 
-    // Add Sign out button (after the founding member tag) — same as my-account.html
-    if (!document.querySelector('.tb-signout-btn')) {
-      var signOutBtn = document.createElement('button');
-      signOutBtn.className = 'tb-signout-btn';
-      signOutBtn.textContent = 'Sign out';
-      signOutBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border:1px solid var(--border-hi,#e8dfd0);border-radius:8px;background:transparent;color:var(--stone,#9a8e80);font-family:Geist,sans-serif;font-size:.8rem;cursor:pointer;';
-      signOutBtn.onclick = async function() {
-        if (window.Clerk) {
-          await window.Clerk.signOut();
-          window.location.href = '/';
+    // Add Sign out button (after the founding member tag) — only if not already present
+    var existingSignOut = document.querySelector('.tb-signout-btn');
+    if (!existingSignOut) {
+      // Also check for any button with "Sign out" text already in the sidebar
+      var sidebarBtns = document.querySelectorAll('.sidebar-profile button, .sidebar button');
+      var hasSignOut = false;
+      sidebarBtns.forEach(function(b) {
+        if ((b.textContent || '').trim().toLowerCase() === 'sign out') hasSignOut = true;
+      });
+      if (!hasSignOut) {
+        var signOutBtn = document.createElement('button');
+        signOutBtn.className = 'tb-signout-btn';
+        signOutBtn.textContent = 'Sign out';
+        signOutBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border:1px solid var(--border-hi,#e8dfd0);border-radius:8px;background:transparent;color:var(--stone,#9a8e80);font-family:Geist,sans-serif;font-size:.8rem;cursor:pointer;';
+        signOutBtn.onclick = async function() {
+          if (window.Clerk) {
+            await window.Clerk.signOut();
+            window.location.href = '/';
+          }
+        };
+        var memberTag = document.querySelector('.sidebar-member');
+        if (memberTag && memberTag.parentNode) {
+          memberTag.parentNode.insertBefore(signOutBtn, memberTag.nextSibling);
+        } else {
+          var profileForBtn = document.querySelector('.sidebar-profile');
+          if (profileForBtn) profileForBtn.appendChild(signOutBtn);
         }
-      };
-      var memberTag = document.querySelector('.sidebar-member');
-      if (memberTag && memberTag.parentNode) {
-        memberTag.parentNode.insertBefore(signOutBtn, memberTag.nextSibling);
-      } else {
-        var profile = document.querySelector('.sidebar-profile');
-        if (profile) profile.appendChild(signOutBtn);
       }
     }
 
