@@ -962,7 +962,7 @@ View in admin: https://thebearing.io/admin-bookings.html
                   from: 'The Bearing <bookings@thebearing.io>',
                   to: ['miguel@thebearing.io'],
                   subject: `New enquiry — ${propertyName} from ${guestName || guestEmail}`,
-                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversation.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
+                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                 })
               });
             } catch(e) { console.error('[Conv] Admin email error:', e.message); }
@@ -1052,7 +1052,7 @@ View in admin: https://thebearing.io/admin-bookings.html
                       from: 'The Bearing <bookings@thebearing.io>',
                       to: ['miguel@thebearing.io'],
                       subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
-                      text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversation.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
+                      text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                     })
                   });
                 }
