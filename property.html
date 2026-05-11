@@ -2083,7 +2083,7 @@ function populateConfirmation(){
       });
       if (existingConv) {
         closeOverlay('inq-overlay');
-        window.location = '/channels.html?id=' + existingConv.id;
+        window.location = '/conversations.html?id=' + existingConv.id;
         return;
       }
       createNewConversation();
@@ -2110,7 +2110,7 @@ function populateConfirmation(){
     if(data.ok) {
       window._lastConvId = data.id;
       var goBtn = document.getElementById('inq-go-channel-btn');
-      if(goBtn) goBtn.href = '/channels.html?id=' + data.id;
+      if(goBtn) goBtn.href = '/conversations.html?id=' + data.id;
     }
   })
   .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
@@ -3133,7 +3133,7 @@ loadProperty();
           <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
           <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
         </div>
-        <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/channels.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
+        <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/conversations.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to conversation
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
@@ -3719,7 +3719,7 @@ document.addEventListener('keydown', function(e) {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
-        <button onclick="window.location='/channels.html'" style="width:100%;padding:13px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        <button onclick="window.location='/conversations.html'" style="width:100%;padding:13px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 2h12v9H9l-3 3v-3H2z"/></svg>
           Go to my conversation
         </button>

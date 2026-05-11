@@ -14,7 +14,7 @@
         // Find the Conversations badge specifically
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === '/channels.html' || link.textContent.indexOf('Conversations') >= 0) {
+          if (link.getAttribute('href') === '/conversations.html' || link.textContent.indexOf('Conversations') >= 0) {
             var badge = link.querySelector('.sidebar-badge');
             if (badge) {
               if (unread > 0) {
