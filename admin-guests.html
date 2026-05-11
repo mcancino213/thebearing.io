@@ -237,19 +237,29 @@ window.addEventListener('load', async function() {
   <div class="card-header">
     <div class="card-title">All members</div>
     <div class="card-header-right">
-      <input class="filter-input" style="width:240px;" placeholder="Search name, email…">
+      <input class="filter-input" id="members-search" style="width:240px;" placeholder="Search name, email, location…" oninput="onMembersSearch(this.value)">
       <div class="filter-tabs">
-        <button class="filter-tab active">All</button>
-        <button class="filter-tab">Founding</button>
-        <button class="filter-tab">Active</button>
-        <button class="filter-tab">New</button>
+        <button class="filter-tab active" data-filter="all" onclick="setMembersFilter('all', this)">All</button>
+        <button class="filter-tab" data-filter="founding" onclick="setMembersFilter('founding', this)">Founding</button>
+        <button class="filter-tab" data-filter="active" onclick="setMembersFilter('active', this)">Active</button>
+        <button class="filter-tab" data-filter="new" onclick="setMembersFilter('new', this)">New</button>
       </div>
     </div>
   </div>
   <div class="card-body" style="padding:0;">
     <div class="table-wrap">
     <table>
-      <thead><tr><th>Member</th><th>Tier</th><th>Location</th><th>Joined</th><th>Bookings</th><th>LTV</th><th>Credits</th><th>Last active</th><th></th></tr></thead>
+      <thead><tr>
+        <th style="cursor:pointer;" onclick="setMembersSort('name')">Member <span class="sort-arrow" data-field="name"></span></th>
+        <th>Tier</th>
+        <th>Location</th>
+        <th style="cursor:pointer;" onclick="setMembersSort('joined_at')">Joined <span class="sort-arrow" data-field="joined_at"></span></th>
+        <th style="cursor:pointer;" onclick="setMembersSort('bookings')">Bookings <span class="sort-arrow" data-field="bookings"></span></th>
+        <th style="cursor:pointer;" onclick="setMembersSort('ltv')">LTV <span class="sort-arrow" data-field="ltv"></span></th>
+        <th>Provider</th>
+        <th style="cursor:pointer;" onclick="setMembersSort('last_active')">Last active <span class="sort-arrow" data-field="last_active"></span></th>
+        <th></th>
+      </tr></thead>
       <tbody id="members-tbody">
         <tr id="members-loading"><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Loading members…</td></tr>
       </tbody>
@@ -264,6 +274,133 @@ window.addEventListener('load', async function() {
 
 
 <script>
+var allMembers = [];
+var currentFilter = 'all';
+var currentSearch = '';
+var sortField = 'joined_at';
+var sortDir = 'desc';
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function onMembersSearch(q) {
+  currentSearch = (q || '').toLowerCase().trim();
+  renderMembers();
+}
+
+function setMembersFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderMembers();
+}
+
+function setMembersSort(field) {
+  if (sortField === field) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else { sortField = field; sortDir = 'desc'; }
+  renderMembers();
+}
+
+function updateSortArrows() {
+  document.querySelectorAll('.sort-arrow').forEach(function(el) {
+    var f = el.getAttribute('data-field');
+    if (f === sortField) el.textContent = sortDir === 'asc' ? '↑' : '↓';
+    else el.textContent = '';
+  });
+}
+
+function applyFilterSort() {
+  var now = Date.now();
+  var DAY = 86400000;
+  var list = allMembers.slice();
+
+  // Filter by tab
+  if (currentFilter === 'founding') {
+    list = list.filter(function(m) { return m.tier === 'founding'; });
+  } else if (currentFilter === 'active') {
+    list = list.filter(function(m) { return m.last_active && (now - new Date(m.last_active).getTime()) < 7 * DAY; });
+  } else if (currentFilter === 'new') {
+    list = list.filter(function(m) { return m.joined_at && (now - new Date(m.joined_at).getTime()) < 7 * DAY; });
+  }
+
+  // Search
+  if (currentSearch) {
+    list = list.filter(function(m) {
+      var hay = [m.name, m.email, m.location, m.tier, m.notes].join(' ').toLowerCase();
+      return hay.indexOf(currentSearch) !== -1;
+    });
+  }
+
+  // Sort
+  list.sort(function(a, b) {
+    var av, bv;
+    if (sortField === 'joined_at' || sortField === 'last_active') {
+      av = a[sortField] ? new Date(a[sortField]).getTime() : 0;
+      bv = b[sortField] ? new Date(b[sortField]).getTime() : 0;
+    } else if (sortField === 'bookings' || sortField === 'ltv') {
+      av = Number(a[sortField] || 0);
+      bv = Number(b[sortField] || 0);
+    } else {
+      av = String(a[sortField] || '').toLowerCase();
+      bv = String(b[sortField] || '').toLowerCase();
+    }
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  return list;
+}
+
+function renderMembers() {
+  updateSortArrows();
+  var tbody = document.getElementById('members-tbody');
+  if (!tbody) return;
+
+  if (!allMembers.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
+    return;
+  }
+
+  var filtered = applyFilterSort();
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members match your filters.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(m) {
+    var initials = (m.name || m.email || '?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || '?';
+    var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', {month:'short', year:'numeric'}) : '—';
+    var lastActive = m.last_active ? new Date(m.last_active).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : '—';
+    var tierBadge = m.tier === 'founding'
+      ? '<span class="badge badge-accent">Founding</span>'
+      : m.tier === 'member'
+        ? '<span class="badge badge-blue">Member</span>'
+        : '<span class="badge">'+escHtml(m.tier||'—')+'</span>';
+    var providerLabel = m.provider === 'google' ? 'Google'
+                      : m.provider === 'apple' ? 'Apple'
+                      : m.provider === 'email' ? 'Email'
+                      : escHtml(m.provider || '—');
+    var ltv = m.ltv ? '$' + parseInt(m.ltv).toLocaleString() : '—';
+    return '<tr>'
+      + '<td><div style="display:flex;align-items:center;gap:10px;">'
+      + (m.avatar ? '<img src="'+escHtml(m.avatar)+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
+                  : '<div class="avatar avatar-sm">'+initials+'</div>')
+      + '<div><div style="font-size:14px;font-weight:600;">'+escHtml(m.name||'—')+'</div>'
+      + '<div style="font-size:12px;color:var(--text2);">'+escHtml(m.email)+'</div></div></div></td>'
+      + '<td>'+tierBadge+'</td>'
+      + '<td style="font-size:13px;">'+escHtml(m.location||'—')+'</td>'
+      + '<td style="font-size:13px;">'+joined+'</td>'
+      + '<td style="font-weight:600;">'+(m.bookings||0)+'</td>'
+      + '<td style="font-weight:600;">'+ltv+'</td>'
+      + '<td style="font-size:12px;color:var(--text2);">'+providerLabel+'</td>'
+      + '<td style="font-size:12px;color:var(--text2);">'+lastActive+'</td>'
+      + '<td><a href="admin-guest-detail.html?id='+encodeURIComponent(m.id)+'" class="btn btn-ghost btn-sm">View</a></td>'
+      + '</tr>';
+  }).join('');
+}
+
 (async function loadMembers() {
   var api = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
     ? '/api/members' : null;
@@ -275,16 +412,17 @@ window.addEventListener('load', async function() {
   try {
     var res = await fetch(api);
     var data = await res.json();
-    var members = data.members || [];
-    // Compute real stats from the members array
+    allMembers = data.members || [];
+
+    // Compute real stats
     var now = Date.now();
     var DAY = 86400000;
     var startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
     var startOfTodayMs = startOfToday.getTime();
-    var total = members.length;
-    var newThisWeek = members.filter(function(m){ return m.joined_at && (now - new Date(m.joined_at).getTime()) < 7 * DAY; }).length;
-    var activeLast7d = members.filter(function(m){ return m.last_active && (now - new Date(m.last_active).getTime()) < 7 * DAY; }).length;
-    var signupsToday = members.filter(function(m){ return m.joined_at && new Date(m.joined_at).getTime() >= startOfTodayMs; }).length;
+    var total = allMembers.length;
+    var newThisWeek = allMembers.filter(function(m){ return m.joined_at && (now - new Date(m.joined_at).getTime()) < 7 * DAY; }).length;
+    var activeLast7d = allMembers.filter(function(m){ return m.last_active && (now - new Date(m.last_active).getTime()) < 7 * DAY; }).length;
+    var signupsToday = allMembers.filter(function(m){ return m.joined_at && new Date(m.joined_at).getTime() >= startOfTodayMs; }).length;
     var setStat = function(id, val){ var el = document.getElementById(id); if (el) el.textContent = val; };
     setStat('stat-total', total.toLocaleString());
     var header = document.getElementById('header-member-count');
@@ -295,45 +433,11 @@ window.addEventListener('load', async function() {
     var deltaEl = document.getElementById('stat-total-delta');
     if (deltaEl) deltaEl.textContent = newThisWeek > 0 ? ('↑ ' + newThisWeek + ' this week') : '\u00a0';
 
-    if (!members.length) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = members.map(function(m) {
-      var initials = (m.name || m.email || '?').split(' ').map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2) || '?';
-      var joined = m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-GB', {month:'short', year:'numeric'}) : '—';
-      var lastActive = m.last_active ? new Date(m.last_active).toLocaleDateString('en-GB', {day:'numeric', month:'short'}) : '—';
-      var tierBadge = m.tier === 'founding'
-        ? '<span class="badge badge-accent">Founding</span>'
-        : m.tier === 'member'
-          ? '<span class="badge badge-blue">Member</span>'
-          : '<span class="badge">'+m.tier+'</span>';
-      var providerIcon = m.provider === 'google' ? '🔵' : m.provider === 'apple' ? '⚫' : '✉️';
-      var ltv = m.ltv ? '$' + parseInt(m.ltv).toLocaleString() : '—';
-      return '<tr>'
-        + '<td><div style="display:flex;align-items:center;gap:10px;">'
-        + (m.avatar ? '<img src="'+m.avatar+'" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" />'
-                    : '<div class="avatar avatar-sm">'+initials+'</div>')
-        + '<div><div style="font-size:14px;font-weight:600;">'+escHtml(m.name||'—')+'</div>'
-        + '<div style="font-size:12px;color:var(--text2);">'+escHtml(m.email)+'</div></div></div></td>'
-        + '<td>'+tierBadge+'</td>'
-        + '<td style="font-size:13px;">'+(m.location||'—')+'</td>'
-        + '<td style="font-size:13px;">'+joined+'</td>'
-        + '<td style="font-weight:600;">'+(m.bookings||0)+'</td>'
-        + '<td style="font-weight:600;">'+ltv+'</td>'
-        + '<td style="font-size:12px;">'+providerIcon+'</td>'
-        + '<td style="font-size:12px;color:var(--text2);">'+lastActive+'</td>'
-        + '<td><a href="admin-guest-detail.html?id='+encodeURIComponent(m.id)+'" class="btn btn-ghost btn-sm">View</a></td>'
-        + '</tr>';
-    }).join('');
+    renderMembers();
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Failed to load members: '+e.message+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Failed to load members: '+escHtml(e.message)+'</td></tr>';
   }
 })();
-
-function escHtml(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
 </script>
 <script src="/assets/admin-sidebar-badge.js"></script>
 </body>
