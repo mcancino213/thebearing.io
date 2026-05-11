@@ -1095,33 +1095,11 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (!convRaw) return jsonResponse({ error: 'conversation not found', convId }, 404);
       const conv = JSON.parse(convRaw);
 
-      // Get email body — try multiple field names in the webhook payload
+      // Get email body — try multiple field names
       let text = body.text || body.plain || (body.data && body.data.text) || (body.data && body.data.plain) || '';
-      let html = body.html || (body.data && body.data.html) || '';
-
-      // If body isn't in the webhook payload, fetch it from Resend API via email_id
-      const emailId = (body.data && body.data.email_id) || body.email_id;
-      if (!text && !html && emailId && env.RESEND_API_KEY) {
-        try {
-          console.log('[Inbound] Fetching email body via API for:', emailId);
-          const apiResp = await fetch('https://api.resend.com/emails/' + emailId, {
-            headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY }
-          });
-          if (apiResp.ok) {
-            const emailData = await apiResp.json();
-            text = emailData.text || '';
-            html = emailData.html || '';
-            console.log('[Inbound] Got body, text length:', text.length, 'html length:', html.length);
-          } else {
-            console.log('[Inbound] API fetch failed:', apiResp.status);
-          }
-        } catch (e) {
-          console.log('[Inbound] API fetch error:', e.message);
-        }
-      }
-
-      // Strip HTML if only HTML is available
-      if (!text && html) {
+      // Strip HTML if only HTML is present
+      if (!text && (body.html || (body.data && body.data.html))) {
+        const html = body.html || body.data.html;
         text = html.replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
       }
       text = text.trim();
