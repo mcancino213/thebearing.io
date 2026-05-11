@@ -31,6 +31,27 @@
       emailEl.textContent = email;
     }
 
+    // Add Sign out button (after the founding member tag) — same as my-account.html
+    if (!document.querySelector('.tb-signout-btn')) {
+      var signOutBtn = document.createElement('button');
+      signOutBtn.className = 'tb-signout-btn';
+      signOutBtn.textContent = 'Sign out';
+      signOutBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border:1px solid var(--border-hi,#e8dfd0);border-radius:8px;background:transparent;color:var(--stone,#9a8e80);font-family:Geist,sans-serif;font-size:.8rem;cursor:pointer;';
+      signOutBtn.onclick = async function() {
+        if (window.Clerk) {
+          await window.Clerk.signOut();
+          window.location.href = '/';
+        }
+      };
+      var memberTag = document.querySelector('.sidebar-member');
+      if (memberTag && memberTag.parentNode) {
+        memberTag.parentNode.insertBefore(signOutBtn, memberTag.nextSibling);
+      } else {
+        var profile = document.querySelector('.sidebar-profile');
+        if (profile) profile.appendChild(signOutBtn);
+      }
+    }
+
     // Reveal the profile area
     var profile = document.querySelector('.sidebar-profile');
     if (profile) profile.classList.add('tb-ready');
