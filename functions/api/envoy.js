@@ -947,8 +947,15 @@ View in admin: https://thebearing.io/admin-bookings.html
           // Update conversation metadata
           conv.lastMessageAt = now;
           conv.lastMessagePreview = text.substring(0, 100);
-          if (role === 'guest') conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
-          else conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+          if (role === 'guest') {
+            conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+          } else {
+            conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+            // Admin/partner replied — clear reminder flags so future staleness can re-trigger
+            if (conv.reminders) {
+              conv.reminders = { lastResetAt: now };
+            }
+          }
 
           await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
           await env.DOSSIERS.put('conversation:' + id + ':messages', JSON.stringify(messages));
@@ -1465,8 +1472,143 @@ View in admin: https://thebearing.io/admin-bookings.html
 
     // ── Everything else → static assets ───────────────────────────
     return env.ASSETS.fetch(request);
+  },
+
+  // ── Scheduled cron handler ────────────────────────────────────
+  // Configured in wrangler.toml under [triggers] crons = ["0 * * * *"]
+  // Runs hourly and sends staleness reminders for conversations awaiting admin reply.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runStaleConvReminders(env));
   }
 };
+
+// Staleness thresholds in milliseconds
+const REMINDER_24H = 24 * 60 * 60 * 1000;
+const REMINDER_48H = 48 * 60 * 60 * 1000;
+const REMINDER_72H = 72 * 60 * 60 * 1000;
+
+async function runStaleConvReminders(env) {
+  if (!env.DOSSIERS || !env.RESEND_API_KEY) {
+    console.log('[Cron] Skipping — missing DOSSIERS or RESEND_API_KEY');
+    return;
+  }
+  const startedAt = Date.now();
+  let scanned = 0, sent = 0;
+
+  try {
+    const idxRaw = await env.DOSSIERS.get('__conversations_index');
+    const ids = idxRaw ? JSON.parse(idxRaw) : [];
+    const now = Date.now();
+
+    for (const id of ids) {
+      const convRaw = await env.DOSSIERS.get('conversation:' + id);
+      if (!convRaw) continue;
+      let conv;
+      try { conv = JSON.parse(convRaw); } catch(e) { continue; }
+      scanned++;
+
+      // Only conversations where admin owes a reply and aren't archived
+      if (conv.status === 'archived') continue;
+      if (!(conv.unreadAdmin || 0)) continue;
+      if (!conv.lastMessageAt) continue;
+
+      const waiting = now - new Date(conv.lastMessageAt).getTime();
+      const reminders = conv.reminders || {};
+
+      let level = null;
+      if (waiting >= REMINDER_72H && !reminders.sent72At) level = 72;
+      else if (waiting >= REMINDER_48H && !reminders.sent48At) level = 48;
+      else if (waiting >= REMINDER_24H && !reminders.sent24At) level = 24;
+
+      if (!level) continue;
+
+      // Look up property contact email
+      let partnerEmail = null;
+      let partnerName = conv.propertyName || conv.propertySlug;
+      if (conv.propertySlug) {
+        try {
+          const propRaw = await env.DOSSIERS.get(conv.propertySlug + ':property');
+          if (propRaw) {
+            const prop = JSON.parse(propRaw);
+            if (prop && prop.contact && prop.contact.email) {
+              partnerEmail = prop.contact.email;
+            }
+            if (prop && prop.name) partnerName = prop.name;
+          }
+        } catch(e) {}
+      }
+
+      const replyUrl = 'https://thebearing.io/admin-conversations.html?id=' + encodeURIComponent(id);
+      const ppUrl = 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(id);
+      const preview = (conv.lastMessagePreview || '').substring(0, 200);
+      const guestLabel = conv.guestName || conv.guestEmail || 'A guest';
+
+      const subjects = {
+        24: `${guestLabel} is waiting on a reply — ${partnerName}`,
+        48: `Still waiting: ${guestLabel} — ${partnerName} (48h)`,
+        72: `Urgent: ${guestLabel} has been waiting 3+ days — ${partnerName}`
+      };
+      const tones = {
+        24: 'A guest has been waiting for a response for over 24 hours.',
+        48: 'This guest has now been waiting over 48 hours. Please respond as soon as possible.',
+        72: 'This guest has been waiting more than 3 days. The enquiry risks being lost — please reply or escalate.'
+      };
+
+      const partnerBody = `${tones[level]}\n\nGuest: ${guestLabel}\nProperty: ${partnerName}\nLast message:\n"${preview}"\n\nReply directly via the partner portal: ${ppUrl}\n\n— The Bearing`;
+      const adminBody = `Stale conversation (${level}h+ wait).\n\nGuest: ${guestLabel}\nProperty: ${partnerName}\nLast message:\n"${preview}"\n\nView conversation: ${replyUrl}\n\n— The Bearing reminder system`;
+
+      // 24h: notify partner only. 48h+: notify partner AND admin.
+      const sendPromises = [];
+      const notifyPartner = partnerEmail && conv.notifyPartner !== false;
+      const notifyAdmin = conv.notifyAdmin !== false;
+
+      if (notifyPartner) {
+        sendPromises.push(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'The Bearing <bookings@thebearing.io>',
+            to: [partnerEmail],
+            subject: subjects[level],
+            text: partnerBody
+          })
+        }).catch(function(e) { console.log('[Cron] partner mail err:', e.message); }));
+      }
+
+      if (level >= 48 && notifyAdmin) {
+        sendPromises.push(fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'The Bearing <bookings@thebearing.io>',
+            to: ['miguel@thebearing.io'],
+            subject: subjects[level],
+            text: adminBody
+          })
+        }).catch(function(e) { console.log('[Cron] admin mail err:', e.message); }));
+      }
+
+      try { await Promise.all(sendPromises); } catch(e) {}
+
+      // Mark this level as sent
+      conv.reminders = conv.reminders || {};
+      const nowIso = new Date().toISOString();
+      if (level === 24) conv.reminders.sent24At = nowIso;
+      if (level === 48) conv.reminders.sent48At = nowIso;
+      if (level === 72) conv.reminders.sent72At = nowIso;
+      conv.reminders.lastSentLevel = level;
+      conv.reminders.lastSentAt = nowIso;
+
+      await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+      sent++;
+      console.log(`[Cron] Sent ${level}h reminder for conv ${id} — partner=${notifyPartner}, admin=${level>=48 && notifyAdmin}`);
+    }
+
+    console.log(`[Cron] Done in ${Date.now()-startedAt}ms. Scanned ${scanned}, sent ${sent} reminders.`);
+  } catch(e) {
+    console.error('[Cron] Fatal error:', e.message);
+  }
+}
 
 function jsonResponse(obj, status = 200) {
   return new Response(JSON.stringify(obj), {

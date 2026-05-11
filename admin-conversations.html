@@ -441,6 +441,18 @@ function renderThread(conv, messages) {
   badge.style.cssText = 'margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;';
   badge.textContent = conv.status || 'open';
 
+  // Reminder status pill — visible only if a reminder has been sent
+  var reminderPill = null;
+  if (conv.reminders && conv.reminders.lastSentLevel) {
+    var lvl = conv.reminders.lastSentLevel;
+    var lvlBg = lvl >= 72 ? '#fee2e2' : lvl >= 48 ? '#ffedd5' : '#fef3c7';
+    var lvlFg = lvl >= 72 ? '#991b1b' : lvl >= 48 ? '#9a3412' : '#854d0e';
+    reminderPill = document.createElement('span');
+    reminderPill.style.cssText = 'margin-left:8px;font-size:.66rem;font-weight:600;padding:3px 9px;border-radius:100px;background:' + lvlBg + ';color:' + lvlFg + ';';
+    reminderPill.title = 'Last partner reminder sent at this level';
+    reminderPill.textContent = lvl + 'h reminder sent';
+  }
+
   // Notification toggle slider for admin
   var notifyWrap = document.createElement('div');
   notifyWrap.style.cssText = 'margin-left:8px;display:flex;align-items:center;gap:8px;font-family:Geist,sans-serif;font-size:.72rem;font-weight:500;color:#475569;';
@@ -514,6 +526,7 @@ function renderThread(conv, messages) {
   hdr.appendChild(avatar);
   hdr.appendChild(info);
   hdr.appendChild(badge);
+  if (reminderPill) hdr.appendChild(reminderPill);
   hdr.appendChild(notifyWrap);
   hdr.appendChild(archiveBtn);
   thread.appendChild(hdr);

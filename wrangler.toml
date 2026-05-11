@@ -25,6 +25,10 @@ index_name = "thebearing-properties"
 [ai]
 binding = "AI"
 
+# Hourly cron — scans conversations for staleness and sends 24h/48h/72h reminders
+[triggers]
+crons = ["0 * * * *"]
+
 # Clerk webhook secret — set via: wrangler secret put CLERK_WEBHOOK_SECRET
 # Resend API key for booking emails — set via: wrangler secret put RESEND_API_KEY
 # Get Resend key at: https://resend.com → API Keys
