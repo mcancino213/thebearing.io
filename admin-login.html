@@ -253,14 +253,26 @@ window.addEventListener('load', async function() {
     }
   });
 
-  // If already signed in: verify admin and redirect to dashboard, OR show denial (without signing them out — they're still a valid customer)
+  // If already signed in: verify admin and redirect to dashboard, OR show denial without mounting sign-in
   if (window.Clerk.user) {
     if (isAdminUser(window.Clerk.user)) {
       window.location.href = '/admin-dashboard.html';
       return;
     } else {
-      // Signed in but not an admin — show message; don't sign them out
+      // Signed in but not an admin — show message; offer "switch account"
       showDenialMessage('not_authorized');
+      var mount = document.getElementById('clerk-sign-in');
+      if (mount) {
+        mount.innerHTML = '<div style="text-align:center;padding:8px 0;">' +
+          '<button id="switch-account-btn" style="display:inline-block;padding:10px 22px;background:#b05830;color:#fff;border:none;border-radius:100px;font-family:Geist,sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;">Sign in as a different account</button>' +
+          '<div style="font-size:.7rem;color:#9a8e80;margin-top:14px;">Or <a href="/" style="color:#b05830;">return to the home page</a></div>' +
+        '</div>';
+        document.getElementById('switch-account-btn').onclick = async function() {
+          try { await window.Clerk.signOut(); } catch(e) {}
+          window.location.reload();
+        };
+      }
+      return;  // Don't mount the sign-in widget below
     }
   }
 
@@ -276,8 +288,9 @@ window.addEventListener('load', async function() {
       if (isAdminUser(resources.user)) {
         window.location.href = '/admin-dashboard.html';
       } else {
-        // Not an admin — just show denial; they remain signed in as a customer
+        // Just-signed-in non-admin: show denial and reload to switch state
         showDenialMessage('not_authorized');
+        // No redirect — let the page re-evaluate on next manual interaction
       }
     }
   });
@@ -288,6 +301,5 @@ window.addEventListener('load', async function() {
   }
 });
 </script>
-<script src="/assets/admin-sidebar-badge.js"></script>
 </body>
 </html>
