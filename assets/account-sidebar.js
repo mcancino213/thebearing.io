@@ -31,9 +31,9 @@
       emailEl.textContent = email;
     }
 
-    // Reveal the profile area (was hidden to prevent demo data flash)
+    // Reveal the profile area
     var profile = document.querySelector('.sidebar-profile');
-    if (profile) profile.style.visibility = 'visible';
+    if (profile) profile.classList.add('tb-ready');
   }
 
   function init() {

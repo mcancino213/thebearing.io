@@ -316,6 +316,12 @@
     document.body.style.overflow='';
   }
 </script>
+<style id="sidebar-hide-until-ready">
+.sidebar-profile{visibility:hidden!important;}
+.sidebar-profile.tb-ready{visibility:visible!important;}
+.sidebar-name:empty{min-height:1.1em;}
+.sidebar-email:empty{min-height:1em;}
+</style>
 </head>
 
 
@@ -422,9 +428,9 @@
 <div class="account-wrap">
     <aside class="sidebar">
     <div class="sidebar-profile">
-      <div class="sidebar-avatar">S</div>
-      <div class="sidebar-name">Sarah Mitchell</div>
-      <div class="sidebar-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa97939d8f9f96ba8e889b8c9f9699958c9fd49395">[email&#160;protected]</a></div>
+      <div class="sidebar-avatar"></div>
+      <div class="sidebar-name"></div>
+      <div class="sidebar-email"></div>
       <div class="sidebar-member"><span class="sidebar-member-txt">✦ Founding Member #247</span></div>
     </div>
     <nav class="sidebar-nav">
@@ -914,6 +920,10 @@ window.addEventListener('load', async function() {
     if (nameEl) nameEl.textContent = name;
     var emailEl = document.querySelector('.sidebar-email');
     if (emailEl) emailEl.textContent = email;
+
+    // Reveal the profile area
+    var profileEl = document.querySelector('.sidebar-profile');
+    if (profileEl) profileEl.classList.add('tb-ready');
 
     // Add sign-out button
     var signOutBtn = document.createElement('button');

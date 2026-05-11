@@ -303,6 +303,12 @@
     document.body.style.overflow='';
   }
 </script>
+<style id="sidebar-hide-until-ready">
+.sidebar-profile{visibility:hidden!important;}
+.sidebar-profile.tb-ready{visibility:visible!important;}
+.sidebar-name:empty{min-height:1.1em;}
+.sidebar-email:empty{min-height:1em;}
+</style>
 </head>
 <body>
 
@@ -395,10 +401,10 @@
 
   <!-- ══ SIDEBAR ══ -->
     <aside class="sidebar">
-    <div class="sidebar-profile" style="visibility:hidden;">
+    <div class="sidebar-profile">
       <div class="sidebar-avatar"></div>
-      <div class="sidebar-name">&nbsp;</div>
-      <div class="sidebar-email">&nbsp;</div>
+      <div class="sidebar-name"></div>
+      <div class="sidebar-email"></div>
       <div class="sidebar-member"><div class="sidebar-member-dot"></div><span class="sidebar-member-txt">✦ Founding Member #247</span></div>
     </div>
     <nav class="sidebar-nav">
