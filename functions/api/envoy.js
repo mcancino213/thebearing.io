@@ -1099,12 +1099,13 @@ View in admin: https://thebearing.io/admin-bookings.html
       let text = body.text || body.plain || (body.data && body.data.text) || (body.data && body.data.plain) || '';
       let html = body.html || (body.data && body.data.html) || '';
 
-      // If body isn't in the webhook payload, fetch it from Resend API via email_id
+      // If body isn't in the webhook payload, fetch it from Resend's Receiving API
+      // Endpoint: GET https://api.resend.com/emails/receiving/{email_id}
       const emailId = (body.data && body.data.email_id) || body.email_id;
       if (!text && !html && emailId && env.RESEND_API_KEY) {
         try {
-          console.log('[Inbound] Fetching email body via API for:', emailId);
-          const apiResp = await fetch('https://api.resend.com/emails/' + emailId, {
+          console.log('[Inbound] Fetching email body via Receiving API for:', emailId);
+          const apiResp = await fetch('https://api.resend.com/emails/receiving/' + emailId, {
             headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY }
           });
           if (apiResp.ok) {
@@ -1113,7 +1114,8 @@ View in admin: https://thebearing.io/admin-bookings.html
             html = emailData.html || '';
             console.log('[Inbound] Got body, text length:', text.length, 'html length:', html.length);
           } else {
-            console.log('[Inbound] API fetch failed:', apiResp.status);
+            const errText = await apiResp.text();
+            console.log('[Inbound] API fetch failed:', apiResp.status, errText.substring(0, 200));
           }
         } catch (e) {
           console.log('[Inbound] API fetch error:', e.message);
