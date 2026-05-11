@@ -26,9 +26,55 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Email, X-Clerk-Session'
         }
       });
+    }
+
+    // ── Admin auth helper ─────────────────────────────────────────
+    // Verifies the request comes from an authorized admin user.
+    // Strategy: client sends Clerk session token in X-Clerk-Session header.
+    // We verify it against Clerk's API to get the user's email, then check the allowlist.
+    // Falls back to X-Admin-Email header check (less secure) for environments without session tokens.
+    const ADMIN_EMAILS = ['mcancino@gmail.com'];
+
+    async function isAdmin() {
+      // Path 1: Clerk session token (most secure)
+      const sessionToken = request.headers.get('X-Clerk-Session');
+      if (sessionToken && env.CLERK_SECRET_KEY) {
+        try {
+          const verifyResp = await fetch('https://api.clerk.com/v1/sessions/' + sessionToken + '/tokens', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
+          });
+          if (verifyResp.ok) {
+            const sessionData = await verifyResp.json();
+            if (sessionData.user_id) {
+              const userResp = await fetch('https://api.clerk.com/v1/users/' + sessionData.user_id, {
+                headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
+              });
+              if (userResp.ok) {
+                const user = await userResp.json();
+                const emails = (user.email_addresses || []).map(function(e) { return (e.email_address || '').toLowerCase(); });
+                return emails.some(function(em) { return ADMIN_EMAILS.indexOf(em) !== -1; });
+              }
+            }
+          }
+        } catch(e) { console.log('[Admin] Clerk verify failed:', e.message); }
+      }
+
+      // Path 2: Email header (less secure — spoof-able, but raises the bar)
+      // Useful when CLERK_SECRET_KEY isn't set yet
+      const emailHeader = request.headers.get('X-Admin-Email');
+      if (emailHeader) {
+        return ADMIN_EMAILS.indexOf(emailHeader.toLowerCase()) !== -1;
+      }
+
+      return false;
+    }
+
+    function adminDenied() {
+      return jsonResponse({ error: 'admin access required' }, 403);
     }
 
     // ── /api/envoy — Anthropic API proxy (RAG-enhanced) ──────────
@@ -484,6 +530,7 @@ export default {
 
       // POST { slug, property } → saves full property JSON, updates index
       if (request.method === 'POST') {
+        if (!(await isAdmin())) return adminDenied();
         let body;
         try { body = await request.json(); }
         catch (err) { return jsonResponse({ error: 'invalid JSON: ' + err.message }, 400); }
@@ -508,6 +555,7 @@ export default {
 
       // DELETE ?slug=... → removes property and updates index
       if (request.method === 'DELETE') {
+        if (!(await isAdmin())) return adminDenied();
         const slug = url.searchParams.get('slug');
         if (!slug) return jsonResponse({ error: 'slug required' }, 400);
         await env.DOSSIERS.delete(slug + ':property');

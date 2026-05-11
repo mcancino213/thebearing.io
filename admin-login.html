@@ -197,7 +197,41 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;bac
   type="text/javascript">
 </script>
 <script>
+var ADMIN_EMAILS = ['mcancino@gmail.com'];
+
+function isAdminUser(user) {
+  if (!user) return false;
+  var emails = [];
+  if (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) emails.push(user.primaryEmailAddress.emailAddress);
+  if (Array.isArray(user.emailAddresses)) {
+    user.emailAddresses.forEach(function(e){ if(e.emailAddress) emails.push(e.emailAddress); });
+  }
+  return emails.some(function(em){ return ADMIN_EMAILS.indexOf(em.toLowerCase()) !== -1; });
+}
+
+function showDenialMessage(reason) {
+  var msgs = {
+    not_authorized: 'This account does not have admin access. Sign in with an authorized admin email.',
+    not_signed_in: 'Please sign in to continue.',
+    signed_out: 'You have been signed out.',
+    clerk_timeout: 'Authentication timed out. Please refresh the page.'
+  };
+  var note = msgs[reason];
+  if (!note || reason === 'not_signed_in') return;
+  var banner = document.createElement('div');
+  banner.style.cssText = 'background:#fef3c7;border:1px solid #fbbf24;color:#854d0e;padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:18px;text-align:center;line-height:1.5;';
+  banner.textContent = note;
+  var mount = document.getElementById('clerk-sign-in');
+  if (mount && mount.parentNode) mount.parentNode.insertBefore(banner, mount);
+}
+
 window.addEventListener('load', async function() {
+  // Surface any denial reason from gate
+  var reason = sessionStorage.getItem('tb_admin_denied_reason');
+  if (reason) {
+    sessionStorage.removeItem('tb_admin_denied_reason');
+    showDenialMessage(reason);
+  }
   try {
   await window.Clerk.load({
       ui: { ClerkUI: window.__internal_ClerkUICtor },
@@ -219,9 +253,16 @@ window.addEventListener('load', async function() {
     }
   });
 
+  // If already signed in: verify admin and redirect to dashboard, OR show denial + force sign-out
   if (window.Clerk.user) {
-    window.location.href = '/admin-dashboard.html';
-    return;
+    if (isAdminUser(window.Clerk.user)) {
+      window.location.href = '/admin-dashboard.html';
+      return;
+    } else {
+      // Signed in but not an admin — sign them out and show message
+      showDenialMessage('not_authorized');
+      try { await window.Clerk.signOut(); } catch(e) {}
+    }
   }
 
   window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
@@ -233,7 +274,13 @@ window.addEventListener('load', async function() {
 
   window.Clerk.addListener(function(resources) {
     if (resources.user) {
-      window.location.href = '/admin-dashboard.html';
+      if (isAdminUser(resources.user)) {
+        window.location.href = '/admin-dashboard.html';
+      } else {
+        // Not an admin — sign out and show denial
+        showDenialMessage('not_authorized');
+        window.Clerk.signOut().catch(function(){});
+      }
     }
   });
   } catch(err) {
