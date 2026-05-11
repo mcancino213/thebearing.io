@@ -874,13 +874,25 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ conversations: convs });
         }
 
-        // List all conversations (admin)
+        // List all conversations (admin) — enriched with guest avatars
         const rawIndex = await env.DOSSIERS.get('__conversations_index');
         const ids = rawIndex ? JSON.parse(rawIndex) : [];
         const convs = (await Promise.all(ids.slice(-50).map(async i => {
           const r = await env.DOSSIERS.get('conversation:' + i);
           return r ? JSON.parse(r) : null;
         }))).filter(Boolean).reverse();
+        // Enrich each conv with guest avatar (lookup member record)
+        await Promise.all(convs.map(async (c) => {
+          if (c.guestId && c.guestId.indexOf('user_') === 0 && !c.guestAvatar) {
+            try {
+              const memberRaw = await env.DOSSIERS.get('member:' + c.guestId);
+              if (memberRaw) {
+                const member = JSON.parse(memberRaw);
+                if (member.avatar) c.guestAvatar = member.avatar;
+              }
+            } catch(e) {}
+          }
+        }));
         return jsonResponse({ conversations: convs });
       }
 
