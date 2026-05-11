@@ -167,6 +167,310 @@ tbody tr:hover{background:var(--bg);}
 .tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 
 
+/* ─────────────────────────────────────────────────────────────
+   CONVERSATIONS — partner view, premium messaging UI
+   ───────────────────────────────────────────────────────────── */
+.conv-layout{
+  display:grid;
+  grid-template-columns:340px 1fr 320px;
+  height:calc(100vh - 200px);min-height:560px;
+  overflow:hidden;
+  background:#fafafa;
+  border:1px solid var(--border);
+  border-radius:14px;
+}
+
+/* ── LEFT: List ── */
+.conv-list-panel{
+  border-right:1px solid var(--border);overflow-y:auto;background:#fff;
+  display:flex;flex-direction:column;
+}
+.conv-list-header{
+  padding:18px 20px 14px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:#fff;z-index:5;
+}
+.conv-list-title{font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);}
+.conv-list-count{font-size:.72rem;color:var(--text3);margin-top:2px;}
+.conv-group-label{
+  padding:14px 20px 8px;font-size:.66rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text3);background:#fafafa;border-bottom:1px solid #f0f0f0;
+}
+.conv-item{
+  padding:14px 18px;border-bottom:1px solid #f0f0f0;cursor:pointer;
+  display:flex;gap:11px;transition:background .15s ease;position:relative;
+}
+.conv-item:hover{background:#fafafa;}
+.conv-item.active{background:#fff8f1;}
+.conv-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
+.conv-item.unread .conv-guest-name{font-weight:700;}
+.conv-item.unread .conv-preview{color:var(--text);font-weight:500;}
+.conv-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,#94a3b8,#64748b);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.82rem;font-weight:600;flex-shrink:0;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);overflow:hidden;
+}
+.conv-avatar img{width:100%;height:100%;object-fit:cover;}
+.conv-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.conv-line1{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.conv-guest-name{font-size:.86rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-time{font-size:.66rem;color:var(--text3);flex-shrink:0;font-variant-numeric:tabular-nums;}
+.conv-prop-name{font-size:.7rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.conv-preview{font-size:.76rem;color:var(--text2);line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px;}
+.conv-pills{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
+.conv-pill{font-size:.62rem;font-weight:600;padding:2px 7px;border-radius:100px;letter-spacing:.02em;}
+.conv-pill.unread{background:var(--accent);color:#fff;}
+
+/* ── MIDDLE: Thread ── */
+.conv-thread-panel{display:flex;flex-direction:column;overflow:hidden;background:#fafafa;}
+.thread-header{
+  padding:18px 24px;border-bottom:1px solid var(--border);background:#fff;
+  display:flex;align-items:center;gap:14px;flex-shrink:0;
+}
+.thread-header-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,#94a3b8,#64748b);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.92rem;font-weight:600;flex-shrink:0;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden;
+}
+.thread-header-avatar img{width:100%;height:100%;object-fit:cover;}
+.thread-header-info{flex:1;min-width:0;}
+.thread-title{font-size:1rem;font-weight:600;color:var(--text);line-height:1.2;}
+.thread-sub{font-size:.74rem;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.thread-sub-sep{color:var(--text3);}
+.thread-header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+/* Messages */
+.messages-wrap{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:4px;background:#fafafa;}
+.msg-day-sep{
+  align-self:center;font-size:.66rem;color:var(--text3);font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;margin:16px 0 8px;
+  padding:4px 14px;background:#fff;border:1px solid var(--border);border-radius:100px;
+}
+.msg{display:flex;flex-direction:column;max-width:68%;margin-top:1px;position:relative;}
+.msg.group-start{margin-top:14px;}
+.msg.from-other{align-self:flex-start;align-items:flex-start;}
+.msg.from-self{align-self:flex-end;align-items:flex-end;}
+.msg-sender{
+  font-size:.7rem;font-weight:600;color:var(--text2);
+  display:flex;align-items:center;gap:7px;margin-bottom:4px;
+}
+.msg.from-other .msg-sender{margin-left:12px;}
+.msg.from-self .msg-sender{margin-right:12px;flex-direction:row-reverse;}
+.msg-sender-avatar{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.62rem;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;
+  background:#9ca3af;letter-spacing:.02em;
+}
+.msg-sender-avatar img{width:100%;height:100%;object-fit:cover;}
+.msg-sender-avatar.role-guest{background:linear-gradient(135deg,#94a3b8,#64748b);}
+.msg-sender-avatar.role-admin{background:linear-gradient(135deg,#1a1a1a,#3d3d3d);}
+.msg-sender-avatar.role-partner{background:linear-gradient(135deg,#c17f3e,#a06530);}
+.msg-sender-role{
+  font-size:.58rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;
+  padding:1px 6px;border-radius:4px;background:#f3f4f6;
+}
+.msg-bubble{
+  padding:11px 16px;border-radius:18px;font-size:.88rem;line-height:1.55;
+  word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.04);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.msg.role-guest .msg-bubble{background:#fefbf6;border:1px solid #ede4d3;color:var(--text);}
+.msg.role-admin .msg-bubble{background:linear-gradient(135deg,#1a1a1a,#2d2d2d);color:#fff;}
+.msg.role-partner .msg-bubble{background:linear-gradient(135deg,#c17f3e,#a06530);color:#fff;}
+.msg.from-other .msg-bubble{border-bottom-left-radius:6px;}
+.msg.from-self .msg-bubble{border-bottom-right-radius:6px;}
+.msg.group-mid.from-other .msg-bubble{border-top-left-radius:6px;border-bottom-left-radius:6px;}
+.msg.group-mid.from-self .msg-bubble{border-top-right-radius:6px;border-bottom-right-radius:6px;}
+.msg.group-end.from-other .msg-bubble{border-top-left-radius:6px;}
+.msg.group-end.from-self .msg-bubble{border-top-right-radius:6px;}
+.msg-time{font-size:.62rem;color:var(--text3);margin:4px 12px 0;font-variant-numeric:tabular-nums;}
+.msg-source-badge{
+  font-size:.55rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  padding:1px 6px;border-radius:4px;background:#f3f4f6;color:#6b7280;margin-left:6px;
+}
+.msg.role-admin .msg-source-badge,.msg.role-partner .msg-source-badge{background:rgba(255,255,255,.18);color:rgba(255,255,255,.85);}
+
+/* Enquiry pill */
+.enq-pill{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  padding:14px 20px;font-size:.78rem;color:var(--text2);
+  margin:8px auto 16px;align-self:center;text-align:center;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);max-width:520px;
+}
+.enq-pill-label{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
+.enq-pill-content{color:var(--text);font-weight:500;line-height:1.5;}
+
+/* Composer */
+.reply-wrap{padding:16px 24px 18px;border-top:1px solid var(--border);background:#fff;flex-shrink:0;}
+.reply-container{
+  border:1px solid var(--border);border-radius:14px;background:#fff;
+  display:flex;flex-direction:column;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.reply-container:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(193,127,62,.12);}
+.reply-input{
+  width:100%;padding:14px 16px 4px;border:none;
+  font-family:inherit;font-size:.9rem;line-height:1.5;
+  resize:none;outline:none;max-height:160px;min-height:48px;
+  background:transparent;color:var(--text);
+}
+.reply-input::placeholder{color:var(--text3);}
+.reply-toolbar{padding:6px 10px 10px;display:flex;align-items:center;gap:6px;position:relative;}
+.reply-toolbar-spacer{flex:1;}
+.reply-hint{font-size:.66rem;color:var(--text3);margin-right:8px;font-variant-numeric:tabular-nums;}
+.reply-hint kbd{background:#f3f4f6;border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-size:.62rem;font-family:inherit;color:var(--text2);}
+.reply-btn{
+  padding:8px 18px;background:linear-gradient(135deg,#c17f3e,#a06530);
+  color:#fff;border:none;border-radius:10px;font-family:inherit;
+  font-size:.78rem;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;gap:6px;
+  transition:transform .1s ease, box-shadow .15s ease;
+  box-shadow:0 1px 3px rgba(193,127,62,.3);
+}
+.reply-btn:hover{box-shadow:0 2px 6px rgba(193,127,62,.4);}
+.reply-btn:active{transform:translateY(1px);}
+.reply-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+
+/* No selection */
+.no-selection{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);padding:40px;text-align:center;}
+.no-selection-icon{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(135deg,#fff,#f5f5f5);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+}
+.no-selection-title{font-family:'Fraunces',serif;font-size:1.5rem;color:var(--text);margin-bottom:6px;}
+.no-selection-sub{font-size:.84rem;color:var(--text2);max-width:340px;line-height:1.55;}
+.conv-loading,.conv-empty{padding:40px 20px;text-align:center;color:var(--text3);font-size:.78rem;line-height:1.6;}
+
+/* Online indicator */
+.online-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2);}
+
+/* ── RIGHT: Context panel (Guest details — partner-scoped) ── */
+.context-panel{border-left:1px solid var(--border);background:#fff;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;}
+.context-panel-empty{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px;color:var(--text3);font-size:.78rem;text-align:center;}
+.context-header{padding:24px 20px 20px;border-bottom:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.context-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,#94a3b8,#64748b);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1.4rem;font-weight:600;margin-bottom:14px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08);overflow:hidden;
+}
+.context-avatar img{width:100%;height:100%;object-fit:cover;}
+.context-name{font-size:1.02rem;font-weight:600;color:var(--text);line-height:1.3;}
+.context-email{font-size:.74rem;color:var(--text2);margin-top:4px;word-break:break-all;}
+.context-presence{font-size:.7rem;margin-top:8px;color:var(--text2);display:inline-flex;align-items:center;gap:5px;}
+.context-section{padding:18px 20px;border-bottom:1px solid #f0f0f0;}
+.context-section-title{font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
+.context-row{display:flex;align-items:baseline;justify-content:space-between;font-size:.78rem;margin-bottom:8px;}
+.context-row:last-child{margin-bottom:0;}
+.context-row-label{color:var(--text2);}
+.context-row-value{color:var(--text);font-weight:500;text-align:right;max-width:60%;word-break:break-word;}
+.context-conv-item{display:block;padding:10px 12px;margin:0 -4px 6px;border-radius:8px;text-decoration:none;color:inherit;border:1px solid transparent;transition:background .12s ease, border-color .12s ease;}
+.context-conv-item:hover{background:#fafafa;border-color:#f0f0f0;}
+.context-conv-item.current{background:#fff8f1;border-color:#ecd9bf;}
+.context-conv-property{font-size:.78rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.context-conv-meta{font-size:.66rem;color:var(--text3);margin-top:2px;font-variant-numeric:tabular-nums;}
+
+/* Message hover actions */
+.msg-bubble{position:relative;}
+.msg-actions{
+  position:absolute;top:-12px;
+  display:flex;gap:2px;
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.06);
+  opacity:0;pointer-events:none;
+  transition:opacity .12s ease, transform .12s ease;
+  transform:translateY(4px);z-index:5;
+}
+.msg.from-other .msg-actions{right:8px;}
+.msg.from-self .msg-actions{left:8px;}
+.msg:hover .msg-actions{opacity:1;pointer-events:auto;transform:translateY(0);}
+.msg-actions:has(.msg-action-emoji-picker.open),
+.msg-actions.actions-pinned{opacity:1 !important;pointer-events:auto !important;transform:translateY(0) !important;}
+.msg-action-btn{
+  width:26px;height:26px;border-radius:5px;border:none;
+  background:transparent;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.82rem;transition:background .12s ease, color .12s ease;
+}
+.msg-action-btn:hover{background:#f3f4f6;color:var(--text);}
+
+/* Emoji picker */
+.msg-action-emoji-picker{position:relative;}
+.msg-emoji-popover{
+  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  margin-bottom:8px;display:none;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);padding:5px;gap:2px;z-index:10;
+}
+.msg-emoji-popover::before{content:'';position:absolute;left:0;right:0;bottom:-8px;height:8px;background:transparent;}
+.msg-action-emoji-picker.open .msg-emoji-popover{display:flex;}
+.msg-emoji-btn{
+  background:none;border:none;cursor:pointer;
+  width:30px;height:30px;border-radius:5px;
+  font-size:1.05rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s ease, transform .12s ease;
+}
+.msg-emoji-btn:hover{background:#f3f4f6;transform:scale(1.15);}
+.msg-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.msg.from-other .msg-reactions{margin-left:34px;justify-content:flex-start;}
+.msg.from-self .msg-reactions{margin-right:12px;justify-content:flex-end;}
+.msg-reaction{
+  font-size:.74rem;padding:2px 8px;border-radius:100px;
+  background:#fff;border:1px solid var(--border);
+  display:inline-flex;align-items:center;gap:5px;color:var(--text2);cursor:pointer;
+  transition:transform .1s ease, border-color .15s ease;
+}
+.msg-reaction:hover{border-color:var(--border-hi);}
+.msg-reaction.mine{background:#fff8f1;border-color:#ecd9bf;color:var(--text);}
+.msg-reaction-count{font-size:.66rem;font-weight:600;}
+
+/* Reply quote in composer */
+.reply-quote{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;background:#fafafa;border-bottom:1px solid #f0f0f0;
+  border-radius:14px 14px 0 0;
+}
+.reply-quote-bar{width:3px;align-self:stretch;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.reply-quote-content{flex:1;min-width:0;}
+.reply-quote-label{font-size:.66rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;}
+.reply-quote-text{font-size:.78rem;color:var(--text2);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.reply-quote-close{background:none;border:none;color:var(--text3);cursor:pointer;padding:0;font-size:1.1rem;line-height:1;flex-shrink:0;}
+.reply-quote-close:hover{color:var(--text);}
+
+/* Copy feedback */
+.copy-flash{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:#1a1a1a;color:#fff;padding:8px 16px;border-radius:8px;
+  font-size:.78rem;opacity:0;transition:opacity .2s ease;pointer-events:none;z-index:9999;
+}
+.copy-flash.show{opacity:1;}
+
+/* Sound toggle */
+.sound-toggle{
+  background:#fff;border:1px solid var(--border);
+  padding:6px 10px;border-radius:8px;color:var(--text2);cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;font-size:.72rem;
+  transition:all .15s ease;
+}
+.sound-toggle:hover{background:#f9fafb;color:var(--text);}
+.sound-toggle.muted{opacity:.6;}
+
+/* Message fade-in */
+@keyframes msgFadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.msg.msg-new{animation:msgFadeIn .25s ease-out;}
+
+/* Scrollbars */
+.conv-list-panel::-webkit-scrollbar,.messages-wrap::-webkit-scrollbar,.context-panel::-webkit-scrollbar{width:8px;}
+.conv-list-panel::-webkit-scrollbar-thumb,.messages-wrap::-webkit-scrollbar-thumb,.context-panel::-webkit-scrollbar-thumb{background:rgba(0,0,0,.08);border-radius:4px;}
+.conv-list-panel::-webkit-scrollbar-thumb:hover,.messages-wrap::-webkit-scrollbar-thumb:hover,.context-panel::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.15);}
+
 </style>
 </head>
 <body>
@@ -207,49 +511,89 @@ tbody tr:hover{background:var(--bg);}
   <div style="font-size:1.1rem;font-weight:600;color:var(--text);margin-top:2px;">Conversations</div>
 </div>
 
-<div id="pp-conv-layout" style="display:grid;grid-template-columns:340px 1fr;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:calc(100vh - 200px);min-height:500px;">
+<div class="conv-layout">
   <!-- Left: conversation list -->
-  <div style="border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;">
-    <div style="padding:16px;border-bottom:1px solid var(--border);">
-      <input class="filter-input" style="width:100%;" placeholder="Search conversations…" oninput="filterConvs(this.value)">
+  <div class="conv-list-panel">
+    <div class="conv-list-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div class="conv-list-title">Inbox</div>
+          <div class="conv-list-count" id="conv-list-count">Loading…</div>
+        </div>
+        <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()"></button>
+      </div>
     </div>
-    <div id="pp-conv-list" style="overflow-y:auto;flex:1;">
-      <div style="padding:20px;color:var(--text3);font-size:13px;">Loading conversations…</div>
+    <div id="pp-conv-list"><div class="conv-loading">Loading conversations…</div></div>
+  </div>
+
+  <!-- Middle: message thread -->
+  <div class="conv-thread-panel" id="pp-conv-thread">
+    <div class="no-selection">
+      <div class="no-selection-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c17f3e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+      <div class="no-selection-title">Select a conversation</div>
+      <div class="no-selection-sub">Pick a conversation from the list to reply to your guests.</div>
     </div>
   </div>
-  <!-- Right: message thread -->
-  <div id="pp-conv-thread" style="display:flex;flex-direction:column;overflow:hidden;height:100%;">
-    <div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:14px;">
-      Select a conversation to reply
-    </div>
+
+  <!-- Right: guest context panel -->
+  <div class="context-panel" id="context-panel">
+    <div class="context-panel-empty">Select a conversation to see guest details.</div>
   </div>
 </div>
 
 </div>
 </div>
 </div>
+
+<div class="copy-flash" id="copy-flash">Copied to clipboard</div>
 
 <script src="/assets/conv-presence.js"></script>
 <script>
+var VIEWER_ROLE = 'partner';
 var PP_SLUG = 'nour-el-nil'; // Partner's property slug
+var PP_NAME = 'Nour El Nil';
 var ppConvs = [];
 var ppActiveId = null;
 var ppPoll = null;
+var quotedMessage = null;
+var lastMsgCount = {};
+var soundEnabled = localStorage.getItem('tb_pp_sound') !== 'off';
 
-function esc(t) {
-  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function fmt(d) {
   if (!d) return '';
-  return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  return new Date(d).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+}
+function fmtDaySep(date) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var d = new Date(date); d.setHours(0,0,0,0);
+  var diff = (today - d) / 86400000;
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7) return date.toLocaleDateString('en-US', {weekday:'long'});
+  return date.toLocaleDateString('en-US', {month:'short', day:'numeric', year: date.getFullYear() === today.getFullYear() ? undefined : 'numeric'});
 }
 
-function filterConvs(q) {
-  var items = document.querySelectorAll('#pp-conv-list [data-id]');
-  items.forEach(function(el) {
-    var text = el.textContent.toLowerCase();
-    el.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
-  });
+function avatarInitials(role, name) {
+  if (role === 'admin') return 'B';
+  if (!name) return '?';
+  if (role === 'partner') return name.charAt(0).toUpperCase();
+  return name.charAt(0).toUpperCase();
+}
+function makeAvatar(role, name, imageUrl) {
+  var wrap = document.createElement('span');
+  wrap.className = 'msg-sender-avatar role-' + role;
+  if (imageUrl) {
+    var img = document.createElement('img');
+    img.src = imageUrl;
+    img.onerror = function() { wrap.textContent = avatarInitials(role, name); };
+    wrap.appendChild(img);
+  } else {
+    wrap.textContent = avatarInitials(role, name);
+  }
+  return wrap;
 }
 
 function loadConvs() {
@@ -257,139 +601,206 @@ function loadConvs() {
     .then(function(r) { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(d) {
       ppConvs = (d.conversations || []).filter(function(c){ return c.status !== 'archived'; });
+      var countEl = document.getElementById('conv-list-count');
+      if (countEl) {
+        var unread = ppConvs.filter(function(c){ return (c.unreadAdmin || 0) > 0; }).length;
+        countEl.textContent = ppConvs.length + ' conversation' + (ppConvs.length === 1 ? '' : 's') + (unread > 0 ? ' · ' + unread + ' unread' : '');
+      }
       renderConvList();
-      if (typeof ppUpdateUnreadIndicator === 'function') ppUpdateUnreadIndicator();
+      ppUpdateUnreadIndicator();
     })
     .catch(function(e) {
-      document.getElementById('pp-conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:13px;">Error: ' + e.message + '</div>';
+      document.getElementById('pp-conv-list').innerHTML = '<div class="conv-loading" style="color:var(--red);">Error: ' + escHtml(e.message) + '</div>';
     });
 }
 
 function renderConvList() {
   var el = document.getElementById('pp-conv-list');
   if (!ppConvs.length) {
-    el.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--text3);font-size:13px;">No conversations yet.<br><br>Conversations from enquiries will appear here.</div>';
+    el.innerHTML = '<div class="conv-empty"><div style="margin-bottom:8px;font-weight:500;color:var(--text2);">No conversations yet</div><div>Conversations from enquiries will appear here.</div></div>';
     return;
   }
-  el.innerHTML = '';
-  ppConvs.forEach(function(c) {
-    var hasUnread = c.unreadAdmin > 0;
-    var item = document.createElement('div');
-    item.setAttribute('data-id', c.id);
-    item.style.cssText = 'padding:16px;border-bottom:1px solid var(--border);cursor:pointer;' + (c.id === ppActiveId ? 'background:var(--accent-bg);border-left:3px solid var(--accent);' : '');
-    item.addEventListener('click', function() { openConv(c.id); });
+  // Group by time bucket
+  var startOfToday = new Date(); startOfToday.setHours(0,0,0,0);
+  var startOfYesterday = new Date(startOfToday); startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  var startOfWeek = new Date(startOfToday); startOfWeek.setDate(startOfWeek.getDate() - 7);
 
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:6px;';
-
-    var avatar = document.createElement('div');
-    avatar.className = 'avatar avatar-sm';
-    avatar.textContent = (c.guestName||'G').split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
-
-    var nameWrap = document.createElement('div');
-    nameWrap.style.cssText = 'flex:1;min-width:0;';
-    var gName = document.createElement('div');
-    gName.style.cssText = 'font-size:14px;font-weight:600;';
-    gName.textContent = c.guestName || c.guestEmail;
-    var gSub = document.createElement('div');
-    gSub.style.cssText = 'font-size:11px;color:var(--text2);';
-    gSub.textContent = (c.enquiry && c.enquiry.cabin ? c.enquiry.cabin + ' · ' : '') + fmt(c.lastMessageAt);
-    nameWrap.appendChild(gName);
-    nameWrap.appendChild(gSub);
-
-    var timeEl = document.createElement('div');
-    timeEl.style.cssText = 'font-size:11px;color:var(--text3);flex-shrink:0;';
-    timeEl.textContent = fmt(c.lastMessageAt);
-
-    row.appendChild(avatar);
-    row.appendChild(nameWrap);
-    row.appendChild(timeEl);
-
-    var preview = document.createElement('div');
-    preview.style.cssText = 'font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-    preview.textContent = c.lastMessagePreview || '';
-
-    item.appendChild(row);
-    item.appendChild(preview);
-
-    if (hasUnread) {
-      var badge = document.createElement('div');
-      badge.style.cssText = 'margin-top:8px;';
-      badge.innerHTML = '<span class="badge badge-accent">' + c.unreadAdmin + ' unread</span>';
-      item.appendChild(badge);
-    }
-
-    el.appendChild(item);
+  var groups = { Today: [], Yesterday: [], 'This week': [], Older: [] };
+  var sorted = ppConvs.slice().sort(function(a, b) {
+    return new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0);
   });
+  sorted.forEach(function(c) {
+    var t = new Date(c.lastMessageAt || 0).getTime();
+    if (t >= startOfToday.getTime()) groups.Today.push(c);
+    else if (t >= startOfYesterday.getTime()) groups.Yesterday.push(c);
+    else if (t >= startOfWeek.getTime()) groups['This week'].push(c);
+    else groups.Older.push(c);
+  });
+
+  el.innerHTML = '';
+  ['Today', 'Yesterday', 'This week', 'Older'].forEach(function(label) {
+    var bucket = groups[label];
+    if (!bucket.length) return;
+    var lbl = document.createElement('div');
+    lbl.className = 'conv-group-label';
+    lbl.textContent = label + ' · ' + bucket.length;
+    el.appendChild(lbl);
+    bucket.forEach(function(c) { el.appendChild(buildConvItem(c)); });
+  });
+}
+
+function buildConvItem(c) {
+  var initials = (c.guestName || c.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  var hasUnread = (c.unreadAdmin || 0) > 0;
+  var item = document.createElement('div');
+  item.className = 'conv-item' + (c.id === ppActiveId ? ' active' : '') + (hasUnread ? ' unread' : '');
+  item.setAttribute('data-id', c.id);
+  item.addEventListener('click', function() { openConv(c.id); });
+
+  var avatar = document.createElement('div');
+  avatar.className = 'conv-avatar';
+  if (c.guestAvatar) {
+    avatar.style.background = 'none';
+    avatar.innerHTML = '<img src="' + escHtml(c.guestAvatar) + '">';
+  } else {
+    avatar.textContent = initials || '?';
+  }
+
+  var meta = document.createElement('div');
+  meta.className = 'conv-meta';
+  var line1 = document.createElement('div');
+  line1.className = 'conv-line1';
+  var nameEl = document.createElement('div');
+  nameEl.className = 'conv-guest-name';
+  nameEl.textContent = c.guestName || c.guestEmail || '';
+  var timeEl = document.createElement('span');
+  timeEl.className = 'conv-time';
+  timeEl.textContent = fmt(c.lastMessageAt);
+  line1.appendChild(nameEl);
+  line1.appendChild(timeEl);
+
+  var sub = document.createElement('div');
+  sub.className = 'conv-prop-name';
+  sub.textContent = (c.enquiry && c.enquiry.cabin) || '';
+
+  var preview = document.createElement('div');
+  preview.className = 'conv-preview';
+  preview.textContent = c.lastMessagePreview || '';
+
+  meta.appendChild(line1);
+  if (sub.textContent) meta.appendChild(sub);
+  meta.appendChild(preview);
+
+  if (hasUnread) {
+    var pills = document.createElement('div');
+    pills.className = 'conv-pills';
+    var unreadPill = document.createElement('span');
+    unreadPill.className = 'conv-pill unread';
+    unreadPill.textContent = c.unreadAdmin + ' unread';
+    pills.appendChild(unreadPill);
+    meta.appendChild(pills);
+  }
+
+  item.appendChild(avatar);
+  item.appendChild(meta);
+  return item;
 }
 
 function openConv(id) {
   ppActiveId = id;
   renderConvList();
   fetch('/api/conversation', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,markReadFor:'admin'})});
+  var conv = ppConvs.find(function(c){ return c.id === id; });
+  if (conv) conv.unreadAdmin = 0;
+
   fetch('/api/conversation?id=' + encodeURIComponent(id))
     .then(function(r){ return r.json(); })
-    .then(function(d){ renderThread(d.conversation, d.messages||[]); startPoll(id); });
+    .then(function(d){
+      var convData = d.conversation;
+      // Fetch guest avatar from members
+      if (convData && convData.guestId && convData.guestId.indexOf('user_') === 0) {
+        fetch('/api/members?id=' + encodeURIComponent(convData.guestId))
+          .then(function(r){ return r.json(); })
+          .then(function(md){
+            if (md && md.data && md.data.avatar) convData.guestAvatar = md.data.avatar;
+            renderThread(convData, d.messages || []);
+            startPoll(id);
+          })
+          .catch(function(){ renderThread(convData, d.messages || []); startPoll(id); });
+      } else {
+        renderThread(convData, d.messages || []);
+        startPoll(id);
+      }
+    });
 }
 
 function renderThread(conv, messages) {
   var thread = document.getElementById('pp-conv-thread');
   thread.innerHTML = '';
 
-  // Header
+  // ── Header ──
   var hdr = document.createElement('div');
-  hdr.style.cssText = 'padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;';
+  hdr.className = 'thread-header';
 
-  var av = document.createElement('div');
-  av.className = 'avatar';
-  av.textContent = (conv.guestName||'G').split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
+  var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  var avatar = document.createElement('div');
+  avatar.className = 'thread-header-avatar';
+  if (conv.guestAvatar) {
+    avatar.style.background = 'none';
+    avatar.innerHTML = '<img src="' + escHtml(conv.guestAvatar) + '">';
+  } else {
+    avatar.textContent = initials;
+  }
 
   var info = document.createElement('div');
-  var n1 = document.createElement('div');
-  n1.style.cssText = 'font-size:15px;font-weight:600;';
-  n1.textContent = conv.guestName || conv.guestEmail;
-  var n2 = document.createElement('div');
-  n2.style.cssText = 'font-size:12px;color:var(--text2);';
-  n2.id = 'pp-presence-line';
-  n2.textContent = conv.guestEmail + (conv.enquiry && conv.enquiry.cabin ? ' · ' + conv.enquiry.cabin : '');
+  info.className = 'thread-header-info';
+  var title = document.createElement('div');
+  title.className = 'thread-title';
+  title.textContent = conv.guestName || conv.guestEmail;
+  var sub = document.createElement('div');
+  sub.className = 'thread-sub';
+  sub.id = 'pp-presence-line';
+  sub.innerHTML = '<span>' + escHtml(conv.guestEmail || '') + '</span>' +
+                  (conv.enquiry && conv.enquiry.cabin ? '<span class="thread-sub-sep">·</span><span>' + escHtml(conv.enquiry.cabin) + '</span>' : '');
+  info.appendChild(title);
+  info.appendChild(sub);
 
-  // Fetch guest presence and update sub line
   if (window.ConvPresence && conv.guestId) {
     window.ConvPresence.fetchPresence({ guestId: conv.guestId }).then(function(p) {
       var line = document.getElementById('pp-presence-line');
       if (!line) return;
       var status = '';
-      if (p.guestOnline) status = '<span style="color:#16a34a;font-weight:600;">● Online</span>';
-      else if (p.guestLastSeen) status = 'Last seen ' + window.ConvPresence.timeAgo(p.guestLastSeen);
-      var base = conv.guestEmail + (conv.enquiry && conv.enquiry.cabin ? ' · ' + conv.enquiry.cabin : '');
-      line.innerHTML = base + (status ? ' · ' + status : '');
+      if (p.guestOnline) status = '<span class="thread-sub-sep">·</span><span style="color:#10b981;font-weight:600;display:inline-flex;align-items:center;gap:5px;"><span class="online-dot"></span>Online</span>';
+      else if (p.guestLastSeen) status = '<span class="thread-sub-sep">·</span><span>Last seen ' + escHtml(window.ConvPresence.timeAgo(p.guestLastSeen)) + '</span>';
+      if (status) line.innerHTML = line.innerHTML + status;
     }).catch(function(){});
   }
-  info.appendChild(n1);
-  info.appendChild(n2);
 
-  // Notification toggle slider for partner
+  // Actions: notification toggle slider (partner-scoped — uses notifyPartner)
+  var actions = document.createElement('div');
+  actions.className = 'thread-header-actions';
   var notifyWrap = document.createElement('div');
-  notifyWrap.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:8px;font-family:Geist,sans-serif;font-size:.72rem;font-weight:500;color:#475569;';
+  notifyWrap.style.cssText = 'display:flex;align-items:center;gap:8px;font-family:inherit;font-size:.72rem;font-weight:500;color:#475569;padding:4px 10px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;';
   var notifyOn = (conv.notifyPartner !== false);
   var notifyLabel = document.createElement('span');
-  notifyLabel.textContent = 'Email Alerts?';
+  notifyLabel.textContent = 'Email notifications';
+  notifyLabel.style.cssText = 'color:var(--text2);';
   var notifyOff = document.createElement('span');
   notifyOff.textContent = 'Off';
   notifyOff.style.cssText = 'font-size:.7rem;color:#94a3b8;';
   var notifySwitch = document.createElement('button');
   notifySwitch.type = 'button';
   notifySwitch.title = 'Toggle email notifications for this conversation';
-  notifySwitch.style.cssText = 'position:relative;width:36px;height:20px;border-radius:100px;border:none;padding:0;cursor:pointer;transition:background .18s ease;flex-shrink:0;';
+  notifySwitch.style.cssText = 'position:relative;width:32px;height:18px;border-radius:100px;border:none;padding:0;cursor:pointer;transition:background .18s ease;flex-shrink:0;';
   var notifyKnob = document.createElement('span');
-  notifyKnob.style.cssText = 'position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:left .18s ease;';
+  notifyKnob.style.cssText = 'position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:left .18s ease;';
   notifySwitch.appendChild(notifyKnob);
   var notifyOnLbl = document.createElement('span');
   notifyOnLbl.textContent = 'On';
   notifyOnLbl.style.cssText = 'font-size:.7rem;color:#94a3b8;';
   function paintNotifyBtn() {
     notifySwitch.style.background = notifyOn ? '#0f172a' : '#cbd5e1';
-    notifyKnob.style.left = notifyOn ? '18px' : '2px';
+    notifyKnob.style.left = notifyOn ? '16px' : '2px';
     notifyOff.style.color = notifyOn ? '#94a3b8' : '#0f172a';
     notifyOff.style.fontWeight = notifyOn ? '500' : '600';
     notifyOnLbl.style.color = notifyOn ? '#0f172a' : '#94a3b8';
@@ -417,115 +828,463 @@ function renderThread(conv, messages) {
   notifyWrap.appendChild(notifyOff);
   notifyWrap.appendChild(notifySwitch);
   notifyWrap.appendChild(notifyOnLbl);
+  actions.appendChild(notifyWrap);
 
-  hdr.appendChild(av);
+  hdr.appendChild(avatar);
   hdr.appendChild(info);
-  hdr.appendChild(notifyWrap);
+  hdr.appendChild(actions);
   thread.appendChild(hdr);
 
-  // Messages
-  var msgsWrap = document.createElement('div');
-  msgsWrap.id = 'pp-msgs-wrap';
-  msgsWrap.style.cssText = 'flex:1;min-height:0;padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;background:#fafafa;';
+  // ── Messages ──
+  var wrap = document.createElement('div');
+  wrap.className = 'messages-wrap';
+  wrap.id = 'pp-msgs-wrap';
+  renderMessagesInto(wrap, conv, messages);
+  thread.appendChild(wrap);
 
-  // Enquiry pill
+  // ── Composer ──
+  var replyWrap = document.createElement('div');
+  replyWrap.className = 'reply-wrap';
+  var container = document.createElement('div');
+  container.className = 'reply-container';
+  var textarea = document.createElement('textarea');
+  textarea.className = 'reply-input';
+  textarea.id = 'pp-reply-input';
+  textarea.rows = 2;
+  textarea.placeholder = 'Reply to ' + (conv.guestName || 'guest') + '…';
+  textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      sendReply();
+    }
+  });
+  textarea.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 160) + 'px';
+  });
+
+  var toolbar = document.createElement('div');
+  toolbar.className = 'reply-toolbar';
+  var spacer = document.createElement('div');
+  spacer.className = 'reply-toolbar-spacer';
+  var hint = document.createElement('span');
+  hint.className = 'reply-hint';
+  hint.innerHTML = '<kbd>⌘</kbd> <kbd>↵</kbd> to send';
+  var sendBtn = document.createElement('button');
+  sendBtn.className = 'reply-btn';
+  sendBtn.innerHTML = 'Send <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+  sendBtn.addEventListener('click', sendReply);
+
+  toolbar.appendChild(spacer);
+  toolbar.appendChild(hint);
+  toolbar.appendChild(sendBtn);
+  container.appendChild(textarea);
+  container.appendChild(toolbar);
+  replyWrap.appendChild(container);
+  thread.appendChild(replyWrap);
+
+  quotedMessage = null;
+  renderContextPanel(conv);
+
+  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 50);
+}
+
+function renderMessagesInto(wrap, conv, messages) {
+  wrap.innerHTML = '';
+
   if (conv.enquiry) {
     var parts = [];
     if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
-    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
-    if (conv.enquiry.arrival && conv.enquiry.departure) parts.push(conv.enquiry.arrival + ' → ' + conv.enquiry.departure);
+    if (conv.enquiry.guests) parts.push(conv.enquiry.guests + ' guests');
+    if (conv.enquiry.arrival) parts.push(conv.enquiry.arrival + (conv.enquiry.departure ? ' → ' + conv.enquiry.departure : ''));
     if (parts.length) {
       var pill = document.createElement('div');
-      pill.style.cssText = 'text-align:center;font-size:12px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;align-self:center;';
-      pill.textContent = 'Enquiry: ' + parts.join(' · ');
-      msgsWrap.appendChild(pill);
+      pill.className = 'enq-pill';
+      var pillLabel = document.createElement('div');
+      pillLabel.className = 'enq-pill-label';
+      pillLabel.textContent = 'Enquiry details';
+      var pillContent = document.createElement('div');
+      pillContent.className = 'enq-pill-content';
+      pillContent.textContent = parts.join(' · ');
+      pill.appendChild(pillLabel);
+      pill.appendChild(pillContent);
+      wrap.appendChild(pill);
     }
   }
 
-  messages.forEach(function(m) {
-    var isGuest = m.role === 'guest';
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:12px;' + (!isGuest ? 'justify-content:flex-end;' : '');
-
-    if (isGuest) {
-      var av2 = document.createElement('div');
-      av2.className = 'avatar avatar-sm';
-      av2.textContent = (conv.guestName||'G')[0].toUpperCase();
-      row.appendChild(av2);
+  var lastDay = '';
+  messages.forEach(function(m, idx) {
+    var role = m.role === 'guest' ? 'guest' : (m.role === 'partner' ? 'partner' : 'admin');
+    var side = role === VIEWER_ROLE ? 'from-self' : 'from-other';
+    var sentAt = new Date(m.sentAt);
+    var dayKey = sentAt.toDateString();
+    if (dayKey !== lastDay) {
+      var sep = document.createElement('div');
+      sep.className = 'msg-day-sep';
+      sep.textContent = fmtDaySep(sentAt);
+      wrap.appendChild(sep);
+      lastDay = dayKey;
     }
 
-    var msgWrap = document.createElement('div');
-    msgWrap.style.maxWidth = '70%';
+    var prev = messages[idx - 1];
+    var next = messages[idx + 1];
+    var prevSame = prev && prev.role === m.role && (sentAt - new Date(prev.sentAt)) < 5 * 60 * 1000 && new Date(prev.sentAt).toDateString() === dayKey;
+    var nextSame = next && next.role === m.role && (new Date(next.sentAt) - sentAt) < 5 * 60 * 1000 && new Date(next.sentAt).toDateString() === dayKey;
+    var groupClass = '';
+    if (prevSame && nextSame) groupClass = ' group-mid';
+    else if (prevSame && !nextSame) groupClass = ' group-end';
+    else groupClass = ' group-start';
 
-    var meta = document.createElement('div');
-    meta.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:5px;' + (!isGuest ? 'text-align:right;' : '');
-    var time = new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    meta.textContent = (m.senderName || (isGuest ? conv.guestName : 'You')) + ' · ' + time;
+    var msgEl = document.createElement('div');
+    msgEl.className = 'msg ' + side + ' role-' + role + groupClass;
+
+    var senderText = m.senderName ||
+      (role === 'guest' ? (conv.guestName || 'Guest')
+      : role === 'partner' ? PP_NAME
+      : 'The Bearing');
+
+    if (!prevSame) {
+      var sender = document.createElement('div');
+      sender.className = 'msg-sender';
+      var avatarImg = null;
+      if (role === 'guest' && conv.guestAvatar) avatarImg = conv.guestAvatar;
+      var av = makeAvatar(role, senderText, avatarImg);
+      var nameSpan = document.createElement('span');
+      nameSpan.textContent = senderText;
+      sender.appendChild(av);
+      sender.appendChild(nameSpan);
+      if (role === 'admin') {
+        var rl = document.createElement('span');
+        rl.className = 'msg-sender-role';
+        rl.textContent = 'Bearing';
+        sender.appendChild(rl);
+      } else if (role === 'partner') {
+        var rl = document.createElement('span');
+        rl.className = 'msg-sender-role';
+        rl.textContent = 'You';
+        sender.appendChild(rl);
+      }
+      msgEl.appendChild(sender);
+    }
 
     var bubble = document.createElement('div');
-    if (isGuest) {
-      bubble.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;';
-    } else {
-      bubble.style.cssText = 'background:var(--accent);color:#fff;border-radius:12px 0 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;';
-    }
+    bubble.className = 'msg-bubble';
     bubble.textContent = m.text;
-
-    msgWrap.appendChild(meta);
-    msgWrap.appendChild(bubble);
-    row.appendChild(msgWrap);
-
-    if (!isGuest) {
-      var av3 = document.createElement('div');
-      av3.className = 'avatar avatar-sm';
-      av3.style.background = 'var(--accent)';
-      av3.textContent = 'NE';
-      row.appendChild(av3);
+    if (m.source === 'email') {
+      var srcBadge = document.createElement('span');
+      srcBadge.className = 'msg-source-badge';
+      srcBadge.textContent = 'via email';
+      bubble.appendChild(srcBadge);
     }
 
-    msgsWrap.appendChild(row);
+    // Hover actions
+    var mActions = document.createElement('div');
+    mActions.className = 'msg-actions';
+    var capturedText = m.text;
+    var capturedSender = m.senderName || senderText || 'Guest';
+    var capturedMsgId = m.id;
+
+    var emojiWrap = document.createElement('div');
+    emojiWrap.className = 'msg-action-emoji-picker';
+    var emojiBtn = document.createElement('button');
+    emojiBtn.className = 'msg-action-btn';
+    emojiBtn.title = 'Add reaction';
+    emojiBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+    var emojiPop = document.createElement('div');
+    emojiPop.className = 'msg-emoji-popover';
+    ['👍','❤️','🎉','✨','🙏','🔥'].forEach(function(emoji) {
+      var btn = document.createElement('button');
+      btn.className = 'msg-emoji-btn';
+      btn.textContent = emoji;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleReaction(capturedMsgId, emoji);
+        emojiWrap.classList.remove('open');
+        mActions.classList.remove('actions-pinned');
+      });
+      emojiPop.appendChild(btn);
+    });
+    emojiBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) {
+        if (el !== emojiWrap) {
+          el.classList.remove('open');
+          var pa = el.closest('.msg-actions'); if (pa) pa.classList.remove('actions-pinned');
+        }
+      });
+      emojiWrap.classList.toggle('open');
+      mActions.classList.toggle('actions-pinned', emojiWrap.classList.contains('open'));
+    });
+    emojiWrap.appendChild(emojiBtn);
+    emojiWrap.appendChild(emojiPop);
+
+    var quoteBtn = document.createElement('button');
+    quoteBtn.className = 'msg-action-btn';
+    quoteBtn.title = 'Reply with quote';
+    quoteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
+    quoteBtn.addEventListener('click', function() { quoteMessage(capturedSender, capturedText); });
+
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'msg-action-btn';
+    copyBtn.title = 'Copy message text';
+    copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    copyBtn.addEventListener('click', function() { copyToClipboard(capturedText); });
+
+    mActions.appendChild(emojiWrap);
+    mActions.appendChild(quoteBtn);
+    mActions.appendChild(copyBtn);
+    bubble.appendChild(mActions);
+    msgEl.appendChild(bubble);
+
+    // Reactions
+    if (m.reactions && Object.keys(m.reactions).length) {
+      var rxWrap = document.createElement('div');
+      rxWrap.className = 'msg-reactions';
+      Object.keys(m.reactions).forEach(function(emoji) {
+        var users = m.reactions[emoji];
+        if (!users || !users.length) return;
+        var pill = document.createElement('span');
+        pill.className = 'msg-reaction' + (users.indexOf('partner') !== -1 ? ' mine' : '');
+        pill.title = users.length + ' reaction' + (users.length === 1 ? '' : 's');
+        pill.innerHTML = emoji + (users.length > 1 ? '<span class="msg-reaction-count">' + users.length + '</span>' : '');
+        pill.addEventListener('click', function() { toggleReaction(m.id, emoji); });
+        rxWrap.appendChild(pill);
+      });
+      msgEl.appendChild(rxWrap);
+    }
+
+    if (!nextSame) {
+      var timeEl = document.createElement('div');
+      timeEl.className = 'msg-time';
+      timeEl.textContent = sentAt.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+      msgEl.appendChild(timeEl);
+    }
+
+    wrap.appendChild(msgEl);
   });
+}
 
-  thread.appendChild(msgsWrap);
+// ── Context panel (Partner-scoped: guest profile, no internal notes, no commercial data) ──
+function renderContextPanel(conv) {
+  var ctx = document.getElementById('context-panel');
+  if (!ctx) return;
+  ctx.innerHTML = '<div class="conv-loading">Loading guest details…</div>';
+  var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
 
-  // Reply input
-  var replyArea = document.createElement('div');
-  replyArea.style.cssText = 'padding:16px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-shrink:0;background:var(--surface);';
+  var html = '';
+  html += '<div class="context-header">';
+  html += '<div class="context-avatar">';
+  if (conv.guestAvatar) html += '<img src="' + escHtml(conv.guestAvatar) + '">';
+  else html += escHtml(initials || '?');
+  html += '</div>';
+  html += '<div class="context-name">' + escHtml(conv.guestName || 'Guest') + '</div>';
+  html += '<div class="context-email">' + escHtml(conv.guestEmail || '') + '</div>';
+  html += '<div class="context-presence" id="ctx-presence"></div>';
+  html += '</div>';
 
-  var ta = document.createElement('textarea');
-  ta.id = 'pp-reply-input';
-  ta.style.cssText = 'flex:1;min-height:72px;resize:none;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);outline:none;background:#fff;';
-  ta.placeholder = 'Reply to ' + (conv.guestName || 'guest') + '…';
-  ta.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); }
-  });
+  // Member basics (partner-appropriate — no LTV, no provider, no notes)
+  html += '<div class="context-section">';
+  html += '<div class="context-section-title">About</div>';
+  html += '<div class="context-row"><span class="context-row-label">Member since</span><span class="context-row-value" id="ctx-joined">—</span></div>';
+  html += '<div class="context-row"><span class="context-row-label">Location</span><span class="context-row-value" id="ctx-location">—</span></div>';
+  html += '</div>';
 
-  var btnCol = document.createElement('div');
-  btnCol.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+  // Enquiry details
+  if (conv.enquiry) {
+    html += '<div class="context-section">';
+    html += '<div class="context-section-title">Enquiry</div>';
+    if (conv.enquiry.cabin) html += '<div class="context-row"><span class="context-row-label">Cabin</span><span class="context-row-value">' + escHtml(conv.enquiry.cabin) + '</span></div>';
+    if (conv.enquiry.guests) html += '<div class="context-row"><span class="context-row-label">Guests</span><span class="context-row-value">' + escHtml(conv.enquiry.guests) + '</span></div>';
+    if (conv.enquiry.arrival) html += '<div class="context-row"><span class="context-row-label">Arrival</span><span class="context-row-value">' + escHtml(conv.enquiry.arrival) + '</span></div>';
+    if (conv.enquiry.departure) html += '<div class="context-row"><span class="context-row-label">Departure</span><span class="context-row-value">' + escHtml(conv.enquiry.departure) + '</span></div>';
+    html += '</div>';
+  }
 
-  var sendBtn = document.createElement('button');
-  sendBtn.className = 'btn btn-primary';
-  sendBtn.textContent = 'Send';
-  sendBtn.addEventListener('click', sendReply);
+  // Past conversations with THIS guest on YOUR property only
+  html += '<div class="context-section" id="ctx-other-convs-section" style="display:none;">';
+  html += '<div class="context-section-title">Previous conversations</div>';
+  html += '<div id="ctx-other-convs"></div>';
+  html += '</div>';
 
-  btnCol.appendChild(sendBtn);
-  replyArea.appendChild(ta);
-  replyArea.appendChild(btnCol);
-  thread.appendChild(replyArea);
+  ctx.innerHTML = html;
 
-  setTimeout(function(){ msgsWrap.scrollTop = msgsWrap.scrollHeight; }, 50);
+  // Presence
+  if (window.ConvPresence && conv.guestId) {
+    window.ConvPresence.fetchPresence({ guestId: conv.guestId }).then(function(p) {
+      var presEl = document.getElementById('ctx-presence');
+      if (!presEl) return;
+      if (p.guestOnline) presEl.innerHTML = '<span class="online-dot"></span><span style="color:#10b981;font-weight:600;">Online now</span>';
+      else if (p.guestLastSeen) presEl.innerHTML = '<span>Last seen ' + escHtml(window.ConvPresence.timeAgo(p.guestLastSeen)) + '</span>';
+    }).catch(function(){});
+  }
+
+  // Member basics
+  if (conv.guestId && conv.guestId.indexOf('user_') === 0) {
+    fetch('/api/members?id=' + encodeURIComponent(conv.guestId))
+      .then(function(r){ return r.json(); })
+      .then(function(md){
+        if (!md || !md.data) return;
+        var m = md.data;
+        var setEl = function(id, val){ var el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('ctx-joined', m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-US', {month:'short', year:'numeric'}) : '—');
+        setEl('ctx-location', m.location || '—');
+      })
+      .catch(function(){});
+  }
+
+  // Past conversations on this property only
+  // Scope: list conversations for this guest AND filter to property slug
+  if (conv.guestId) {
+    fetch('/api/conversation?guestId=' + encodeURIComponent(conv.guestId))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var other = (d.conversations || []).filter(function(c) {
+          return c.id !== conv.id && c.status !== 'archived' && c.propertySlug === PP_SLUG;
+        });
+        if (!other.length) return;
+        var sec = document.getElementById('ctx-other-convs-section');
+        var box = document.getElementById('ctx-other-convs');
+        if (!sec || !box) return;
+        sec.style.display = '';
+        box.innerHTML = other.slice(0, 6).map(function(c) {
+          var when = c.lastMessageAt ? fmt(c.lastMessageAt) : '';
+          var preview = c.lastMessagePreview ? (c.lastMessagePreview.substring(0, 60) + (c.lastMessagePreview.length > 60 ? '…' : '')) : '';
+          return '<a class="context-conv-item" href="pp-conversations.html?id=' + encodeURIComponent(c.id) + '">' +
+            '<div class="context-conv-property">' + escHtml(preview || 'Conversation') + '</div>' +
+            '<div class="context-conv-meta">' + escHtml(when) + '</div>' +
+          '</a>';
+        }).join('');
+      })
+      .catch(function(){});
+  }
+}
+
+// ── Reactions ──
+function toggleReaction(messageId, emoji) {
+  if (!ppActiveId || !messageId) return;
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'reaction',
+      id: ppActiveId,
+      messageId: messageId,
+      emoji: emoji,
+      role: 'partner',
+      userId: 'partner'
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.ok) refreshThread(); });
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.msg-action-emoji-picker')) {
+    document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) {
+      el.classList.remove('open');
+      var pa = el.closest('.msg-actions'); if (pa) pa.classList.remove('actions-pinned');
+    });
+  }
+});
+
+// ── Reply quote ──
+function quoteMessage(sender, text) {
+  quotedMessage = { sender: sender, text: text };
+  renderQuoteUi();
+  var input = document.getElementById('pp-reply-input');
+  if (input) input.focus();
+}
+function renderQuoteUi() {
+  var container = document.querySelector('.reply-container');
+  if (!container) return;
+  var existing = container.querySelector('.reply-quote');
+  if (existing) existing.remove();
+  if (!quotedMessage) return;
+  var q = document.createElement('div');
+  q.className = 'reply-quote';
+  q.innerHTML = '<div class="reply-quote-bar"></div>' +
+    '<div class="reply-quote-content">' +
+      '<div class="reply-quote-label">Replying to ' + escHtml(quotedMessage.sender) + '</div>' +
+      '<div class="reply-quote-text">' + escHtml(quotedMessage.text) + '</div>' +
+    '</div>' +
+    '<button class="reply-quote-close" onclick="clearQuote()">×</button>';
+  container.insertBefore(q, container.firstChild);
+}
+function clearQuote() {
+  quotedMessage = null;
+  renderQuoteUi();
+}
+
+// ── Copy & flash ──
+function copyToClipboard(text) {
+  var flash = document.getElementById('copy-flash');
+  function showFlash() {
+    if (!flash) return;
+    flash.classList.add('show');
+    setTimeout(function() { flash.classList.remove('show'); }, 1400);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(showFlash).catch(function() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      showFlash();
+    });
+  }
+}
+
+// ── Sound ──
+function playNotificationSound() {
+  if (!soundEnabled) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start(); osc.stop(ctx.currentTime + 0.25);
+  } catch(e) {}
+}
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('tb_pp_sound', soundEnabled ? 'on' : 'off');
+  paintSoundToggle();
+}
+function paintSoundToggle() {
+  var btn = document.getElementById('sound-toggle');
+  if (!btn) return;
+  btn.classList.toggle('muted', !soundEnabled);
+  btn.title = soundEnabled ? 'Sounds on — click to mute' : 'Sounds off — click to enable';
+  btn.innerHTML = soundEnabled
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg><span>Sound</span>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg><span>Muted</span>';
 }
 
 function sendReply() {
   var input = document.getElementById('pp-reply-input');
   var text = input ? input.value.trim() : '';
   if (!text || !ppActiveId) return;
+
+  if (quotedMessage) {
+    var quoteLines = quotedMessage.text.split('\n').map(function(l){ return '> ' + l; }).join('\n');
+    text = '> ' + quotedMessage.sender + ' wrote:\n' + quoteLines + '\n\n' + text;
+    quotedMessage = null;
+    renderQuoteUi();
+  }
+
   input.value = '';
+  input.style.height = 'auto';
   input.disabled = true;
 
   fetch('/api/conversation', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({action:'message', id:ppActiveId, role:'partner', text:text, senderName:'Nour El Nil'})
+    body: JSON.stringify({action:'message', id:ppActiveId, role:'partner', text:text, senderName: PP_NAME})
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
@@ -543,58 +1302,27 @@ function refreshThread() {
 }
 
 function refreshMessages(conv, messages) {
-  var msgsWrap = document.getElementById('pp-msgs-wrap');
-  if (!msgsWrap) return; // thread not open yet
-  
-  // Clear and re-render just messages
-  msgsWrap.innerHTML = '';
-  
-  if (conv.enquiry) {
-    var parts = [];
-    if (conv.enquiry.cabin) parts.push(conv.enquiry.cabin);
-    if (conv.enquiry.guests) parts.push(conv.enquiry.guests);
-    if (conv.enquiry.arrival && conv.enquiry.departure) parts.push(conv.enquiry.arrival + ' → ' + conv.enquiry.departure);
-    if (parts.length) {
-      var pill = document.createElement('div');
-      pill.style.cssText = 'text-align:center;font-size:12px;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;align-self:center;';
-      pill.textContent = 'Enquiry: ' + parts.join(' · ');
-      msgsWrap.appendChild(pill);
+  var wrap = document.getElementById('pp-msgs-wrap');
+  if (!wrap) return;
+  var prevCount = lastMsgCount[conv.id] || 0;
+  var newCount = messages.length;
+  var newFromOther = false;
+  if (newCount > prevCount && prevCount > 0) {
+    for (var i = prevCount; i < newCount; i++) {
+      if (messages[i] && messages[i].role !== 'partner') { newFromOther = true; break; }
     }
   }
-
-  messages.forEach(function(m) {
-    var isGuest = m.role === 'guest';
-    var row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:12px;' + (!isGuest ? 'justify-content:flex-end;' : '');
-    if (isGuest) {
-      var av2 = document.createElement('div');
-      av2.className = 'avatar avatar-sm';
-      av2.textContent = (conv.guestName||'G')[0].toUpperCase();
-      row.appendChild(av2);
+  lastMsgCount[conv.id] = newCount;
+  renderMessagesInto(wrap, conv, messages);
+  if (newFromOther && newCount > prevCount) {
+    var allMsgEls = wrap.querySelectorAll('.msg');
+    var toAnimate = newCount - prevCount;
+    for (var i = allMsgEls.length - toAnimate; i < allMsgEls.length; i++) {
+      if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
-    var msgWrap = document.createElement('div');
-    msgWrap.style.maxWidth = '70%';
-    var meta = document.createElement('div');
-    meta.style.cssText = 'font-size:12px;color:var(--text2);margin-bottom:5px;' + (!isGuest ? 'text-align:right;' : '');
-    meta.textContent = (m.senderName || (isGuest ? conv.guestName : 'You')) + ' · ' + new Date(m.sentAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    var bubble = document.createElement('div');
-    bubble.style.cssText = isGuest
-      ? 'background:var(--surface);border:1px solid var(--border);border-radius:0 12px 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;'
-      : 'background:var(--accent);color:#fff;border-radius:12px 0 12px 12px;padding:13px 16px;font-size:14px;line-height:1.6;';
-    bubble.textContent = m.text;
-    msgWrap.appendChild(meta);
-    msgWrap.appendChild(bubble);
-    row.appendChild(msgWrap);
-    if (!isGuest) {
-      var av3 = document.createElement('div');
-      av3.className = 'avatar avatar-sm';
-      av3.style.background = 'var(--accent)';
-      av3.textContent = 'NE';
-      row.appendChild(av3);
-    }
-    msgsWrap.appendChild(row);
-  });
-  msgsWrap.scrollTop = msgsWrap.scrollHeight;
+    playNotificationSound();
+  }
+  wrap.scrollTop = wrap.scrollHeight;
 }
 
 function startPoll(id) {
@@ -630,6 +1358,7 @@ setInterval(function() {
 }, 15000);
 
 loadConvs();
+paintSoundToggle();
 </script>
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
