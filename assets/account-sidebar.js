@@ -1,6 +1,22 @@
-// Customer-side sidebar populator with sessionStorage caching for instant render
+// Customer-side sidebar populator with sessionStorage caching
 (function() {
   var CACHE_KEY = 'tb_user_cache';
+
+  function wireSignOut() {
+    // Find any tb-signout-btn (static HTML in every page) and wire its click handler
+    var btns = document.querySelectorAll('.tb-signout-btn');
+    btns.forEach(function(btn) {
+      if (btn.__wired) return;
+      btn.__wired = true;
+      btn.addEventListener('click', async function() {
+        try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
+        if (window.Clerk) {
+          await window.Clerk.signOut();
+          window.location.href = '/';
+        }
+      });
+    });
+  }
 
   function applyToDOM(data) {
     if (!data) return;
@@ -23,36 +39,8 @@
       emailEl.textContent = data.email || '';
     }
 
-    // Add Sign out button only if no sign-out already exists
-    if (!document.querySelector('.tb-signout-btn')) {
-      var sidebarBtns = document.querySelectorAll('.sidebar-profile button, .sidebar button');
-      var hasSignOut = false;
-      sidebarBtns.forEach(function(b) {
-        if ((b.textContent || '').trim().toLowerCase() === 'sign out') hasSignOut = true;
-      });
-      if (!hasSignOut) {
-        var signOutBtn = document.createElement('button');
-        signOutBtn.className = 'tb-signout-btn';
-        signOutBtn.textContent = 'Sign out';
-        signOutBtn.style.cssText = 'margin-top:12px;width:100%;padding:8px;border:1px solid var(--border-hi,#e8dfd0);border-radius:8px;background:transparent;color:var(--stone,#9a8e80);font-family:Geist,sans-serif;font-size:.8rem;cursor:pointer;';
-        signOutBtn.onclick = async function() {
-          try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
-          if (window.Clerk) {
-            await window.Clerk.signOut();
-            window.location.href = '/';
-          }
-        };
-        var memberTag = document.querySelector('.sidebar-member');
-        if (memberTag && memberTag.parentNode) {
-          memberTag.parentNode.insertBefore(signOutBtn, memberTag.nextSibling);
-        } else {
-          var profileForBtn = document.querySelector('.sidebar-profile');
-          if (profileForBtn) profileForBtn.appendChild(signOutBtn);
-        }
-      }
-    }
+    wireSignOut();
 
-    // Reveal
     var profile = document.querySelector('.sidebar-profile');
     if (profile) profile.classList.add('tb-ready');
   }
@@ -70,7 +58,6 @@
     applyToDOM(data);
   }
 
-  // Apply cached data immediately for instant render
   function applyCacheNow() {
     try {
       var cached = sessionStorage.getItem(CACHE_KEY);
@@ -80,6 +67,7 @@
 
   function init() {
     applyCacheNow();
+    wireSignOut(); // Always wire even if no cache, so button works on first sign-in too
 
     var attempts = 0;
     var t = setInterval(function() {
