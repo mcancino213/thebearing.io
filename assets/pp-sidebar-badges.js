@@ -47,5 +47,8 @@
   } else {
     updateBadges();
   }
-  setInterval(updateBadges, 30000);
+  setInterval(updateBadges, 8000);
+  window.addEventListener('focus', updateBadges);
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateBadges(); });
+  window.refreshPpBadges = updateBadges;
 })();

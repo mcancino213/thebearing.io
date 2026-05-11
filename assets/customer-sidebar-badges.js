@@ -62,7 +62,10 @@
       if (window.Clerk && window.Clerk.user) {
         clearInterval(t);
         updateBadges();
-        setInterval(updateBadges, 30000);
+        setInterval(updateBadges, 8000);
+        window.addEventListener('focus', updateBadges);
+        document.addEventListener('visibilitychange', function(){ if (!document.hidden) updateBadges(); });
+        window.refreshCustomerBadges = updateBadges;
       } else if (attempts > 25) {
         clearInterval(t);
       }

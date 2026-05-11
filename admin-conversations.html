@@ -694,8 +694,9 @@ setInterval(function() {
     conversations = (data.conversations || []).filter(function(c){ return c.status !== 'archived'; });
     if (!document.querySelector('#conv-list .conv-item.active')) renderList();
     updateUnreadIndicator();
+    if (window.refreshAdminUnreadBadge) window.refreshAdminUnreadBadge();
   }).catch(function(){});
-}, 15000);
+}, 8000);
 
 loadList();
 </script>
