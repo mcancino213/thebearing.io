@@ -1095,11 +1095,33 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (!convRaw) return jsonResponse({ error: 'conversation not found', convId }, 404);
       const conv = JSON.parse(convRaw);
 
-      // Get email body — try multiple field names
+      // Get email body — try multiple field names in the webhook payload
       let text = body.text || body.plain || (body.data && body.data.text) || (body.data && body.data.plain) || '';
-      // Strip HTML if only HTML is present
-      if (!text && (body.html || (body.data && body.data.html))) {
-        const html = body.html || body.data.html;
+      let html = body.html || (body.data && body.data.html) || '';
+
+      // If body isn't in the webhook payload, fetch it from Resend API via email_id
+      const emailId = (body.data && body.data.email_id) || body.email_id;
+      if (!text && !html && emailId && env.RESEND_API_KEY) {
+        try {
+          console.log('[Inbound] Fetching email body via API for:', emailId);
+          const apiResp = await fetch('https://api.resend.com/emails/' + emailId, {
+            headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY }
+          });
+          if (apiResp.ok) {
+            const emailData = await apiResp.json();
+            text = emailData.text || '';
+            html = emailData.html || '';
+            console.log('[Inbound] Got body, text length:', text.length, 'html length:', html.length);
+          } else {
+            console.log('[Inbound] API fetch failed:', apiResp.status);
+          }
+        } catch (e) {
+          console.log('[Inbound] API fetch error:', e.message);
+        }
+      }
+
+      // Strip HTML if only HTML is available
+      if (!text && html) {
         text = html.replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
       }
       text = text.trim();
@@ -1109,14 +1131,27 @@ View in admin: https://thebearing.io/admin-bookings.html
         .filter(line => !line.trim().startsWith('>'))
         .join('\n')
         .trim();
-      // Remove common email signature/quote separators
-      const sigSeparators = ['\n--\n', '\n— The Bearing', '\nOn ', '\nSent from', '________', '\n>From:'];
+
+      // Strip "On <date>, <name> wrote:" attribution lines and everything after
+      // Examples:
+      //   "On May 11, 2026, at 8:15 AM, Foo wrote:"
+      //   "On Mon, May 11, 2026 at 8:15 AM Foo <a@b.com> wrote:"
+      const attribMatch = text.match(/\n\s*On\s+[^\n]+?\s+wrote:/i);
+      if (attribMatch) {
+        text = text.substring(0, attribMatch.index).trim();
+      }
+
+      // Strip common signature/quote separators (but only if they appear after some content)
+      const sigSeparators = ['\n-- \n', '\n--\n', '\n— The Bearing', '\nSent from my', '\n________', '\nFrom:'];
       for (const sep of sigSeparators) {
         const idx = text.indexOf(sep);
         if (idx > 20) { text = text.substring(0, idx).trim(); break; }
       }
 
+      text = text.trim();
+
       if (!text || text.length < 2) {
+        console.log('[Inbound] Empty reply after stripping. Original text:', (body.text||'').substring(0,500));
         return jsonResponse({ ok: true, skipped: 'empty reply', convId });
       }
 
