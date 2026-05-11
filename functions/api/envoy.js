@@ -36,7 +36,7 @@ export default {
     // Strategy: client sends Clerk session token in X-Clerk-Session header.
     // We verify it against Clerk's API to get the user's email, then check the allowlist.
     // Falls back to X-Admin-Email header check (less secure) for environments without session tokens.
-    const ADMIN_EMAILS = ['mcancino@gmail.com'];
+    const ADMIN_EMAILS = ['admin@thebearing.io'];
 
     async function isAdmin() {
       // Path 1: Clerk session token (most secure)

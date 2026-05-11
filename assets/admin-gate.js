@@ -5,7 +5,7 @@
 // This is FRONTEND-ONLY enforcement — the real security comes from the server
 // also rejecting admin API operations from non-admin users. See worker /api/admin-check.
 (function() {
-  var ADMIN_EMAILS = ['mcancino@gmail.com'];
+  var ADMIN_EMAILS = ['admin@thebearing.io'];
 
   // Hide page contents instantly to prevent flash of admin UI before redirect
   var hideStyle = document.createElement('style');
