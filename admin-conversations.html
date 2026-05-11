@@ -177,10 +177,14 @@ tbody tr:hover{background:var(--bg);}
    ───────────────────────────────────────────────────────────── */
 .conv-layout{
   display:grid;
-  grid-template-columns:340px 1fr;
+  grid-template-columns:340px 1fr 320px;
   height:calc(100vh - 60px);
   overflow:hidden;
   background:#fafafa;
+  transition:grid-template-columns .25s ease;
+}
+.conv-layout.context-hidden{
+  grid-template-columns:340px 1fr 0;
 }
 
 /* ── LEFT: Conversation list panel ── */
@@ -493,13 +497,167 @@ tbody tr:hover{background:var(--bg);}
 
 /* Scrollbar prettifier */
 .conv-list-panel::-webkit-scrollbar,
-.messages-wrap::-webkit-scrollbar{width:8px;}
+.messages-wrap::-webkit-scrollbar,
+.context-panel::-webkit-scrollbar{width:8px;}
 .conv-list-panel::-webkit-scrollbar-thumb,
-.messages-wrap::-webkit-scrollbar-thumb{
+.messages-wrap::-webkit-scrollbar-thumb,
+.context-panel::-webkit-scrollbar-thumb{
   background:rgba(0,0,0,.08);border-radius:4px;
 }
 .conv-list-panel::-webkit-scrollbar-thumb:hover,
-.messages-wrap::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.15);}
+.messages-wrap::-webkit-scrollbar-thumb:hover,
+.context-panel::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.15);}
+
+/* ─────────────────────────────────────────────────────────────
+   RIGHT: Guest context panel (Intercom-style)
+   ───────────────────────────────────────────────────────────── */
+.context-panel{
+  border-left:1px solid var(--border);
+  background:#fff;
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.context-panel-empty{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;color:var(--text3);font-size:.78rem;text-align:center;
+}
+.context-header{
+  padding:24px 20px 20px;
+  border-bottom:1px solid #f0f0f0;
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.context-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:linear-gradient(135deg,#c17f3e,#a06530);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:1.4rem;font-weight:600;
+  margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.08);
+  overflow:hidden;
+}
+.context-avatar img{width:100%;height:100%;object-fit:cover;}
+.context-name{font-size:1.02rem;font-weight:600;color:var(--text);line-height:1.3;}
+.context-email{font-size:.74rem;color:var(--text2);margin-top:4px;word-break:break-all;}
+.context-presence{
+  font-size:.7rem;margin-top:8px;color:var(--text2);
+  display:inline-flex;align-items:center;gap:5px;
+}
+.context-section{padding:18px 20px;border-bottom:1px solid #f0f0f0;}
+.context-section-title{
+  font-size:.66rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text3);
+  margin-bottom:12px;
+}
+.context-row{
+  display:flex;align-items:baseline;justify-content:space-between;
+  font-size:.78rem;margin-bottom:8px;
+}
+.context-row:last-child{margin-bottom:0;}
+.context-row-label{color:var(--text2);}
+.context-row-value{color:var(--text);font-weight:500;text-align:right;max-width:60%;word-break:break-word;}
+.context-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.context-stat{
+  background:#fafafa;border:1px solid #f0f0f0;border-radius:10px;
+  padding:10px 12px;
+}
+.context-stat-label{font-size:.62rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);}
+.context-stat-value{font-size:1.05rem;font-weight:600;color:var(--text);margin-top:3px;font-variant-numeric:tabular-nums;}
+.context-conv-item{
+  display:block;padding:10px 12px;margin:0 -4px 6px;border-radius:8px;
+  text-decoration:none;color:inherit;
+  border:1px solid transparent;
+  transition:background .12s ease, border-color .12s ease;
+}
+.context-conv-item:hover{background:#fafafa;border-color:#f0f0f0;}
+.context-conv-item.current{background:#fff8f1;border-color:#ecd9bf;}
+.context-conv-property{font-size:.78rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.context-conv-meta{font-size:.66rem;color:var(--text3);margin-top:2px;font-variant-numeric:tabular-nums;}
+.context-toggle-btn{
+  position:absolute;top:14px;right:14px;
+  width:32px;height:32px;border-radius:8px;
+  background:#fff;border:1px solid var(--border);
+  color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s ease;z-index:10;
+}
+.context-toggle-btn:hover{background:#f9fafb;color:var(--text);}
+.context-notes{
+  width:100%;padding:10px 12px;border:1px solid var(--border);
+  border-radius:8px;font-family:inherit;font-size:.78rem;line-height:1.5;
+  resize:vertical;min-height:70px;background:#fafafa;color:var(--text);
+  outline:none;transition:border-color .15s ease, background .15s ease;
+}
+.context-notes:focus{border-color:var(--accent);background:#fff;}
+.context-notes-status{
+  font-size:.66rem;color:var(--text3);margin-top:6px;
+  display:flex;align-items:center;gap:6px;min-height:14px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MESSAGE HOVER ACTIONS
+   ───────────────────────────────────────────────────────────── */
+.msg{position:relative;}
+.msg-bubble-wrap{position:relative;display:inline-block;}
+.msg-actions{
+  position:absolute;top:-12px;
+  display:flex;gap:2px;
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:3px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  opacity:0;pointer-events:none;
+  transition:opacity .12s ease, transform .12s ease;
+  transform:translateY(4px);
+  z-index:5;
+}
+.msg.from-other .msg-actions{right:8px;}
+.msg.from-self .msg-actions{left:8px;}
+.msg:hover .msg-actions{opacity:1;pointer-events:auto;transform:translateY(0);}
+.msg-action-btn{
+  width:26px;height:26px;border-radius:5px;border:none;
+  background:transparent;color:var(--text2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.82rem;transition:background .12s ease, color .12s ease;
+}
+.msg-action-btn:hover{background:#f3f4f6;color:var(--text);}
+.msg-action-divider{width:1px;background:#f0f0f0;margin:2px 1px;}
+.msg-reactions{
+  display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;
+}
+.msg.from-other .msg-reactions{margin-left:34px;}
+.msg.from-self .msg-reactions{margin-right:12px;justify-content:flex-end;}
+.msg-reaction{
+  font-size:.72rem;padding:2px 8px;border-radius:100px;
+  background:#fff;border:1px solid var(--border);
+  display:inline-flex;align-items:center;gap:4px;
+  color:var(--text2);cursor:pointer;
+}
+.msg-reaction-count{font-size:.66rem;font-weight:600;color:var(--text3);}
+
+/* Reply quote in composer */
+.reply-quote{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;background:#fafafa;border-bottom:1px solid #f0f0f0;
+  border-radius:14px 14px 0 0;
+}
+.reply-quote-bar{width:3px;align-self:stretch;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.reply-quote-content{flex:1;min-width:0;}
+.reply-quote-label{font-size:.66rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;}
+.reply-quote-text{font-size:.78rem;color:var(--text2);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.reply-quote-close{
+  background:none;border:none;color:var(--text3);cursor:pointer;padding:0;
+  font-size:1.1rem;line-height:1;flex-shrink:0;
+}
+.reply-quote-close:hover{color:var(--text);}
+
+/* Copy feedback toast */
+.copy-flash{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:#1a1a1a;color:#fff;padding:8px 16px;border-radius:8px;
+  font-size:.78rem;opacity:0;transition:opacity .2s ease;pointer-events:none;
+  z-index:9999;
+}
+.copy-flash.show{opacity:1;}
 </style>
 <!-- Clerk Auth SDK + Admin Gate -->
 <script defer crossorigin="anonymous"
@@ -557,7 +715,7 @@ window.addEventListener('load', async function() {
       <div id="conv-list"><div class="conv-loading">Loading conversations…</div></div>
     </div>
 
-    <!-- Right: message thread -->
+    <!-- Middle: message thread -->
     <div class="conv-thread-panel" id="conv-thread">
       <div class="no-selection">
         <div class="no-selection-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c17f3e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
@@ -566,9 +724,17 @@ window.addEventListener('load', async function() {
       </div>
     </div>
 
+    <!-- Right: guest context panel -->
+    <div class="context-panel" id="context-panel">
+      <div class="context-panel-empty">Select a conversation to see guest details.</div>
+    </div>
+
   </div>
 </div>
 </div>
+
+<!-- Copy feedback -->
+<div class="copy-flash" id="copy-flash">Copied to clipboard</div>
 
 <div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0b0e14;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
 
@@ -999,6 +1165,10 @@ function renderThread(conv, messages) {
   replyWrap.appendChild(container);
   thread.appendChild(replyWrap);
 
+  // Clear any quoted message from previous thread; render context panel
+  quotedMessage = null;
+  renderContextPanel(conv);
+
   setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 50);
 }
 
@@ -1023,13 +1193,225 @@ function renderEmptyState() {
     '<div class="no-selection-title">Select a conversation</div>' +
     '<div class="no-selection-sub">Pick a conversation from the list to read messages and reply. The Envoy can help draft responses if you get stuck.</div>' +
   '</div>';
+  // Reset context panel too
+  var ctx = document.getElementById('context-panel');
+  if (ctx) ctx.innerHTML = '<div class="context-panel-empty">Select a conversation to see guest details.</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// Context panel — Intercom-style guest details
+// ─────────────────────────────────────────────────────────────
+var notesSaveTimer = null;
+
+function renderContextPanel(conv) {
+  var ctx = document.getElementById('context-panel');
+  if (!ctx) return;
+  ctx.innerHTML = '<div class="conv-loading">Loading guest details…</div>';
+
+  var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+
+  // Build static parts first; populate stats async
+  var html = '';
+  html += '<div class="context-header">';
+  html += '<div class="context-avatar">';
+  if (conv.guestAvatar) html += '<img src="' + escHtml(conv.guestAvatar) + '">';
+  else html += escHtml(initials || '?');
+  html += '</div>';
+  html += '<div class="context-name">' + escHtml(conv.guestName || 'Guest') + '</div>';
+  html += '<div class="context-email">' + escHtml(conv.guestEmail || '') + '</div>';
+  html += '<div class="context-presence" id="ctx-presence"></div>';
+  html += '</div>';
+
+  // Quick stats grid (member since, total convs, etc.)
+  html += '<div class="context-section">';
+  html += '<div class="context-section-title">Member</div>';
+  html += '<div class="context-stat-grid" id="ctx-stats">';
+  html += '<div class="context-stat"><div class="context-stat-label">Joined</div><div class="context-stat-value" id="ctx-joined">—</div></div>';
+  html += '<div class="context-stat"><div class="context-stat-label">Convs</div><div class="context-stat-value" id="ctx-convs">—</div></div>';
+  html += '<div class="context-stat"><div class="context-stat-label">Bookings</div><div class="context-stat-value" id="ctx-bookings">—</div></div>';
+  html += '<div class="context-stat"><div class="context-stat-label">LTV</div><div class="context-stat-value" id="ctx-ltv">—</div></div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Details block
+  html += '<div class="context-section">';
+  html += '<div class="context-section-title">Details</div>';
+  html += '<div class="context-row"><span class="context-row-label">Property</span><span class="context-row-value">' + escHtml(conv.propertyName || conv.propertySlug || '—') + '</span></div>';
+  html += '<div class="context-row"><span class="context-row-label">Tier</span><span class="context-row-value" id="ctx-tier">—</span></div>';
+  html += '<div class="context-row"><span class="context-row-label">Location</span><span class="context-row-value" id="ctx-location">—</span></div>';
+  html += '<div class="context-row"><span class="context-row-label">Provider</span><span class="context-row-value" id="ctx-provider">—</span></div>';
+  html += '</div>';
+
+  // Other conversations
+  html += '<div class="context-section" id="ctx-other-convs-section" style="display:none;">';
+  html += '<div class="context-section-title">Other conversations</div>';
+  html += '<div id="ctx-other-convs"></div>';
+  html += '</div>';
+
+  // Notes
+  html += '<div class="context-section">';
+  html += '<div class="context-section-title">Internal notes</div>';
+  html += '<textarea class="context-notes" id="ctx-notes" placeholder="Private notes about this guest, only visible to admins…"></textarea>';
+  html += '<div class="context-notes-status" id="ctx-notes-status"></div>';
+  html += '<a href="admin-guest-detail.html?id=' + encodeURIComponent(conv.guestId || '') + '" style="display:inline-block;margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:500;">View full member profile →</a>';
+  html += '</div>';
+
+  ctx.innerHTML = html;
+
+  // Populate presence
+  if (window.ConvPresence && conv.guestId) {
+    window.ConvPresence.fetchPresence({ guestId: conv.guestId }).then(function(p) {
+      var presEl = document.getElementById('ctx-presence');
+      if (!presEl) return;
+      if (p.guestOnline) presEl.innerHTML = '<span class="online-dot"></span><span style="color:#10b981;font-weight:600;">Online now</span>';
+      else if (p.guestLastSeen) presEl.innerHTML = '<span>Last seen ' + escHtml(window.ConvPresence.timeAgo(p.guestLastSeen)) + '</span>';
+    }).catch(function(){});
+  }
+
+  // Fetch member record for stats
+  if (conv.guestId && conv.guestId.indexOf('user_') === 0) {
+    fetch('/api/members?id=' + encodeURIComponent(conv.guestId))
+      .then(function(r){ return r.json(); })
+      .then(function(md){
+        if (!md || !md.data) return;
+        var m = md.data;
+        var setEl = function(id, val){ var el = document.getElementById(id); if (el) el.textContent = val; };
+        setEl('ctx-joined', m.joined_at ? new Date(m.joined_at).toLocaleDateString('en-US', {month:'short', year:'numeric'}) : '—');
+        setEl('ctx-bookings', m.bookings || 0);
+        setEl('ctx-ltv', m.ltv ? '$' + Number(m.ltv).toLocaleString() : '—');
+        setEl('ctx-tier', m.tier === 'founding' ? 'Founding' : m.tier === 'member' ? 'Member' : (m.tier || '—'));
+        setEl('ctx-location', m.location || '—');
+        setEl('ctx-provider', m.provider === 'google' ? 'Google' : m.provider === 'apple' ? 'Apple' : m.provider === 'email' ? 'Email' : (m.provider || '—'));
+        // Populate notes
+        var notesEl = document.getElementById('ctx-notes');
+        if (notesEl) {
+          notesEl.value = m.notes || '';
+          notesEl.addEventListener('input', function() {
+            scheduleNotesSave(conv.guestId, this.value);
+          });
+        }
+      })
+      .catch(function(){});
+  }
+
+  // Fetch other conversations for this guest
+  if (conv.guestId) {
+    fetch('/api/conversation?guestId=' + encodeURIComponent(conv.guestId))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var other = (d.conversations || []).filter(function(c) { return c.id !== conv.id && c.status !== 'archived'; });
+        document.getElementById('ctx-convs').textContent = (d.conversations || []).length;
+        if (!other.length) return;
+        var sec = document.getElementById('ctx-other-convs-section');
+        var box = document.getElementById('ctx-other-convs');
+        if (!sec || !box) return;
+        sec.style.display = '';
+        box.innerHTML = other.slice(0, 6).map(function(c) {
+          var when = c.lastMessageAt ? fmt(c.lastMessageAt) : '';
+          return '<a class="context-conv-item" href="admin-conversations.html?id=' + encodeURIComponent(c.id) + '">' +
+            '<div class="context-conv-property">' + escHtml(c.propertyName || c.propertySlug || '—') + '</div>' +
+            '<div class="context-conv-meta">' + escHtml(when) + (c.unreadAdmin ? ' · <strong style="color:var(--accent);">' + c.unreadAdmin + ' unread</strong>' : '') + '</div>' +
+          '</a>';
+        }).join('');
+      })
+      .catch(function(){});
+  }
+}
+
+function scheduleNotesSave(memberId, value) {
+  clearTimeout(notesSaveTimer);
+  var status = document.getElementById('ctx-notes-status');
+  if (status) status.textContent = 'Saving…';
+  notesSaveTimer = setTimeout(function() {
+    fetch('/api/members', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id: memberId, notes: value })
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (status) status.innerHTML = '<span style="color:#10b981;">✓ Saved</span>';
+      setTimeout(function(){ if (status) status.textContent = ''; }, 2000);
+    })
+    .catch(function(){
+      if (status) status.innerHTML = '<span style="color:var(--red);">Save failed</span>';
+    });
+  }, 800);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hover actions on messages
+// ─────────────────────────────────────────────────────────────
+var quotedMessage = null;  // {sender, text}
+
+function copyToClipboard(text) {
+  var flash = document.getElementById('copy-flash');
+  navigator.clipboard.writeText(text).then(function() {
+    if (flash) {
+      flash.classList.add('show');
+      setTimeout(function() { flash.classList.remove('show'); }, 1400);
+    }
+  }).catch(function() {
+    // Fallback: select-and-copy via textarea
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    if (flash) {
+      flash.classList.add('show');
+      setTimeout(function() { flash.classList.remove('show'); }, 1400);
+    }
+  });
+}
+
+function quoteMessage(sender, text) {
+  quotedMessage = { sender: sender, text: text };
+  renderQuoteUi();
+  var input = document.getElementById('reply-input');
+  if (input) input.focus();
+}
+
+function renderQuoteUi() {
+  var container = document.querySelector('.reply-container');
+  if (!container) return;
+  // Remove any existing quote
+  var existing = container.querySelector('.reply-quote');
+  if (existing) existing.remove();
+  if (!quotedMessage) return;
+
+  var q = document.createElement('div');
+  q.className = 'reply-quote';
+  q.innerHTML = '<div class="reply-quote-bar"></div>' +
+    '<div class="reply-quote-content">' +
+      '<div class="reply-quote-label">Replying to ' + escHtml(quotedMessage.sender) + '</div>' +
+      '<div class="reply-quote-text">' + escHtml(quotedMessage.text) + '</div>' +
+    '</div>' +
+    '<button class="reply-quote-close" onclick="clearQuote()">×</button>';
+  container.insertBefore(q, container.firstChild);
+}
+
+function clearQuote() {
+  quotedMessage = null;
+  renderQuoteUi();
 }
 
 function sendReply() {
   var input = document.getElementById('reply-input');
   var text = input ? input.value.trim() : '';
   if (!text || !activeConvId) return;
+
+  // Prepend quoted message if present
+  if (quotedMessage) {
+    var quoteLines = quotedMessage.text.split('\n').map(function(l){ return '> ' + l; }).join('\n');
+    text = '> ' + quotedMessage.sender + ' wrote:\n' + quoteLines + '\n\n' + text;
+    quotedMessage = null;
+    renderQuoteUi();
+  }
+
   input.value = '';
+  input.style.height = 'auto';
   input.disabled = true;
 
   fetch('/api/conversation', {
@@ -1136,13 +1518,15 @@ function renderMessagesInto(wrap, conv, messages) {
     var msgEl = document.createElement('div');
     msgEl.className = 'msg ' + side + ' role-' + role + groupClass;
 
+    // Compute sender text once (used for the sender row AND for hover action quote)
+    var senderText = m.senderName ||
+      (role === 'guest' ? (conv.guestName || 'Guest')
+      : role === 'partner' ? (conv.propertyName || 'Partner')
+      : 'The Bearing');
+
     if (!prevSame) {
       var sender = document.createElement('div');
       sender.className = 'msg-sender';
-      var senderText = m.senderName ||
-        (role === 'guest' ? (conv.guestName || 'Guest')
-        : role === 'partner' ? (conv.propertyName || 'Partner')
-        : 'The Bearing');
       var avatarImg = null;
       if (role === 'guest' && conv.guestAvatar) avatarImg = conv.guestAvatar;
       else if (role === 'partner' && conv.propertyLogo) avatarImg = conv.propertyLogo;
@@ -1175,6 +1559,30 @@ function renderMessagesInto(wrap, conv, messages) {
       srcBadge.textContent = 'via email';
       bubble.appendChild(srcBadge);
     }
+
+    // Hover action overlay
+    var actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    var capturedText = m.text;
+    var capturedSender = m.senderName || senderText || 'Guest';
+
+    // Reply quote button
+    var quoteBtn = document.createElement('button');
+    quoteBtn.className = 'msg-action-btn';
+    quoteBtn.title = 'Reply with quote';
+    quoteBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>';
+    quoteBtn.addEventListener('click', function() { quoteMessage(capturedSender, capturedText); });
+
+    // Copy button
+    var copyBtn = document.createElement('button');
+    copyBtn.className = 'msg-action-btn';
+    copyBtn.title = 'Copy message text';
+    copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    copyBtn.addEventListener('click', function() { copyToClipboard(capturedText); });
+
+    actions.appendChild(quoteBtn);
+    actions.appendChild(copyBtn);
+    bubble.appendChild(actions);
     msgEl.appendChild(bubble);
 
     if (!nextSame) {
