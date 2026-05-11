@@ -695,16 +695,26 @@ tbody tr:hover{background:var(--bg);}
   position:relative;
 }
 .msg-emoji-popover{
-  position:absolute;bottom:100%;margin-bottom:4px;
+  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  margin-bottom:8px;
   display:none;
   background:#fff;border:1px solid var(--border);border-radius:10px;
   box-shadow:0 4px 14px rgba(0,0,0,.1);
   padding:5px;gap:2px;
   z-index:10;
 }
-.msg.from-other .msg-emoji-popover{right:0;}
-.msg.from-self .msg-emoji-popover{left:0;}
+/* Invisible bridge so diagonal mouse moves don't trigger a leave */
+.msg-emoji-popover::before{
+  content:'';position:absolute;
+  left:0;right:0;bottom:-8px;height:8px;
+  background:transparent;
+}
 .msg-action-emoji-picker.open .msg-emoji-popover{display:flex;}
+/* When popover is open, keep the entire action bar visible regardless of hover */
+.msg-actions:has(.msg-action-emoji-picker.open),
+.msg-actions.actions-pinned{
+  opacity:1 !important;pointer-events:auto !important;transform:translateY(0) !important;
+}
 .msg-emoji-btn{
   background:none;border:none;cursor:pointer;
   width:30px;height:30px;border-radius:5px;
@@ -1582,7 +1592,11 @@ function toggleReaction(messageId, emoji) {
 // Close emoji popovers when clicking outside
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.msg-action-emoji-picker')) {
-    document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) { el.classList.remove('open'); });
+    document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) {
+      el.classList.remove('open');
+      var pa = el.closest('.msg-actions');
+      if (pa) pa.classList.remove('actions-pinned');
+    });
   }
   if (!e.target.closest('.saved-replies-menu') && !e.target.closest('.saved-replies-btn')) {
     var menu = document.querySelector('.saved-replies-menu.open');
@@ -1940,9 +1954,19 @@ function renderMessagesInto(wrap, conv, messages) {
     emojiBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) {
-        if (el !== emojiWrap) el.classList.remove('open');
+        if (el !== emojiWrap) {
+          el.classList.remove('open');
+          var pa = el.closest('.msg-actions');
+          if (pa) pa.classList.remove('actions-pinned');
+        }
       });
       emojiWrap.classList.toggle('open');
+      // Keep parent action bar pinned when popover is open
+      if (emojiWrap.classList.contains('open')) {
+        actions.classList.add('actions-pinned');
+      } else {
+        actions.classList.remove('actions-pinned');
+      }
     });
     emojiWrap.appendChild(emojiBtn);
     emojiWrap.appendChild(emojiPop);
