@@ -441,18 +441,36 @@ function renderThread(conv, messages) {
   badge.style.cssText = 'margin-left:auto;font-size:.68rem;font-weight:600;padding:3px 10px;border-radius:100px;background:#dcfce7;color:#166534;';
   badge.textContent = conv.status || 'open';
 
-  // Notification toggle for admin
-  var notifyBtn = document.createElement('button');
-  notifyBtn.type = 'button';
-  notifyBtn.title = 'Toggle email notifications for this conversation';
+  // Notification toggle slider for admin
+  var notifyWrap = document.createElement('div');
+  notifyWrap.style.cssText = 'margin-left:8px;display:flex;align-items:center;gap:8px;font-family:Geist,sans-serif;font-size:.72rem;font-weight:500;color:#475569;';
   var notifyOn = (conv.notifyAdmin !== false);
+  var notifyLabel = document.createElement('span');
+  notifyLabel.textContent = 'Email Alerts?';
+  var notifyOff = document.createElement('span');
+  notifyOff.textContent = 'Off';
+  notifyOff.style.cssText = 'font-size:.7rem;color:#94a3b8;';
+  var notifySwitch = document.createElement('button');
+  notifySwitch.type = 'button';
+  notifySwitch.title = 'Toggle email notifications for this conversation';
+  notifySwitch.style.cssText = 'position:relative;width:36px;height:20px;border-radius:100px;border:none;padding:0;cursor:pointer;transition:background .18s ease;flex-shrink:0;';
+  var notifyKnob = document.createElement('span');
+  notifyKnob.style.cssText = 'position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:left .18s ease;';
+  notifySwitch.appendChild(notifyKnob);
+  var notifyOnLbl = document.createElement('span');
+  notifyOnLbl.textContent = 'On';
+  notifyOnLbl.style.cssText = 'font-size:.7rem;color:#94a3b8;';
   function paintNotifyBtn() {
-    notifyBtn.style.cssText = 'margin-left:8px;display:flex;align-items:center;gap:5px;padding:5px 10px;font-family:Geist,sans-serif;font-size:.7rem;font-weight:500;border:1px solid '+(notifyOn?'#0f172a':'#e2e8f0')+';background:'+(notifyOn?'#0f172a':'#fff')+';color:'+(notifyOn?'#fff':'#64748b')+';border-radius:6px;cursor:pointer;';
-    notifyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 6a5 5 0 0110 0v3l1 2H2l1-2V6z"/>'+(notifyOn?'':'<line x1="1" y1="1" x2="15" y2="15"/>')+'</svg>'+(notifyOn?'Email on':'Muted');
+    notifySwitch.style.background = notifyOn ? '#0f172a' : '#cbd5e1';
+    notifyKnob.style.left = notifyOn ? '18px' : '2px';
+    notifyOff.style.color = notifyOn ? '#94a3b8' : '#0f172a';
+    notifyOff.style.fontWeight = notifyOn ? '500' : '600';
+    notifyOnLbl.style.color = notifyOn ? '#0f172a' : '#94a3b8';
+    notifyOnLbl.style.fontWeight = notifyOn ? '600' : '500';
   }
   paintNotifyBtn();
-  notifyBtn.onclick = async function() {
-    notifyBtn.disabled = true;
+  notifySwitch.onclick = async function() {
+    notifySwitch.disabled = true;
     try {
       var r = await fetch('/api/notify-toggle', {
         method: 'POST',
@@ -466,8 +484,12 @@ function renderThread(conv, messages) {
         paintNotifyBtn();
       }
     } catch(e) {}
-    notifyBtn.disabled = false;
+    notifySwitch.disabled = false;
   };
+  notifyWrap.appendChild(notifyLabel);
+  notifyWrap.appendChild(notifyOff);
+  notifyWrap.appendChild(notifySwitch);
+  notifyWrap.appendChild(notifyOnLbl);
 
   var archiveBtn = document.createElement('button');
   archiveBtn.textContent = 'Archive';
@@ -492,7 +514,7 @@ function renderThread(conv, messages) {
   hdr.appendChild(avatar);
   hdr.appendChild(info);
   hdr.appendChild(badge);
-  hdr.appendChild(notifyBtn);
+  hdr.appendChild(notifyWrap);
   hdr.appendChild(archiveBtn);
   thread.appendChild(hdr);
 
