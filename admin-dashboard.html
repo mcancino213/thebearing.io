@@ -221,17 +221,11 @@ tbody tr:hover{background:var(--bg);}
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
   <div class="card">
     <div class="card-header">
-      <div><div class="card-title">Property pipeline</div><div class="card-subtitle">Prospecting → Live</div></div>
-      <div class="card-header-right"><a href="admin-properties.html" class="btn btn-ghost btn-sm">View all</a></div>
+      <div><div class="card-title">Live activity</div><div class="card-subtitle">Most recent events across The Bearing</div></div>
+      <div class="card-header-right"><button class="btn btn-ghost btn-sm" onclick="loadDashActivity()">↻ Refresh</button></div>
     </div>
-    <div class="card-body" style="padding:20px 24px;">
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Prospecting</span><span class="badge badge-gray">8</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:23%;height:100%;background:var(--text3);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Invited</span><span class="badge badge-blue">5</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:15%;height:100%;background:var(--blue);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Onboarding</span><span class="badge badge-amber">7</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:20%;height:100%;background:var(--amber);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>In review</span><span class="badge badge-accent">4</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:12%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Live</span><span class="badge badge-green">34</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:100%;height:100%;background:var(--emerald);border-radius:4px;"></div></div></div>
-      </div>
+    <div class="card-body" id="dash-activity" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;min-height:200px;">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Loading activity…</div>
     </div>
   </div>
 
@@ -240,47 +234,20 @@ tbody tr:hover{background:var(--bg);}
       <div><div class="card-title">Recent bookings</div></div>
       <div class="card-header-right"><a href="admin-bookings.html" class="btn btn-ghost btn-sm">View all</a></div>
     </div>
-    <div class="card-body" style="padding:0;">
-      <table>
-        <thead><tr><th>Ref</th><th>Guest</th><th>Property</th><th>Value</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td style="font-family:JetBrains Mono,mono;font-size:11px;color:var(--text2);">TB-0912</td><td style="font-size:14px;">Patricia Chen</td><td style="font-size:13px;color:var(--text2);">Nour El Nil</td><td style="font-weight:600;">$9,800</td><td><span class="badge badge-green">Confirmed</span></td></tr>
-          <tr><td style="font-family:JetBrains Mono,mono;font-size:11px;color:var(--text2);">TB-0901</td><td style="font-size:14px;">Thomas Müller</td><td style="font-size:13px;color:var(--text2);">Nour El Nil</td><td style="font-weight:600;">$18,200</td><td><span class="badge badge-amber">Pending</span></td></tr>
-          <tr><td style="font-family:JetBrains Mono,mono;font-size:11px;color:var(--text2);">TB-0897</td><td style="font-size:14px;">Caroline Scott</td><td style="font-size:13px;color:var(--text2);">Singita Grumeti</td><td style="font-weight:600;">$32,400</td><td><span class="badge badge-green">Confirmed</span></td></tr>
-          <tr><td style="font-family:JetBrains Mono,mono;font-size:11px;color:var(--text2);">TB-0884</td><td style="font-size:14px;">David Okafor</td><td style="font-size:13px;color:var(--text2);">Wolwedans</td><td style="font-weight:600;">$14,600</td><td><span class="badge badge-green">Confirmed</span></td></tr>
-        </tbody>
-      </table>
+    <div class="card-body" id="dash-recent-bookings" style="padding:0;">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px;">Loading bookings…</div>
     </div>
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+<div style="display:grid;grid-template-columns:1fr;gap:20px;">
   <div class="card">
     <div class="card-header">
-      <div><div class="card-title">Conversations needing attention</div></div>
-      <div class="card-header-right"><a href="admin-conversations.html" class="btn btn-ghost btn-sm">View all 12</a></div>
+      <div><div class="card-title">Conversations needing attention</div><div class="card-subtitle">Guest waiting on a reply, sorted by longest wait</div></div>
+      <div class="card-header-right"><a href="admin-conversations.html" class="btn btn-ghost btn-sm" id="dash-conv-count-link">View all</a></div>
     </div>
-    <div class="card-body" style="padding:0;">
-      <table>
-        <thead><tr><th>Guest</th><th>Property</th><th>Last message</th><th>Waiting</th><th>Action</th></tr></thead>
-        <tbody>
-          <tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">RP</div><div style="font-size:14px;font-weight:500;">Rachel Park</div></div></td><td style="font-size:13px;color:var(--text2);">Soneva Fushi</td><td style="font-size:13px;color:var(--text2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">We haven't heard back about the overwater villa upgrade…</td><td><span class="badge badge-red">4 days</span></td><td><button class="btn btn-sm btn-primary" onclick="window.location='admin-conversation.html'">Step in</button></td></tr>
-          <tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">NV</div><div style="font-size:14px;font-weight:500;">Nicolas Vidal</div></div></td><td style="font-size:13px;color:var(--text2);">Chablé Yucatan</td><td style="font-size:13px;color:var(--text2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Is there a private cenote accessible only to their guests?</td><td><span class="badge badge-amber">2 days</span></td><td><button class="btn btn-sm" onclick="window.location='admin-conversation.html'">View</button></td></tr>
-          <tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">LH</div><div style="font-size:14px;font-weight:500;">Lena Hoffmann</div></div></td><td style="font-size:13px;color:var(--text2);">Aqua Nera</td><td style="font-size:13px;color:var(--text2);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Requesting a dietary menu for the full 7-night itinerary</td><td><span class="badge badge-amber">1 day</span></td><td><button class="btn btn-sm" onclick="window.location='admin-conversation.html'">View</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-header"><div class="card-title">Live activity</div></div>
-    <div class="card-body" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px;">
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--emerald);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">New enquiry <strong>Nour El Nil</strong></div><div style="color:var(--text3);font-size:12px;">2 minutes ago</div></div></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">Member joined — <strong>Fumiko Tanaka</strong></div><div style="color:var(--text3);font-size:12px;">14 minutes ago</div></div></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">Booking confirmed <strong>TB-0897</strong></div><div style="color:var(--text3);font-size:12px;">1 hour ago</div></div></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--emerald);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">Property went live — <strong>Chablé Yucatan</strong></div><div style="color:var(--text3);font-size:12px;">3 hours ago</div></div></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--text3);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">Review submitted — <strong>Singita Grumeti</strong></div><div style="color:var(--text3);font-size:12px;">5 hours ago</div></div></div>
-      <div style="display:flex;gap:10px;align-items:flex-start;font-size:13px;"><div style="width:7px;height:7px;border-radius:50%;background:var(--blue);margin-top:5px;flex-shrink:0;"></div><div><div style="color:var(--text);">Member joined — <strong>Oliver Blackwood</strong></div><div style="color:var(--text3);font-size:12px;">6 hours ago</div></div></div>
+    <div class="card-body" id="dash-conv-attention" style="padding:0;">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:40px;">Loading conversations…</div>
     </div>
   </div>
 </div>
@@ -290,7 +257,25 @@ tbody tr:hover{background:var(--bg);}
 </div>
 
 <script>
-// Load real stats from KV
+// ── Helpers ─────────────────────────────────────────────────────
+function timeAgo(ms) {
+  var s = Math.floor((Date.now() - ms) / 1000);
+  if (s < 60) return s + 's ago';
+  var m = Math.floor(s / 60);
+  if (m < 60) return m + 'm ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  var d = Math.floor(h / 24);
+  return d + 'd ago';
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getInitials(name) {
+  return String(name || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+}
+
+// ── Load top stats (existing) ───────────────────────────────────
 (async function() {
   try {
     var [propsRes, membersRes, bookingsRes] = await Promise.all([
@@ -314,10 +299,191 @@ tbody tr:hover{background:var(--bg);}
     document.getElementById('dash-bookings-sub').textContent = confirmed.length + ' confirmed';
     document.getElementById('dash-pending').textContent = pending.length;
     document.getElementById('dash-pending-sub').textContent = pending.length ? 'need attention' : 'all clear';
+
+    renderRecentBookings(bookings);
   } catch(e) {
     console.log('[Dashboard] Stats error:', e.message);
   }
 })();
+
+// ── Recent bookings table ───────────────────────────────────────
+function renderRecentBookings(bookings) {
+  var box = document.getElementById('dash-recent-bookings');
+  if (!box) return;
+  if (!bookings || !bookings.length) {
+    box.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px;">No bookings yet.</div>';
+    return;
+  }
+  // Sort most recent first
+  var sorted = bookings.slice().sort(function(a, b) {
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+  }).slice(0, 5);
+
+  var rows = sorted.map(function(b) {
+    var statusMap = { 'confirmed': 'badge-green', 'pending': 'badge-amber', 'cancelled': 'badge-red' };
+    var statusCls = statusMap[b.status] || 'badge-gray';
+    var ref = b.ref || (b.id ? 'TB-' + b.id.toString().slice(-4) : '—');
+    var value = b.totalValue ? ('$' + Number(b.totalValue).toLocaleString()) : '—';
+    return '<tr>' +
+      '<td style="font-family:JetBrains Mono,mono;font-size:11px;color:var(--text2);">' + escapeHtml(ref) + '</td>' +
+      '<td style="font-size:14px;">' + escapeHtml(b.guestName || b.guestEmail || 'Guest') + '</td>' +
+      '<td style="font-size:13px;color:var(--text2);">' + escapeHtml(b.propertyName || b.propertySlug || '—') + '</td>' +
+      '<td style="font-weight:600;">' + value + '</td>' +
+      '<td><span class="badge ' + statusCls + '">' + escapeHtml(b.status || 'pending') + '</span></td>' +
+    '</tr>';
+  }).join('');
+
+  box.innerHTML = '<table><thead><tr><th>Ref</th><th>Guest</th><th>Property</th><th>Value</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table>';
+}
+
+// ── Conversations needing attention ─────────────────────────────
+async function loadDashConvAttention() {
+  try {
+    var d = await fetch('/api/conversation', { cache: 'no-store' }).then(function(r) { return r.json(); });
+    var convs = (d.conversations || []).filter(function(c) {
+      return c.status !== 'archived' && (c.unreadAdmin || 0) > 0;
+    });
+    // Sort by oldest waiting first (longest delay = most urgent)
+    convs.sort(function(a, b) {
+      return new Date(a.lastMessageAt || 0) - new Date(b.lastMessageAt || 0);
+    });
+
+    var link = document.getElementById('dash-conv-count-link');
+    if (link) link.textContent = 'View all ' + convs.length;
+
+    var box = document.getElementById('dash-conv-attention');
+    if (!box) return;
+    if (!convs.length) {
+      box.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px;">No conversations waiting — you\u2019re all caught up.</div>';
+      return;
+    }
+
+    var rows = convs.slice(0, 6).map(function(c) {
+      var ms = Date.now() - new Date(c.lastMessageAt || 0).getTime();
+      var days = Math.floor(ms / 86400000);
+      var hours = Math.floor(ms / 3600000);
+      var waitLabel, waitBadge;
+      if (days >= 4) { waitLabel = days + ' days'; waitBadge = 'badge-red'; }
+      else if (days >= 1) { waitLabel = days + ' day' + (days > 1 ? 's' : ''); waitBadge = 'badge-amber'; }
+      else if (hours >= 1) { waitLabel = hours + 'h'; waitBadge = 'badge-amber'; }
+      else { waitLabel = Math.max(1, Math.floor(ms / 60000)) + 'm'; waitBadge = 'badge-gray'; }
+
+      var preview = c.lastMessagePreview || '';
+      if (preview.length > 80) preview = preview.substring(0, 80) + '…';
+
+      return '<tr>' +
+        '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escapeHtml(getInitials(c.guestName)) + '</div><div style="font-size:14px;font-weight:500;">' + escapeHtml(c.guestName || c.guestEmail || 'Guest') + '</div></div></td>' +
+        '<td style="font-size:13px;color:var(--text2);">' + escapeHtml(c.propertyName || c.propertySlug || '—') + '</td>' +
+        '<td style="font-size:13px;color:var(--text2);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(preview) + '</td>' +
+        '<td><span class="badge ' + waitBadge + '">' + waitLabel + '</span></td>' +
+        '<td><a href="admin-conversations.html?id=' + encodeURIComponent(c.id) + '" class="btn btn-sm ' + (days >= 1 ? 'btn-primary' : '') + '">' + (days >= 1 ? 'Step in' : 'View') + '</a></td>' +
+      '</tr>';
+    }).join('');
+
+    box.innerHTML = '<table><thead><tr><th>Guest</th><th>Property</th><th>Last message</th><th>Waiting</th><th>Action</th></tr></thead><tbody>' + rows + '</tbody></table>';
+  } catch(e) {
+    console.log('[Dashboard] Conv attention error:', e.message);
+    var box = document.getElementById('dash-conv-attention');
+    if (box) box.innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:20px;">Failed to load conversations.</div>';
+  }
+}
+
+// ── Live activity feed ──────────────────────────────────────────
+// Builds a real-time feed from: recent conversations, recent bookings, recent members.
+// Only includes events from real KV data — nothing made up.
+async function loadDashActivity() {
+  var box = document.getElementById('dash-activity');
+  if (!box) return;
+  try {
+    var [convsRes, bookingsRes, membersRes] = await Promise.all([
+      fetch('/api/conversation', { cache: 'no-store' }).then(function(r) { return r.json(); }).catch(function() { return { conversations: [] }; }),
+      fetch('/api/booking').then(function(r) { return r.json(); }).catch(function() { return { bookings: [] }; }),
+      fetch('/api/members').then(function(r) { return r.json(); }).catch(function() { return { members: [] }; })
+    ]);
+
+    var events = [];
+
+    // New enquiries (conversation createdAt)
+    (convsRes.conversations || []).forEach(function(c) {
+      if (c.createdAt) {
+        events.push({
+          ts: new Date(c.createdAt).getTime(),
+          dot: '#10b981',
+          text: 'New enquiry on <strong>' + escapeHtml(c.propertyName || c.propertySlug || 'property') + '</strong> from ' + escapeHtml(c.guestName || c.guestEmail || 'guest'),
+          link: 'admin-conversations.html?id=' + encodeURIComponent(c.id)
+        });
+      }
+      // Replies (lastMessageAt > createdAt by some margin means there's been activity since)
+      if (c.lastMessageAt && c.createdAt && new Date(c.lastMessageAt).getTime() - new Date(c.createdAt).getTime() > 60000) {
+        events.push({
+          ts: new Date(c.lastMessageAt).getTime(),
+          dot: '#3b82f6',
+          text: 'Reply in <strong>' + escapeHtml(c.propertyName || c.propertySlug || 'conversation') + '</strong> · ' + escapeHtml(c.guestName || c.guestEmail || 'guest'),
+          link: 'admin-conversations.html?id=' + encodeURIComponent(c.id)
+        });
+      }
+    });
+
+    // Bookings
+    (bookingsRes.bookings || []).forEach(function(b) {
+      if (b.createdAt) {
+        events.push({
+          ts: new Date(b.createdAt).getTime(),
+          dot: b.status === 'confirmed' ? '#c17f3e' : '#f59e0b',
+          text: (b.status === 'confirmed' ? 'Booking confirmed' : 'Booking ' + (b.status || 'pending')) + ' <strong>' + escapeHtml(b.ref || ('TB-' + (b.id || '').toString().slice(-4))) + '</strong>' + (b.propertyName ? ' · ' + escapeHtml(b.propertyName) : ''),
+          link: 'admin-bookings.html'
+        });
+      }
+    });
+
+    // New members (Clerk signups)
+    (membersRes.members || []).forEach(function(m) {
+      if (m.createdAt) {
+        var name = [m.firstName, m.lastName].filter(Boolean).join(' ') || m.email || 'Member';
+        events.push({
+          ts: new Date(m.createdAt).getTime(),
+          dot: '#3b82f6',
+          text: 'Member joined — <strong>' + escapeHtml(name) + '</strong>',
+          link: 'admin-guests.html'
+        });
+      }
+    });
+
+    // Sort newest first, take 8
+    events.sort(function(a, b) { return b.ts - a.ts; });
+    events = events.slice(0, 8);
+
+    if (!events.length) {
+      box.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">No activity yet. New enquiries, bookings, and member signups will show here.</div>';
+      return;
+    }
+
+    box.innerHTML = events.map(function(e) {
+      return '<a href="' + e.link + '" style="display:flex;gap:10px;align-items:flex-start;font-size:13px;text-decoration:none;color:inherit;padding:4px 0;">' +
+        '<div style="width:7px;height:7px;border-radius:50%;background:' + e.dot + ';margin-top:5px;flex-shrink:0;"></div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="color:var(--text);overflow:hidden;text-overflow:ellipsis;">' + e.text + '</div>' +
+          '<div style="color:var(--text3);font-size:12px;">' + timeAgo(e.ts) + '</div>' +
+        '</div>' +
+      '</a>';
+    }).join('');
+  } catch(e) {
+    console.log('[Dashboard] Activity error:', e.message);
+    box.innerHTML = '<div style="color:var(--red);font-size:13px;text-align:center;padding:20px;">Failed to load activity.</div>';
+  }
+}
+
+// Initial loads
+loadDashActivity();
+loadDashConvAttention();
+
+// Refresh every 30s (cheap calls)
+setInterval(function() {
+  if (!document.hidden) {
+    loadDashActivity();
+    loadDashConvAttention();
+  }
+}, 30000);
 </script>
 <script src="/assets/admin-sidebar-badge.js"></script>
 </body>
