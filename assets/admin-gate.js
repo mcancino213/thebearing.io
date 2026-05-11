@@ -1,13 +1,10 @@
 // admin-gate.js — runs on every /admin-*.html page (except admin-login.html)
 // Verifies the signed-in Clerk user is on the admin allowlist.
 // Non-admins are redirected to /admin-login.html with a clear message.
-//
-// This is FRONTEND-ONLY enforcement — the real security comes from the server
-// also rejecting admin API operations from non-admin users. See worker /api/admin-check.
 (function() {
   var ADMIN_EMAILS = ['admin@thebearing.io'];
 
-  // Hide page contents instantly to prevent flash of admin UI before redirect
+  // Hide page contents instantly to prevent flash of admin UI before auth check
   var hideStyle = document.createElement('style');
   hideStyle.id = 'admin-gate-hide';
   hideStyle.textContent = 'body{visibility:hidden!important;}';
@@ -19,7 +16,6 @@
   }
 
   function denied(reason) {
-    // Redirect with reason so login page can show a useful message
     sessionStorage.setItem('tb_admin_denied_reason', reason || 'not_authorized');
     window.location.replace('/admin-login.html');
   }
@@ -40,42 +36,56 @@
     });
   }
 
-  function check() {
-    var attempts = 0;
+  // Wait for Clerk to be FULLY loaded, not just for addListener to exist.
+  // Clerk sets `loaded` to true only after `Clerk.load()` resolves.
+  function waitForClerkReady(maxMs, cb) {
+    var startedAt = Date.now();
     var t = setInterval(function() {
-      attempts++;
-      if (attempts > 60) {  // ~12s — Clerk should be ready well before this
+      if (window.Clerk && window.Clerk.loaded === true) {
         clearInterval(t);
+        cb(null);
+        return;
+      }
+      if (Date.now() - startedAt > maxMs) {
+        clearInterval(t);
+        cb(new Error('clerk_timeout'));
+      }
+    }, 150);
+  }
+
+  function evaluate() {
+    var user = window.Clerk && window.Clerk.user;
+    if (!user) {
+      denied('not_signed_in');
+      return;
+    }
+    if (!isAdmin(user)) {
+      denied('not_authorized');
+      return;
+    }
+    // Authorized
+    reveal();
+    // Watch for sign-out/changes
+    window.Clerk.addListener(function(resources) {
+      if (!resources.user || !isAdmin(resources.user)) {
+        denied('signed_out');
+      }
+    });
+  }
+
+  function start() {
+    waitForClerkReady(15000, function(err) {
+      if (err) {
         denied('clerk_timeout');
         return;
       }
-      if (!window.Clerk || typeof window.Clerk.addListener !== 'function') return;
-      // Clerk loaded
-      clearInterval(t);
-      var user = window.Clerk.user;
-      if (!user) {
-        denied('not_signed_in');
-        return;
-      }
-      if (!isAdmin(user)) {
-        denied('not_authorized');
-        return;
-      }
-      // Authorized — reveal the page
-      reveal();
-
-      // Watch for sign-out
-      window.Clerk.addListener(function(resources) {
-        if (!resources.user || !isAdmin(resources.user)) {
-          denied('signed_out');
-        }
-      });
-    }, 200);
+      evaluate();
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', check);
+    document.addEventListener('DOMContentLoaded', start);
   } else {
-    check();
+    start();
   }
 })();
