@@ -658,6 +658,142 @@ tbody tr:hover{background:var(--bg);}
   z-index:9999;
 }
 .copy-flash.show{opacity:1;}
+
+/* ─────────────────────────────────────────────────────────────
+   SESSION 3 — Reactions, saved replies, animations, sound
+   ───────────────────────────────────────────────────────────── */
+
+/* Message fade-in animation */
+@keyframes msgFadeIn{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.msg.msg-new{animation:msgFadeIn .25s ease-out;}
+
+/* Typing/sending indicator dots */
+@keyframes typingDot{
+  0%,80%,100%{opacity:.25;transform:translateY(0);}
+  40%{opacity:1;transform:translateY(-3px);}
+}
+.typing-indicator{
+  align-self:flex-start;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;background:#fff;border:1px solid var(--border);
+  border-radius:18px;border-bottom-left-radius:6px;
+  margin-top:4px;max-width:80px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.typing-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--text3);
+  animation:typingDot 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2){animation-delay:.15s;}
+.typing-dot:nth-child(3){animation-delay:.3s;}
+
+/* Emoji reactions on messages */
+.msg-action-emoji-picker{
+  position:relative;
+}
+.msg-emoji-popover{
+  position:absolute;bottom:100%;margin-bottom:4px;
+  display:none;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);
+  padding:5px;gap:2px;
+  z-index:10;
+}
+.msg.from-other .msg-emoji-popover{right:0;}
+.msg.from-self .msg-emoji-popover{left:0;}
+.msg-action-emoji-picker.open .msg-emoji-popover{display:flex;}
+.msg-emoji-btn{
+  background:none;border:none;cursor:pointer;
+  width:30px;height:30px;border-radius:5px;
+  font-size:1.05rem;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .12s ease, transform .12s ease;
+}
+.msg-emoji-btn:hover{background:#f3f4f6;transform:scale(1.15);}
+
+.msg-reactions{
+  display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;
+}
+.msg.from-other .msg-reactions{margin-left:34px;justify-content:flex-start;}
+.msg.from-self .msg-reactions{margin-right:12px;justify-content:flex-end;}
+.msg-reaction{
+  font-size:.74rem;padding:2px 8px;border-radius:100px;
+  background:#fff;border:1px solid var(--border);
+  display:inline-flex;align-items:center;gap:5px;
+  color:var(--text2);cursor:pointer;
+  transition:transform .1s ease, border-color .15s ease;
+}
+.msg-reaction:hover{border-color:var(--border-hi);}
+.msg-reaction.mine{background:#fff8f1;border-color:#ecd9bf;color:var(--text);}
+.msg-reaction-count{font-size:.66rem;font-weight:600;}
+
+/* Saved replies dropdown */
+.saved-replies-btn{
+  background:none;border:none;cursor:pointer;
+  padding:6px 10px;border-radius:6px;
+  color:var(--text2);font-size:.72rem;font-weight:500;
+  display:inline-flex;align-items:center;gap:5px;
+  transition:background .12s ease, color .12s ease;
+}
+.saved-replies-btn:hover{background:#f3f4f6;color:var(--text);}
+.saved-replies-menu{
+  position:absolute;bottom:100%;left:0;margin-bottom:6px;
+  background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+  width:340px;max-height:340px;overflow-y:auto;
+  display:none;z-index:20;
+}
+.saved-replies-menu.open{display:block;}
+.saved-replies-header{
+  padding:10px 14px;border-bottom:1px solid #f0f0f0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.saved-replies-title{font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);}
+.saved-replies-add{
+  background:none;border:none;color:var(--accent);font-size:.72rem;font-weight:500;cursor:pointer;
+}
+.saved-reply-item{
+  padding:10px 14px;border-bottom:1px solid #f8f8f8;cursor:pointer;
+  display:flex;flex-direction:column;gap:2px;
+  transition:background .1s ease;
+}
+.saved-reply-item:hover{background:#fafafa;}
+.saved-reply-item:last-child{border-bottom:none;}
+.saved-reply-label{font-size:.78rem;font-weight:600;color:var(--text);}
+.saved-reply-preview{font-size:.7rem;color:var(--text2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.saved-reply-actions{display:flex;gap:4px;margin-top:4px;}
+.saved-reply-action{
+  background:none;border:none;font-size:.66rem;color:var(--text3);cursor:pointer;padding:2px 6px;border-radius:3px;
+}
+.saved-reply-action:hover{background:#f3f4f6;color:var(--text2);}
+.saved-replies-empty{padding:18px 14px;text-align:center;color:var(--text3);font-size:.74rem;line-height:1.5;}
+
+/* Better empty states */
+.no-selection-actions{
+  display:flex;gap:8px;margin-top:18px;
+}
+.no-selection-action{
+  font-size:.74rem;color:var(--text2);
+  padding:7px 14px;border:1px solid var(--border);border-radius:8px;
+  background:#fff;cursor:pointer;
+  transition:all .15s ease;
+  text-decoration:none;
+}
+.no-selection-action:hover{background:#fafafa;color:var(--text);border-color:var(--border-hi);}
+
+/* Sound toggle in topbar */
+.sound-toggle{
+  background:#fff;border:1px solid var(--border);
+  padding:6px 10px;border-radius:8px;
+  color:var(--text2);cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;font-size:.72rem;
+  transition:all .15s ease;
+}
+.sound-toggle:hover{background:#f9fafb;color:var(--text);}
+.sound-toggle.muted{opacity:.6;}
 </style>
 <!-- Clerk Auth SDK + Admin Gate -->
 <script defer crossorigin="anonymous"
@@ -709,8 +845,13 @@ window.addEventListener('load', async function() {
     <!-- Left: conversation list -->
     <div class="conv-list-panel">
       <div class="conv-list-header">
-        <div class="conv-list-title">Inbox</div>
-        <div class="conv-list-count" id="conv-list-count">Loading…</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+          <div>
+            <div class="conv-list-title">Inbox</div>
+            <div class="conv-list-count" id="conv-list-count">Loading…</div>
+          </div>
+          <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()"></button>
+        </div>
       </div>
       <div id="conv-list"><div class="conv-loading">Loading conversations…</div></div>
     </div>
@@ -1146,6 +1287,24 @@ function renderThread(conv, messages) {
 
   var toolbar = document.createElement('div');
   toolbar.className = 'reply-toolbar';
+  toolbar.style.position = 'relative';
+
+  // Saved replies button + menu
+  var savedBtn = document.createElement('button');
+  savedBtn.className = 'saved-replies-btn';
+  savedBtn.type = 'button';
+  savedBtn.title = 'Saved replies';
+  savedBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Saved replies</span>';
+  var savedMenu = document.createElement('div');
+  savedMenu.className = 'saved-replies-menu';
+  savedBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    loadSavedReplies().then(function() {
+      renderSavedRepliesMenu(savedMenu);
+      savedMenu.classList.toggle('open');
+    });
+  });
+
   var spacer = document.createElement('div');
   spacer.className = 'reply-toolbar-spacer';
   var hint = document.createElement('span');
@@ -1156,6 +1315,8 @@ function renderThread(conv, messages) {
   sendBtn.innerHTML = 'Send <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
   sendBtn.addEventListener('click', sendReply);
 
+  toolbar.appendChild(savedBtn);
+  toolbar.appendChild(savedMenu);
   toolbar.appendChild(spacer);
   toolbar.appendChild(hint);
   toolbar.appendChild(sendBtn);
@@ -1397,6 +1558,195 @@ function clearQuote() {
   renderQuoteUi();
 }
 
+// ─────────────────────────────────────────────────────────────
+// Emoji reactions
+// ─────────────────────────────────────────────────────────────
+function toggleReaction(messageId, emoji) {
+  if (!activeConvId || !messageId) return;
+  fetch('/api/conversation', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'reaction',
+      id: activeConvId,
+      messageId: messageId,
+      emoji: emoji,
+      role: 'admin',
+      userId: 'admin'
+    })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){ if (d.ok) refreshThread(); });
+}
+
+// Close emoji popovers when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.msg-action-emoji-picker')) {
+    document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) { el.classList.remove('open'); });
+  }
+  if (!e.target.closest('.saved-replies-menu') && !e.target.closest('.saved-replies-btn')) {
+    var menu = document.querySelector('.saved-replies-menu.open');
+    if (menu) menu.classList.remove('open');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Saved replies
+// ─────────────────────────────────────────────────────────────
+var savedReplies = [];
+
+function loadSavedReplies() {
+  return fetch('/api/saved-replies')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      savedReplies = d.replies || [];
+      return savedReplies;
+    })
+    .catch(function(){ savedReplies = []; return []; });
+}
+
+function renderSavedRepliesMenu(menu) {
+  if (!savedReplies.length) {
+    menu.innerHTML = '<div class="saved-replies-header">' +
+      '<span class="saved-replies-title">Saved replies</span>' +
+      '<button class="saved-replies-add" onclick="createSavedReply()">+ New</button>' +
+    '</div>' +
+    '<div class="saved-replies-empty">No saved replies yet.<br><br>Save commonly-used responses (welcome messages, common FAQ answers) to insert with one click.</div>';
+    return;
+  }
+  var html = '<div class="saved-replies-header">' +
+    '<span class="saved-replies-title">Saved replies (' + savedReplies.length + ')</span>' +
+    '<button class="saved-replies-add" onclick="createSavedReply()">+ New</button>' +
+  '</div>';
+  savedReplies.forEach(function(r) {
+    html += '<div class="saved-reply-item" data-id="' + escHtml(r.id) + '">' +
+      '<div class="saved-reply-label">' + escHtml(r.label) + '</div>' +
+      '<div class="saved-reply-preview">' + escHtml(r.text) + '</div>' +
+      '<div class="saved-reply-actions">' +
+        '<button class="saved-reply-action" data-action="edit">Edit</button>' +
+        '<button class="saved-reply-action" data-action="delete">Delete</button>' +
+      '</div>' +
+    '</div>';
+  });
+  menu.innerHTML = html;
+  // Wire item clicks
+  menu.querySelectorAll('.saved-reply-item').forEach(function(item) {
+    var id = item.getAttribute('data-id');
+    item.addEventListener('click', function(e) {
+      if (e.target.closest('.saved-reply-actions')) return;  // ignore action button clicks
+      var reply = savedReplies.find(function(r){ return r.id === id; });
+      if (reply) insertSavedReply(reply);
+    });
+    item.querySelector('[data-action="edit"]').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var reply = savedReplies.find(function(r){ return r.id === id; });
+      if (reply) editSavedReply(reply);
+    });
+    item.querySelector('[data-action="delete"]').addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (!confirm('Delete this saved reply?')) return;
+      fetch('/api/saved-replies?id=' + encodeURIComponent(id), { method: 'DELETE' })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          savedReplies = d.replies || [];
+          renderSavedRepliesMenu(menu);
+          toast('Saved reply deleted');
+        });
+    });
+  });
+}
+
+function insertSavedReply(reply) {
+  var input = document.getElementById('reply-input');
+  if (!input) return;
+  input.value = reply.text;
+  input.focus();
+  // Trigger auto-resize
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  // Close menu
+  var menu = document.querySelector('.saved-replies-menu.open');
+  if (menu) menu.classList.remove('open');
+}
+
+function createSavedReply() {
+  var label = prompt('Label for this saved reply (e.g., "Welcome message"):');
+  if (!label || !label.trim()) return;
+  var text = prompt('Text of the reply:');
+  if (!text || !text.trim()) return;
+  fetch('/api/saved-replies', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ label: label.trim(), text: text.trim() })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    savedReplies = d.replies || [];
+    var menu = document.querySelector('.saved-replies-menu');
+    if (menu) renderSavedRepliesMenu(menu);
+    toast('Saved reply added');
+  });
+}
+
+function editSavedReply(reply) {
+  var label = prompt('Edit label:', reply.label);
+  if (label === null) return;
+  var text = prompt('Edit text:', reply.text);
+  if (text === null) return;
+  fetch('/api/saved-replies', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ id: reply.id, label: label.trim(), text: text.trim() })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    savedReplies = d.replies || [];
+    var menu = document.querySelector('.saved-replies-menu');
+    if (menu) renderSavedRepliesMenu(menu);
+    toast('Saved reply updated');
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sound effect on new incoming messages
+// ─────────────────────────────────────────────────────────────
+var soundEnabled = localStorage.getItem('tb_admin_sound') !== 'off';
+var lastMsgCount = {};  // per-conv-id: last seen message count
+
+function playNotificationSound() {
+  if (!soundEnabled) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1320, ctx.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.25);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('tb_admin_sound', soundEnabled ? 'on' : 'off');
+  paintSoundToggle();
+}
+
+function paintSoundToggle() {
+  var btn = document.getElementById('sound-toggle');
+  if (!btn) return;
+  btn.classList.toggle('muted', !soundEnabled);
+  btn.title = soundEnabled ? 'Sounds on — click to mute' : 'Sounds off — click to enable';
+  btn.innerHTML = soundEnabled
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg><span>Sound</span>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg><span>Muted</span>';
+}
+
 function sendReply() {
   var input = document.getElementById('reply-input');
   var text = input ? input.value.trim() : '';
@@ -1565,6 +1915,37 @@ function renderMessagesInto(wrap, conv, messages) {
     actions.className = 'msg-actions';
     var capturedText = m.text;
     var capturedSender = m.senderName || senderText || 'Guest';
+    var capturedMsgId = m.id;
+
+    // Emoji picker
+    var emojiWrap = document.createElement('div');
+    emojiWrap.className = 'msg-action-emoji-picker';
+    var emojiBtn = document.createElement('button');
+    emojiBtn.className = 'msg-action-btn';
+    emojiBtn.title = 'Add reaction';
+    emojiBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+    var emojiPop = document.createElement('div');
+    emojiPop.className = 'msg-emoji-popover';
+    ['👍','❤️','🎉','✨','🙏','🔥'].forEach(function(emoji) {
+      var btn = document.createElement('button');
+      btn.className = 'msg-emoji-btn';
+      btn.textContent = emoji;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleReaction(capturedMsgId, emoji);
+        emojiWrap.classList.remove('open');
+      });
+      emojiPop.appendChild(btn);
+    });
+    emojiBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      document.querySelectorAll('.msg-action-emoji-picker.open').forEach(function(el) {
+        if (el !== emojiWrap) el.classList.remove('open');
+      });
+      emojiWrap.classList.toggle('open');
+    });
+    emojiWrap.appendChild(emojiBtn);
+    emojiWrap.appendChild(emojiPop);
 
     // Reply quote button
     var quoteBtn = document.createElement('button');
@@ -1580,10 +1961,28 @@ function renderMessagesInto(wrap, conv, messages) {
     copyBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
     copyBtn.addEventListener('click', function() { copyToClipboard(capturedText); });
 
+    actions.appendChild(emojiWrap);
     actions.appendChild(quoteBtn);
     actions.appendChild(copyBtn);
     bubble.appendChild(actions);
     msgEl.appendChild(bubble);
+
+    // Render existing reactions
+    if (m.reactions && Object.keys(m.reactions).length) {
+      var rxWrap = document.createElement('div');
+      rxWrap.className = 'msg-reactions';
+      Object.keys(m.reactions).forEach(function(emoji) {
+        var users = m.reactions[emoji];
+        if (!users || !users.length) return;
+        var pill = document.createElement('span');
+        pill.className = 'msg-reaction' + (users.indexOf('admin') !== -1 ? ' mine' : '');
+        pill.title = users.length + ' reaction' + (users.length === 1 ? '' : 's');
+        pill.innerHTML = emoji + (users.length > 1 ? '<span class="msg-reaction-count">' + users.length + '</span>' : '');
+        pill.addEventListener('click', function() { toggleReaction(m.id, emoji); });
+        rxWrap.appendChild(pill);
+      });
+      msgEl.appendChild(rxWrap);
+    }
 
     if (!nextSame) {
       var timeEl = document.createElement('div');
@@ -1599,7 +1998,33 @@ function renderMessagesInto(wrap, conv, messages) {
 function refreshMessages(conv, messages) {
   var wrap = document.getElementById('messages-wrap');
   if (!wrap) return;
+  // Detect new incoming messages (only from others — not our own sends)
+  var prevCount = lastMsgCount[conv.id] || 0;
+  var newCount = messages.length;
+  var newFromOther = false;
+  if (newCount > prevCount && prevCount > 0) {
+    // Check last messages — if any are from someone other than admin, sound + animate
+    for (var i = prevCount; i < newCount; i++) {
+      if (messages[i] && messages[i].role !== 'admin') {
+        newFromOther = true;
+        break;
+      }
+    }
+  }
+  lastMsgCount[conv.id] = newCount;
+
   renderMessagesInto(wrap, conv, messages);
+
+  // Animate the newest bubble(s) if they came from someone else
+  if (newFromOther && newCount > prevCount) {
+    var allMsgEls = wrap.querySelectorAll('.msg');
+    var toAnimate = newCount - prevCount;
+    for (var i = allMsgEls.length - toAnimate; i < allMsgEls.length; i++) {
+      if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
+    }
+    playNotificationSound();
+  }
+
   wrap.scrollTop = wrap.scrollHeight;
 }
 
@@ -1639,6 +2064,7 @@ setInterval(function() {
 }, 15000);
 
 loadList();
+paintSoundToggle();
 </script>
 <script src="/assets/admin-sidebar-badge.js"></script>
 </body>

@@ -1075,6 +1075,30 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ ok: true, message: msg });
         }
 
+        // Toggle a reaction on a specific message
+        // body: { action:'reaction', id (conv), messageId, emoji, role, userId }
+        if (body.action === 'reaction') {
+          const { id, messageId, emoji, role, userId } = body;
+          if (!id || !messageId || !emoji) return jsonResponse({ error: 'id, messageId, emoji required' }, 400);
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
+          if (!msgsRaw) return jsonResponse({ error: 'not found' }, 404);
+          const messages = JSON.parse(msgsRaw);
+          const msg = messages.find(m => m.id === messageId);
+          if (!msg) return jsonResponse({ error: 'message not found' }, 404);
+          msg.reactions = msg.reactions || {};
+          msg.reactions[emoji] = msg.reactions[emoji] || [];
+          const who = userId || role || 'unknown';
+          const existingIdx = msg.reactions[emoji].indexOf(who);
+          if (existingIdx === -1) {
+            msg.reactions[emoji].push(who);
+          } else {
+            msg.reactions[emoji].splice(existingIdx, 1);
+            if (msg.reactions[emoji].length === 0) delete msg.reactions[emoji];
+          }
+          await env.DOSSIERS.put('conversation:' + id + ':messages', JSON.stringify(messages));
+          return jsonResponse({ ok: true, reactions: msg.reactions });
+        }
+
         return jsonResponse({ error: 'invalid action' }, 400);
       }
 
@@ -1095,6 +1119,52 @@ View in admin: https://thebearing.io/admin-bookings.html
         await recomputeUnreadCounters(env);
         return jsonResponse({ ok: true });
       }
+    }
+
+    // ── /api/saved-replies ────────────────────────────────────────
+    // Admin's saved reply templates, stored globally in KV.
+    // GET    → returns { replies: [{id, label, text}] }
+    // POST   → upsert; body: { id?, label, text }
+    // DELETE ?id=X → remove
+    if (url.pathname === '/api/saved-replies') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      const KEY = '__saved_replies';
+
+      if (request.method === 'GET') {
+        const raw = await env.DOSSIERS.get(KEY);
+        return jsonResponse({ replies: raw ? JSON.parse(raw) : [] });
+      }
+      if (request.method === 'POST') {
+        if (!(await isAdmin())) return adminDenied();
+        let body;
+        try { body = await request.json(); } catch(e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        if (!body.label || !body.text) return jsonResponse({ error: 'label and text required' }, 400);
+        const raw = await env.DOSSIERS.get(KEY);
+        const replies = raw ? JSON.parse(raw) : [];
+        if (body.id) {
+          const idx = replies.findIndex(r => r.id === body.id);
+          if (idx >= 0) {
+            replies[idx] = { id: body.id, label: body.label, text: body.text };
+          } else {
+            replies.push({ id: body.id, label: body.label, text: body.text });
+          }
+        } else {
+          replies.push({ id: 'rep_' + Date.now(), label: body.label, text: body.text });
+        }
+        await env.DOSSIERS.put(KEY, JSON.stringify(replies));
+        return jsonResponse({ ok: true, replies });
+      }
+      if (request.method === 'DELETE') {
+        if (!(await isAdmin())) return adminDenied();
+        const id = url.searchParams.get('id');
+        if (!id) return jsonResponse({ error: 'id required' }, 400);
+        const raw = await env.DOSSIERS.get(KEY);
+        const replies = raw ? JSON.parse(raw) : [];
+        const filtered = replies.filter(r => r.id !== id);
+        await env.DOSSIERS.put(KEY, JSON.stringify(filtered));
+        return jsonResponse({ ok: true, replies: filtered });
+      }
+      return new Response('Method not allowed', { status: 405 });
     }
 
     // ── /api/presence ─────────────────────────────────────────────
