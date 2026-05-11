@@ -368,8 +368,37 @@ function renderThread(conv, messages) {
   info.appendChild(n1);
   info.appendChild(n2);
 
+  // Notification toggle for partner
+  var notifyBtn = document.createElement('button');
+  notifyBtn.type = 'button';
+  notifyBtn.title = 'Toggle email notifications for this conversation';
+  var notifyOn = (conv.notifyPartner !== false);
+  function paintNotifyBtn() {
+    notifyBtn.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:5px;padding:5px 10px;font-family:Geist,sans-serif;font-size:.7rem;font-weight:500;border:1px solid '+(notifyOn?'#0f172a':'#e2e8f0')+';background:'+(notifyOn?'#0f172a':'#fff')+';color:'+(notifyOn?'#fff':'#64748b')+';border-radius:6px;cursor:pointer;';
+    notifyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 6a5 5 0 0110 0v3l1 2H2l1-2V6z"/>'+(notifyOn?'':'<line x1="1" y1="1" x2="15" y2="15"/>')+'</svg>'+(notifyOn?'Email on':'Muted');
+  }
+  paintNotifyBtn();
+  notifyBtn.onclick = async function() {
+    notifyBtn.disabled = true;
+    try {
+      var r = await fetch('/api/notify-toggle', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id: conv.id, role: 'partner', enabled: !notifyOn })
+      });
+      var d = await r.json();
+      if (d.ok) {
+        notifyOn = d.notifyPartner;
+        conv.notifyPartner = notifyOn;
+        paintNotifyBtn();
+      }
+    } catch(e) {}
+    notifyBtn.disabled = false;
+  };
+
   hdr.appendChild(av);
   hdr.appendChild(info);
+  hdr.appendChild(notifyBtn);
   thread.appendChild(hdr);
 
   // Messages

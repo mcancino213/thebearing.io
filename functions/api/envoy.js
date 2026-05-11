@@ -837,7 +837,8 @@ View in admin: https://thebearing.io/admin-bookings.html
             createdAt: now, lastMessageAt: now,
             lastMessagePreview: firstMessage ? firstMessage.substring(0, 100) : '',
             enquiry: enquiry || {},
-            unreadAdmin: 1, unreadGuest: 0
+            unreadAdmin: 1, unreadGuest: 0,
+            notifyAdmin: true, notifyPartner: true, notifyGuest: true
           };
 
           // First message
@@ -874,8 +875,9 @@ View in admin: https://thebearing.io/admin-bookings.html
           await env.DOSSIERS.put('prop:' + propertySlug + ':convs', JSON.stringify(propIds));
 
           // Email admin/partner notification
-          if (env.RESEND_API_KEY && firstMessage) {
+          if (env.RESEND_API_KEY && firstMessage && conv.notifyAdmin !== false) {
             try {
+              const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -883,7 +885,7 @@ View in admin: https://thebearing.io/admin-bookings.html
                   from: 'The Bearing <bookings@thebearing.io>',
                   to: ['miguel@thebearing.io'],
                   subject: `New enquiry — ${propertyName} from ${guestName || guestEmail}`,
-                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversation.html?id=${id}`
+                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversation.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                 })
               });
             } catch(e) { console.error('[Conv] Admin email error:', e.message); }
@@ -935,32 +937,38 @@ View in admin: https://thebearing.io/admin-bookings.html
           if (env.RESEND_API_KEY) {
             try {
               if (role === 'admin' || role === 'partner') {
-                // Notify guest
-                const replyUrl = `https://thebearing.io/conversations.html?id=${id}`;
-                const displaySender = senderName || conv.propertyName;
-                await fetch('https://api.resend.com/emails', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
-                    to: [conv.guestEmail],
-                    reply_to: `reply+${id}@thebearing.io`,
-                    subject: `New message about your ${conv.propertyName} enquiry`,
-                    text: `${displaySender} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io`
-                  })
-                });
+                // Notify guest — only if guest hasn't muted
+                if (conv.notifyGuest !== false) {
+                  const replyUrl = `https://thebearing.io/conversations.html?id=${id}`;
+                  const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=guest`;
+                  const displaySender = senderName || conv.propertyName;
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
+                      to: [conv.guestEmail],
+                      reply_to: `reply+${id}@thebearing.io`,
+                      subject: `New message about your ${conv.propertyName} enquiry`,
+                      text: `${displaySender} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
+                    })
+                  });
+                }
               } else {
-                // Notify admin
-                await fetch('https://api.resend.com/emails', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    from: 'The Bearing <bookings@thebearing.io>',
-                    to: ['miguel@thebearing.io'],
-                    subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
-                    text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversation.html?id=${id}`
-                  })
-                });
+                // Notify admin — only if admin hasn't muted
+                if (conv.notifyAdmin !== false) {
+                  const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: 'The Bearing <bookings@thebearing.io>',
+                      to: ['miguel@thebearing.io'],
+                      subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
+                      text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversation.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
+                    })
+                  });
+                }
               }
             } catch(e) { console.error('[Conv] Notify email error:', e.message); }
           }
@@ -1046,7 +1054,95 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ error: 'method not allowed' }, 405);
     }
 
-    // ── /api/inbound-email ────────────────────────────────────────
+    // ── /api/notify-toggle ────────────────────────────────────────
+    // Toggle email notifications on/off per conversation per role.
+    // GET (from email link): shows confirmation page and toggles
+    // POST (from in-app): JSON body { id, role, enabled } returns JSON
+    if (url.pathname === '/api/notify-toggle') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      let id, role, enabled, isGet;
+
+      if (request.method === 'GET') {
+        isGet = true;
+        id = url.searchParams.get('id');
+        role = url.searchParams.get('role');
+        // GET defaults to flipping (mute)
+        enabled = url.searchParams.get('enabled');
+      } else if (request.method === 'POST') {
+        const b = await request.json().catch(() => ({}));
+        id = b.id; role = b.role; enabled = b.enabled;
+      } else {
+        return jsonResponse({ error: 'GET or POST only' }, 405);
+      }
+
+      if (!id || !role) {
+        return isGet
+          ? new Response('Missing id or role', { status: 400 })
+          : jsonResponse({ error: 'id and role required' }, 400);
+      }
+      if (!['admin', 'partner', 'guest'].includes(role)) {
+        return isGet
+          ? new Response('Invalid role', { status: 400 })
+          : jsonResponse({ error: 'role must be admin/partner/guest' }, 400);
+      }
+
+      const convRaw = await env.DOSSIERS.get('conversation:' + id);
+      if (!convRaw) {
+        return isGet
+          ? new Response('Conversation not found', { status: 404 })
+          : jsonResponse({ error: 'conversation not found' }, 404);
+      }
+      const conv = JSON.parse(convRaw);
+
+      const flagKey = role === 'admin' ? 'notifyAdmin'
+                    : role === 'partner' ? 'notifyPartner'
+                    : 'notifyGuest';
+
+      // Determine new value
+      let newValue;
+      if (enabled === undefined || enabled === null || enabled === '') {
+        // GET with no enabled param = toggle (mute by default)
+        newValue = conv[flagKey] === false ? true : false;
+      } else {
+        newValue = (enabled === true || enabled === 'true' || enabled === '1');
+      }
+
+      conv[flagKey] = newValue;
+      await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+
+      if (isGet) {
+        // Show a friendly HTML confirmation
+        const status = newValue ? 'enabled' : 'muted';
+        const flipLink = `/api/notify-toggle?id=${id}&role=${role}&enabled=${!newValue}`;
+        const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Notifications ${status} — The Bearing</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Geist:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#faf7f1;font-family:Geist,sans-serif;color:#1e1810;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+  .card{max-width:480px;text-align:center;background:#fff;padding:48px 36px;border-radius:16px;border:1px solid rgba(80,60,30,.08);}
+  h1{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.8rem;margin:0 0 12px;}
+  p{font-size:.92rem;line-height:1.6;color:#5a4f43;margin:8px 0 24px;}
+  .pill{display:inline-block;padding:6px 14px;border-radius:100px;background:${newValue?'#e8f4ea':'#fdecea'};color:${newValue?'#1b6a32':'#a23226'};font-size:.8rem;font-weight:500;margin-bottom:16px;}
+  a.undo{display:inline-block;padding:10px 20px;background:#1e1810;color:#fff;text-decoration:none;border-radius:100px;font-size:.85rem;font-weight:500;}
+  .conv{font-size:.78rem;color:#9a8e80;margin-top:32px;}
+</style></head>
+<body><div class="card">
+  <div class="pill">Email notifications ${status}</div>
+  <h1>${newValue ? 'You\u2019ll hear from us' : 'You won\u2019t hear from us'}</h1>
+  <p>${newValue
+    ? `You'll receive email notifications for new messages on this conversation about ${conv.propertyName||'your enquiry'}.`
+    : `We won't email you about new messages on this conversation about ${conv.propertyName||'your enquiry'}. You can still view replies anytime on The Bearing.`}</p>
+  <a class="undo" href="${flipLink}">${newValue ? 'Mute notifications' : 'Re-enable notifications'}</a>
+  <div class="conv">Conversation #${id.substring(0,16)}\u2026</div>
+</div></body></html>`;
+        return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+      }
+
+      return jsonResponse({ ok: true, id, role, [flagKey]: newValue });
+    }
+
+
     // Resend inbound webhook — parses email replies and saves to conversation
     // Setup: Resend dashboard → Domains → thebearing.io → enable Receiving
     // Then add webhook endpoint: https://thebearing.io/api/inbound-email
@@ -1218,8 +1314,9 @@ View in admin: https://thebearing.io/admin-bookings.html
       }
 
       // Notify admin
-      if (env.RESEND_API_KEY) {
+      if (env.RESEND_API_KEY && conv.notifyAdmin !== false) {
         try {
+          const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=admin`;
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -1227,7 +1324,7 @@ View in admin: https://thebearing.io/admin-bookings.html
               from: 'The Bearing <bookings@thebearing.io>',
               to: ['miguel@thebearing.io'],
               subject: `Email reply from ${conv.guestName} — ${conv.propertyName}`,
-              text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html`
+              text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
             })
           });
         } catch(e) { console.error('[Inbound] Notify error:', e.message); }
