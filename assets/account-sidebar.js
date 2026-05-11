@@ -30,6 +30,10 @@
       emailEl.innerHTML = '';
       emailEl.textContent = email;
     }
+
+    // Reveal the profile area (was hidden to prevent demo data flash)
+    var profile = document.querySelector('.sidebar-profile');
+    if (profile) profile.style.visibility = 'visible';
   }
 
   function init() {
