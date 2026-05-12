@@ -57,8 +57,14 @@ export default {
 
     async function isAdmin() {
       const allowlist = await getAllowlist();
-      // Path 1: Clerk session token (most secure)
+      const emailHeader = request.headers.get('X-Admin-Email');
       const sessionToken = request.headers.get('X-Clerk-Session');
+
+      // Path 1: Clerk session token (most secure). If verification succeeds AND the
+      // user's emails include an allowlisted address, accept. ANY other outcome
+      // (token missing, secret missing, Clerk API error, email mismatch) falls
+      // through to Path 2 instead of returning false outright — so a misconfigured
+      // CLERK_SECRET_KEY can't poison auth for legitimate users.
       if (sessionToken && env.CLERK_SECRET_KEY) {
         try {
           const verifyResp = await fetch('https://api.clerk.com/v1/sessions/' + sessionToken + '/tokens', {
@@ -74,20 +80,32 @@ export default {
               if (userResp.ok) {
                 const user = await userResp.json();
                 const emails = (user.email_addresses || []).map(function(e) { return (e.email_address || '').toLowerCase(); });
-                return emails.some(function(em) { return allowlist.indexOf(em) !== -1; });
+                if (emails.some(function(em) { return allowlist.indexOf(em) !== -1; })) {
+                  return true;
+                }
+                console.log('[Admin] Clerk path: user emails not in allowlist. emails=', emails.join(','), 'allowlist=', allowlist.join(','));
+              } else {
+                console.log('[Admin] Clerk path: user fetch failed:', userResp.status);
               }
+            } else {
+              console.log('[Admin] Clerk path: no user_id in session response (expected for /sessions/{sid}/tokens — endpoint returns a JWT, not user info)');
             }
+          } else {
+            console.log('[Admin] Clerk path: token verify failed:', verifyResp.status);
           }
-        } catch(e) { console.log('[Admin] Clerk verify failed:', e.message); }
+        } catch(e) { console.log('[Admin] Clerk verify exception:', e.message); }
       }
 
-      // Path 2: Email header (less secure — spoof-able, but raises the bar)
-      // Useful when CLERK_SECRET_KEY isn't set yet
-      const emailHeader = request.headers.get('X-Admin-Email');
+      // Path 2: Email header fallback. Always runs if Path 1 didn't return true.
+      // Less secure (spoofable) but raises the bar past random guessing.
       if (emailHeader) {
-        return allowlist.indexOf(emailHeader.toLowerCase()) !== -1;
+        const lc = emailHeader.toLowerCase().trim();
+        const ok = allowlist.indexOf(lc) !== -1;
+        if (!ok) console.log('[Admin] Email header path: not in allowlist. email=', lc, 'allowlist=', allowlist.join(','));
+        return ok;
       }
 
+      console.log('[Admin] No auth headers present');
       return false;
     }
 
