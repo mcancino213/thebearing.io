@@ -338,6 +338,18 @@ window.addEventListener('load', async function() {
     var statusMap = { 'live': 'badge-green', 'draft': 'badge-gray', 'coming-soon': 'badge-blue', 'paused': 'badge-amber' };
     var heroUrl = (p.photos && p.photos.hero && p.photos.hero.length && p.photos.hero[0].url) ? cfThumb(p.photos.hero[0].url) : '';
     var initials = (p.name || slug).split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+    // v72x — commission pill. Three states:
+    //   number set → small bordered pill showing "15% commission"
+    //   missing   → amber "Commission not set" pill, flagged for attention
+    // Pill is purely informational; clicking the card opens the editor where
+    // the field can be set.
+    var commPct = (typeof p.commission_pct === 'number') ? p.commission_pct : null;
+    var commPill;
+    if (commPct === null) {
+      commPill = '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);border-radius:12px;font-size:11px;font-weight:500;color:#d97706;line-height:1.2;"><span style="width:5px;height:5px;border-radius:50%;background:#d97706;"></span>Commission not set</span>';
+    } else {
+      commPill = '<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:500;color:var(--text2);line-height:1.2;">' + commPct + '% commission</span>';
+    }
     var card = document.createElement('div');
     card.className = 'kv-prop-card';
     card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;';
@@ -349,6 +361,7 @@ window.addEventListener('load', async function() {
           '<div><div style="font-weight:600;font-size:14px;">'+(p.name||slug)+'</div><div style="font-size:12px;color:var(--text2);">'+(p.type||'')+(p.country?' · '+p.country:'')+'</div></div>' +
           '<span class="badge '+( statusMap[statusVal]||'badge-gray')+'">'+statusVal+'</span>' +
         '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' + commPill + '</div>' +
         '<div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;"><span>Completeness</span><span style="font-weight:600;color:'+hc+';">'+health+'%</span></div><div style="height:5px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="width:'+health+'%;height:100%;background:'+hc+';border-radius:3px;"></div></div></div>' +
         (p.hook ? '<div style="font-size:12px;color:var(--text2);line-height:1.5;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">"'+p.hook+'"</div>' : '') +
         '<div style="display:flex;gap:8px;margin-top:auto;"><a href="admin-property-editor?slug='+encodeURIComponent(slug)+'" style="flex:1;padding:7px 0;background:var(--accent);color:#fff;border-radius:7px;font-size:13px;font-weight:500;text-align:center;text-decoration:none;">Edit</a><a href="/property.html?slug='+encodeURIComponent(slug)+'" target="_blank" style="padding:7px 12px;background:var(--bg);border:1px solid var(--border);color:var(--text2);border-radius:7px;font-size:13px;text-decoration:none;">View →</a><button onclick="kvDeleteProperty(\''+slug+'\',this)" style="padding:7px 10px;background:var(--red-bg);border:1px solid transparent;color:var(--red);border-radius:7px;font-size:13px;cursor:pointer;" title="Delete property">✕</button></div>' +

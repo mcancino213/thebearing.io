@@ -564,6 +564,47 @@ window.addEventListener('load', async function() {
 
 
       
+<!-- 0. COMMERCIAL TERMS — added v72x.
+     This is the only admin-only / business-side section in the property
+     editor; everything below is public content. Sits at the top because
+     a partner can't take real bookings until commission is set, so it's
+     the highest-priority field on the page.
+     Fields:
+       - f-commission-pct: commission TheBearing collects as deposit, 1-25%
+       - f-booking-type: how members book (only "enquiry" allowed in v1) -->
+      <div class="pe-section" id="section-commercial">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-num">0</div>
+            <div class="pe-section-title">Commercial terms <span style="font-size:10px;font-weight:600;color:#8a8580;letter-spacing:.08em;text-transform:uppercase;margin-left:8px;padding:2px 7px;border:1px solid #3a3a30;border-radius:4px;">Admin only</span></div>
+          </div>
+        </div>
+        <div class="pe-section-body">
+          <div class="pe-grid-2 pe-field">
+            <div>
+              <label class="pe-label">Commission %<span class="pe-label-req">*</span></label>
+              <div style="display:flex;align-items:stretch;gap:0;">
+                <input class="pe-input" id="f-commission-pct" type="number" min="1" max="25" step="0.1" placeholder="e.g. 15" oninput="updateAll();validateCommission();" style="border-top-right-radius:0;border-bottom-right-radius:0;">
+                <div style="display:flex;align-items:center;justify-content:center;padding:0 14px;background:#13171e;border:1px solid #242a33;border-left:none;border-top-right-radius:8px;border-bottom-right-radius:8px;color:#8a8580;font-size:13px;font-weight:500;">%</div>
+              </div>
+              <div id="f-commission-help" style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
+                Percentage TheBearing collects as a non-refundable deposit at booking. Range 1-25%. Negotiated per property. Member sees only the dollar amount, not the percentage.
+              </div>
+            </div>
+            <div>
+              <label class="pe-label">Booking type<span class="pe-label-req">*</span></label>
+              <select class="pe-input" id="f-booking-type" onchange="updateAll()" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option value="enquiry">Enquiry → offer → accept</option>
+                <option value="instant" disabled>Instant book (reserved — needs PMS integration)</option>
+              </select>
+              <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
+                Enquiry-led is the only flow available in v1. Instant book will unlock once a partner needs a channel-manager integration (Cloudbeds, SiteMinder, etc).
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
 <!-- 1. CORE IDENTITY -->
       <div class="pe-section">
         <div class="pe-section-head">
@@ -1940,6 +1981,37 @@ function updateAll() {
   syncPublishTab();
 }
 
+// v72x — inline validator for the Commercial Terms commission field.
+// Called via oninput on f-commission-pct. Updates the inline help text
+// below the input to reflect three states:
+//   empty       → neutral guidance ("Required before this property can take bookings")
+//   in range    → green checkmark + the dollar example
+//   out of range → red warning
+// Doesn't block save; the worker will reject out-of-range values too.
+// The save button itself can still go through even when empty — that lets
+// admins edit other fields on a property whose commission hasn't been
+// negotiated yet without being blocked.
+function validateCommission() {
+  var input = document.getElementById('f-commission-pct');
+  var help = document.getElementById('f-commission-help');
+  if (!input || !help) return;
+  var raw = input.value.trim();
+  if (raw === '') {
+    help.style.color = '#d97706'; // amber
+    help.innerHTML = '<strong>Required before this property can take bookings.</strong> Percentage TheBearing collects as a non-refundable deposit at booking. Range 1-25%.';
+    return;
+  }
+  var n = parseFloat(raw);
+  if (!isFinite(n) || n < 1 || n > 25) {
+    help.style.color = '#dc2626'; // red
+    help.innerHTML = '<strong>Out of range.</strong> Commission must be between 1% and 25%.';
+    return;
+  }
+  // Valid — show a worked example so the admin can sanity-check the math
+  help.style.color = '#059669'; // green
+  help.innerHTML = '✓ Valid. On a $5,000 booking, member would pay a $' + Math.round(5000 * n / 100).toLocaleString() + ' deposit on TheBearing.';
+}
+
 function syncPublishTab() {
   // updateCompleteness writes directly to ci2- elements in Settings panel
   // Just sync the percentage display
@@ -2297,6 +2369,17 @@ function updateJSON() {
   var verifiedEl = document.getElementById('f-verified');
 
   var json = {
+    // Commercial terms (admin only — see Section 0 of editor)
+    // commission_pct: percentage TheBearing collects as deposit (1-25, or null)
+    // booking_type: how members book this property ("enquiry" only for v1)
+    commission_pct: (function(){
+      var raw = getFieldVal('f-commission-pct');
+      if (raw === '' || raw == null) return null;
+      var n = parseFloat(raw);
+      return (isFinite(n) && n >= 1 && n <= 25) ? n : null;
+    })(),
+    booking_type: getFieldVal('f-booking-type') || 'enquiry',
+
     // Core identity
     name: getFieldVal('f-name'),
     slug: getFieldVal('f-slug'),
@@ -3608,6 +3691,22 @@ async function propLoad() {
     // Old format: flat snapshot object
     var snapshot = saved.__editorSnapshot || saved;
     propRestore(snapshot);
+
+    // v72x — belt-and-suspenders sync for commercial-terms fields.
+    // propRestore only reads f-*-prefixed snapshot keys. New top-level
+    // fields (commission_pct, booking_type) wouldn't reach the form if
+    // the snapshot is stale (e.g. legacy properties pre-v72x, or future
+    // API-only updates). Sync them down explicitly here.
+    var commInput = document.getElementById('f-commission-pct');
+    if (commInput && typeof saved.commission_pct === 'number' && !commInput.value) {
+      commInput.value = saved.commission_pct;
+    }
+    var bookingTypeSelect = document.getElementById('f-booking-type');
+    if (bookingTypeSelect && saved.booking_type) {
+      bookingTypeSelect.value = saved.booking_type;
+    }
+    // Refresh the inline help text after load
+    if (typeof validateCommission === 'function') validateCommission();
 
     propShowStatus('✓ Loaded · ' + slug, 'success');
     showToast('Loaded: ' + slug, 'success');

@@ -602,6 +602,27 @@ export default {
         if (raw) {
           try { data = JSON.parse(raw); } catch (e) { data = null; }
         }
+        // On-read backfill of schema fields added in later builds. Idempotent —
+        // records that already have the fields are untouched. Pattern can be
+        // reused for any future schema addition: check, fill default, return.
+        // Note: we do NOT write the backfilled values back to KV here on read,
+        // for two reasons: (1) GET handlers shouldn't have write side effects,
+        // (2) the values will be persisted on the next legitimate POST anyway.
+        // The cost is microseconds per read.
+        if (data && typeof data === 'object') {
+          // v72x: commission_pct (percent TheBearing collects as deposit).
+          // null means "not yet set" — admin UI flags this as required before
+          // the property can take real bookings. A non-null value must be
+          // a number in [1, 25].
+          if (typeof data.commission_pct !== 'number') {
+            data.commission_pct = null;
+          }
+          // v72x: booking_type. Only "enquiry" is valid in v1. Reserved
+          // values: "instant" (PMS-integrated, future), "package" (future).
+          if (!data.booking_type) {
+            data.booking_type = 'enquiry';
+          }
+        }
         return jsonResponse({ slug, data, exists: data !== null });
       }
 
@@ -662,6 +683,33 @@ export default {
         if (!body.property || typeof body.property !== 'object') {
           return jsonResponse({ error: 'property object required' }, 400);
         }
+
+        // v72x: validate new commercial-terms fields.
+        // commission_pct: optional (allows in-progress edits before commission is
+        // negotiated), but when present must be a number 1-25. v72v locked the
+        // 25% cap as our max negotiated rate. v72z will additionally refuse to
+        // create a Stripe checkout for a property whose commission_pct is null —
+        // that's where the field becomes truly required, not at save time.
+        if (body.property.commission_pct !== undefined && body.property.commission_pct !== null) {
+          const c = body.property.commission_pct;
+          if (typeof c !== 'number' || !isFinite(c) || c < 1 || c > 25) {
+            return jsonResponse({ error: 'commission_pct must be a number between 1 and 25, or null' }, 400);
+          }
+        }
+        // booking_type: optional in payload (will default to "enquiry" on read).
+        // If supplied, must match one of the allowed values. "instant" is reserved
+        // for a future PMS-integrated build and is intentionally not yet allowed —
+        // saving with "instant" would be misleading since no instant-book flow
+        // exists. We'll widen this list when v73-something ships that integration.
+        if (body.property.booking_type !== undefined && body.property.booking_type !== null) {
+          const ALLOWED_BOOKING_TYPES = ['enquiry'];
+          if (ALLOWED_BOOKING_TYPES.indexOf(body.property.booking_type) === -1) {
+            return jsonResponse({
+              error: 'booking_type must be one of: ' + ALLOWED_BOOKING_TYPES.join(', ')
+            }, 400);
+          }
+        }
+
         const serialized = JSON.stringify(body.property);
         await env.DOSSIERS.put(slugVal + ':property', serialized);
 
