@@ -238,7 +238,7 @@ window.addEventListener('load', async function() {
       <div style="font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;">Live on The Bearing</div>
       <div style="font-size:18px;font-weight:600;color:var(--text);">Published properties <span id="kv-saved-count" style="font-size:13px;font-weight:400;color:var(--text3);margin-left:6px;"></span></div>
     </div>
-    <a href="admin-property-editor.html" class="btn btn-primary btn-sm">+ New property</a>
+    <a href="admin-property-editor" class="btn btn-primary btn-sm">+ New property</a>
   </div>
   <div id="kv-saved-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
 </div><!-- end ap-panel-published -->
@@ -251,7 +251,7 @@ window.addEventListener('load', async function() {
       <div style="font-size:18px;font-weight:600;color:var(--text);">In progress <span id="kv-progress-count" style="font-size:13px;font-weight:400;color:var(--text3);margin-left:6px;"></span></div>
       <div style="font-size:12px;color:var(--text3);margin-top:3px;">Properties you're still building. Set status to <span style="color:#059669;font-weight:600;">Live</span> in the editor to publish.</div>
     </div>
-    <a href="admin-property-editor.html" class="btn btn-primary btn-sm">+ New property</a>
+    <a href="admin-property-editor" class="btn btn-primary btn-sm">+ New property</a>
   </div>
   <div id="kv-progress-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;"></div>
 </div><!-- end ap-panel-progress -->
@@ -373,7 +373,7 @@ window.addEventListener('load', async function() {
       var pubCount = document.getElementById('kv-saved-count');
       var progCount = document.getElementById('kv-progress-count');
       var emptyPubMsg = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;">No published properties yet. Set a property to <span style="color:#059669;font-weight:600;">Live</span> or <span style="color:#3b82f6;font-weight:600;">Coming soon</span> in the editor.</div>';
-      var emptyProgMsg = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;">Nothing in progress. <a href="admin-property-editor.html" style="color:var(--accent);">Create a new property →</a></div>';
+      var emptyProgMsg = '<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--text3);font-size:13px;">Nothing in progress. <a href="admin-property-editor" style="color:var(--accent);">Create a new property →</a></div>';
 
       if (!results) {
         if (pubGrid) pubGrid.innerHTML = emptyPubMsg;

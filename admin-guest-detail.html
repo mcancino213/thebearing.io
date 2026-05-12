@@ -198,7 +198,7 @@ window.addEventListener('load', async function() {
 <div class="topbar">
   <div><div class="topbar-title" id="tb-name">Loading…</div><div class='topbar-sub' id="tb-sub">&nbsp;</div></div>
   <div class="topbar-right">
-    <a href="admin-guests.html" class="btn btn-ghost">← All members</a>
+    <a href="admin-guests" class="btn btn-ghost">← All members</a>
     <button id="save-btn" class="btn btn-primary" style="background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:8px;font-weight:600;">Save changes</button>
   </div>
 </div>
@@ -278,7 +278,7 @@ window.addEventListener('load', async function() {
   var current = null;
 
   if (!id) {
-    loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">No member id provided. <a href="admin-guests.html" style="color:var(--accent);">← Back to members</a></div>';
+    loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">No member id provided. <a href="admin-guests" style="color:var(--accent);">← Back to members</a></div>';
     return;
   }
 
@@ -350,7 +350,7 @@ window.addEventListener('load', async function() {
       var res = await fetch('/api/members?id=' + encodeURIComponent(id));
       var data = await res.json();
       if (!data.exists) {
-        loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">Member not found. <a href="admin-guests.html" style="color:var(--accent);">← Back to members</a></div>';
+        loadingEl.innerHTML = '<div class="card-body" style="padding:60px;text-align:center;color:var(--text2);">Member not found. <a href="admin-guests" style="color:var(--accent);">← Back to members</a></div>';
         return;
       }
       populate(Object.assign({ id: id }, data.data));

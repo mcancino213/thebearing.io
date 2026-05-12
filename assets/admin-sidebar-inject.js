@@ -17,7 +17,7 @@
 // The version is part of the storage key, so old cached copies are simply
 // ignored (and eventually evicted by sessionStorage on session end).
 (function() {
-  var SIDEBAR_VERSION = 1;
+  var SIDEBAR_VERSION = 2;
   var STORAGE_KEY = 'tb_admin_sidebar_v' + SIDEBAR_VERSION;
 
   function applyActive(mount) {
