@@ -199,406 +199,108 @@ window.addEventListener('load', async function() {
   <div><div class="topbar-title">Payments</div><div class='topbar-sub'>Commission and revenue tracking</div></div>
   <div class="topbar-right"></div>
 </div>
-<div class="page-body">
+<div class="page-body" style="max-width:1100px;">
 
-<div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;">
+<div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">
   <div>
     <div class="page-eyebrow">Commission &amp; revenue</div>
     <div class="page-title">Payments</div>
-    <div class="page-subtitle">GMV, commission earned, partner payouts, and refunds.</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-    <div class="filter-tabs">
-      <button class="filter-tab">7d</button>
-      <button class="filter-tab active">30d</button>
-      <button class="filter-tab">90d</button>
-      <button class="filter-tab">YTD</button>
-    </div>
-    <button class="btn btn-sm">Export</button>
-    <button class="btn btn-primary btn-sm">+ Manual transaction</button>
+    <div class="page-subtitle">Booking deposits collected via Stripe, refunds, and disputes.</div>
   </div>
 </div>
 
-<!-- KPI tiles -->
+<!-- ── PAYMENT STATUS BANNER ── -->
+<!--
+  Replaces the previous KPI tiles, transactions table, and dispute panel.
+  Those were all driven by hardcoded fake data ($2.41M GMV, fake property
+  names, made-up dispute counts). Honest empty state until Stripe is wired
+  in v72w-v72y. See PROJECT_CONTEXT.md for the booking model decision.
+-->
+<div class="card" style="margin-bottom:20px;background:var(--accent-bg);border-color:rgba(193,127,62,.25);">
+  <div style="padding:24px 28px;display:flex;align-items:flex-start;gap:18px;">
+    <div style="width:42px;height:42px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v14M5 4.5h4.5a2 2 0 0 1 0 4H6a2 2 0 0 0 0 4H11"/></svg>
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Stripe integration not yet configured</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.55;">
+        Payments will appear here once the Stripe checkout flow is wired up.
+        Current build stage: <strong>v72v — schema decisions locked, scaffolding pending</strong>.
+        Booking model is <strong>deposit-only</strong> — TheBearing collects a percentage commission as a non-refundable booking fee at the moment of acceptance. Partner arranges the balance directly with the member.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── KPI tiles · empty state ── -->
 <div class="stats-grid cols-4">
   <div class="stat-tile">
-    <div class="stat-label">Gross booking volume</div>
-    <div class="stat-value">$2.41M</div>
-    <div class="stat-delta">▲ 22.1% vs prev. 30d</div>
+    <div class="stat-label">Deposits collected</div>
+    <div class="stat-value" style="color:var(--text3);">—</div>
+    <div class="stat-delta" style="color:var(--text3);">No paid bookings yet</div>
   </div>
   <div class="stat-tile">
-    <div class="stat-label">Commission earned</div>
-    <div class="stat-value accent">$361k</div>
-    <div class="stat-delta">▲ 19.8% · 15% avg take rate</div>
+    <div class="stat-label">Bookings paid</div>
+    <div class="stat-value" style="color:var(--text3);">—</div>
+    <div class="stat-delta" style="color:var(--text3);">No paid bookings yet</div>
   </div>
   <div class="stat-tile">
-    <div class="stat-label">Pending partner payouts</div>
-    <div class="stat-value">$2.05M</div>
-    <div class="stat-delta" style="color:var(--text2);">Across 14 properties</div>
+    <div class="stat-label">Refunds issued</div>
+    <div class="stat-value" style="color:var(--text3);">—</div>
+    <div class="stat-delta" style="color:var(--text3);">No refunds yet</div>
   </div>
   <div class="stat-tile">
-    <div class="stat-label">Refunds &amp; disputes</div>
-    <div class="stat-value">$18.4k</div>
-    <div class="stat-delta down">▲ 2 open disputes</div>
+    <div class="stat-label">Disputes</div>
+    <div class="stat-value" style="color:var(--text3);">—</div>
+    <div class="stat-delta" style="color:var(--text3);">No disputes yet</div>
   </div>
 </div>
 
-<!-- Transactions -->
+<!-- ── Transactions · empty state ── -->
 <div class="card" style="margin-bottom:20px;">
   <div class="card-header">
     <div class="card-header-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#c17f3e" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v14M5 4.5h4.5a2 2 0 0 1 0 4H6a2 2 0 0 0 0 4H11"/></svg></div>
-    <div><div class="card-title">Recent transactions</div><div class="card-subtitle">All booking-related charges and refunds</div></div>
-    <div class="card-header-right">
-      <div class="filter-tabs">
-        <button class="filter-tab active">All</button>
-        <button class="filter-tab">Succeeded</button>
-        <button class="filter-tab">Pending</button>
-        <button class="filter-tab">Refunded</button>
-        <button class="filter-tab">Disputed</button>
-      </div>
+    <div><div class="card-title">Recent transactions</div><div class="card-subtitle">Live Stripe payment data will appear here</div></div>
+  </div>
+  <div style="padding:80px 24px;text-align:center;">
+    <div style="font-size:36px;color:var(--text3);margin-bottom:16px;line-height:1;">—</div>
+    <div style="font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px;">No transactions yet</div>
+    <div style="font-size:13px;color:var(--text2);max-width:420px;margin:0 auto;line-height:1.55;">
+      Transactions populate from Stripe webhooks once a member accepts an offer and pays the deposit. Until Stripe is wired in v72w, this list stays empty.
     </div>
-  </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Reference</th>
-          <th>Member</th>
-          <th>Property</th>
-          <th style="text-align:right;">Amount</th>
-          <th style="text-align:right;">Fee</th>
-          <th style="text-align:right;">Net</th>
-          <th>Status</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqL2v</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">EH</div><span>Eleanor Hadley</span></div></td>
-          <td>Nour El Nil</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$24,800</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$3,720</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$21,080</td>
-          <td><span class="badge badge-green">● Succeeded</span></td>
-          <td style="color:var(--text2);">Apr 6</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqK8t</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#3a5d4a,#5a8068);">JR</div><span>James Renard</span></div></td>
-          <td>Singita Grumeti</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$48,200</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$7,230</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$40,970</td>
-          <td><span class="badge badge-green">● Succeeded</span></td>
-          <td style="color:var(--text2);">Apr 5</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqJ4r</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7a4a3a,#a06850);">SO</div><span>Sofia Okonkwo</span></div></td>
-          <td>Soneva Fushi</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$31,400</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$4,710</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$26,690</td>
-          <td><span class="badge badge-amber">● Pending</span></td>
-          <td style="color:var(--text2);">Apr 5</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqH9p</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2c5570,#4a7a95);">MK</div><span>Marcus Kamau</span></div></td>
-          <td>Amangiri</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$18,650</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$2,798</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$15,852</td>
-          <td><span class="badge badge-green">● Succeeded</span></td>
-          <td style="color:var(--text2);">Apr 4</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqG1n</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#6a4a6a,#8a6a8a);">AC</div><span>Anaïs Couture</span></div></td>
-          <td>Capella Ubud</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$12,400</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$1,860</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$10,540</td>
-          <td><span class="badge badge-green">● Succeeded</span></td>
-          <td style="color:var(--text2);">Apr 4</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqF7l</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8a6a3a,#b08850);">DV</div><span>Dilan Vaziri</span></div></td>
-          <td>Aqua Nera</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$22,100</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$3,315</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;color:var(--red);">−$22,100</td>
-          <td><span class="badge badge-red">● Refunded</span></td>
-          <td style="color:var(--text2);">Apr 3</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqE2j</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm">RB</div><span>Renée Bouchard</span></div></td>
-          <td>Al Moudira</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$9,800</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$1,470</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$8,330</td>
-          <td><span class="badge badge-green">● Succeeded</span></td>
-          <td style="color:var(--text2);">Apr 3</td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqD8h</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#3a5070,#5a7090);">TY</div><span>Theodora Yannopoulos</span></div></td>
-          <td>Mekong Navigator</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$28,900</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--text2);">$4,335</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;">$24,565</td>
-          <td><span class="badge badge-blue">● Disputed</span></td>
-          <td style="color:var(--text2);">Apr 2</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text2);">
-    <div>Showing 8 of 142 transactions</div>
-    <div style="display:flex;gap:8px;"><button class="btn btn-sm">Previous</button><button class="btn btn-sm">Next →</button></div>
   </div>
 </div>
 
-<!-- Two column: payouts + payment methods -->
-<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;margin-bottom:20px;">
-
-  <!-- Upcoming payouts -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#c17f3e" stroke-width="1.5" stroke-linecap="round"><path d="M2 8h11M9 4l4 4-4 4"/></svg></div>
-      <div><div class="card-title">Upcoming partner payouts</div><div class="card-subtitle">Scheduled to release after guest check-in</div></div>
-      <div class="card-header-right"><button class="btn btn-sm">Schedule</button></div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Property</th>
-            <th style="text-align:right;">Bookings</th>
-            <th style="text-align:right;">Amount</th>
-            <th>Release</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#3a5d4a,#5a8068);">NE</div><span style="font-weight:500;">Nour El Nil</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">8</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$184,200</td>
-            <td><span class="badge badge-amber">Apr 15</span></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#8a6a3a,#b08850);">SG</div><span style="font-weight:500;">Singita Grumeti</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">5</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$152,800</td>
-            <td><span class="badge badge-amber">Apr 15</span></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2c5570,#4a7a95);">SF</div><span style="font-weight:500;">Soneva Fushi</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">6</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$128,400</td>
-            <td><span class="badge badge-gray">Apr 22</span></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7a4a3a,#a06850);">AM</div><span style="font-weight:500;">Amangiri</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">4</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$96,600</td>
-            <td><span class="badge badge-gray">Apr 22</span></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#3a5070,#5a7090);">AN</div><span style="font-weight:500;">Aqua Nera</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">3</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$72,400</td>
-            <td><span class="badge badge-gray">Apr 29</span></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#6a4a6a,#8a6a8a);">CU</div><span style="font-weight:500;">Capella Ubud</span></div></td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;">3</td>
-            <td style="text-align:right;font-variant-numeric:tabular-nums;font-family:'Fraunces',serif;font-size:16px;">$48,800</td>
-            <td><span class="badge badge-gray">Apr 29</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Payment methods -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-header-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#c17f3e" stroke-width="1.5"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/><path d="M1.5 6.5h13"/></svg></div>
-      <div><div class="card-title">Payment methods</div><div class="card-subtitle">Share of total volume</div></div>
-    </div>
-    <div class="card-body" style="padding:24px;">
-      <div style="display:flex;flex-direction:column;gap:18px;">
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="font-weight:500;">Credit card</span><span style="color:var(--text2);font-variant-numeric:tabular-nums;">$1.62M · 67%</span></div>
-          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;"><div style="width:67%;height:100%;background:#c17f3e;border-radius:4px;"></div></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="font-weight:500;">Bank transfer (ACH/wire)</span><span style="color:var(--text2);font-variant-numeric:tabular-nums;">$582k · 24%</span></div>
-          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;"><div style="width:24%;height:100%;background:#c17f3e;opacity:.8;border-radius:4px;"></div></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="font-weight:500;">Apple / Google Pay</span><span style="color:var(--text2);font-variant-numeric:tabular-nums;">$144k · 6%</span></div>
-          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;"><div style="width:6%;height:100%;background:#c17f3e;opacity:.6;border-radius:4px;"></div></div>
-        </div>
-        <div>
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="font-weight:500;">Crypto (concierge)</span><span style="color:var(--text2);font-variant-numeric:tabular-nums;">$72k · 3%</span></div>
-          <div style="height:7px;background:var(--bg);border-radius:4px;overflow:hidden;"><div style="width:3%;height:100%;background:#c17f3e;opacity:.4;border-radius:4px;"></div></div>
-        </div>
-      </div>
-      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
-        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Avg processing fee</div>
-        <div style="font-family:'Fraunces',serif;font-size:22px;">2.74%</div>
-        <div style="font-size:12px;color:var(--text2);margin-top:2px;">$66,034 in processor fees this period</div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Disputes & refunds -->
-<div class="card">
+<!-- ── Roadmap panel ── -->
+<div class="card" style="margin-bottom:20px;">
   <div class="card-header">
-    <div class="card-header-icon" style="background:var(--red-bg);"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#dc2626" stroke-width="1.5"><path d="M8 1.5L1.5 13.5h13z"/><path d="M8 6v3M8 11v.5"/></svg></div>
-    <div><div class="card-title">Open disputes &amp; refund requests</div><div class="card-subtitle">Requires admin attention</div></div>
-    <div class="card-header-right"><span class="badge badge-red">2 open</span></div>
+    <div class="card-header-icon"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#c17f3e" stroke-width="1.5"><path d="M2 12 6 7l3 3 5-6"/><path d="M2 14h12"/></svg></div>
+    <div><div class="card-title">Payments build roadmap</div><div class="card-subtitle">What's coming and in what order</div></div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Reference</th>
-          <th>Member</th>
-          <th>Property</th>
-          <th>Reason</th>
-          <th style="text-align:right;">Amount</th>
-          <th>Opened</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PqD8h</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#3a5070,#5a7090);">TY</div><span>Theodora Yannopoulos</span></div></td>
-          <td>Mekong Navigator</td>
-          <td>Itinerary not as described</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$28,900</td>
-          <td style="color:var(--text2);">Apr 2</td>
-          <td><a href="admin-conversations" class="btn btn-sm">Review</a></td>
-        </tr>
-        <tr>
-          <td><span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text2);">tb_3PpY1c</span></td>
-          <td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#6a4a6a,#8a6a8a);">LS</div><span>Lukas Sørensen</span></div></td>
-          <td>Al Moudira</td>
-          <td>Member medical cancellation</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500;">$11,200</td>
-          <td style="color:var(--text2);">Mar 28</td>
-          <td><a href="admin-conversations" class="btn btn-sm">Review</a></td>
-        </tr>
-      </tbody>
-    </table>
+  <div style="padding:20px 28px 28px;">
+    <ol style="margin:0;padding:0 0 0 22px;font-size:14px;line-height:1.8;color:var(--text);">
+      <li><strong>v72v (this build):</strong> kill dummy data, lock booking model, document schema decisions in HANDOFF.</li>
+      <li><strong>v72w:</strong> Stripe SDK in worker, env secrets, webhook endpoint, commission_pct field on property editor.</li>
+      <li><strong>v72x:</strong> Enquiry → Offer flow. Partner builds offers in pp-bookings; offer states; revision history.</li>
+      <li><strong>v72y:</strong> Member-side offer review, Accept &amp; pay deposit, Stripe Checkout integration, confirmation emails.</li>
+      <li><strong>v72z:</strong> Admin refunds, dispute handling, edge cases (expired offers, abandoned checkouts).</li>
+    </ol>
+    <div style="font-size:12px;color:var(--text2);margin-top:18px;padding-top:16px;border-top:1px solid var(--border);line-height:1.55;">
+      Channel-manager / instant-book integrations (Cloudbeds, SiteMinder, iCal sync) deferred until a partner specifically needs one. Until then, every property operates in enquiry mode.
+    </div>
   </div>
-</div>
-</div>
 </div>
 
+</div><!-- /page-body -->
+</div><!-- /main-area -->
+</div><!-- /app -->
 <script>
-// ── TRANSACTION FILTER TABS ──────────────────────────────────────────
-var allRows = null;
-
-function initFilterTabs() {
-  var tbody = document.querySelector('.table-wrap table tbody');
-  if (!tbody) return;
-  // Cache all rows on first call
-  allRows = Array.from(tbody.querySelectorAll('tr'));
-
-  document.querySelectorAll('.filter-tab').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.filter-tab').forEach(function(b) { b.classList.remove('active'); });
-      this.classList.add('active');
-      var filter = this.textContent.trim().toLowerCase();
-
-      allRows.forEach(function(row) {
-        if (filter === 'all') {
-          row.style.display = '';
-          return;
-        }
-        var badge = row.querySelector('.badge');
-        var status = badge ? badge.textContent.replace('●', '').trim().toLowerCase() : '';
-        row.style.display = (status.indexOf(filter) !== -1) ? '' : 'none';
-      });
-
-      // Update "Showing X of Y" footer
-      var visible = filter === 'all' ? allRows.length : allRows.filter(function(r) { return r.style.display !== 'none'; }).length;
-      var footer = document.querySelector('.table-wrap + div, [style*="Showing"]');
-      if (!footer) {
-        // Try finding by text content
-        document.querySelectorAll('div').forEach(function(el) {
-          if (el.textContent.trim().startsWith('Showing ')) footer = el;
-        });
-      }
-      if (footer) footer.textContent = 'Showing ' + visible + ' of 142 transactions';
-    });
-  });
-}
-
-// ── PAYOUT PERIOD SELECTOR ───────────────────────────────────────────
+// admin-payments is in honest-empty-state mode until v72w wires Stripe.
+// No data to fetch yet — leaving this script block as a placeholder so
+// future builds can drop logic in without re-finding the insertion point.
 (function() {
-  var periodBtns = document.querySelectorAll('.card-body button');
-  // Only target payout section buttons if they exist
-  // The structure uses filter-tab class above; payout table has no period tabs yet.
-  // Wire any future period tabs here.
+  // Nothing to do.
 })();
-
-// ── KV PROPERTY PAYOUT SYNC ─────────────────────────────────────────
-// On the live site, overlay KV property names onto the upcoming payouts table
-// so newly saved properties appear correctly even if the hardcoded list is stale.
-(function kvPaymentsSync() {
-  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/api/property' : null;
-  if (!PROP_API) return;
-
-  fetch(PROP_API)
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(index) {
-      if (!index || !index.slugs || !index.slugs.length) return;
-      // We don't rewrite the payouts table — just badge any property name
-      // that matches a live KV entry with a "✓ Editor" indicator.
-      return Promise.all(index.slugs.map(function(slug) {
-        return fetch(PROP_API + '?slug=' + encodeURIComponent(slug))
-          .then(function(r) { return r.ok ? r.json() : null; })
-          .catch(function() { return null; });
-      }));
-    })
-    .then(function(results) {
-      if (!results) return;
-      var kvNames = {};
-      results.forEach(function(res) {
-        if (res && res.exists && res.data && res.data.name) {
-          kvNames[res.data.name.toLowerCase()] = res.slug;
-        }
-      });
-      // Badge matching property names in all tables on the page
-      document.querySelectorAll('table tbody tr td').forEach(function(td) {
-        var nameEl = td.querySelector('[style*="font-weight:500"]');
-        if (!nameEl) return;
-        var name = nameEl.textContent.trim().toLowerCase();
-        if (kvNames[name]) {
-          var badge = document.createElement('span');
-          badge.style.cssText = 'font-size:10px;font-weight:600;color:#059669;background:#ecfdf5;padding:2px 6px;border-radius:100px;margin-left:7px;vertical-align:middle;';
-          badge.textContent = '✓ Editor';
-          nameEl.appendChild(badge);
-        }
-      });
-    })
-    .catch(function(e) { console.log('[Payments KV]', e.message); });
-})();
-
-// Init
-initFilterTabs();
 </script>
 
 <script src="/assets/admin-sidebar-badge.js"></script>
