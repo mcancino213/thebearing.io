@@ -534,9 +534,10 @@ window.addEventListener('load', async function() {
     ai:        { name: 'Workers AI',           sub: 'Embedding model for Vectorize' },
     anthropic: { name: 'Anthropic API',        sub: 'Envoy AI proxy / dossier drafting' },
     clerk:     { name: 'Clerk',                sub: 'Sign-in + admin session verification' },
+    stripe:    { name: 'Stripe',               sub: 'Booking deposits — checkout, webhooks, refunds' },
     cron:      { name: 'Stale-conversation cron', sub: 'Hourly trigger — 24h/48h/72h escalations' }
   };
-  var HEALTH_ORDER = ['kv', 'resend', 'vectorize', 'ai', 'anthropic', 'clerk', 'cron'];
+  var HEALTH_ORDER = ['kv', 'resend', 'vectorize', 'ai', 'anthropic', 'clerk', 'stripe', 'cron'];
 
   function statusBadgeClass(ok) {
     return ok ? 'badge-green' : 'badge-red';

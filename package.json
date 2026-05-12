@@ -1,0 +1,9 @@
+{
+  "name": "thebearing-io",
+  "private": true,
+  "version": "1.0.0",
+  "description": "TheBearing.io worker dependencies. The site itself is flat HTML/CSS/JS — this package.json exists only so Cloudflare Pages installs the npm packages our Pages Functions need (currently: stripe SDK). No build step. No bundler.",
+  "dependencies": {
+    "stripe": "^17.0.0"
+  }
+}

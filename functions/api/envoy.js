@@ -10,10 +10,39 @@
 //   /api/upload  POST → gets a Cloudflare Images direct-upload URL, then browser uploads
 //                       directly; returns { url } delivery URL ready to paste
 //   /api/property GET/POST/DELETE → full property data save/load/delete/list
+//   /api/stripe/health  GET (admin) → reports whether Stripe is configured and reachable
+//   /api/stripe/webhook POST (public) → receives Stripe events, signature-verified
 // All other paths fall through to static asset serving.
+
+// Stripe SDK: configured to use FetchHttpClient because Cloudflare Workers has no
+// node:https. The default SDK HTTP client would fail to load on Pages Functions.
+// See https://github.com/stripe/stripe-node — the README has a Cloudflare section.
+import Stripe from 'stripe';
 
 const CF_ACCOUNT_ID = 'd62dd7db798247bb6cc9ff18ff7ee84f';
 const CF_ACCOUNT_HASH = 'YyCqpmHo4EG6ShyDMCRcVQ';
+
+// Lazy-init a Stripe client. Returns null when STRIPE_SECRET_KEY is not configured
+// so callers can return a sensible "not configured" response instead of crashing.
+// Module-cached because each Pages Function invocation is short-lived but may make
+// multiple Stripe calls — no point reconstructing the client per call.
+let _stripeClient = null;
+let _stripeClientKey = null;
+function getStripe(env) {
+  const key = env && env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  if (_stripeClient && _stripeClientKey === key) return _stripeClient;
+  _stripeClient = new Stripe(key, {
+    // Workers don't have node:https; force the fetch-based HTTP client.
+    httpClient: Stripe.createFetchHttpClient(),
+    // Pin the API version so behavior is stable even as Stripe rolls forward.
+    apiVersion: '2025-04-30.basil',
+    // Tag requests so we can find them in Stripe logs.
+    appInfo: { name: 'TheBearing.io', version: '1.0' },
+  });
+  _stripeClientKey = key;
+  return _stripeClient;
+}
 
 export default {
   async fetch(request, env) {
@@ -1976,6 +2005,39 @@ View in admin: https://thebearing.io/admin-bookings.html
         ? { ok: true, status: 'configured', detail: 'CLERK_SECRET_KEY set — session-token verification active' }
         : { ok: false, status: 'not configured', detail: 'CLERK_SECRET_KEY missing — falling back to email-header gate (less secure)' };
 
+      // Stripe — added v72w. Checks both that the secret is set AND that Stripe
+      // accepts it (real network call). Reports mode (test vs live) and account
+      // ID so the admin can confirm they're pointing at the right account.
+      // Webhook secret is reported separately since it can be unset for a while
+      // (only needed when we wire the checkout flow in v72z).
+      if (!env.STRIPE_SECRET_KEY) {
+        checks.stripe = {
+          ok: false,
+          status: 'not configured',
+          detail: 'STRIPE_SECRET_KEY missing — add as encrypted env var in Cloudflare Pages settings'
+        };
+      } else {
+        const stripe = getStripe(env);
+        try {
+          const account = await stripe.accounts.retrieve();
+          const isTest = env.STRIPE_SECRET_KEY.startsWith('sk_test_');
+          const webhookPart = env.STRIPE_WEBHOOK_SECRET
+            ? ', webhook secret set'
+            : ', webhook secret NOT set (needed before v72z)';
+          checks.stripe = {
+            ok: true,
+            status: isTest ? 'test mode' : 'live mode',
+            detail: `Connected to account ${account.id} (${account.country || '??'})` + webhookPart
+          };
+        } catch(e) {
+          checks.stripe = {
+            ok: false,
+            status: 'auth error',
+            detail: 'Stripe rejected the key: ' + String(e && e.message || e)
+          };
+        }
+      }
+
       // Cron schedule + last run
       let lastRun = null;
       try {
@@ -2017,6 +2079,91 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (raw) lastRun = JSON.parse(raw);
       } catch(_) {}
       return jsonResponse({ ok: true, lastRun });
+    }
+
+    // ── Stripe health check (admin-gated) ─────────────────────────
+    // Returns whether STRIPE_SECRET_KEY is set AND Stripe accepts it. The
+    // admin-settings System Health card calls this; admin-payments uses it
+    // to decide which status banner to show.
+    //
+    // Response shape:
+    //   { configured: false }                              — no env var set
+    //   { configured: true, ok: false, error: '...' }      — key set but rejected
+    //   { configured: true, ok: true, mode: 'test'|'live',
+    //     account_id: 'acct_...', country: 'US', ... }     — fully working
+    if (url.pathname === '/api/stripe/health') {
+      if (!(await isAdmin())) return adminDenied();
+      const stripe = getStripe(env);
+      if (!stripe) {
+        return jsonResponse({ configured: false });
+      }
+      try {
+        // accounts.retrieve() with no args returns the account associated
+        // with the secret key — cheapest possible health-check call.
+        const account = await stripe.accounts.retrieve();
+        const isTest = (env.STRIPE_SECRET_KEY || '').startsWith('sk_test_');
+        return jsonResponse({
+          configured: true,
+          ok: true,
+          mode: isTest ? 'test' : 'live',
+          account_id: account.id,
+          country: account.country || null,
+          default_currency: account.default_currency || null,
+          charges_enabled: !!account.charges_enabled,
+          payouts_enabled: !!account.payouts_enabled,
+          email: account.email || null,
+        });
+      } catch (err) {
+        return jsonResponse({
+          configured: true,
+          ok: false,
+          error: (err && err.message) || 'Stripe API call failed'
+        });
+      }
+    }
+
+    // ── Stripe webhook (public, signature-verified) ───────────────
+    // Stripe POSTs payment lifecycle events here. We just acknowledge for
+    // now — the real handler that updates booking records, sends emails,
+    // etc. arrives with v72z (checkout flow). Logging in place so we can
+    // see events flowing during v72w smoke-tests.
+    //
+    // Critical: signature verification MUST use constructEventAsync. The
+    // synchronous constructEvent uses Node crypto APIs that don't exist on
+    // Workers and fails silently (returns invalid signature even on valid
+    // payloads). This is a well-known footgun — multiple Cloudflare/Stripe
+    // tutorial blog posts have specifically warned about it.
+    if (url.pathname === '/api/stripe/webhook') {
+      if (request.method !== 'POST') {
+        return new Response('Method not allowed', { status: 405 });
+      }
+      const stripe = getStripe(env);
+      const signingSecret = env.STRIPE_WEBHOOK_SECRET;
+      if (!stripe || !signingSecret) {
+        console.error('[Stripe webhook] not configured (missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET)');
+        return new Response('Webhook not configured', { status: 503 });
+      }
+      const signature = request.headers.get('stripe-signature');
+      if (!signature) {
+        return new Response('Missing signature', { status: 400 });
+      }
+      // Stripe needs the raw body bytes exactly as sent — don't parse, don't
+      // trim, don't transform. Reading as text preserves byte-for-byte
+      // fidelity for the signature verification.
+      const rawBody = await request.text();
+      let event;
+      try {
+        event = await stripe.webhooks.constructEventAsync(
+          rawBody, signature, signingSecret
+        );
+      } catch (err) {
+        console.error('[Stripe webhook] signature verification failed:', err.message);
+        return new Response('Invalid signature', { status: 400 });
+      }
+      // Log every event so v72w smoke-tests can confirm the pipe works.
+      // Future builds (v72z) will branch on event.type and update KV.
+      console.log('[Stripe webhook]', event.type, event.id);
+      return jsonResponse({ received: true, type: event.type, id: event.id });
     }
 
     // ── Everything else → static assets ───────────────────────────

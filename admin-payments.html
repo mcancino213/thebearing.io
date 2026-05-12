@@ -211,21 +211,24 @@ window.addEventListener('load', async function() {
 
 <!-- ── PAYMENT STATUS BANNER ── -->
 <!--
-  Replaces the previous KPI tiles, transactions table, and dispute panel.
-  Those were all driven by hardcoded fake data ($2.41M GMV, fake property
-  names, made-up dispute counts). Honest empty state until Stripe is wired
-  in v72w-v72y. See PROJECT_CONTEXT.md for the booking model decision.
+  Replaces the previous KPI tiles, transactions table, and dispute panel that
+  were all driven by hardcoded fake data ($2.41M GMV, fake property names,
+  made-up dispute counts). Honest empty state until Stripe checkout is wired
+  in v72z. See PROJECT_CONTEXT.md for the booking model decision.
+
+  As of v72w, /api/stripe/health is live. On page load we ping it and update
+  this banner: "not configured" stays in the un-Stripe'd default; "connected"
+  flips the banner to a green-tinted "Stripe connected (test mode)" so Miguel
+  can confirm at a glance that the keys are working before we wire flow.
 -->
-<div class="card" style="margin-bottom:20px;background:var(--accent-bg);border-color:rgba(193,127,62,.25);">
+<div id="payment-status-banner" class="card" style="margin-bottom:20px;background:var(--accent-bg);border-color:rgba(193,127,62,.25);">
   <div style="padding:24px 28px;display:flex;align-items:flex-start;gap:18px;">
-    <div style="width:42px;height:42px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+    <div id="payment-status-icon" style="width:42px;height:42px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
       <svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><path d="M8 1v14M5 4.5h4.5a2 2 0 0 1 0 4H6a2 2 0 0 0 0 4H11"/></svg>
     </div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Stripe integration not yet configured</div>
-      <div style="font-size:13px;color:var(--text2);line-height:1.55;">
-        Payments will appear here once the Stripe checkout flow is wired up.
-        Current build stage: <strong>v72v — schema decisions locked, scaffolding pending</strong>.
+      <div id="payment-status-title" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;">Checking Stripe connection…</div>
+      <div id="payment-status-body" style="font-size:13px;color:var(--text2);line-height:1.55;">
         Booking model is <strong>deposit-only</strong> — TheBearing collects a percentage commission as a non-refundable booking fee at the moment of acceptance. Partner arranges the balance directly with the member.
       </div>
     </div>
@@ -295,11 +298,80 @@ window.addEventListener('load', async function() {
 </div><!-- /main-area -->
 </div><!-- /app -->
 <script>
-// admin-payments is in honest-empty-state mode until v72w wires Stripe.
-// No data to fetch yet — leaving this script block as a placeholder so
-// future builds can drop logic in without re-finding the insertion point.
+// admin-payments — on load, probe /api/stripe/health and update the
+// status banner so Miguel can confirm at a glance whether Stripe is
+// configured and reachable. Three rendered states:
+//
+//   1. Probe failed (network / not admin) → leave default "checking" text
+//      and silently log to console. We don't break the page.
+//   2. configured=false → "Stripe not yet configured" banner with setup
+//      reminder (env vars + signup link).
+//   3. configured=true, ok=true → green-tinted "connected" banner showing
+//      mode (test/live) and the connected account ID.
+//   4. configured=true, ok=false → red-tinted "auth error" banner with
+//      the error message from Stripe.
+//
+// Future builds (v72z onwards) will additionally fetch real payment data
+// from a future endpoint and populate the KPI tiles + transactions table.
 (function() {
-  // Nothing to do.
+  function setBanner(opts) {
+    var banner = document.getElementById('payment-status-banner');
+    var icon = document.getElementById('payment-status-icon');
+    var title = document.getElementById('payment-status-title');
+    var body = document.getElementById('payment-status-body');
+    if (!banner || !icon || !title || !body) return;
+    // Background + border palette by state
+    if (opts.tone === 'ok') {
+      banner.style.background = 'var(--emerald-bg, #ecfdf5)';
+      banner.style.borderColor = 'rgba(5,150,105,.25)';
+      icon.style.background = 'var(--emerald, #059669)';
+    } else if (opts.tone === 'error') {
+      banner.style.background = 'var(--red-bg, #fef2f2)';
+      banner.style.borderColor = 'rgba(220,38,38,.25)';
+      icon.style.background = 'var(--red, #dc2626)';
+    } else {
+      banner.style.background = 'var(--accent-bg)';
+      banner.style.borderColor = 'rgba(193,127,62,.25)';
+      icon.style.background = 'var(--accent)';
+    }
+    title.textContent = opts.title;
+    body.innerHTML = opts.body;
+  }
+
+  fetch('/api/stripe/health', { cache: 'no-store' })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      if (!data.configured) {
+        setBanner({
+          tone: 'pending',
+          title: 'Stripe not yet configured',
+          body: 'Add <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_PUBLISHABLE_KEY</code> as encrypted environment variables in the Cloudflare Pages dashboard, then redeploy. ' +
+                'Booking model is <strong>deposit-only</strong> — TheBearing collects a percentage commission as a non-refundable booking fee at the moment of acceptance.'
+        });
+      } else if (data.ok) {
+        var modeLabel = data.mode === 'live' ? 'LIVE MODE' : 'test mode';
+        setBanner({
+          tone: 'ok',
+          title: 'Stripe connected · ' + modeLabel,
+          body: 'Connected to account <code>' + (data.account_id || '?') + '</code>' +
+                (data.country ? ' (' + data.country + ')' : '') +
+                '. Awaiting first booking — the offer/checkout flow ships in v72y\u2013v72z.'
+        });
+      } else {
+        setBanner({
+          tone: 'error',
+          title: 'Stripe configured but not reachable',
+          body: 'Stripe rejected the key: ' + (data.error || 'unknown error') + '. Verify the secret in Cloudflare Pages env vars matches your Stripe dashboard.'
+        });
+      }
+    })
+    .catch(function(e) {
+      console.log('[admin-payments] stripe health probe failed:', e && e.message || e);
+      // Leave the banner in its default state — no UI break on probe failure.
+    });
 })();
 </script>
 
