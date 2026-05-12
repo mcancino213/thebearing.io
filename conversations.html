@@ -1994,8 +1994,12 @@ function chBuildContextPanel(conv, prop) {
   }
 
   // Actions
+  // Nour El Nil has a dedicated hand-built page; everything else uses the dynamic template
+  var propUrl = conv.propertySlug === 'nour-el-nil'
+    ? '/nour-el-nil.html'
+    : '/property.html?slug=' + encodeURIComponent(conv.propertySlug);
   html += '<div class="ch-context-actions">';
-  html += '<a class="ch-context-action primary" href="/property.html?slug=' + encodeURIComponent(conv.propertySlug) + '">View property →</a>';
+  html += '<a class="ch-context-action primary" href="' + propUrl + '">View property →</a>';
   html += '<button class="ch-context-action secondary" onclick="chSaveProperty(\'' + chEscHtml(conv.propertySlug) + '\')">';
   html += '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
   html += 'Save to wishlist</button>';
