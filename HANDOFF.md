@@ -1,5 +1,5 @@
 # TheBearing.io — Handoff Document
-> Last updated: 2026-04-27 | Current build: v57j
+> Last updated: 2026-05-12 | Current build: v72e
 
 ---
 
@@ -287,6 +287,35 @@ id = "aa0c885871474266966e50f0676dd019"
 ## Build History (recent)
 | Build | Key changes |
 |-------|-------------|
+| v72e | Envoy drawer positioning fix: lens/saved/bookings/preferences had dark-theme styling but were missing `position:fixed; right:0; width:25vw; transform:translateX(100%)` base rules — drawer rendered without positioning, breaking layout. Patched all 4 pages with full positioning + open-state + body-push + responsive rules |
+| v72d | Conversation pages dead-space fix at bottom of viewport: customer (`account-wrap` padding-top + height calc overflowed by 66px → set `height:100dvh; box-sizing:border-box`), admin (was subtracting 60px for a topbar that doesn't exist → `height:100vh`), partner (`calc(100vh - 200px)` over-budgeted → `flex:1; min-height:0`) |
+| v72c | property.html hardening: 12s safety timeout, granular error messages instead of generic, console diagnostics, isolated renderProperty try/catch, loadSimilar chained as `.catch()` so it can't block main render. Fixed `/property?slug=` (no .html) in similar cards + admin-property-editor preview button |
+| v72b | Customer page "View property" action: special-cases `nour-el-nil` slug → `/nour-el-nil.html` (dedicated hand-built page), all other slugs → dynamic `/property.html?slug=...` template |
+| v72 | Customer conversations full visual parity: 3-column layout (responsive, collapses <1100px), property details panel (hero image, facts, your enquiry, View property + Save to wishlist), Clerk photo for guest avatars, role-distinct bubbles, hover actions, reactions (guest scoped), sound (`tb_guest_sound`), animations, day separators, ⌘+Enter to send |
+| v71 | Partner portal conversations parity: 3-column with partner-scoped guest context panel (no LTV/notes/saved-replies — admin only). Previous conversations filtered to `propertySlug === PP_SLUG` (privacy). Sound key `tb_pp_sound` |
+| v70g | Emoji popover diagonal-mouse fix: popover centered above smiley btn, invisible bridge below popover, `.actions-pinned` class on parent action bar via JS + CSS `:has()` so the action bar stays visible while picker open |
+| v70f | Session 3 admin polish: emoji reactions (6 emoji, per-message KV via `action:'reaction'`), saved replies (`/api/saved-replies` GET/POST/DELETE admin-gated, stored at `__saved_replies`), sound on incoming msgs (Web Audio chirp, `tb_admin_sound`), message fade-in animation, click-outside closes popovers |
+| v70e | Session 2 admin polish: right-side guest context panel (avatar, presence, stats grid Joined/Convs/Bookings/LTV, Tier/Location/Provider, Other conversations, Internal notes with 800ms autosave). Hover actions on messages (emoji react / reply-quote / copy with toast confirmation). Quoted reply prepends `> Sender wrote:` in send |
+| v70d | (folded into v70e) |
+| v70c | (folded into v70e) |
+| v70b | Session 1 admin conversation redesign: 3-column layout (340 + flex + 320), grouped time buckets (Today/Yesterday/This week/Older), unread+wait-time pills, polished thread header (avatar+name+sub+actions), day separators, avatar grouping (3+ msgs in 5min stack visually), role-distinct bubbles, viewer-relative positioning, composer with auto-resize + ⌘+Enter |
+| v70 | admin-guests polish: search box (name/email/location/tier/notes), filter tabs (All/Founding/Active/New), sortable columns, default sort newest joined desc, Provider as Google/Apple/Email text, removed unused Credits column, XSS-safe |
+| v69c | admin-bookings: GMV stat fixed (exclude cancelled, use totalAmount), Value column shows total + deposit ("$8,400 / $2,100 dep."), distinct empty states, auto-refresh 30s when visible |
+| v69b | admin-bookings polish: real-time search across ref/name/email/property/room/notes, sortable columns (Reference/Arrival/Value) with arrow indicators, default sort newest createdAt desc |
+| v69 | Admin stub cleanup: deleted admin-conversation.html, admin-property-detail.html, admin-booking-detail.html, admin-content.html, admin-invite.html. Sidebar scrubbed across all admin pages. Worker email templates updated to `admin-conversations.html` |
+| v68f | Auth gating polish: admin-login.html shows yellow banner + sign-out option for already-signed-in non-admins (doesn't auto-mount Clerk widget or sign them out). SPA fallback removed (`not_found_handling: "404-page"`) |
+| v68 | Admin auth gating: `assets/admin-gate.js` client gate (waits for `Clerk.loaded===true`, hides body until verified, redirects non-admins to `/admin-login.html`), worker `isAdmin()` server gate on POST/DELETE `/api/property`, `assets/admin-fetch.js` wraps fetch to attach X-Admin-Email/X-Clerk-Session. Allowlist: `admin@thebearing.io` (hardcoded in 3 places — keep in sync). Clerk allows 2nd email per account |
+| v67 | Stale conversation reminder cron: hourly `0 * * * *` in wrangler.toml `[triggers] crons`. Worker `runStaleConvReminders()` scans `unreadAdmin>0 && !archived`, escalates 24h→partner, 48h→partner+admin, 72h→urgent both. Tracks `conv.reminders.{sent24At,sent48At,sent72At}`, resets on reply. Admin UI shows colored pill in thread header ("24h reminder sent" amber → 48h orange → 72h red) |
+| v66h | Admin dashboard rewrite: removed deprecated Property pipeline card. Real Live Activity card (new enquiries, replies, bookings, member signups — clickable). Real Conversations needing attention (sorted oldest first, dynamic wait time, red ≥4d, amber ≥1d, "Step in" button). Recent bookings table reads `/api/booking`. Auto-refresh 30s when tab visible |
+| v66 | Foundation period: pre-redesign housekeeping (admin sidebar consistency, status badge polish, various stub pages cleanup) |
+| v65 | Cron infrastructure added: wrangler `[triggers] crons` + `scheduled()` handler scaffolding |
+| v64 | Resend inbound webhook: `/api/inbound-email` handler. Resend `email.received` has NO body — must fetch via `/emails/receiving/{id}` |
+| v63 | Notification toggles `notifyAdmin`/`notifyPartner`/`notifyGuest` on conversations; `/api/notify-toggle` endpoint |
+| v62 | Conversation system maturation: presence (`/api/presence` + `conv-presence.js` heartbeat/visible/favicon-dot), unread counters recomputed, archive status |
+| v61 | Clerk authentication integrated for admin login; `/api/members` member tracking, `/api/clerk-webhook` for sign-up events |
+| v60 | Admin listing order tab: drag-to-reorder with `__index_cruises`/`__index_hotels`/`__index_villas` curated arrays; `toast()` UI helper added |
+| v59 | Dynamic KV loaders for cruises/hotels/villas: curated index controls featured order, unmatched items appended after |
+| v58 | Envoy L1-L3 work: page-aware dossier+sources injection, structured dossier admin authoring, AI-assisted dossier draft with web search. L4 Vectorize blocked. `CI_SYSTEM` prompt fragmentation documented in `docs/ENVOY_PROMPT_EXTRACTION_DOSSIER.md` for future extraction to `assets/envoy-prompt.js` |
 | v57j | Cruises header: CF image `2d9c0e5f` set as hero, object-position bottom 2/3 |
 | v57i | Cruises header: updated to CF image URL |
 | v57h | Cruises header: full-bleed cinematic dark (Option A) applied |
