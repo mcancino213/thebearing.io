@@ -18,6 +18,11 @@
     var nameEl = document.getElementById('sb-user-name');
     if (nameEl) nameEl.textContent = name || 'Admin';
   }
+  // Expose a re-init hook so admin-sidebar-inject.js can re-apply after a
+  // late sidebar mount (first-load cache miss).
+  window.refreshAdminSidebarUser = function() {
+    if (window.Clerk && window.Clerk.user) apply(window.Clerk.user);
+  };
   function init() {
     var attempts = 0;
     var t = setInterval(function() {
