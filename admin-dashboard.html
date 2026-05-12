@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dashboard — The Bearing</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/admin-chrome.css">
+<link rel="stylesheet" href="/assets/portal-chrome.css">
 <style>
 
 :root{
@@ -372,7 +372,7 @@ async function loadDashConvAttention() {
         '<td style="font-size:13px;color:var(--text2);">' + escapeHtml(c.propertyName || c.propertySlug || '—') + '</td>' +
         '<td style="font-size:13px;color:var(--text2);max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(preview) + '</td>' +
         '<td><span class="badge ' + waitBadge + '">' + waitLabel + '</span></td>' +
-        '<td><a href="admin-conversations.html?id=' + encodeURIComponent(c.id) + '" class="btn btn-sm ' + (days >= 1 ? 'btn-primary' : '') + '">' + (days >= 1 ? 'Step in' : 'View') + '</a></td>' +
+        '<td><a href="admin-conversations?id=' + encodeURIComponent(c.id) + '" class="btn btn-sm ' + (days >= 1 ? 'btn-primary' : '') + '">' + (days >= 1 ? 'Step in' : 'View') + '</a></td>' +
       '</tr>';
     }).join('');
 

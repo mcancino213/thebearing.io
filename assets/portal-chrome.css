@@ -1,0 +1,53 @@
+/* portal-chrome.css — shared CSS for all three portal experiences (admin,
+ * partner, customer). Loaded by every page that has a persistent sidebar.
+ *
+ * Currently scoped to view transitions only. Browsers that support
+ * cross-document view transitions (Chrome 126+, Safari 18+, Firefox 145+ —
+ * verified in 2026) will cross-fade between portal pages on navigation
+ * instead of hard-cutting to white. Older browsers ignore these rules
+ * entirely and fall back to today's behavior. No regression.
+ *
+ * History: originally added in v72q as admin-chrome.css. The reason
+ * transitions seemed not to work for several builds (v72q, v72r) was that
+ * Cloudflare Pages was redirecting `/admin-foo.html` → `/admin-foo` on
+ * every sidebar click, and cross-document transitions are silently
+ * skipped when a navigation involves a redirect. The actual fix was in
+ * v72s: strip the `.html` extension from all internal portal links so
+ * the navigation hits the canonical URL with no redirect hop. Renamed
+ * to portal-chrome.css in v72t when extending to all three portals.
+ */
+
+/* Opt the document into cross-document view transitions. Both the source
+ * page and the destination page must opt in for a transition to fire —
+ * which is why this lives in a shared stylesheet linked from every portal
+ * page rather than scattered inline. */
+@view-transition {
+  navigation: auto;
+}
+
+/* Mark the sidebar as a shared element across pages. When the browser sees
+ * the same view-transition-name on both old and new pages, it treats them
+ * as the same logical element and animates between their states instead of
+ * fading both out and in. Since the sidebar occupies the same position on
+ * every portal page, the browser computes a "no movement, no opacity change"
+ * animation — the sidebar appears to stay perfectly still while the main
+ * content cross-fades. That's the perceptual fix for the navigation flash.
+ *
+ * One name shared across all three portals is fine. In the unlikely case
+ * of a cross-portal navigation (e.g. admin → customer), the browser will
+ * still produce a clean transition since both sides have matching names
+ * on visually-similar elements (a left-anchored vertical column). The
+ * pragmatic alternative — separate names per portal — would mean three
+ * stylesheets to maintain for zero perceived benefit. */
+.sidebar {
+  view-transition-name: portal-sidebar;
+}
+
+/* Speed up the default cross-fade. The browser's default is 250ms which
+ * feels sluggish for an admin or partner tool where you're clicking around
+ * quickly. 140ms is fast enough to feel responsive while still being long
+ * enough for the eye to register continuity. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 140ms;
+}

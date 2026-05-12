@@ -12,7 +12,7 @@
         var unread = d.unread || 0;
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === 'pp-conversations.html') {
+          if (link.getAttribute('href') === 'pp-conversations' || link.getAttribute('href') === 'pp-conversations.html') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
               if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
@@ -32,7 +32,7 @@
         var bookings = (d.bookings || []).filter(function(b){ return b.status !== 'cancelled'; });
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === 'pp-bookings.html') {
+          if (link.getAttribute('href') === 'pp-bookings' || link.getAttribute('href') === 'pp-bookings.html') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
               if (bookings.length > 0) { badge.textContent = bookings.length; badge.style.display = ''; }

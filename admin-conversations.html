@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Conversations — The Bearing Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/admin-chrome.css">
+<link rel="stylesheet" href="/assets/portal-chrome.css">
 <style>
 
 :root{
@@ -1404,7 +1404,7 @@ function renderContextPanel(conv) {
   html += '<div class="context-section-title">Internal notes</div>';
   html += '<textarea class="context-notes" id="ctx-notes" placeholder="Private notes about this guest, only visible to admins…"></textarea>';
   html += '<div class="context-notes-status" id="ctx-notes-status"></div>';
-  html += '<a href="admin-guest-detail.html?id=' + encodeURIComponent(conv.guestId || '') + '" style="display:inline-block;margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:500;">View full member profile →</a>';
+  html += '<a href="admin-guest-detail?id=' + encodeURIComponent(conv.guestId || '') + '" style="display:inline-block;margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:500;">View full member profile →</a>';
   html += '</div>';
 
   ctx.innerHTML = html;
@@ -1459,7 +1459,7 @@ function renderContextPanel(conv) {
         sec.style.display = '';
         box.innerHTML = other.slice(0, 6).map(function(c) {
           var when = c.lastMessageAt ? fmt(c.lastMessageAt) : '';
-          return '<a class="context-conv-item" href="admin-conversations.html?id=' + encodeURIComponent(c.id) + '">' +
+          return '<a class="context-conv-item" href="admin-conversations?id=' + encodeURIComponent(c.id) + '">' +
             '<div class="context-conv-property">' + escHtml(c.propertyName || c.propertySlug || '—') + '</div>' +
             '<div class="context-conv-meta">' + escHtml(when) + (c.unreadAdmin ? ' · <strong style="color:var(--accent);">' + c.unreadAdmin + ' unread</strong>' : '') + '</div>' +
           '</a>';

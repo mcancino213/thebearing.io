@@ -216,20 +216,20 @@ window.addEventListener('load', async function() {
     });
 
     if (window.Clerk.user) {
-      window.location.href = '/pp-dashboard.html';
+      window.location.href = '/pp-dashboard';
       return;
     }
 
     window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
       signUpUrl: null,
-      afterSignInUrl: '/pp-dashboard.html',
+      afterSignInUrl: '/pp-dashboard',
       socialProvider: ['google', 'apple'],
       waitlistMode: false,
     });
 
     window.Clerk.addListener(function(resources) {
       if (resources.user) {
-        window.location.href = '/pp-dashboard.html';
+        window.location.href = '/pp-dashboard';
       }
     });
   } catch(err) {
