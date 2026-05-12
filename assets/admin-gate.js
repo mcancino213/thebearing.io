@@ -10,19 +10,43 @@
 //      Clerk init. If the fetch fails, only the baseline is honoured.
 (function() {
   var ADMIN_EMAILS = ['admin@thebearing.io'];
+  var AUTH_FLAG = 'tb_admin_verified_v1';
 
-  // Hide page contents instantly to prevent flash of admin UI before auth check
-  var hideStyle = document.createElement('style');
-  hideStyle.id = 'admin-gate-hide';
-  hideStyle.textContent = 'body{visibility:hidden!important;}';
-  (document.head || document.documentElement).appendChild(hideStyle);
+  // Hide page contents until auth check completes — but ONLY on the first
+  // admin page load this session. On subsequent navigations within the admin
+  // portal (every sidebar click), we skip the hide so cross-document view
+  // transitions can actually animate between the two pages. The browser was
+  // showing white between every navigation because the destination page was
+  // hidden by this script the moment it began loading.
+  //
+  // Security note: the worker independently verifies admin status on every
+  // API call regardless of what the client renders, so a brief moment of
+  // visible content during the background re-check on subsequent loads
+  // doesn't leak anything. Clerk's session cookie is still valid across the
+  // navigation; we're just trusting that the auth we verified <1s ago is
+  // still valid for the next click. If the session genuinely expired, the
+  // re-check fails and the redirect to /admin-login.html still happens.
+  var alreadyVerified = false;
+  try { alreadyVerified = sessionStorage.getItem(AUTH_FLAG) === '1'; } catch(e) {}
+
+  if (!alreadyVerified) {
+    var hideStyle = document.createElement('style');
+    hideStyle.id = 'admin-gate-hide';
+    hideStyle.textContent = 'body{visibility:hidden!important;}';
+    (document.head || document.documentElement).appendChild(hideStyle);
+  }
 
   function reveal() {
     var s = document.getElementById('admin-gate-hide');
     if (s) s.remove();
+    // Mark the session as verified so subsequent navigations don't hide.
+    try { sessionStorage.setItem(AUTH_FLAG, '1'); } catch(e) {}
   }
 
   function denied(reason) {
+    // Clear the verified flag — whatever state got us here, we no longer
+    // trust it for future loads in this tab.
+    try { sessionStorage.removeItem(AUTH_FLAG); } catch(e) {}
     sessionStorage.setItem('tb_admin_denied_reason', reason || 'not_authorized');
     window.location.replace('/admin-login.html');
   }

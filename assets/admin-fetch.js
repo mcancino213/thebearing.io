@@ -41,10 +41,31 @@
     return null;
   }
 
+  // Wait for Clerk to finish loading before issuing /api/ calls. Without this,
+  // pages that fetch immediately on load (admin-settings, admin-analytics)
+  // would race Clerk and send requests with no admin headers — getting 403'd
+  // by the worker. Resolves immediately if Clerk is already loaded.
+  function awaitClerkReady() {
+    return new Promise(function(resolve) {
+      if (window.Clerk && window.Clerk.loaded === true) { resolve(); return; }
+      var startedAt = Date.now();
+      var t = setInterval(function() {
+        if (window.Clerk && window.Clerk.loaded === true) {
+          clearInterval(t); resolve(); return;
+        }
+        // Cap the wait so a busted Clerk init can't deadlock fetches forever.
+        // If we hit the cap, the request goes out without admin headers and
+        // the worker will 403, which is recoverable behavior.
+        if (Date.now() - startedAt > 15000) { clearInterval(t); resolve(); }
+      }, 100);
+    });
+  }
+
   window.fetch = async function(input, init) {
     var url = typeof input === 'string' ? input : (input && input.url) || '';
     // Only attach auth headers to our own /api/ calls
     if (url.indexOf('/api/') === 0 || url.indexOf(location.origin + '/api/') === 0) {
+      await awaitClerkReady();
       init = init || {};
       init.headers = new Headers(init.headers || {});
       var emails = getAdminEmails();
