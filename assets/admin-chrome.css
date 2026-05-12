@@ -1,0 +1,40 @@
+/* admin-chrome.css — shared CSS for admin pages, loaded by every admin-*.html.
+ *
+ * Currently scoped to view transitions only. Browsers that support
+ * cross-document view transitions (Chrome 126+, Safari 18+, Firefox 145+ —
+ * verified in 2026) will cross-fade between admin pages on navigation
+ * instead of hard-cutting to white. Older browsers ignore these rules
+ * entirely and fall back to today's behavior. No regression.
+ */
+
+/* Opt the document into cross-document view transitions. Both the source
+ * page and the destination page must opt in for a transition to fire —
+ * which is why this lives in a shared stylesheet linked from every admin
+ * page rather than scattered inline. */
+@view-transition {
+  navigation: auto;
+}
+
+/* Mark the sidebar as a shared element across pages. When the browser sees
+ * the same view-transition-name on both old and new pages, it treats them
+ * as the same logical element and animates between their states instead of
+ * fading both out and in. Since the sidebar occupies the same position on
+ * every admin page, the browser computes a "no movement, no opacity change"
+ * animation — the sidebar appears to stay perfectly still while the main
+ * content cross-fades. That's the perceptual fix for the navigation flash.
+ *
+ * The name has to match between pages, but doesn't matter what it is.
+ * Keeping it specific so it can't collide with names used elsewhere on the
+ * site (e.g. customer pages getting their own transitions later). */
+.sidebar {
+  view-transition-name: admin-sidebar;
+}
+
+/* Speed up the default cross-fade. The browser's default is 250ms which
+ * feels sluggish for an admin tool where you're clicking around quickly.
+ * 140ms is fast enough to feel responsive while still being long enough
+ * for the eye to register continuity. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 140ms;
+}
