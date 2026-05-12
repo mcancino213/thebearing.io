@@ -137,6 +137,21 @@
   .ci-fab-sub{font-size:.6rem;color:rgba(255,255,255,.45);white-space:nowrap;}
 
 
+  /* Drawer positioning + open state (must come before dark-theme overrides below) */
+  .ci-drawer{position:fixed;top:0;right:0;width:25vw;min-width:320px;max-width:480px;height:100dvh;z-index:400;background:#faf7f1;border-left:1px solid rgba(0,0,0,.08);box-shadow:-8px 0 40px rgba(0,0,0,.12);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);}
+  .ci-drawer.open{transform:translateX(0);}
+
+  /* Page push when drawer open */
+  body{transition:margin-right .38s cubic-bezier(.32,.72,0,1);}
+  @media(min-width:768px){
+    body.ci-open{margin-right:clamp(320px,25vw,480px);}
+    .ci-fab.drawer-open{right:calc(clamp(320px,25vw,480px) + 28px);}
+  }
+  @media(max-width:767px){
+    .ci-drawer{width:88vw;min-width:0;max-width:400px;}
+    .ci-fab.drawer-open{right:calc(88vw + 12px);}
+  }
+
   /* ── Envoy Drawer — fully scoped, immune to page styles ── */
   .ci-drawer{background:#1c1610!important;border-left:1px solid rgba(180,140,70,.2)!important;box-shadow:-12px 0 60px rgba(0,0,0,.45)!important;}
   .ci-drawer *{box-sizing:border-box;}
