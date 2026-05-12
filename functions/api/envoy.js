@@ -36,9 +36,27 @@ export default {
     // Strategy: client sends Clerk session token in X-Clerk-Session header.
     // We verify it against Clerk's API to get the user's email, then check the allowlist.
     // Falls back to X-Admin-Email header check (less secure) for environments without session tokens.
-    const ADMIN_EMAILS = ['admin@thebearing.io'];
+    //
+    // The allowlist is the union of:
+    //   1. ADMIN_EMAILS_BASELINE — hardcoded founder address, never removable via UI (failsafe)
+    //   2. KV-stored allowlist at __settings:allowlist — managed via admin-settings.html
+    const ADMIN_EMAILS_BASELINE = ['admin@thebearing.io'];
+
+    async function getAllowlist() {
+      const extras = await loadAllowlistExtras(env);
+      const merged = ADMIN_EMAILS_BASELINE.concat(extras);
+      // dedupe + lowercase
+      const seen = {};
+      const out = [];
+      merged.forEach(function(e) {
+        const lc = String(e || '').toLowerCase().trim();
+        if (lc && !seen[lc]) { seen[lc] = 1; out.push(lc); }
+      });
+      return out;
+    }
 
     async function isAdmin() {
+      const allowlist = await getAllowlist();
       // Path 1: Clerk session token (most secure)
       const sessionToken = request.headers.get('X-Clerk-Session');
       if (sessionToken && env.CLERK_SECRET_KEY) {
@@ -56,7 +74,7 @@ export default {
               if (userResp.ok) {
                 const user = await userResp.json();
                 const emails = (user.email_addresses || []).map(function(e) { return (e.email_address || '').toLowerCase(); });
-                return emails.some(function(em) { return ADMIN_EMAILS.indexOf(em) !== -1; });
+                return emails.some(function(em) { return allowlist.indexOf(em) !== -1; });
               }
             }
           }
@@ -67,7 +85,7 @@ export default {
       // Useful when CLERK_SECRET_KEY isn't set yet
       const emailHeader = request.headers.get('X-Admin-Email');
       if (emailHeader) {
-        return ADMIN_EMAILS.indexOf(emailHeader.toLowerCase()) !== -1;
+        return allowlist.indexOf(emailHeader.toLowerCase()) !== -1;
       }
 
       return false;
@@ -732,6 +750,8 @@ Notes: ${notes || 'none'}
 View in admin: https://thebearing.io/admin-bookings.html
             `.trim();
 
+            const adminRecipients = await loadNotificationRecipients(env);
+
             await Promise.all([
               fetch('https://api.resend.com/emails', {
                 method: 'POST',
@@ -748,7 +768,7 @@ View in admin: https://thebearing.io/admin-bookings.html
                 headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   from: 'The Bearing Bookings <bookings@thebearing.io>',
-                  to: ['miguel@thebearing.io'],
+                  to: adminRecipients,
                   subject: `New booking — ${ref} · ${firstname} ${lastname} · ${property}`,
                   text: adminEmailBody
                 })
@@ -967,12 +987,13 @@ View in admin: https://thebearing.io/admin-bookings.html
           if (env.RESEND_API_KEY && firstMessage && conv.notifyAdmin !== false) {
             try {
               const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
+              const adminRecipients = await loadNotificationRecipients(env);
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   from: 'The Bearing <bookings@thebearing.io>',
-                  to: ['miguel@thebearing.io'],
+                  to: adminRecipients,
                   subject: `New enquiry — ${propertyName} from ${guestName || guestEmail}`,
                   text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                 })
@@ -1057,12 +1078,13 @@ View in admin: https://thebearing.io/admin-bookings.html
                 // Notify admin — only if admin hasn't muted
                 if (conv.notifyAdmin !== false) {
                   const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
+                  const adminRecipients = await loadNotificationRecipients(env);
                   await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       from: 'The Bearing <bookings@thebearing.io>',
-                      to: ['miguel@thebearing.io'],
+                      to: adminRecipients,
                       subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
                       text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                     })
@@ -1488,12 +1510,13 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (env.RESEND_API_KEY && conv.notifyAdmin !== false) {
         try {
           const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=admin`;
+          const adminRecipients = await loadNotificationRecipients(env);
           await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               from: 'The Bearing <bookings@thebearing.io>',
-              to: ['miguel@thebearing.io'],
+              to: adminRecipients,
               subject: `Email reply from ${conv.guestName} — ${conv.propertyName}`,
               text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
             })
@@ -1600,6 +1623,231 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ ok: true });
     }
 
+    // ── /api/settings/allowlist-public ─────────────────────────────
+    // Returns the merged admin allowlist (baseline + KV extras) WITHOUT auth.
+    // This is read by assets/admin-gate.js on every admin page load so the
+    // client gate can authorize additional admins added via the settings UI.
+    // No sensitive data: emails are admin login addresses, not customer data.
+    if (url.pathname === '/api/settings/allowlist-public') {
+      if (request.method !== 'GET') {
+        return jsonResponse({ error: 'GET only' }, 405);
+      }
+      const extras = await loadAllowlistExtras(env);
+      const merged = ADMIN_EMAILS_BASELINE.concat(extras);
+      const seen = {}; const out = [];
+      merged.forEach(function(e) {
+        const lc = String(e || '').toLowerCase().trim();
+        if (lc && !seen[lc]) { seen[lc] = 1; out.push(lc); }
+      });
+      return jsonResponse({ allowlist: out });
+    }
+
+    // ── /api/settings ──────────────────────────────────────────────
+    // GET → current settings (notification recipients, admin allowlist extras)
+    // POST → update settings { type: 'notifications'|'allowlist', ... }
+    // Both admin-gated.
+    if (url.pathname === '/api/settings') {
+      if (!(await isAdmin())) return adminDenied();
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      if (request.method === 'GET') {
+        const notifRaw = await env.DOSSIERS.get('__settings:notifications');
+        const allowRaw = await env.DOSSIERS.get('__settings:allowlist');
+        let notifications = { recipients: [] };
+        let allowlist = { emails: [] };
+        try { if (notifRaw) notifications = JSON.parse(notifRaw); } catch(_) {}
+        try { if (allowRaw) allowlist = JSON.parse(allowRaw); } catch(_) {}
+        return jsonResponse({
+          ok: true,
+          notifications: {
+            recipients: Array.isArray(notifications.recipients) ? notifications.recipients : [],
+            baseline: BASELINE_NOTIFICATION_RECIPIENT
+          },
+          allowlist: {
+            emails: Array.isArray(allowlist.emails) ? allowlist.emails : [],
+            baseline: ADMIN_EMAILS_BASELINE
+          }
+        });
+      }
+
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const type = body && body.type;
+        if (type === 'notifications') {
+          const list = Array.isArray(body.recipients) ? body.recipients : [];
+          const cleaned = []; const seen = {};
+          list.forEach(function(e) {
+            const lc = String(e || '').toLowerCase().trim();
+            // Basic email shape check — anything@anything.anything
+            if (lc && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lc) && !seen[lc]) {
+              seen[lc] = 1;
+              cleaned.push(lc);
+            }
+          });
+          await env.DOSSIERS.put('__settings:notifications', JSON.stringify({
+            recipients: cleaned,
+            updatedAt: new Date().toISOString()
+          }));
+          return jsonResponse({ ok: true, recipients: cleaned });
+        }
+
+        if (type === 'allowlist') {
+          const list = Array.isArray(body.emails) ? body.emails : [];
+          const cleaned = []; const seen = {};
+          // Reject baseline addresses — they're hardcoded and never need to be stored
+          const baselineLc = ADMIN_EMAILS_BASELINE.map(function(e) { return e.toLowerCase(); });
+          list.forEach(function(e) {
+            const lc = String(e || '').toLowerCase().trim();
+            if (lc && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lc) && !seen[lc] && baselineLc.indexOf(lc) === -1) {
+              seen[lc] = 1;
+              cleaned.push(lc);
+            }
+          });
+          await env.DOSSIERS.put('__settings:allowlist', JSON.stringify({
+            emails: cleaned,
+            updatedAt: new Date().toISOString()
+          }));
+          return jsonResponse({ ok: true, emails: cleaned });
+        }
+
+        return jsonResponse({ error: 'type must be "notifications" or "allowlist"' }, 400);
+      }
+
+      return jsonResponse({ error: 'GET or POST only' }, 405);
+    }
+
+    // ── /api/health ────────────────────────────────────────────────
+    // Admin-gated. Reports the status of dependent systems so the founder can
+    // diagnose issues from the admin-settings page without hitting each service.
+    // Each check is wrapped in its own try/catch so one failure doesn't break others.
+    if (url.pathname === '/api/health') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'GET') return jsonResponse({ error: 'GET only' }, 405);
+
+      const checks = {};
+
+      // KV
+      try {
+        const ping = await env.DOSSIERS.get('__property_index');
+        checks.kv = {
+          ok: true,
+          status: 'connected',
+          detail: ping ? 'index present' : 'index empty (no properties)',
+          binding: 'DOSSIERS'
+        };
+      } catch(e) {
+        checks.kv = { ok: false, status: 'error', detail: String(e && e.message || e) };
+      }
+
+      // Resend
+      if (!env.RESEND_API_KEY) {
+        checks.resend = {
+          ok: false,
+          status: 'not configured',
+          detail: 'RESEND_API_KEY secret is not set on the worker'
+        };
+      } else {
+        try {
+          // Resend has no public health endpoint; the cheapest valid call is
+          // GET /domains which returns the configured sending domains. Status 200
+          // ⇒ key valid and reachable. 401 ⇒ key invalid. Network error ⇒ unreachable.
+          const resp = await fetch('https://api.resend.com/domains', {
+            headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}` }
+          });
+          if (resp.ok) {
+            let domainCount = null;
+            try {
+              const j = await resp.json();
+              if (Array.isArray(j && j.data)) domainCount = j.data.length;
+            } catch(_) {}
+            checks.resend = {
+              ok: true,
+              status: 'connected',
+              detail: domainCount === null ? 'API key valid' : (domainCount + ' sending domain(s) configured')
+            };
+          } else {
+            checks.resend = {
+              ok: false,
+              status: 'auth error',
+              detail: 'Resend returned HTTP ' + resp.status + ' — check the API key'
+            };
+          }
+        } catch(e) {
+          checks.resend = { ok: false, status: 'unreachable', detail: String(e && e.message || e) };
+        }
+      }
+
+      // Vectorize
+      if (!env.VECTORIZE) {
+        checks.vectorize = {
+          ok: false,
+          status: 'not bound',
+          detail: 'VECTORIZE binding missing from wrangler.toml or Pages config'
+        };
+      } else {
+        try {
+          // describe() returns dimensions/metric/vectorsCount for the index
+          const info = await env.VECTORIZE.describe();
+          const dims = info && (info.config && info.config.dimensions || info.dimensions);
+          const count = info && (info.vectorsCount !== undefined ? info.vectorsCount : info.vectors);
+          checks.vectorize = {
+            ok: true,
+            status: 'connected',
+            detail: 'index reachable' + (dims ? ` (${dims} dims)` : '') + (count !== undefined ? `, ${count} vectors` : ''),
+            indexName: 'thebearing-properties'
+          };
+        } catch(e) {
+          checks.vectorize = { ok: false, status: 'error', detail: String(e && e.message || e) };
+        }
+      }
+
+      // Workers AI binding (embeddings model)
+      if (!env.AI) {
+        checks.ai = {
+          ok: false,
+          status: 'not bound',
+          detail: 'AI binding missing from wrangler.toml or Pages config'
+        };
+      } else {
+        checks.ai = {
+          ok: true,
+          status: 'bound',
+          detail: 'Workers AI available (model: @cf/baai/bge-base-en-v1.5)'
+        };
+      }
+
+      // Anthropic key (Envoy)
+      checks.anthropic = env.ANTHROPIC_API_KEY
+        ? { ok: true, status: 'configured', detail: 'ANTHROPIC_API_KEY secret is set' }
+        : { ok: false, status: 'not configured', detail: 'ANTHROPIC_API_KEY secret missing — /api/envoy will fail' };
+
+      // Clerk
+      checks.clerk = env.CLERK_SECRET_KEY
+        ? { ok: true, status: 'configured', detail: 'CLERK_SECRET_KEY set — session-token verification active' }
+        : { ok: false, status: 'not configured', detail: 'CLERK_SECRET_KEY missing — falling back to email-header gate (less secure)' };
+
+      // Cron schedule + last run
+      let lastRun = null;
+      try {
+        const raw = await env.DOSSIERS.get('__cron:last_run');
+        if (raw) lastRun = JSON.parse(raw);
+      } catch(_) {}
+      checks.cron = {
+        ok: !!lastRun,
+        status: lastRun ? 'last ran ' + lastRun.ranAt : 'no runs recorded',
+        detail: lastRun
+          ? `Scanned ${lastRun.scanned} convs, sent ${lastRun.sent} reminders in ${lastRun.durationMs}ms` + (lastRun.error ? ` — error: ${lastRun.error}` : '')
+          : 'Stale-conversation cron has not yet run (or last run pre-dates v72f). Configured: hourly (0 * * * *).',
+        schedule: '0 * * * * (hourly)',
+        lastRun: lastRun
+      };
+
+      return jsonResponse({ ok: true, checks, generatedAt: new Date().toISOString() });
+    }
+
     // ── Everything else → static assets ───────────────────────────
     return env.ASSETS.fetch(request);
   },
@@ -1624,6 +1872,7 @@ async function runStaleConvReminders(env) {
   }
   const startedAt = Date.now();
   let scanned = 0, sent = 0;
+  const adminRecipients = await loadNotificationRecipients(env);
 
   try {
     const idxRaw = await env.DOSSIERS.get('__conversations_index');
@@ -1711,7 +1960,7 @@ async function runStaleConvReminders(env) {
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'The Bearing <bookings@thebearing.io>',
-            to: ['miguel@thebearing.io'],
+            to: adminRecipients,
             subject: subjects[level],
             text: adminBody
           })
@@ -1735,8 +1984,28 @@ async function runStaleConvReminders(env) {
     }
 
     console.log(`[Cron] Done in ${Date.now()-startedAt}ms. Scanned ${scanned}, sent ${sent} reminders.`);
+    // Record run for system health check
+    try {
+      await env.DOSSIERS.put('__cron:last_run', JSON.stringify({
+        ranAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt,
+        scanned: scanned,
+        sent: sent,
+        ok: true
+      }));
+    } catch(_) {}
   } catch(e) {
     console.error('[Cron] Fatal error:', e.message);
+    try {
+      await env.DOSSIERS.put('__cron:last_run', JSON.stringify({
+        ranAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt,
+        scanned: scanned,
+        sent: sent,
+        ok: false,
+        error: String(e && e.message || e)
+      }));
+    } catch(_) {}
   }
 }
 
@@ -1749,6 +2018,49 @@ function jsonResponse(obj, status = 200) {
     }
   });
 }
+
+// ── Settings helpers ──────────────────────────────────────────────
+// Notification recipients and admin allowlist are persisted in KV so they can be
+// edited via admin-settings.html without redeploying. The baseline founder
+// address `miguel@thebearing.io` (and the `admin@thebearing.io` admin login) is
+// always merged in as a failsafe so the admin can never lose access by mistake.
+
+const BASELINE_NOTIFICATION_RECIPIENT = 'miguel@thebearing.io';
+
+async function loadNotificationRecipients(env) {
+  if (!env.DOSSIERS) return [BASELINE_NOTIFICATION_RECIPIENT];
+  try {
+    const raw = await env.DOSSIERS.get('__settings:notifications');
+    if (!raw) return [BASELINE_NOTIFICATION_RECIPIENT];
+    const obj = JSON.parse(raw);
+    const list = Array.isArray(obj && obj.recipients) ? obj.recipients : [];
+    // dedupe + lowercase + baseline merge so we always notify the founder
+    const seen = {}; const out = [];
+    [BASELINE_NOTIFICATION_RECIPIENT].concat(list).forEach(function(e) {
+      const lc = String(e || '').toLowerCase().trim();
+      if (lc && !seen[lc]) { seen[lc] = 1; out.push(lc); }
+    });
+    return out.length ? out : [BASELINE_NOTIFICATION_RECIPIENT];
+  } catch(e) {
+    console.error('[Settings] notif load error:', e.message);
+    return [BASELINE_NOTIFICATION_RECIPIENT];
+  }
+}
+
+async function loadAllowlistExtras(env) {
+  if (!env.DOSSIERS) return [];
+  try {
+    const raw = await env.DOSSIERS.get('__settings:allowlist');
+    if (!raw) return [];
+    const obj = JSON.parse(raw);
+    const list = Array.isArray(obj && obj.emails) ? obj.emails : [];
+    return list.map(function(e) { return String(e || '').toLowerCase().trim(); }).filter(Boolean);
+  } catch(e) {
+    console.error('[Settings] allowlist load error:', e.message);
+    return [];
+  }
+}
+
 
 // Recomputes the aggregated unread counters from all conversations.
 // Cheap because conv list is small and KV ops are bulk-readable.

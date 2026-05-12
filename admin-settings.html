@@ -169,6 +169,42 @@ tbody tr:hover{background:var(--bg);}
 .empty-desc{font-size:13px;color:var(--text2);}
 .tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 
+/* ── EMAIL CHIP LIST ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;min-height:54px;align-items:center;}
+.chips:empty::before{content:'No addresses yet — add one below.';color:var(--text3);font-size:13px;padding:4px;}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:6px 6px 6px 12px;background:#fff;border:1px solid var(--border);border-radius:20px;font-size:13px;color:var(--text);}
+.chip.baseline{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+.chip .chip-rm{width:20px;height:20px;border-radius:50%;background:transparent;color:var(--text3);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;padding:0;transition:all .15s;}
+.chip .chip-rm:hover{background:var(--red-bg);color:var(--red);}
+.chip.baseline .chip-lock{font-size:11px;opacity:.7;margin-right:4px;}
+.chip-add{display:flex;gap:8px;margin-top:12px;}
+.chip-add input{flex:1;}
+
+/* ── HEALTH ROWS ── */
+.health-row{display:flex;align-items:flex-start;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);}
+.health-row:last-child{border-bottom:none;}
+.health-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.health-icon.ok{background:var(--emerald-bg);color:var(--emerald);}
+.health-icon.bad{background:var(--red-bg);color:var(--red);}
+.health-icon.unknown{background:var(--bg);color:var(--text3);}
+.health-body{flex:1;min-width:0;}
+.health-name{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.health-detail{font-size:13px;color:var(--text2);margin-top:3px;word-break:break-word;}
+
+/* ── INLINE FEEDBACK ── */
+.save-status{font-size:13px;color:var(--text2);margin-left:12px;opacity:0;transition:opacity .2s;}
+.save-status.show{opacity:1;}
+.save-status.ok{color:var(--emerald);}
+.save-status.err{color:var(--red);}
+
+.help-text{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:18px;}
+.help-text strong{color:var(--text);}
+
+@media(max-width:720px){
+  .form-row.c2,.form-row.c3{grid-template-columns:1fr;}
+  .page-body{padding:24px 20px;}
+}
+
 
 </style>
 <!-- Clerk Auth SDK + Admin Gate -->
@@ -217,27 +253,391 @@ window.addEventListener('load', async function() {
 </aside>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Settings</div><div class='topbar-sub'>Team, platform, and integration settings</div></div>
+  <div><div class="topbar-title">Settings</div><div class='topbar-sub'>Notification recipients, admin allowlist, and system health</div></div>
   <div class="topbar-right"></div>
 </div>
-<div class="page-body">
+<div class="page-body" style="max-width:980px;">
 
 <div class="page-header">
-  <div class="page-eyebrow">Team, platform, and integration settings</div>
+  <div class="page-eyebrow">Operations</div>
   <div class="page-title">Settings</div>
-  <div class="page-subtitle">Team members, roles, Stripe, email, API keys.</div>
+  <div class="page-subtitle">Configure who receives operational alerts, who can sign in to the admin portal, and check the health of dependent services.</div>
 </div>
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Settings</div>
-  <div class="empty-desc" style="margin-top:8px;">Team members, roles, Stripe, email, API keys.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="admin-dashboard.html" class="btn btn-ghost">← Dashboard</a>
+
+<!-- ─── SECTION 1: NOTIFICATION RECIPIENTS ─── -->
+<div class="form-section" id="sec-notifications">
+  <div class="fs-head">
+    <div class="fs-num">1</div>
+    <div style="flex:1;">
+      <div class="fs-title">Notification recipients</div>
+      <div class="fs-subtitle">Email addresses that receive booking alerts, new enquiries, conversation replies, and stale-conversation escalations.</div>
+    </div>
+    <span class="save-status" id="notif-status"></span>
   </div>
-</div></div>
+  <div class="fs-body">
+    <div class="help-text">
+      Each address here receives the same operational alerts. The founder address <strong>miguel@thebearing.io</strong> is always included as a failsafe and shown locked at the top of the list.
+    </div>
+    <div class="field">
+      <label>Recipients <span class="hint">addresses receiving admin alerts</span></label>
+      <div class="chips" id="notif-chips">
+        <span class="chip" style="opacity:.5;">Loading…</span>
+      </div>
+    </div>
+    <div class="chip-add">
+      <div class="field" style="flex:1;margin:0;">
+        <input type="email" id="notif-input" placeholder="add another recipient — e.g. team@thebearing.io" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="notif-add-btn">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SECTION 2: ADMIN ALLOWLIST ─── -->
+<div class="form-section" id="sec-allowlist">
+  <div class="fs-head">
+    <div class="fs-num">2</div>
+    <div style="flex:1;">
+      <div class="fs-title">Admin allowlist</div>
+      <div class="fs-subtitle">Email addresses authorised to sign in to the admin portal.</div>
+    </div>
+    <span class="save-status" id="allow-status"></span>
+  </div>
+  <div class="fs-body">
+    <div class="help-text">
+      Anyone signing in with a Clerk account whose primary email matches an entry here gets full admin access. <strong>admin@thebearing.io</strong> is the founder address — hardcoded in the worker and the client gate, never removable through this UI. Changes apply on the admin's next page load.
+    </div>
+    <div class="field">
+      <label>Authorised addresses</label>
+      <div class="chips" id="allow-chips">
+        <span class="chip" style="opacity:.5;">Loading…</span>
+      </div>
+    </div>
+    <div class="chip-add">
+      <div class="field" style="flex:1;margin:0;">
+        <input type="email" id="allow-input" placeholder="add another admin — e.g. partner@thebearing.io" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" id="allow-add-btn">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SECTION 3: SYSTEM HEALTH ─── -->
+<div class="form-section" id="sec-health">
+  <div class="fs-head">
+    <div class="fs-num">3</div>
+    <div style="flex:1;">
+      <div class="fs-title">System health</div>
+      <div class="fs-subtitle">Status of dependent services. Each row is a live check, not a cached value.</div>
+    </div>
+    <button class="btn btn-sm" id="health-refresh-btn" type="button">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 8a6 6 0 1 1-2-4.5"/><path d="M14 2v4h-4"/></svg>
+      Refresh
+    </button>
+  </div>
+  <div class="fs-body" style="padding:8px 28px;">
+    <div id="health-list">
+      <div style="padding:32px 0;text-align:center;color:var(--text3);font-size:13px;">Running checks…</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);padding:14px 0 4px;border-top:1px solid var(--border);margin-top:8px;" id="health-stamp"></div>
+  </div>
+</div>
+
 </div>
 </div>
 </div>
+
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:#0b0e14;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
+
+<script>
+(function(){
+  var SETTINGS_API = '/api/settings';
+  var HEALTH_API = '/api/health';
+
+  // ── Toast helper ────────────────────────────────────────────────
+  function toast(msg) {
+    var el = document.getElementById('toast');
+    el.textContent = msg;
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+    clearTimeout(window._tt);
+    window._tt = setTimeout(function() {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(10px)';
+    }, 2400);
+  }
+
+  function flashStatus(elId, ok, text) {
+    var el = document.getElementById(elId);
+    el.textContent = text;
+    el.className = 'save-status show ' + (ok ? 'ok' : 'err');
+    clearTimeout(el._t);
+    el._t = setTimeout(function(){ el.className = 'save-status'; }, 2200);
+  }
+
+  function isValidEmail(s) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s||'').toLowerCase().trim());
+  }
+
+  function escapeHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, function(c){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+    });
+  }
+
+  // ── State ───────────────────────────────────────────────────────
+  var state = {
+    notifRecipients: [],   // extras only (baseline rendered separately)
+    notifBaseline: '',
+    allowEmails: [],       // extras only
+    allowBaseline: []
+  };
+
+  // ── Renderers ───────────────────────────────────────────────────
+  function renderNotifChips() {
+    var box = document.getElementById('notif-chips');
+    var html = '';
+    if (state.notifBaseline) {
+      html += '<span class="chip baseline" title="Founder address — always included">' +
+        '<span class="chip-lock">🔒</span>' + escapeHtml(state.notifBaseline) +
+      '</span>';
+    }
+    state.notifRecipients.forEach(function(em, i) {
+      html += '<span class="chip">' + escapeHtml(em) +
+        '<button class="chip-rm" data-idx="' + i + '" data-list="notif" aria-label="Remove">×</button>' +
+      '</span>';
+    });
+    box.innerHTML = html;
+  }
+
+  function renderAllowChips() {
+    var box = document.getElementById('allow-chips');
+    var html = '';
+    state.allowBaseline.forEach(function(em) {
+      html += '<span class="chip baseline" title="Hardcoded admin — always allowed">' +
+        '<span class="chip-lock">🔒</span>' + escapeHtml(em) +
+      '</span>';
+    });
+    state.allowEmails.forEach(function(em, i) {
+      html += '<span class="chip">' + escapeHtml(em) +
+        '<button class="chip-rm" data-idx="' + i + '" data-list="allow" aria-label="Remove">×</button>' +
+      '</span>';
+    });
+    box.innerHTML = html;
+  }
+
+  // Delegated remove handler (re-renders are destructive so we can't attach on each)
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest && e.target.closest('.chip-rm');
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute('data-idx'), 10);
+    var list = btn.getAttribute('data-list');
+    if (list === 'notif') {
+      var removed = state.notifRecipients.splice(idx, 1)[0];
+      renderNotifChips();
+      saveNotif(removed ? ('Removed ' + removed) : 'Updated');
+    } else if (list === 'allow') {
+      var removed2 = state.allowEmails.splice(idx, 1)[0];
+      renderAllowChips();
+      saveAllow(removed2 ? ('Removed ' + removed2) : 'Updated');
+    }
+  });
+
+  // ── Save handlers ───────────────────────────────────────────────
+  function saveNotif(note) {
+    fetch(SETTINGS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'notifications', recipients: state.notifRecipients })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+      .then(function(res){
+        if (res.ok) {
+          // Server normalises; rehydrate to match
+          state.notifRecipients = (res.body.recipients || []).filter(function(e){
+            return e.toLowerCase() !== state.notifBaseline.toLowerCase();
+          });
+          renderNotifChips();
+          flashStatus('notif-status', true, note || 'Saved');
+        } else {
+          flashStatus('notif-status', false, (res.body && res.body.error) || 'Failed');
+        }
+      })
+      .catch(function(e){ flashStatus('notif-status', false, 'Network error'); });
+  }
+
+  function saveAllow(note) {
+    fetch(SETTINGS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'allowlist', emails: state.allowEmails })
+    }).then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+      .then(function(res){
+        if (res.ok) {
+          state.allowEmails = (res.body.emails || []).filter(function(e){
+            return state.allowBaseline.indexOf(e.toLowerCase()) === -1;
+          });
+          renderAllowChips();
+          flashStatus('allow-status', true, note || 'Saved');
+        } else {
+          flashStatus('allow-status', false, (res.body && res.body.error) || 'Failed');
+        }
+      })
+      .catch(function(e){ flashStatus('allow-status', false, 'Network error'); });
+  }
+
+  // ── Add handlers ────────────────────────────────────────────────
+  function attachAdd(inputId, btnId, listKey, baselineKey, render, save) {
+    var input = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
+    function add() {
+      var v = String(input.value || '').toLowerCase().trim();
+      if (!v) return;
+      if (!isValidEmail(v)) {
+        toast('That doesn\u2019t look like a valid email.');
+        return;
+      }
+      // Already present? (baseline or extras)
+      var inBaseline = (function(){
+        var b = state[baselineKey];
+        if (Array.isArray(b)) return b.indexOf(v) !== -1;
+        return String(b||'').toLowerCase() === v;
+      })();
+      if (inBaseline) {
+        toast('That address is already included as a baseline.');
+        input.value = '';
+        return;
+      }
+      if (state[listKey].indexOf(v) !== -1) {
+        toast('Already in the list.');
+        input.value = '';
+        return;
+      }
+      state[listKey].push(v);
+      input.value = '';
+      render();
+      save('Added ' + v);
+    }
+    btn.addEventListener('click', add);
+    input.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') { e.preventDefault(); add(); }
+    });
+  }
+
+  attachAdd('notif-input', 'notif-add-btn', 'notifRecipients', 'notifBaseline', renderNotifChips, saveNotif);
+  attachAdd('allow-input', 'allow-add-btn', 'allowEmails', 'allowBaseline', renderAllowChips, saveAllow);
+
+  // ── Health rendering ───────────────────────────────────────────
+  var HEALTH_LABELS = {
+    kv:        { name: 'Cloudflare KV',        sub: 'DOSSIERS namespace — site\u2019s primary store' },
+    resend:    { name: 'Resend',               sub: 'Transactional email — bookings, enquiries, escalations' },
+    vectorize: { name: 'Cloudflare Vectorize', sub: 'RAG index for Envoy AI (L4)' },
+    ai:        { name: 'Workers AI',           sub: 'Embedding model for Vectorize' },
+    anthropic: { name: 'Anthropic API',        sub: 'Envoy AI proxy / dossier drafting' },
+    clerk:     { name: 'Clerk',                sub: 'Sign-in + admin session verification' },
+    cron:      { name: 'Stale-conversation cron', sub: 'Hourly trigger — 24h/48h/72h escalations' }
+  };
+  var HEALTH_ORDER = ['kv', 'resend', 'vectorize', 'ai', 'anthropic', 'clerk', 'cron'];
+
+  function statusBadgeClass(ok) {
+    return ok ? 'badge-green' : 'badge-red';
+  }
+
+  function renderHealth(data) {
+    var list = document.getElementById('health-list');
+    if (!data || !data.checks) {
+      list.innerHTML = '<div style="padding:32px 0;text-align:center;color:var(--red);font-size:13px;">Health check failed to load.</div>';
+      return;
+    }
+    var html = '';
+    HEALTH_ORDER.forEach(function(key){
+      var c = data.checks[key];
+      if (!c) return;
+      var meta = HEALTH_LABELS[key] || { name: key, sub: '' };
+      var iconClass = c.ok ? 'ok' : 'bad';
+      var iconChar = c.ok ? '✓' : '!';
+      var badgeClass = statusBadgeClass(c.ok);
+      html += '<div class="health-row">' +
+        '<div class="health-icon ' + iconClass + '" style="font-size:16px;font-weight:700;">' + iconChar + '</div>' +
+        '<div class="health-body">' +
+          '<div class="health-name">' + escapeHtml(meta.name) +
+            ' <span class="badge ' + badgeClass + '">' + escapeHtml(c.status || (c.ok ? 'ok' : 'error')) + '</span>' +
+          '</div>' +
+          '<div class="health-detail">' + escapeHtml(meta.sub) + (c.detail ? ' — ' + escapeHtml(c.detail) : '') + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+    list.innerHTML = html;
+    var stamp = document.getElementById('health-stamp');
+    if (data.generatedAt) {
+      stamp.textContent = 'Checked ' + new Date(data.generatedAt).toLocaleString();
+    }
+  }
+
+  function runHealth() {
+    var btn = document.getElementById('health-refresh-btn');
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+    document.getElementById('health-list').innerHTML =
+      '<div style="padding:32px 0;text-align:center;color:var(--text3);font-size:13px;">Running checks…</div>';
+    fetch(HEALTH_API, { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(renderHealth)
+      .catch(function(err){
+        document.getElementById('health-list').innerHTML =
+          '<div style="padding:32px 0;text-align:center;color:var(--red);font-size:13px;">Health check error: ' + escapeHtml(String(err)) + '</div>';
+      })
+      .finally(function(){
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+  }
+  document.getElementById('health-refresh-btn').addEventListener('click', runHealth);
+
+  // ── Initial load ───────────────────────────────────────────────
+  function loadSettings() {
+    fetch(SETTINGS_API, { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function(data){
+        var n = data.notifications || {};
+        var a = data.allowlist || {};
+        state.notifBaseline = (n.baseline || '').toLowerCase();
+        state.notifRecipients = (n.recipients || [])
+          .map(function(x){ return String(x||'').toLowerCase(); })
+          .filter(function(x){ return x && x !== state.notifBaseline; });
+        state.allowBaseline = (a.baseline || []).map(function(x){ return String(x||'').toLowerCase(); });
+        state.allowEmails = (a.emails || [])
+          .map(function(x){ return String(x||'').toLowerCase(); })
+          .filter(function(x){ return x && state.allowBaseline.indexOf(x) === -1; });
+        renderNotifChips();
+        renderAllowChips();
+      })
+      .catch(function(err){
+        document.getElementById('notif-chips').innerHTML =
+          '<span class="chip" style="opacity:.7;color:var(--red);">Failed to load settings — ' + escapeHtml(String(err)) + '</span>';
+        document.getElementById('allow-chips').innerHTML =
+          '<span class="chip" style="opacity:.7;color:var(--red);">Failed to load settings.</span>';
+      });
+  }
+
+  // Wait for admin-gate.js to authorise (it reveals body when ready) before kicking off API calls.
+  // admin-fetch.js needs Clerk.user to attach auth headers; the simplest guarantee is to wait
+  // for the gate's body-reveal, then start. Poll briefly (the gate removes the hide-style element).
+  function waitForReveal(cb) {
+    var maxWait = 18000;
+    var startedAt = Date.now();
+    var t = setInterval(function(){
+      var stillHidden = document.getElementById('admin-gate-hide');
+      if (!stillHidden) { clearInterval(t); cb(); return; }
+      if (Date.now() - startedAt > maxWait) { clearInterval(t); cb(); }
+    }, 200);
+  }
+
+  waitForReveal(function(){
+    loadSettings();
+    runHealth();
+  });
+})();
+</script>
 
 <script src="/assets/admin-sidebar-badge.js"></script>
 </body>

@@ -1,5 +1,5 @@
 # TheBearing.io — Handoff Document
-> Last updated: 2026-05-12 | Current build: v72e
+> Last updated: 2026-05-12 | Current build: v72g
 
 ---
 
@@ -55,6 +55,9 @@ TheBearing.io is a curated luxury travel platform. Miguel is founder and works h
 | `/api/upload` | POST | Cloudflare Images upload |
 | `/api/index` | POST/DELETE | Embed + upsert content into Vectorize / delete vectors |
 | `/api/clerk-webhook` | POST | Clerk auth webhook handler |
+| `/api/settings` | GET/POST | Admin-gated. Read/write notification recipients + allowlist extras. Stored at `__settings:notifications` and `__settings:allowlist` |
+| `/api/settings/allowlist-public` | GET | **Unauthenticated**. Returns merged admin allowlist (baseline + KV extras). Read by `assets/admin-gate.js` on every admin page load |
+| `/api/health` | GET | Admin-gated. Live status of KV / Resend / Vectorize / Workers AI / Anthropic / Clerk / cron last-run |
 
 ### KV Key Conventions
 ```
@@ -68,6 +71,9 @@ __index_hotels         → JSON {slugs:[...]} curated hotel order
 __index_villas         → JSON {slugs:[...]} curated villa order
 member:{id}            → member JSON
 __members_index        → JSON array of member IDs
+__settings:notifications → JSON {recipients:[email], updatedAt} — admin alert recipients
+__settings:allowlist   → JSON {emails:[email], updatedAt} — extra admin sign-in addresses
+__cron:last_run        → JSON {ranAt, durationMs, scanned, sent, ok, error?} — set by stale-conv cron each run
 ```
 
 ---
@@ -161,12 +167,25 @@ Standard partner-facing pages: dashboard, listings, bookings, photos, rooms, ava
 - tbAuthBook(config) — auth-gated booking opener
 - All enquiry + book buttons on property pages gated
 
+### Admin allowlist (as of v72g)
+- **Baseline:** `admin@thebearing.io` — hardcoded in `functions/api/envoy.js` (`ADMIN_EMAILS_BASELINE`) and `assets/admin-gate.js`. Never removable through the UI; it's the failsafe so a bad settings edit can't lock everyone out.
+- **Extras:** Stored in KV at `__settings:allowlist`. Edited from `admin-settings.html`. Read by the worker via `loadAllowlistExtras()` and by `admin-gate.js` via `/api/settings/allowlist-public` on every admin page load (3s cap, baseline-only on fetch failure).
+- To add a new admin: sign in to admin-settings.html → section 2 → add email → save. Takes effect on that admin's next page load (no redeploy)
+
+
 ## Booking System
 - /api/booking — POST saves to KV, GET lists all, PATCH updates status
 - KV key: booking:{ref}, index: __bookings_index
 - Email via Resend (RESEND_API_KEY secret in worker)
 - admin-bookings.html — real KV data, filter/confirm/cancel
 - Pricing: roomPrice is per-trip flat rate
+- **Recipient emails** for all operational admin alerts (booking, enquiry, conv reply, inbound email, 48h/72h stale escalation) are configurable from `admin-settings.html` and stored at `__settings:notifications`. `miguel@thebearing.io` is always merged in as a baseline failsafe.
+
+## Queued / Deferred (as of v72g)
+- **admin-analytics wiring** — deferred until there's real traffic to chart. Page exists at `admin-analytics.html` but is a stub.
+- **admin-payments (Stripe integration)** — deferred until there are real bookings to take payment for. Page exists at `admin-payments.html`.
+- **L5 / L6 of Envoy roadmap** — global cross-property RAG index + persistent per-user memory. See section below.
+
 | L5 | 🔲 Pending | Cross-property index for compare/recommend queries |
 | L6 | 🔲 Pending | Persistent per-user conversational memory |
 
@@ -287,6 +306,8 @@ id = "aa0c885871474266966e50f0676dd019"
 ## Build History (recent)
 | Build | Key changes |
 |-------|-------------|
+| v72g | **admin-settings.html built out.** Three sections: (1) Notification recipients — chip-list editor, baseline `miguel@thebearing.io` locked & always included; (2) Admin allowlist — chip-list editor, baseline `admin@thebearing.io` locked; (3) System health — live checks for KV, Resend (validates API key via `/domains`), Vectorize (`describe()`), Workers AI, Anthropic, Clerk, and cron last-run. Worker: `__settings:notifications` and `__settings:allowlist` KV-backed; 5 hardcoded `to:['miguel@thebearing.io']` recipients refactored to `loadNotificationRecipients()`; `ADMIN_EMAILS` refactored to `getAllowlist()` merging baseline + KV extras. New endpoints: `/api/settings` (GET/POST admin-gated), `/api/settings/allowlist-public` (GET unauth — used by client gate), `/api/health` (GET admin-gated). `assets/admin-gate.js` extended to fetch dynamic allowlist on every admin page load, 3s cap, baseline-only on failure. Cron persists `__cron:last_run` with `{ranAt, durationMs, scanned, sent, ok}` for the health check |
+| v72f | (build packaged but history row not recorded — inherited zip from previous session)  |
 | v72e | Envoy drawer positioning fix: lens/saved/bookings/preferences had dark-theme styling but were missing `position:fixed; right:0; width:25vw; transform:translateX(100%)` base rules — drawer rendered without positioning, breaking layout. Patched all 4 pages with full positioning + open-state + body-push + responsive rules |
 | v72d | Conversation pages dead-space fix at bottom of viewport: customer (`account-wrap` padding-top + height calc overflowed by 66px → set `height:100dvh; box-sizing:border-box`), admin (was subtracting 60px for a topbar that doesn't exist → `height:100vh`), partner (`calc(100vh - 200px)` over-budgeted → `flex:1; min-height:0`) |
 | v72c | property.html hardening: 12s safety timeout, granular error messages instead of generic, console diagnostics, isolated renderProperty try/catch, loadSimilar chained as `.catch()` so it can't block main render. Fixed `/property?slug=` (no .html) in similar cards + admin-property-editor preview button |
