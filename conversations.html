@@ -499,7 +499,8 @@
 <style>
 /* ── Channels full-height layout overrides ── */
 html, body { height: 100%; }
-.account-wrap { height: calc(100dvh - var(--nav-h)); min-height: unset; align-items: stretch; }
+/* Use box-sizing so padding-top (nav-h) is INSIDE the height, not added to it */
+.account-wrap { height: 100dvh; min-height: unset; align-items: stretch; box-sizing: border-box; }
 
 /* ─────────────────────────────────────────────────────────────
    CONVERSATIONS — guest view, premium messaging UI
