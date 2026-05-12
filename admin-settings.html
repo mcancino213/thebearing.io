@@ -556,7 +556,14 @@ window.addEventListener('load', async function() {
       var iconClass = c.ok ? 'ok' : 'bad';
       var iconChar = c.ok ? '✓' : '!';
       var badgeClass = statusBadgeClass(c.ok);
-      html += '<div class="health-row">' +
+      // The cron row gets an action button — "Run now" to trigger manually.
+      // Useful for confirming the cron code works (regardless of schedule) and
+      // for catching up on escalations after secret/config changes.
+      var actionHtml = '';
+      if (key === 'cron') {
+        actionHtml = '<button class="btn btn-sm" id="cron-run-now-btn" type="button" style="margin-left:auto;flex-shrink:0;">Run now</button>';
+      }
+      html += '<div class="health-row" style="align-items:center;">' +
         '<div class="health-icon ' + iconClass + '" style="font-size:16px;font-weight:700;">' + iconChar + '</div>' +
         '<div class="health-body">' +
           '<div class="health-name">' + escapeHtml(meta.name) +
@@ -564,6 +571,7 @@ window.addEventListener('load', async function() {
           '</div>' +
           '<div class="health-detail">' + escapeHtml(meta.sub) + (c.detail ? ' — ' + escapeHtml(c.detail) : '') + '</div>' +
         '</div>' +
+        actionHtml +
       '</div>';
     });
     list.innerHTML = html;
@@ -571,6 +579,33 @@ window.addEventListener('load', async function() {
     if (data.generatedAt) {
       stamp.textContent = 'Checked ' + new Date(data.generatedAt).toLocaleString();
     }
+    // Wire the Run-now button (re-rendered each refresh so re-attach every time)
+    var runBtn = document.getElementById('cron-run-now-btn');
+    if (runBtn) runBtn.addEventListener('click', runCron);
+  }
+
+  function runCron() {
+    var btn = document.getElementById('cron-run-now-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Running…'; btn.style.opacity = '.6'; }
+    fetch('/api/cron/run', { method: 'POST', cache: 'no-store' })
+      .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+      .then(function(res){
+        if (res.ok && res.body && res.body.lastRun) {
+          var lr = res.body.lastRun;
+          if (lr.skipped) {
+            toast('Cron skipped: ' + lr.skipped);
+          } else {
+            toast('Cron ran: scanned ' + (lr.scanned||0) + ' convs, sent ' + (lr.sent||0) + ' reminders in ' + (lr.durationMs||0) + 'ms');
+          }
+        } else {
+          toast('Cron run failed: ' + ((res.body && res.body.error) || 'unknown error'));
+        }
+      })
+      .catch(function(e){ toast('Cron run error: ' + (e && e.message || e)); })
+      .finally(function(){
+        // Re-fetch health so the cron row updates with the new lastRun data
+        runHealth();
+      });
   }
 
   function runHealth() {

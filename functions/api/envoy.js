@@ -1860,17 +1860,41 @@ View in admin: https://thebearing.io/admin-bookings.html
         const raw = await env.DOSSIERS.get('__cron:last_run');
         if (raw) lastRun = JSON.parse(raw);
       } catch(_) {}
+      let cronDetail;
+      if (!lastRun) {
+        cronDetail = 'Stale-conversation cron has not yet run (or last run pre-dates v72f). Configured: hourly (0 * * * *).';
+      } else if (lastRun.skipped) {
+        cronDetail = `Last ran ${new Date(lastRun.ranAt).toLocaleString()} but was skipped: ${lastRun.skipped}`;
+      } else {
+        cronDetail = `Scanned ${lastRun.scanned} convs, sent ${lastRun.sent} reminders in ${lastRun.durationMs}ms` + (lastRun.error ? ` — error: ${lastRun.error}` : '');
+      }
       checks.cron = {
-        ok: !!lastRun,
-        status: lastRun ? 'last ran ' + lastRun.ranAt : 'no runs recorded',
-        detail: lastRun
-          ? `Scanned ${lastRun.scanned} convs, sent ${lastRun.sent} reminders in ${lastRun.durationMs}ms` + (lastRun.error ? ` — error: ${lastRun.error}` : '')
-          : 'Stale-conversation cron has not yet run (or last run pre-dates v72f). Configured: hourly (0 * * * *).',
+        ok: !!lastRun && !lastRun.skipped && !lastRun.error,
+        status: lastRun ? (lastRun.skipped ? 'skipped' : (lastRun.error ? 'errored' : 'last ran ' + new Date(lastRun.ranAt).toLocaleString())) : 'no runs recorded',
+        detail: cronDetail,
         schedule: '0 * * * * (hourly)',
         lastRun: lastRun
       };
 
       return jsonResponse({ ok: true, checks, generatedAt: new Date().toISOString() });
+    }
+
+    // ── /api/cron/run ─────────────────────────────────────────────
+    // Admin-gated. Triggers the stale-conversation cron synchronously and returns
+    // the result. Useful for: (a) confirming cron code works without waiting for
+    // the next scheduled tick, (b) catching up on escalations after a deploy.
+    // Also writes __cron:last_run, so the health card flips green after a run.
+    if (url.pathname === '/api/cron/run') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      await runStaleConvReminders(env);
+      // Read back what was just written so the response includes the run summary
+      let lastRun = null;
+      try {
+        const raw = await env.DOSSIERS.get('__cron:last_run');
+        if (raw) lastRun = JSON.parse(raw);
+      } catch(_) {}
+      return jsonResponse({ ok: true, lastRun });
     }
 
     // ── Everything else → static assets ───────────────────────────
@@ -1891,11 +1915,28 @@ const REMINDER_48H = 48 * 60 * 60 * 1000;
 const REMINDER_72H = 72 * 60 * 60 * 1000;
 
 async function runStaleConvReminders(env) {
-  if (!env.DOSSIERS || !env.RESEND_API_KEY) {
-    console.log('[Cron] Skipping — missing DOSSIERS or RESEND_API_KEY');
+  const startedAt = Date.now();
+  // Record skipped runs so the health card distinguishes "skipped because Resend
+  // missing" from "actually never ran." Without this, an early return left
+  // __cron:last_run unwritten and the health card stayed amber forever.
+  if (!env.DOSSIERS) {
+    console.log('[Cron] Skipping — DOSSIERS not bound');
     return;
   }
-  const startedAt = Date.now();
+  if (!env.RESEND_API_KEY) {
+    console.log('[Cron] Skipping — RESEND_API_KEY missing');
+    try {
+      await env.DOSSIERS.put('__cron:last_run', JSON.stringify({
+        ranAt: new Date().toISOString(),
+        durationMs: Date.now() - startedAt,
+        scanned: 0,
+        sent: 0,
+        ok: true,
+        skipped: 'RESEND_API_KEY missing — no escalations could be sent'
+      }));
+    } catch(_) {}
+    return;
+  }
   let scanned = 0, sent = 0;
   const adminRecipients = await loadNotificationRecipients(env);
 
