@@ -585,11 +585,38 @@ export default {
         if (!body.slug || typeof body.slug !== 'string') {
           return jsonResponse({ error: 'slug required (string)' }, 400);
         }
+        // Special case: the three curated listing-order keys (`__index_hotels`,
+        // `__index_cruises`, `__index_villas`) are legitimate writes via this
+        // endpoint — they store `{slugs:[...]}` arrays controlling the order
+        // properties appear on public listing pages. The admin "Save order"
+        // button posts to them. Validate the payload shape, write, and return
+        // — don't add to __property_index, don't apply the regular slug rules.
+        const slugLower = body.slug.trim().toLowerCase();
+        const ALLOWED_INDEX_SLUGS = ['__index_hotels', '__index_cruises', '__index_villas'];
+        if (ALLOWED_INDEX_SLUGS.indexOf(slugLower) !== -1) {
+          if (!body.property || typeof body.property !== 'object' || !Array.isArray(body.property.slugs)) {
+            return jsonResponse({ error: 'curated-index payload must be { slugs: [...] }' }, 400);
+          }
+          // Filter the slugs array itself — never let real `__*` junk into the curated lists
+          const cleanSlugs = body.property.slugs.filter(function(s) {
+            return typeof s === 'string' && s.length > 0 && !s.startsWith('__');
+          });
+          const indexPayload = JSON.stringify({
+            slugs: cleanSlugs,
+            updatedAt: new Date().toISOString()
+          });
+          // Store under TWO keys for compatibility:
+          //   `{slug}:property` — what /api/property?slug=__index_X reads (legacy path)
+          //   `{slug}`          — direct key (preferred going forward)
+          await env.DOSSIERS.put(slugLower + ':property', indexPayload);
+          await env.DOSSIERS.put(slugLower, indexPayload);
+          return jsonResponse({ ok: true, slug: slugLower, slugs: cleanSlugs });
+        }
         // Reject reserved/internal slugs and any slug that would collide with KV
         // key conventions (`__settings:*`, `__cron:*`, `__index_*`, `__property_index`,
         // `member:*`, `booking:*`, `conversation:*`, etc.). Slug must be url-safe and
         // not start with `__`, not contain `:`, and not be one of a few reserved words.
-        const slugVal = body.slug.trim().toLowerCase();
+        const slugVal = slugLower;
         const reserved = ['property', 'properties', 'admin', 'api', 'settings', 'health', 'cron'];
         if (slugVal.length < 2 || slugVal.length > 80) {
           return jsonResponse({ error: 'slug must be 2-80 characters' }, 400);
