@@ -97,12 +97,19 @@ export default {
       }
 
       // Path 2: Email header fallback. Always runs if Path 1 didn't return true.
-      // Less secure (spoofable) but raises the bar past random guessing.
+      // admin-fetch.js sends ALL the user's emails as a comma-separated list
+      // (primary + secondaries), so accounts with a non-admin primary email but
+      // an admin secondary (e.g. gmail primary + admin@thebearing.io secondary)
+      // are still recognised. Less secure than session-token verification but
+      // raises the bar past random guessing.
       if (emailHeader) {
-        const lc = emailHeader.toLowerCase().trim();
-        const ok = allowlist.indexOf(lc) !== -1;
-        if (!ok) console.log('[Admin] Email header path: not in allowlist. email=', lc, 'allowlist=', allowlist.join(','));
-        return ok;
+        const candidates = emailHeader.split(',').map(function(s) {
+          return s.toLowerCase().trim();
+        }).filter(Boolean);
+        const matched = candidates.find(function(em) { return allowlist.indexOf(em) !== -1; });
+        if (matched) return true;
+        console.log('[Admin] Email header path: no candidate in allowlist. candidates=', candidates.join('|'), 'allowlist=', allowlist.join('|'));
+        return false;
       }
 
       console.log('[Admin] No auth headers present');
