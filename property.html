@@ -1372,16 +1372,45 @@ function cfThumb(u){return u?(u+'').replace(/\/public$|\/thumb$|\/w=\d+$/,'/thum
 
 async function loadProperty(){
   var slug=new URLSearchParams(location.search).get('slug')||'';
-  if(!slug){showError();return;}
+  if(!slug){console.log('[Property] No slug in URL');showError('No property slug provided in URL.');return;}
   if(!PROP_API){showDev(slug);return;}
+  console.log('[Property] Loading slug:', slug);
+
+  // Safety: if the whole load takes more than 12s, show error so user isn't stuck
+  var stuck=setTimeout(function(){
+    if(document.getElementById('prop-loading').style.display!=='none'){
+      console.warn('[Property] Load timed out after 12s for slug:', slug);
+      showError('Loading is taking too long. Please refresh the page.');
+    }
+  },12000);
+
   try{
     var res=await fetch(PROP_API+'?slug='+encodeURIComponent(slug));
+    if(!res.ok){clearTimeout(stuck);console.log('[Property] HTTP', res.status);showError('Could not load property data (HTTP '+res.status+').');return;}
     var d=await res.json();
-    if(!res.ok||!d.exists||!d.data){showError();return;}
+    if(!d.exists||!d.data){
+      clearTimeout(stuck);
+      console.log('[Property] Slug not found in KV:', slug, '— data:', d);
+      showError('"'+slug+'" hasn\u2019t been added to The Bearing yet.');
+      return;
+    }
     propData=d.data;
-    renderProperty(d.data,slug);
-    loadSimilar(d.data,slug);
-  }catch(e){showError();}
+    try {
+      renderProperty(d.data,slug);
+    } catch(renderErr) {
+      clearTimeout(stuck);
+      console.error('[Property] renderProperty failed for slug:', slug, renderErr);
+      showError('Property data is missing some required fields. (See console for details.)');
+      return;
+    }
+    clearTimeout(stuck);
+    // loadSimilar is allowed to fail silently — it shouldn't block the main render
+    loadSimilar(d.data,slug).catch(function(e){console.log('[Similar] failed:', e.message);});
+  }catch(e){
+    clearTimeout(stuck);
+    console.error('[Property] loadProperty error:', e);
+    showError('Could not load property: '+e.message);
+  }
 }
 
 async function loadSimilar(p, currentSlug){
@@ -1458,7 +1487,7 @@ async function loadSimilar(p, currentSlug){
       var photo = (q.photos&&q.photos.hero&&q.photos.hero[0]&&q.photos.hero[0].url) || '';
       var region = (q.render&&q.render.location_line) || q.region || q.country || '';
       var price = (q.rooms&&q.rooms[0]&&q.rooms[0].price) ? 'From $'+parseInt(q.rooms[0].price).toLocaleString()+'pp' : '';
-      var href = '/property?slug='+encodeURIComponent(slug);
+      var href = '/property.html?slug='+encodeURIComponent(slug);
       return '<div class="sim-card" onclick="window.location=\''+href+'\'">'
         +(photo?'<div class="sim-img"><img src="'+esc(photo)+'" alt="'+esc(q.name||'')+'" loading="lazy"></div>':'<div class="sim-img"></div>')
         +'<div class="sim-body">'
@@ -1472,7 +1501,17 @@ async function loadSimilar(p, currentSlug){
   }catch(e){ console.log('[Similar]',e.message); }
 }
 
-function showError(){hide('prop-loading');document.getElementById('prop-error').style.display='flex';}
+function showError(msg){
+  hide('prop-loading');
+  var err=document.getElementById('prop-error');
+  if(err){
+    err.style.display='flex';
+    if(msg){
+      var p=err.querySelector('p');
+      if(p) p.textContent=msg;
+    }
+  }
+}
 function showDev(slug){showError();document.querySelector('#prop-error h1').textContent='Dev mode';document.querySelector('#prop-error p').textContent='"'+slug+'" — deploy to Cloudflare to render.';}
 
 function renderProperty(p,slug){

@@ -3567,9 +3567,7 @@ function propRestore(fields) {
 function propPreview() {
   var slug = propCurrentSlug();
   if (!slug) { propShowStatus('Set a property name or slug first.', 'error'); return; }
-  var url = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/property?slug=' + encodeURIComponent(slug)
-    : '/property.html?slug=' + encodeURIComponent(slug);
+  var url = '/property.html?slug=' + encodeURIComponent(slug);
   window.open(url, '_blank');
 }
 
