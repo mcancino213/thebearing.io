@@ -548,6 +548,7 @@ tbody tr:hover{background:var(--bg);}
 <div class="copy-flash" id="copy-flash">Copied to clipboard</div>
 
 <script src="/assets/conv-presence.js"></script>
+<script src="/assets/conv-scroll.js"></script>
 <script>
 var VIEWER_ROLE = 'partner';
 var PP_SLUG = 'nour-el-nil'; // Partner's property slug
@@ -886,7 +887,7 @@ function renderThread(conv, messages) {
   quotedMessage = null;
   renderContextPanel(conv);
 
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 50);
+  window.pinToBottom(wrap);
 }
 
 function renderMessagesInto(wrap, conv, messages) {
@@ -1322,7 +1323,7 @@ function refreshMessages(conv, messages) {
     }
     playNotificationSound();
   }
-  wrap.scrollTop = wrap.scrollHeight;
+  window.pinToBottom(wrap, { observe: false });
 }
 
 function startPoll(id) {

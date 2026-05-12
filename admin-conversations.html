@@ -821,6 +821,7 @@ window.addEventListener('load', async function() {
 </script>
 <script src="/assets/admin-gate.js"></script>
 <script src="/assets/admin-fetch.js"></script>
+<script src="/assets/conv-scroll.js"></script>
 <script src="/assets/admin-sidebar-user.js"></script>
 </head>
 <body data-page="conversations">
@@ -1318,7 +1319,7 @@ function renderThread(conv, messages) {
   quotedMessage = null;
   renderContextPanel(conv);
 
-  setTimeout(function() { wrap.scrollTop = wrap.scrollHeight; }, 50);
+  window.pinToBottom(wrap);
 }
 
 function fmtDaySep(date) {
@@ -2027,7 +2028,9 @@ function refreshMessages(conv, messages) {
     playNotificationSound();
   }
 
-  wrap.scrollTop = wrap.scrollHeight;
+  // New messages arrived via polling — pin to bottom without ResizeObserver
+  // since the layout is already settled.
+  window.pinToBottom(wrap, { observe: false });
 }
 
 function startPolling(id) {

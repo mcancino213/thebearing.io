@@ -1297,6 +1297,7 @@ window.addEventListener('load', async function() {
 </script>
 
 <script src="/assets/conv-presence.js"></script>
+<script src="/assets/conv-scroll.js"></script>
 <script>
 var chConvs = [];
 var chActiveId = null;
@@ -1740,7 +1741,7 @@ function chRenderThread(conv, msgs) {
   chQuotedMessage = null;
   chRenderContextPanel(conv);
 
-  setTimeout(function() { msgsWrap.scrollTop = msgsWrap.scrollHeight; }, 50);
+  window.pinToBottom(msgsWrap);
 }
 
 // Shared message rendering
@@ -2191,7 +2192,7 @@ function chRefreshMessages(conv, msgs) {
     }
     chPlayNotificationSound();
   }
-  wrap.scrollTop = wrap.scrollHeight;
+  window.pinToBottom(wrap, { observe: false });
 }
 
 function chStartPoll(id) {
