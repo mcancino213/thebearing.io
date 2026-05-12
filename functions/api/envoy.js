@@ -878,20 +878,40 @@ export default {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
 
       // GET — list all bookings or fetch one
+      // v72y: backfills `offers` (array) and `active_offer_id` (string|null)
+      // on read. Idempotent — records already with these fields are untouched.
+      // Adds `?slug=X` filter so partner portal can scope to its property.
+      function backfillBookingShape(b) {
+        if (!b || typeof b !== 'object') return b;
+        if (!Array.isArray(b.offers)) b.offers = [];
+        if (typeof b.active_offer_id === 'undefined') b.active_offer_id = null;
+        return b;
+      }
       if (request.method === 'GET') {
         const ref = url.searchParams.get('ref');
         if (ref) {
           const raw = await env.DOSSIERS.get('booking:' + ref);
-          const data = raw ? JSON.parse(raw) : null;
+          const data = raw ? backfillBookingShape(JSON.parse(raw)) : null;
           return jsonResponse({ ref, data, exists: !!data });
         }
+        const slugFilter = url.searchParams.get('slug');
         const rawIndex = await env.DOSSIERS.get('__bookings_index');
         const refs = rawIndex ? JSON.parse(rawIndex) : [];
-        const bookings = await Promise.all(refs.map(async (r) => {
+        let bookings = await Promise.all(refs.map(async (r) => {
           const raw = await env.DOSSIERS.get('booking:' + r);
-          return raw ? { ref: r, ...JSON.parse(raw) } : null;
+          if (!raw) return null;
+          const parsed = backfillBookingShape(JSON.parse(raw));
+          return { ref: r, ...parsed };
         }));
-        return jsonResponse({ bookings: bookings.filter(Boolean).reverse() });
+        bookings = bookings.filter(Boolean);
+        if (slugFilter) {
+          // Partner-scoped view: only bookings for this property.
+          // Match against the canonical `slug` field. Bookings without a slug
+          // are excluded from partner views (they shouldn't exist post-v72y
+          // since the booking POST always stores slug now).
+          bookings = bookings.filter(function(b) { return b.slug === slugFilter; });
+        }
+        return jsonResponse({ bookings: bookings.reverse() });
       }
 
       // POST — create a booking
@@ -2127,6 +2147,297 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (raw) lastRun = JSON.parse(raw);
       } catch(_) {}
       return jsonResponse({ ok: true, lastRun });
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // ── Offers (v72y) ────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // An offer is the partner's structured proposal for an enquiry — dates,
+    // room, total price, inclusions, terms, validity. The deposit (= total
+    // × commission_pct / 100) is collected by TheBearing if the member
+    // accepts; the rest is settled directly between member and partner.
+    //
+    // KV schema:
+    //   offer:{id}                 — full offer JSON record
+    //   __offers_by_booking:{ref}  — array of offer IDs belonging to one booking
+    //
+    // Each booking record carries `offers: [ids]` and `active_offer_id`
+    // (the most recently-sent, not-yet-superseded offer). The "active" offer
+    // is what the member sees on /bookings/{ref}.
+    //
+    // Lifecycle states:
+    //   draft     — partner is editing, not yet sent. Not visible to member.
+    //   sent      — partner has sent. Visible to member. Awaits response.
+    //   accepted  — member accepted. Stripe Checkout triggered (v72z).
+    //   declined  — member declined. Conversation can continue, partner can
+    //               build a fresh offer.
+    //   changes_requested — member requested adjustments. Partner builds a
+    //               revised offer (which supersedes this one).
+    //   superseded — replaced by a newer offer. Frozen for audit history.
+    //   expired   — valid_until passed without response. Cron job (future)
+    //               will flip these automatically; for v72y, expiry is
+    //               checked client-side on render.
+    //   withdrawn — partner cancelled before member responded.
+    //
+    // Authorization for v72y:
+    //   GET (by id or booking)     — public for now; member's /bookings
+    //                                page reads via this endpoint
+    //   POST/PATCH                 — NOT YET AUTHENTICATED. Partner portal
+    //                                lacks a real auth layer (hardcoded
+    //                                PP_SLUG). Real partner auth is on the
+    //                                deferred work list. In test mode this
+    //                                is acceptable; before going live we
+    //                                MUST add partner authentication.
+    if (url.pathname === '/api/offer') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // ─ GET ─
+      // ?id=X           → single offer
+      // ?bookingId=X    → all offers for a booking, oldest first
+      if (request.method === 'GET') {
+        const id = url.searchParams.get('id');
+        if (id) {
+          const raw = await env.DOSSIERS.get('offer:' + id);
+          if (!raw) return jsonResponse({ id, data: null, exists: false });
+          return jsonResponse({ id, data: JSON.parse(raw), exists: true });
+        }
+        const bookingId = url.searchParams.get('bookingId');
+        if (!bookingId) {
+          return jsonResponse({ error: 'id or bookingId required' }, 400);
+        }
+        const idxRaw = await env.DOSSIERS.get('__offers_by_booking:' + bookingId);
+        const ids = idxRaw ? JSON.parse(idxRaw) : [];
+        const offers = await Promise.all(ids.map(async (oid) => {
+          const raw = await env.DOSSIERS.get('offer:' + oid);
+          return raw ? JSON.parse(raw) : null;
+        }));
+        return jsonResponse({ bookingId, offers: offers.filter(Boolean) });
+      }
+
+      // ─ POST ─
+      // Create a new offer. Body required:
+      //   { bookingId, propertySlug, [trip fields], total_amount, ... }
+      // Computes deposit from property's commission_pct (rejects if commission
+      // not set — that's where v72x's null becomes truly required). Auto-
+      // generates ID, sets status to "draft" unless `sendImmediately:true`.
+      // Updates booking record's `offers` array. If `sendImmediately`, also
+      // sets booking.active_offer_id.
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const required = ['bookingId', 'propertySlug', 'total_amount'];
+        for (const k of required) {
+          if (body[k] === undefined || body[k] === null || body[k] === '') {
+            return jsonResponse({ error: 'missing field: ' + k }, 400);
+          }
+        }
+        const total = Number(body.total_amount);
+        if (!isFinite(total) || total <= 0) {
+          return jsonResponse({ error: 'total_amount must be a positive number' }, 400);
+        }
+        // Look up the property to grab the commission rate. Snapshot the rate
+        // into the offer so future changes to the property don't retroactively
+        // alter existing offers.
+        const propRaw = await env.DOSSIERS.get(body.propertySlug + ':property');
+        if (!propRaw) {
+          return jsonResponse({ error: 'property not found: ' + body.propertySlug }, 404);
+        }
+        let prop;
+        try { prop = JSON.parse(propRaw); }
+        catch (e) { return jsonResponse({ error: 'property record corrupt' }, 500); }
+        const commissionPct = (typeof prop.commission_pct === 'number') ? prop.commission_pct : null;
+        if (commissionPct === null) {
+          return jsonResponse({
+            error: 'Cannot create offer: property ' + body.propertySlug +
+                   ' has no commission_pct set. Set it in admin-property-editor first.'
+          }, 400);
+        }
+        // Verify booking exists. We don't enforce booking ownership here
+        // (no real partner auth yet), just integrity.
+        const bookingRaw = await env.DOSSIERS.get('booking:' + body.bookingId);
+        if (!bookingRaw) {
+          return jsonResponse({ error: 'booking not found: ' + body.bookingId }, 404);
+        }
+        const booking = JSON.parse(bookingRaw);
+        if (!Array.isArray(booking.offers)) booking.offers = [];
+
+        // Generate offer ID. Format mirrors booking ref for consistency.
+        const year = new Date().getFullYear();
+        const rand = Math.floor(10000 + Math.random() * 90000);
+        const offerId = 'OFR-' + year + '-' + rand;
+        const now = new Date().toISOString();
+
+        // Compute deposit. Keep 2-decimal precision to avoid float weirdness.
+        const depositAmount = Math.round(total * commissionPct) / 100;
+
+        // Default validity: 7 days from now if not specified.
+        let validUntil = body.valid_until;
+        if (!validUntil) {
+          validUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        }
+
+        const inclusions = Array.isArray(body.inclusions)
+          ? body.inclusions.filter(function(x) { return typeof x === 'string' && x.trim().length > 0; }).map(function(x) { return x.trim(); })
+          : [];
+
+        const sendImmediately = body.sendImmediately === true;
+
+        const offer = {
+          id: offerId,
+          bookingId: body.bookingId,
+          propertySlug: body.propertySlug,
+          propertyName: body.propertyName || prop.name || '',
+          // Trip details
+          arrival: body.arrival || '',
+          departure: body.departure || '',
+          nights: body.nights || 0,
+          guests: body.guests || 0,
+          room: body.room || '',
+          // Pricing
+          pricing_mode: body.pricing_mode === 'per_night' ? 'per_night' : 'package',
+          nightly_rate: Number(body.nightly_rate) || 0,
+          total_amount: total,
+          currency: 'USD',
+          commission_pct_at_time: commissionPct,
+          deposit_amount: depositAmount,
+          // Structured content
+          inclusions: inclusions,
+          exclusions: typeof body.exclusions === 'string' ? body.exclusions.trim() : '',
+          cancellation_terms: typeof body.cancellation_terms === 'string' ? body.cancellation_terms.trim() : '',
+          partner_notes: typeof body.partner_notes === 'string' ? body.partner_notes.trim() : '',
+          // Lifecycle
+          status: sendImmediately ? 'sent' : 'draft',
+          valid_until: validUntil,
+          created_at: now,
+          sent_at: sendImmediately ? now : null,
+          responded_at: null,
+          supersedes: body.supersedes || null,
+          superseded_by: null,
+        };
+
+        // If this offer supersedes a previous one, flip the previous to
+        // "superseded" status and link both directions.
+        if (offer.supersedes) {
+          const prevRaw = await env.DOSSIERS.get('offer:' + offer.supersedes);
+          if (prevRaw) {
+            const prev = JSON.parse(prevRaw);
+            prev.status = 'superseded';
+            prev.superseded_by = offerId;
+            await env.DOSSIERS.put('offer:' + prev.id, JSON.stringify(prev));
+          }
+        }
+
+        // Write the offer
+        await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(offer));
+
+        // Append to per-booking offers index
+        const offerIdxKey = '__offers_by_booking:' + body.bookingId;
+        const idxRaw = await env.DOSSIERS.get(offerIdxKey);
+        const ids = idxRaw ? JSON.parse(idxRaw) : [];
+        ids.push(offerId);
+        await env.DOSSIERS.put(offerIdxKey, JSON.stringify(ids));
+
+        // Update booking record
+        booking.offers = (booking.offers || []).concat([offerId]);
+        if (sendImmediately) {
+          booking.active_offer_id = offerId;
+          booking.status = 'offer_sent';
+        } else if (!booking.active_offer_id && booking.status === 'pending') {
+          // Stays pending — draft doesn't change booking-level state
+        }
+        booking.updatedAt = now;
+        await env.DOSSIERS.put('booking:' + body.bookingId, JSON.stringify(booking));
+
+        return jsonResponse({ ok: true, offer });
+      }
+
+      // ─ PATCH ─
+      // Update an offer. Body required: { id, ...fields }
+      // Allowed transitions (state machine):
+      //   draft → sent (via action:'send')
+      //   draft → withdrawn (via action:'withdraw')
+      //   sent  → withdrawn (via action:'withdraw') — partner pulls offer back
+      // Field edits are only allowed when status === 'draft'.
+      // accepted/declined/changes_requested transitions are member-driven
+      // and come in v72z; for now PATCH only handles partner-side state.
+      if (request.method === 'PATCH') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        if (!body.id) return jsonResponse({ error: 'id required' }, 400);
+
+        const raw = await env.DOSSIERS.get('offer:' + body.id);
+        if (!raw) return jsonResponse({ error: 'offer not found' }, 404);
+        const offer = JSON.parse(raw);
+
+        const now = new Date().toISOString();
+
+        if (body.action === 'send') {
+          if (offer.status !== 'draft') {
+            return jsonResponse({ error: 'can only send from draft, current: ' + offer.status }, 400);
+          }
+          offer.status = 'sent';
+          offer.sent_at = now;
+          // Update booking
+          const brRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+          if (brRaw) {
+            const booking = JSON.parse(brRaw);
+            booking.active_offer_id = offer.id;
+            booking.status = 'offer_sent';
+            booking.updatedAt = now;
+            await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
+          }
+        } else if (body.action === 'withdraw') {
+          if (offer.status !== 'draft' && offer.status !== 'sent') {
+            return jsonResponse({ error: 'can only withdraw from draft or sent' }, 400);
+          }
+          offer.status = 'withdrawn';
+          offer.responded_at = now;
+          // Clear booking.active_offer_id if it was this one
+          const brRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+          if (brRaw) {
+            const booking = JSON.parse(brRaw);
+            if (booking.active_offer_id === offer.id) {
+              booking.active_offer_id = null;
+              booking.status = 'pending';
+            }
+            booking.updatedAt = now;
+            await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
+          }
+        } else if (body.action === 'edit-draft') {
+          if (offer.status !== 'draft') {
+            return jsonResponse({ error: 'can only edit drafts, current: ' + offer.status }, 400);
+          }
+          // Apply field updates. Re-validate critical fields.
+          const editable = ['arrival', 'departure', 'nights', 'guests', 'room',
+                            'pricing_mode', 'nightly_rate', 'total_amount',
+                            'inclusions', 'exclusions', 'cancellation_terms',
+                            'partner_notes', 'valid_until'];
+          for (const k of editable) {
+            if (body[k] !== undefined) offer[k] = body[k];
+          }
+          // Recompute deposit if total or commission changed (commission can't
+          // change post-create — it's frozen at the snapshotted rate).
+          if (typeof offer.total_amount === 'number' && typeof offer.commission_pct_at_time === 'number') {
+            offer.deposit_amount = Math.round(offer.total_amount * offer.commission_pct_at_time) / 100;
+          }
+          // Sanitize inclusions
+          if (Array.isArray(offer.inclusions)) {
+            offer.inclusions = offer.inclusions
+              .filter(function(x) { return typeof x === 'string' && x.trim().length > 0; })
+              .map(function(x) { return x.trim(); });
+          }
+        } else {
+          return jsonResponse({ error: 'unknown action: ' + body.action }, 400);
+        }
+
+        await env.DOSSIERS.put('offer:' + offer.id, JSON.stringify(offer));
+        return jsonResponse({ ok: true, offer });
+      }
+
+      return new Response('Method not allowed', { status: 405 });
     }
 
     // ── Stripe health check (admin-gated) ─────────────────────────

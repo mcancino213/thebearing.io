@@ -206,48 +206,645 @@ tbody tr:hover{background:var(--bg);}
 <div class="page-header">
   <div class="page-eyebrow">Enquiries & bookings</div>
   <div class="page-title">Bookings</div>
-  <div class="page-subtitle">All bookings from The Bearing guests.</div>
+  <div class="page-subtitle">Enquiries from The Bearing guests. Build an offer when a guest enquires, then send it for their approval.</div>
 </div>
 
-<div class="stats-grid cols-4" style="margin-bottom:24px;">
-  <div class="stat-tile"><div class="stat-label">This season</div><div class="stat-value">23</div><div class="stat-delta">↑ 5 vs last season</div></div>
-  <div class="stat-tile"><div class="stat-label">Confirmed revenue</div><div class="stat-value" style="font-size:24px;">$82,600</div><div class="stat-delta">↑ 22%</div></div>
-  <div class="stat-tile"><div class="stat-label">Avg booking value</div><div class="stat-value" style="font-size:24px;">$5,840</div></div>
-  <div class="stat-tile"><div class="stat-label">Avg lead time</div><div class="stat-value">68 <span style="font-size:16px;font-family:'DM Sans'">days</span></div></div>
+<!-- ── KPI tiles · driven by real KV data ── -->
+<div class="stats-grid cols-4" style="margin-bottom:24px;" id="kpi-grid">
+  <div class="stat-tile"><div class="stat-label">Open enquiries</div><div class="stat-value" id="kpi-enquiries" style="color:var(--text3);">—</div><div class="stat-delta" style="color:var(--text2);" id="kpi-enquiries-sub">Loading…</div></div>
+  <div class="stat-tile"><div class="stat-label">Offers sent</div><div class="stat-value" id="kpi-offers" style="color:var(--text3);">—</div><div class="stat-delta" style="color:var(--text2);" id="kpi-offers-sub">Awaiting response</div></div>
+  <div class="stat-tile"><div class="stat-label">Confirmed</div><div class="stat-value" id="kpi-confirmed" style="color:var(--text3);">—</div><div class="stat-delta" style="color:var(--text2);" id="kpi-confirmed-sub">Paid deposit</div></div>
+  <div class="stat-tile"><div class="stat-label">Avg lead time</div><div class="stat-value" id="kpi-leadtime" style="color:var(--text3);">—</div><div class="stat-delta" style="color:var(--text2);" id="kpi-leadtime-sub">Days to arrival</div></div>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <div><div class="card-title">All bookings</div></div>
+    <div><div class="card-title">All bookings</div><div class="card-subtitle" id="bookings-count">Loading…</div></div>
     <div class="card-header-right">
-      <input class="filter-input" style="width:240px;" placeholder="Search guest, ref…">
-      <div class="filter-tabs">
-        <button class="filter-tab active">All</button>
-        <button class="filter-tab">Confirmed</button>
-        <button class="filter-tab">Pending</button>
-        <button class="filter-tab">Past</button>
+      <input class="filter-input" id="bk-search" style="width:240px;" placeholder="Search guest, ref…">
+      <div class="filter-tabs" id="bk-tabs">
+        <button class="filter-tab active" data-filter="all">All</button>
+        <button class="filter-tab" data-filter="enquiry">Enquiries</button>
+        <button class="filter-tab" data-filter="offer_sent">Offers sent</button>
+        <button class="filter-tab" data-filter="confirmed">Confirmed</button>
       </div>
     </div>
   </div>
   <div class="card-body" style="padding:0;">
     <div class="table-wrap">
-    <table>
-      <thead><tr><th>Ref</th><th>Guest</th><th>Dates</th><th>Boat</th><th>Cabin</th><th>Pax</th><th>Value</th><th>Status</th><th></th></tr></thead>
-      <tbody>
-        <tr><td><span style="font-family:'JetBrains Mono',mono;font-size:12px;color:var(--text2);">TB-2025-0847</span></td><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">SA</div><div style="font-size:14px;font-weight:500;">Sarah Alderton</div></div></td><td><div style="font-weight:500;font-size:14px;">Apr 15–21</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td><td>Poppee</td><td>Panoramic Suite</td><td>2</td><td style="font-weight:600;">$12,400</td><td><span class="badge badge-green">Confirmed</span></td><td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><span style="font-family:'JetBrains Mono',mono;font-size:12px;color:var(--text2);">TB-2025-0901</span></td><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div><div style="font-size:14px;font-weight:500;">Thomas Müller</div></div></td><td><div style="font-weight:500;font-size:14px;">May 3–9</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td><td>Najafa</td><td>Luxury Room ×2</td><td>4</td><td style="font-weight:600;">$18,200</td><td><span class="badge badge-amber">Pending confirmation</span></td><td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><span style="font-family:'JetBrains Mono',mono;font-size:12px;color:var(--text2);">TB-2025-0912</span></td><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">PC</div><div style="font-size:14px;font-weight:500;">Patricia Chen</div></div></td><td><div style="font-weight:500;font-size:14px;">May 18–24</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td><td>Roman</td><td>Deluxe Suite</td><td>2</td><td style="font-weight:600;">$9,800</td><td><span class="badge badge-green">Confirmed</span></td><td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><span style="font-family:'JetBrains Mono',mono;font-size:12px;color:var(--text2);">TB-2024-0791</span></td><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">JL</div><div style="font-size:14px;font-weight:500;">Jean-Luc Fontaine</div></div></td><td><div style="font-weight:500;font-size:14px;">Nov 4–10, 2024</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td><td>Poppee</td><td>Deluxe Suite</td><td>2</td><td style="font-weight:600;">$10,800</td><td><span class="badge badge-gray">Completed</span></td><td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td></tr>
-        <tr><td><span style="font-family:'JetBrains Mono',mono;font-size:12px;color:var(--text2);">TB-2024-0744</span></td><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#dc2626,#f87171);">AK</div><div style="font-size:14px;font-weight:500;">Amelia Kovacs</div></div></td><td><div style="font-weight:500;font-size:14px;">Oct 15–21, 2024</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td><td>Roman</td><td>Panoramic Suite</td><td>2</td><td style="font-weight:600;">$8,700</td><td><span class="badge badge-gray">Completed</span></td><td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td></tr>
-      </tbody>
-    </table>
+      <table>
+        <thead><tr><th>Ref</th><th>Guest</th><th>Dates</th><th>Pax</th><th>Status</th><th>Offer / value</th><th></th></tr></thead>
+        <tbody id="bookings-tbody">
+          <tr><td colspan="7" style="padding:48px;text-align:center;color:var(--text3);font-size:13px;">Loading bookings…</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>
 
+</div><!-- /page-body -->
+</div><!-- /main-area -->
+</div><!-- /app -->
+
+<!-- ── OFFER BUILDER MODAL ── -->
+<!--
+  Single modal reused for both "build new offer" and "revise existing offer."
+  When revising, opens with previous offer's values pre-filled and submits
+  with `supersedes: oldOfferId` so the worker links them.
+
+  Layout: full-screen overlay with a right-anchored sheet on desktop, full
+  on mobile. Form fields mirror the offer schema in functions/api/envoy.js.
+-->
+<div id="offer-modal" style="position:fixed;inset:0;z-index:200;display:none;background:rgba(15,17,23,.5);backdrop-filter:blur(4px);">
+  <div style="position:absolute;right:0;top:0;bottom:0;width:min(720px,100vw);background:var(--surface);box-shadow:-12px 0 32px rgba(0,0,0,.16);display:flex;flex-direction:column;">
+    <!-- Modal header -->
+    <div style="padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;">
+      <div style="width:38px;height:38px;border-radius:10px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="#c17f3e" stroke-width="1.5"><path d="M2 4h12v9H2zM5 1v3M11 1v3M2 7h12"/></svg>
+      </div>
+      <div style="flex:1;">
+        <div id="om-title" style="font-size:16px;font-weight:600;color:var(--text);">Build offer</div>
+        <div id="om-sub" style="font-size:13px;color:var(--text2);margin-top:2px;">For booking TB-2026-XXXX · Guest Name</div>
+      </div>
+      <button onclick="closeOfferModal()" style="background:transparent;border:none;padding:8px;cursor:pointer;color:var(--text2);font-size:22px;line-height:1;">×</button>
+    </div>
+
+    <!-- Modal body — scrollable form -->
+    <div style="flex:1;overflow-y:auto;padding:24px 28px;">
+      <div id="om-error" style="display:none;padding:12px 14px;background:var(--red-bg);color:var(--red);border-radius:8px;font-size:13px;margin-bottom:20px;"></div>
+
+      <!-- Trip details -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;">Trip details</div>
+      <div class="form-row c3">
+        <div class="field"><label>Arrival</label><input type="date" id="om-arrival"></div>
+        <div class="field"><label>Departure</label><input type="date" id="om-departure"></div>
+        <div class="field"><label>Nights<span class="hint">auto</span></label><input type="text" id="om-nights" readonly style="background:var(--bg);color:var(--text2);"></div>
+      </div>
+      <div class="form-row c2">
+        <div class="field"><label>Guests</label><input type="number" id="om-guests" min="1" max="40" placeholder="2"></div>
+        <div class="field"><label>Room / package</label><input type="text" id="om-room" placeholder="Pool Villa · 7-night charter · ..."></div>
+      </div>
+
+      <!-- Pricing -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin:24px 0 12px;">Pricing</div>
+      <div class="form-row c1">
+        <div class="field">
+          <label>Pricing mode</label>
+          <div style="display:flex;gap:8px;">
+            <button type="button" class="om-mode-btn" data-mode="package" onclick="setPricingMode('package')" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);background:var(--bg);border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;">Package total<div style="font-size:12px;font-weight:400;color:var(--text3);margin-top:2px;">One all-in price (charter, package, fixed itinerary)</div></button>
+            <button type="button" class="om-mode-btn" data-mode="per_night" onclick="setPricingMode('per_night')" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);background:var(--bg);border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;">Per-night × nights<div style="font-size:12px;font-weight:400;color:var(--text3);margin-top:2px;">Nightly rate × number of nights</div></button>
+          </div>
+        </div>
+      </div>
+      <div id="om-pricing-fields" class="form-row c2">
+        <!-- Populated by setPricingMode() — either a single Total field or Nightly × Nights -->
+      </div>
+      <div id="om-deposit-preview" style="background:var(--accent-bg);border:1px solid rgba(193,127,62,.25);border-radius:10px;padding:14px 16px;margin-top:12px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">Deposit (TheBearing commission)</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;" id="om-deposit-detail">— at —% of $—</div>
+          </div>
+          <div style="font-size:22px;font-weight:600;color:var(--accent);font-family:'Fraunces',serif;" id="om-deposit-amount">$0</div>
+        </div>
+      </div>
+
+      <!-- Inclusions -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin:24px 0 12px;">Included in this offer</div>
+      <div id="om-inclusions-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+        <!-- One-line inclusion items, dynamically managed -->
+      </div>
+      <button type="button" onclick="addInclusion('')" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:transparent;border:1.5px dashed var(--border-hi);color:var(--text2);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">+ Add inclusion</button>
+
+      <!-- Exclusions / terms / notes -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin:24px 0 12px;">Terms</div>
+      <div class="form-row c1">
+        <div class="field"><label>Excluded / additional charges<span class="hint">free text</span></label><textarea id="om-exclusions" placeholder="Premium wines, spa treatments, gratuities" style="min-height:60px;"></textarea></div>
+      </div>
+      <div class="form-row c1">
+        <div class="field"><label>Cancellation terms<span class="hint">required</span></label><textarea id="om-cancellation" placeholder="Fully refundable until 60 days before arrival. Cancellations within 60 days forfeit 50% of total." style="min-height:70px;"></textarea></div>
+      </div>
+      <div class="form-row c1">
+        <div class="field"><label>Notes to guest<span class="hint">optional</span></label><textarea id="om-notes" placeholder="Looking forward to hosting you and your family. Let us know if you'd like to add the private guide upgrade." style="min-height:60px;"></textarea></div>
+      </div>
+      <div class="form-row c2">
+        <div class="field"><label>Offer valid until<span class="hint">defaults to 7 days</span></label><input type="date" id="om-valid-until"></div>
+        <div class="field"><label style="visibility:hidden;">spacer</label></div>
+      </div>
+    </div>
+
+    <!-- Modal footer -->
+    <div style="padding:16px 28px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;background:#fafafa;">
+      <button onclick="saveOfferDraft()" class="btn btn-sm">Save as draft</button>
+      <div style="flex:1;"></div>
+      <button onclick="closeOfferModal()" class="btn btn-ghost btn-sm">Cancel</button>
+      <button onclick="sendOffer()" class="btn btn-primary btn-sm">Send offer to guest →</button>
+    </div>
+  </div>
 </div>
-</div>
-</div>
+
+<!-- ── TOAST ── -->
+<div id="pp-toast" style="position:fixed;bottom:24px;right:24px;background:#0b0e14;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;"></div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// pp-bookings — real data from /api/booking + offer builder modal.
+//
+// v72y replaced the dummy data block (hardcoded Sarah Alderton / Thomas
+// Müller etc.) with real KV-backed bookings scoped to PP_SLUG, plus a
+// modal-driven offer builder. The page does:
+//
+//   1. On load: fetch /api/booking?slug=PP_SLUG → render table + KPIs
+//   2. Filter tabs (All / Enquiries / Offers sent / Confirmed) toggle visibility
+//   3. Search box does client-side filter over name / email / ref
+//   4. "Build offer" button on enquiry-stage bookings opens the modal
+//   5. Modal collects offer fields, POST /api/offer with sendImmediately
+//   6. Refresh booking list to reflect new state
+//
+// Notes:
+// - PP_SLUG is hardcoded to 'nour-el-nil' (same as the rest of the partner
+//   portal). Real partner auth is on the deferred list — see HANDOFF.
+// - Booking statuses we surface: pending (= enquiry), offer_sent, confirmed,
+//   cancelled. The partner can revise offers when status is offer_sent.
+// ════════════════════════════════════════════════════════════════════
+
+var PP_SLUG = 'nour-el-nil';
+var ALL_BOOKINGS = [];        // last-fetched list
+var CURRENT_FILTER = 'all';
+var CURRENT_SEARCH = '';
+
+// Offer modal state — stored separately from the form fields so we can
+// distinguish new offers from revisions of an existing one.
+var modalState = {
+  bookingRef: null,
+  bookingGuest: null,
+  supersedesId: null,   // if non-null, this submit creates a revision
+  pricingMode: 'package',
+  commissionPct: null,  // looked up from the property at modal-open time
+  propertyName: null
+};
+
+// ── Toast helper ───────────────────────────────────────────────────
+function ppToast(msg, kind) {
+  var el = document.getElementById('pp-toast');
+  el.textContent = msg;
+  el.style.background = kind === 'error' ? '#dc2626' : kind === 'ok' ? '#059669' : '#0b0e14';
+  el.style.opacity = '1';
+  el.style.transform = 'translateY(0)';
+  clearTimeout(window._ppt);
+  window._ppt = setTimeout(function() {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+  }, 2800);
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+  });
+}
+function initials(name) {
+  return String(name || '?').split(/\s+/).map(function(w){return (w[0]||'').toUpperCase();}).slice(0,2).join('');
+}
+function fmtUSD(n) {
+  var num = Number(n) || 0;
+  return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+function fmtDateRange(arrival, departure, nights) {
+  if (!arrival || !departure) return '<span style="color:var(--text3);">Dates TBD</span>';
+  try {
+    var a = new Date(arrival), d = new Date(departure);
+    var aOpts = { month: 'short', day: 'numeric' };
+    var dOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    return '<div style="font-weight:500;font-size:14px;">' + a.toLocaleDateString('en-US', aOpts) + ' – ' + d.toLocaleDateString('en-US', dOpts) + '</div>' +
+           '<div style="font-size:12px;color:var(--text2);">' + (nights || '?') + ' nights</div>';
+  } catch(e) {
+    return '<span style="color:var(--text3);">Invalid dates</span>';
+  }
+}
+
+// Booking status → user-facing badge + label.
+// Note: legacy bookings (pre-v72y) used status = 'pending'/'confirmed'/'cancelled'.
+// v72y adds 'offer_sent' as the state between enquiry submission and acceptance.
+// We treat 'pending' and absence-of-status as "enquiry" for filtering purposes.
+function statusBadge(b) {
+  var s = (b.status || 'pending').toLowerCase();
+  if (s === 'confirmed') return '<span class="badge badge-green">Confirmed</span>';
+  if (s === 'offer_sent') return '<span class="badge badge-blue">Offer sent</span>';
+  if (s === 'cancelled') return '<span class="badge badge-red">Cancelled</span>';
+  if (s === 'completed') return '<span class="badge badge-gray">Completed</span>';
+  return '<span class="badge badge-amber">Enquiry</span>';
+}
+function bookingFilterCategory(b) {
+  var s = (b.status || 'pending').toLowerCase();
+  if (s === 'confirmed' || s === 'completed') return 'confirmed';
+  if (s === 'offer_sent') return 'offer_sent';
+  return 'enquiry';
+}
+
+// ── Rendering ──────────────────────────────────────────────────────
+function renderBookings() {
+  var tbody = document.getElementById('bookings-tbody');
+  if (!tbody) return;
+  var q = (CURRENT_SEARCH || '').toLowerCase().trim();
+  var rows = ALL_BOOKINGS.filter(function(b) {
+    if (CURRENT_FILTER !== 'all' && bookingFilterCategory(b) !== CURRENT_FILTER) return false;
+    if (!q) return true;
+    var hay = [b.ref, b.firstname, b.lastname, b.email].join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  if (!rows.length) {
+    var msg = ALL_BOOKINGS.length === 0
+      ? 'No bookings yet. Guests who enquire about this property will appear here.'
+      : 'No bookings match this filter.';
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:64px 24px;text-align:center;color:var(--text3);font-size:13px;">' + msg + '</td></tr>';
+    document.getElementById('bookings-count').textContent = ALL_BOOKINGS.length + ' total';
+    return;
+  }
+
+  var html = '';
+  rows.forEach(function(b) {
+    var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || '—');
+    var category = bookingFilterCategory(b);
+    // Action button changes by state:
+    //   enquiry   → "Build offer"
+    //   offer_sent → "Revise offer"
+    //   confirmed → "View"  (detail view comes later — for now just View)
+    var actionBtn;
+    if (category === 'enquiry') {
+      actionBtn = '<button class="btn btn-primary btn-sm" onclick="openOfferModal(\'' + escHtml(b.ref) + '\', null)">Build offer</button>';
+    } else if (category === 'offer_sent') {
+      actionBtn = '<button class="btn btn-sm" onclick="openOfferModal(\'' + escHtml(b.ref) + '\', \'revise\')">Revise offer</button>';
+    } else {
+      actionBtn = '<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed;">View</button>';
+    }
+
+    // Offer / value column shows different content per state.
+    var offerCol;
+    if (category === 'enquiry') {
+      offerCol = '<div style="color:var(--text3);font-size:13px;">No offer yet</div>';
+    } else if (category === 'offer_sent' && b.active_offer_id) {
+      offerCol = '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:var(--text2);">' + escHtml(b.active_offer_id) + '</div><div style="font-size:12px;color:var(--text3);">Awaiting guest response</div>';
+    } else if (b.totalAmount) {
+      offerCol = '<div style="font-weight:600;">' + fmtUSD(b.totalAmount) + '</div>';
+    } else {
+      offerCol = '<span style="color:var(--text3);">—</span>';
+    }
+
+    html += '<tr>' +
+      '<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text2);">' + escHtml(b.ref) + '</span></td>' +
+      '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escHtml(initials(guestName)) + '</div><div><div style="font-size:14px;font-weight:500;">' + escHtml(guestName) + '</div><div style="font-size:12px;color:var(--text3);">' + escHtml(b.email || '') + '</div></div></div></td>' +
+      '<td>' + fmtDateRange(b.arrival, b.departure, b.nights) + '</td>' +
+      '<td>' + escHtml(b.guests || '') + '</td>' +
+      '<td>' + statusBadge(b) + '</td>' +
+      '<td>' + offerCol + '</td>' +
+      '<td style="text-align:right;">' + actionBtn + '</td>' +
+    '</tr>';
+  });
+  tbody.innerHTML = html;
+  document.getElementById('bookings-count').textContent = rows.length + ' of ' + ALL_BOOKINGS.length;
+}
+
+function renderKPIs() {
+  var enquiries = 0, offersSent = 0, confirmed = 0, leadTimeSum = 0, leadTimeCount = 0;
+  var now = Date.now();
+  ALL_BOOKINGS.forEach(function(b) {
+    var cat = bookingFilterCategory(b);
+    if (cat === 'enquiry') enquiries++;
+    else if (cat === 'offer_sent') offersSent++;
+    else if (cat === 'confirmed') confirmed++;
+    if (b.arrival) {
+      try {
+        var days = Math.round((new Date(b.arrival).getTime() - now) / (24*60*60*1000));
+        if (days > 0) { leadTimeSum += days; leadTimeCount++; }
+      } catch(_) {}
+    }
+  });
+  function setVal(id, v, subId, subText) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.textContent = v;
+      el.style.color = (v === 0 || v === '—') ? 'var(--text3)' : 'var(--text)';
+    }
+    if (subId) {
+      var sub = document.getElementById(subId);
+      if (sub && subText) sub.textContent = subText;
+    }
+  }
+  setVal('kpi-enquiries', enquiries, 'kpi-enquiries-sub', enquiries === 0 ? 'No open enquiries' : 'Awaiting offer');
+  setVal('kpi-offers', offersSent, 'kpi-offers-sub', offersSent === 0 ? 'No offers out' : 'Awaiting response');
+  setVal('kpi-confirmed', confirmed, 'kpi-confirmed-sub', 'Paid deposit');
+  var leadTime = leadTimeCount > 0 ? Math.round(leadTimeSum / leadTimeCount) : '—';
+  setVal('kpi-leadtime', leadTime, 'kpi-leadtime-sub', leadTime === '—' ? 'No upcoming' : 'Days until arrival');
+}
+
+// ── Load ───────────────────────────────────────────────────────────
+function loadBookings() {
+  fetch('/api/booking?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+    .then(function(data) {
+      ALL_BOOKINGS = (data && data.bookings) || [];
+      renderBookings();
+      renderKPIs();
+    })
+    .catch(function(err) {
+      console.error('[pp-bookings] load failed:', err);
+      var tbody = document.getElementById('bookings-tbody');
+      if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="padding:64px 24px;text-align:center;color:var(--red);font-size:13px;">Failed to load bookings. Check console for details.</td></tr>';
+    });
+}
+
+// ── Filter / search wiring ─────────────────────────────────────────
+document.addEventListener('click', function(e) {
+  var tab = e.target.closest('.filter-tab');
+  if (!tab) return;
+  CURRENT_FILTER = tab.dataset.filter || 'all';
+  document.querySelectorAll('#bk-tabs .filter-tab').forEach(function(b) { b.classList.remove('active'); });
+  tab.classList.add('active');
+  renderBookings();
+});
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'bk-search') {
+    CURRENT_SEARCH = e.target.value;
+    renderBookings();
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════
+// ── Offer builder modal ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════
+
+function openOfferModal(bookingRef, mode) {
+  var b = ALL_BOOKINGS.find(function(x) { return x.ref === bookingRef; });
+  if (!b) { ppToast('Booking not found: ' + bookingRef, 'error'); return; }
+
+  // Look up commission_pct from the property. We need it to compute the
+  // deposit preview live in the modal. The /api/property GET response
+  // backfills commission_pct to null for legacy records (v72x change).
+  fetch('/api/property?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(propResp) {
+      var prop = propResp && propResp.data;
+      if (!prop) { ppToast('Property not found in KV', 'error'); return; }
+      if (typeof prop.commission_pct !== 'number') {
+        ppToast('Commission percentage not set for this property — set it in admin first', 'error');
+        return;
+      }
+      // Set up modal state
+      modalState.bookingRef = bookingRef;
+      modalState.bookingGuest = ((b.firstname||'') + ' ' + (b.lastname||'')).trim() || b.email;
+      modalState.supersedesId = null;
+      modalState.commissionPct = prop.commission_pct;
+      modalState.propertyName = prop.name || PP_SLUG;
+      modalState.pricingMode = 'package';
+
+      // Title
+      document.getElementById('om-title').textContent = mode === 'revise' ? 'Revise offer' : 'Build offer';
+      document.getElementById('om-sub').textContent = 'For booking ' + bookingRef + ' · ' + modalState.bookingGuest;
+
+      // Default field values from the booking
+      document.getElementById('om-arrival').value = b.arrival || '';
+      document.getElementById('om-departure').value = b.departure || '';
+      document.getElementById('om-nights').value = b.nights || '';
+      document.getElementById('om-guests').value = b.guests || '';
+      document.getElementById('om-room').value = b.room || '';
+      document.getElementById('om-exclusions').value = '';
+      document.getElementById('om-cancellation').value = '';
+      document.getElementById('om-notes').value = '';
+      // Default valid_until = 7 days out
+      var sevenOut = new Date(Date.now() + 7*24*60*60*1000);
+      document.getElementById('om-valid-until').value = sevenOut.toISOString().slice(0, 10);
+      // Clear inclusions list
+      document.getElementById('om-inclusions-list').innerHTML = '';
+
+      // If revising, fetch the previous offer and prefill
+      if (mode === 'revise' && b.active_offer_id) {
+        fetch('/api/offer?id=' + encodeURIComponent(b.active_offer_id))
+          .then(function(r) { return r.json(); })
+          .then(function(resp) {
+            if (resp && resp.data) {
+              var prev = resp.data;
+              modalState.supersedesId = prev.id;
+              document.getElementById('om-arrival').value = prev.arrival || '';
+              document.getElementById('om-departure').value = prev.departure || '';
+              document.getElementById('om-nights').value = prev.nights || '';
+              document.getElementById('om-guests').value = prev.guests || '';
+              document.getElementById('om-room').value = prev.room || '';
+              document.getElementById('om-exclusions').value = prev.exclusions || '';
+              document.getElementById('om-cancellation').value = prev.cancellation_terms || '';
+              document.getElementById('om-notes').value = prev.partner_notes || '';
+              if (prev.valid_until) document.getElementById('om-valid-until').value = prev.valid_until.slice(0, 10);
+              (prev.inclusions || []).forEach(function(item) { addInclusion(item); });
+              setPricingMode(prev.pricing_mode || 'package');
+              if (prev.pricing_mode === 'per_night') {
+                document.getElementById('om-nightly').value = prev.nightly_rate || '';
+              } else {
+                document.getElementById('om-total').value = prev.total_amount || '';
+              }
+              updateDepositPreview();
+            }
+          });
+      } else {
+        // Default to package mode, one empty inclusion row to invite input
+        setPricingMode('package');
+      }
+
+      // Show modal
+      document.getElementById('offer-modal').style.display = 'block';
+      document.getElementById('om-error').style.display = 'none';
+    })
+    .catch(function(err) {
+      ppToast('Failed to load property: ' + err, 'error');
+    });
+}
+
+function closeOfferModal() {
+  document.getElementById('offer-modal').style.display = 'none';
+}
+
+function setPricingMode(mode) {
+  modalState.pricingMode = mode;
+  document.querySelectorAll('.om-mode-btn').forEach(function(btn) {
+    var on = btn.dataset.mode === mode;
+    btn.style.borderColor = on ? 'var(--accent)' : 'var(--border)';
+    btn.style.background = on ? 'var(--accent-bg)' : 'var(--bg)';
+    btn.style.color = on ? 'var(--accent)' : 'var(--text2)';
+  });
+  var f = document.getElementById('om-pricing-fields');
+  if (mode === 'per_night') {
+    f.innerHTML =
+      '<div class="field"><label>Nightly rate (USD)<span class="req">*</span></label><input type="number" id="om-nightly" min="0" step="1" placeholder="800" oninput="recomputeFromNightly()"></div>' +
+      '<div class="field"><label>Total<span class="hint">auto from nightly × nights</span></label><input type="number" id="om-total" readonly style="background:var(--bg);color:var(--text2);"></div>';
+  } else {
+    f.innerHTML =
+      '<div class="field"><label>Package total (USD)<span class="req">*</span></label><input type="number" id="om-total" min="0" step="1" placeholder="8400" oninput="updateDepositPreview()"></div>' +
+      '<div class="field"><label>Equivalent nightly<span class="hint">auto</span></label><input type="text" id="om-nightly-eq" readonly style="background:var(--bg);color:var(--text2);"></div>';
+  }
+  // Date listeners
+  ['om-arrival','om-departure'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', recomputeNights);
+  });
+  recomputeNights();
+  updateDepositPreview();
+}
+
+function recomputeNights() {
+  var a = document.getElementById('om-arrival').value;
+  var d = document.getElementById('om-departure').value;
+  if (!a || !d) return;
+  try {
+    var nights = Math.round((new Date(d).getTime() - new Date(a).getTime()) / (24*60*60*1000));
+    if (nights > 0) {
+      document.getElementById('om-nights').value = nights;
+    } else {
+      document.getElementById('om-nights').value = '';
+    }
+  } catch(_) {}
+  if (modalState.pricingMode === 'per_night') recomputeFromNightly();
+  else updateDepositPreview();
+}
+
+function recomputeFromNightly() {
+  var nightly = parseFloat(document.getElementById('om-nightly').value) || 0;
+  var nights = parseInt(document.getElementById('om-nights').value) || 0;
+  var totalEl = document.getElementById('om-total');
+  if (totalEl) totalEl.value = nightly && nights ? (nightly * nights) : '';
+  updateDepositPreview();
+}
+
+function updateDepositPreview() {
+  var totalEl = document.getElementById('om-total');
+  if (!totalEl) return;
+  var total = parseFloat(totalEl.value) || 0;
+  // Update equivalent nightly if in package mode
+  if (modalState.pricingMode === 'package') {
+    var nights = parseInt(document.getElementById('om-nights').value) || 0;
+    var eqEl = document.getElementById('om-nightly-eq');
+    if (eqEl) eqEl.value = (total && nights) ? '$' + Math.round(total/nights).toLocaleString() : '';
+  }
+  var preview = document.getElementById('om-deposit-preview');
+  if (!total || !modalState.commissionPct) {
+    preview.style.display = 'none';
+    return;
+  }
+  var deposit = Math.round(total * modalState.commissionPct) / 100;
+  document.getElementById('om-deposit-amount').textContent = fmtUSD(deposit);
+  document.getElementById('om-deposit-detail').textContent =
+    'TheBearing collects this at the moment your guest accepts · ' +
+    modalState.commissionPct + '% of ' + fmtUSD(total);
+  preview.style.display = 'block';
+}
+
+// ── Inclusions list — one item per row, dynamically added/removed ──
+function addInclusion(initial) {
+  var list = document.getElementById('om-inclusions-list');
+  var row = document.createElement('div');
+  row.className = 'om-inc-row';
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+  row.innerHTML =
+    '<div style="width:24px;height:24px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;">✓</div>' +
+    '<input type="text" class="om-inc-input" placeholder="e.g. All meals" style="flex:1;padding:9px 12px;font-size:14px;border:1px solid var(--border);border-radius:7px;background:var(--bg);outline:none;" value="' + escHtml(initial || '') + '">' +
+    '<button type="button" onclick="this.parentElement.remove()" style="background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px 8px;line-height:1;" title="Remove">×</button>';
+  list.appendChild(row);
+  var inp = row.querySelector('input');
+  inp.focus();
+}
+
+function collectInclusions() {
+  var out = [];
+  document.querySelectorAll('.om-inc-input').forEach(function(el) {
+    var v = el.value.trim();
+    if (v) out.push(v);
+  });
+  return out;
+}
+
+function validateOfferForm() {
+  var err = function(msg) {
+    var box = document.getElementById('om-error');
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    return false;
+  };
+  document.getElementById('om-error').style.display = 'none';
+  var arrival = document.getElementById('om-arrival').value;
+  var departure = document.getElementById('om-departure').value;
+  if (!arrival || !departure) return err('Arrival and departure dates are required.');
+  if (new Date(departure) <= new Date(arrival)) return err('Departure must be after arrival.');
+  var totalEl = document.getElementById('om-total');
+  var total = parseFloat(totalEl && totalEl.value) || 0;
+  if (!total || total <= 0) return err('Set a price — either a package total or a nightly rate.');
+  var cancel = document.getElementById('om-cancellation').value.trim();
+  if (!cancel) return err('Cancellation terms are required so the guest knows where they stand.');
+  return true;
+}
+
+function buildOfferPayload(sendImmediately) {
+  return {
+    bookingId: modalState.bookingRef,
+    propertySlug: PP_SLUG,
+    propertyName: modalState.propertyName,
+    arrival: document.getElementById('om-arrival').value,
+    departure: document.getElementById('om-departure').value,
+    nights: parseInt(document.getElementById('om-nights').value) || 0,
+    guests: parseInt(document.getElementById('om-guests').value) || 0,
+    room: document.getElementById('om-room').value.trim(),
+    pricing_mode: modalState.pricingMode,
+    nightly_rate: parseFloat((document.getElementById('om-nightly') || {}).value) || 0,
+    total_amount: parseFloat(document.getElementById('om-total').value) || 0,
+    inclusions: collectInclusions(),
+    exclusions: document.getElementById('om-exclusions').value.trim(),
+    cancellation_terms: document.getElementById('om-cancellation').value.trim(),
+    partner_notes: document.getElementById('om-notes').value.trim(),
+    valid_until: document.getElementById('om-valid-until').value
+      ? new Date(document.getElementById('om-valid-until').value + 'T23:59:59Z').toISOString()
+      : null,
+    supersedes: modalState.supersedesId,
+    sendImmediately: !!sendImmediately
+  };
+}
+
+function postOffer(payload, successMsg) {
+  fetch('/api/offer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+    .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+    .then(function(res) {
+      if (!res.ok || res.body.error) {
+        var box = document.getElementById('om-error');
+        box.textContent = res.body.error || 'Save failed';
+        box.style.display = 'block';
+        return;
+      }
+      ppToast(successMsg, 'ok');
+      closeOfferModal();
+      loadBookings();
+    })
+    .catch(function(e) {
+      var box = document.getElementById('om-error');
+      box.textContent = 'Network error: ' + (e && e.message || e);
+      box.style.display = 'block';
+    });
+}
+
+function saveOfferDraft() {
+  if (!validateOfferForm()) return;
+  postOffer(buildOfferPayload(false), 'Offer saved as draft');
+}
+
+function sendOffer() {
+  if (!validateOfferForm()) return;
+  postOffer(buildOfferPayload(true), 'Offer sent to guest');
+}
+
+// ── Boot ───────────────────────────────────────────────────────────
+loadBookings();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
