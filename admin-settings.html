@@ -343,6 +343,27 @@ window.addEventListener('load', async function() {
   </div>
 </div>
 
+<!-- ─── SECTION 4: MAINTENANCE ─── -->
+<div class="form-section" id="sec-maintenance">
+  <div class="fs-head">
+    <div class="fs-num">4</div>
+    <div style="flex:1;">
+      <div class="fs-title">Maintenance</div>
+      <div class="fs-subtitle">One-shot cleanup utilities. Safe to run repeatedly.</div>
+    </div>
+  </div>
+  <div class="fs-body" style="padding:20px 28px;">
+    <div class="help-text">
+      <strong>Clean property index:</strong> scrubs <code>__property_index</code> of reserved/internal slugs (anything starting with <code>__</code>), empty stub records, duplicates, and any entries whose property record is missing or invalid. Fix for v72l-era issue where curated-order keys leaked into the index. Reports what was kept and what was dropped.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="cleanup-index-btn" type="button">Clean property index</button>
+      <span class="save-status" id="cleanup-status"></span>
+    </div>
+    <pre id="cleanup-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+  </div>
+</div>
+
 </div>
 </div>
 </div>
@@ -670,7 +691,57 @@ window.addEventListener('load', async function() {
   waitForReveal(function(){
     loadSettings();
     runHealth();
+    wireCleanup();
   });
+
+  // ── Maintenance: clean property index ──────────────────────────
+  function wireCleanup() {
+    var btn = document.getElementById('cleanup-index-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+      btn.disabled = true;
+      btn.textContent = 'Cleaning…';
+      btn.style.opacity = '.6';
+      var out = document.getElementById('cleanup-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/property/cleanup', { method: 'POST', cache: 'no-store' })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok) {
+            flashStatus('cleanup-status', false, (res.body && res.body.error) || 'Failed');
+            return;
+          }
+          var b = res.body;
+          var droppedCount = (b.dropped || []).length;
+          flashStatus('cleanup-status', true,
+            'Done · kept ' + b.after + ' / ' + b.before + (droppedCount ? ' · dropped ' + droppedCount : ''));
+          // Show the detail
+          var lines = [];
+          lines.push('Before: ' + b.before + ' slug(s) in __property_index');
+          lines.push('After:  ' + b.after + ' slug(s) kept');
+          lines.push('');
+          lines.push('KEPT:');
+          (b.kept || []).forEach(function(s){ lines.push('  ✓ ' + s); });
+          if (droppedCount) {
+            lines.push('');
+            lines.push('DROPPED:');
+            b.dropped.forEach(function(d){ lines.push('  ✗ ' + d.slug + ' (' + d.reason + ')'); });
+          } else {
+            lines.push('');
+            lines.push('Nothing dropped — index was already clean.');
+          }
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('cleanup-status', false, 'Network error'); })
+        .finally(function(){
+          btn.disabled = false;
+          btn.textContent = 'Clean property index';
+          btn.style.opacity = '1';
+        });
+    });
+  }
 })();
 </script>
 

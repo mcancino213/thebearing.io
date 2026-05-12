@@ -558,9 +558,14 @@ export default {
       if (request.method === 'GET') {
         const slug = url.searchParams.get('slug');
         if (!slug) {
-          // Return index
+          // Return index — defensively filter out reserved/internal slugs that
+          // shouldn't be there but historically slipped in (e.g. __index_cruises
+          // got POSTed as a property slug in early versions of the reorder UI).
           const rawIndex = await env.DOSSIERS.get('__property_index');
-          const slugs = rawIndex ? JSON.parse(rawIndex) : [];
+          let slugs = rawIndex ? JSON.parse(rawIndex) : [];
+          slugs = slugs.filter(function(s) {
+            return typeof s === 'string' && s.length > 0 && !s.startsWith('__');
+          });
           return jsonResponse({ slugs });
         }
         const raw = await env.DOSSIERS.get(slug + ':property');
@@ -578,22 +583,46 @@ export default {
         try { body = await request.json(); }
         catch (err) { return jsonResponse({ error: 'invalid JSON: ' + err.message }, 400); }
         if (!body.slug || typeof body.slug !== 'string') {
-          return jsonResponse({ error: 'slug required' }, 400);
+          return jsonResponse({ error: 'slug required (string)' }, 400);
+        }
+        // Reject reserved/internal slugs and any slug that would collide with KV
+        // key conventions (`__settings:*`, `__cron:*`, `__index_*`, `__property_index`,
+        // `member:*`, `booking:*`, `conversation:*`, etc.). Slug must be url-safe and
+        // not start with `__`, not contain `:`, and not be one of a few reserved words.
+        const slugVal = body.slug.trim().toLowerCase();
+        const reserved = ['property', 'properties', 'admin', 'api', 'settings', 'health', 'cron'];
+        if (slugVal.length < 2 || slugVal.length > 80) {
+          return jsonResponse({ error: 'slug must be 2-80 characters' }, 400);
+        }
+        if (slugVal.startsWith('__') || slugVal.indexOf(':') !== -1) {
+          return jsonResponse({ error: 'slug cannot start with __ or contain :' }, 400);
+        }
+        if (!/^[a-z0-9-]+$/.test(slugVal)) {
+          return jsonResponse({ error: 'slug must be lowercase letters, numbers, hyphens only' }, 400);
+        }
+        if (reserved.indexOf(slugVal) !== -1) {
+          return jsonResponse({ error: 'slug is reserved: ' + slugVal }, 400);
         }
         if (!body.property || typeof body.property !== 'object') {
           return jsonResponse({ error: 'property object required' }, 400);
         }
         const serialized = JSON.stringify(body.property);
-        await env.DOSSIERS.put(body.slug + ':property', serialized);
+        await env.DOSSIERS.put(slugVal + ':property', serialized);
 
-        // Update index
+        // Update index — also defensively filter junk while we're rewriting it
         const rawIndex = await env.DOSSIERS.get('__property_index');
         let slugs = rawIndex ? JSON.parse(rawIndex) : [];
-        if (!slugs.includes(body.slug)) {
-          slugs.push(body.slug);
+        slugs = slugs.filter(function(s) {
+          return typeof s === 'string' && s.length > 0 && !s.startsWith('__');
+        });
+        if (!slugs.includes(slugVal)) {
+          slugs.push(slugVal);
+          await env.DOSSIERS.put('__property_index', JSON.stringify(slugs));
+        } else if (rawIndex && JSON.parse(rawIndex).length !== slugs.length) {
+          // We just dropped some junk — persist the cleanup
           await env.DOSSIERS.put('__property_index', JSON.stringify(slugs));
         }
-        return jsonResponse({ ok: true, slug: body.slug, length: serialized.length });
+        return jsonResponse({ ok: true, slug: slugVal, length: serialized.length });
       }
 
       // DELETE ?slug=... → removes property and updates index
@@ -610,6 +639,72 @@ export default {
       }
 
       return new Response('Method not allowed', { status: 405 });
+    }
+
+    // ── /api/property/cleanup ─────────────────────────────────────
+    // Admin-gated. One-shot janitor: scrubs `__property_index` of (a) reserved
+    // slugs starting with `__`, (b) slugs whose `{slug}:property` KV record is
+    // missing/empty/invalid JSON, (c) duplicates. Also deletes the offending
+    // `{slug}:property` records for known-bad slugs (e.g. `__index_cruises:property`)
+    // so they stop polluting future scans. Idempotent — safe to run repeatedly.
+    if (url.pathname === '/api/property/cleanup') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const rawIndex = await env.DOSSIERS.get('__property_index');
+      const original = rawIndex ? JSON.parse(rawIndex) : [];
+      const seen = {};
+      const kept = [];
+      const dropped = [];
+
+      for (const slug of original) {
+        if (typeof slug !== 'string' || !slug.length) {
+          dropped.push({ slug: String(slug), reason: 'not-a-string' });
+          continue;
+        }
+        if (slug.startsWith('__')) {
+          dropped.push({ slug, reason: 'reserved-prefix' });
+          // Best-effort delete the rogue `{slug}:property` record too
+          try { await env.DOSSIERS.delete(slug + ':property'); } catch(_) {}
+          continue;
+        }
+        if (seen[slug]) {
+          dropped.push({ slug, reason: 'duplicate' });
+          continue;
+        }
+        // Verify the property record actually exists and parses
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) {
+          dropped.push({ slug, reason: 'no-record' });
+          continue;
+        }
+        try {
+          const parsed = JSON.parse(raw);
+          // Must at minimum have a name; otherwise it's an empty stub
+          if (!parsed || typeof parsed !== 'object' || !parsed.name) {
+            dropped.push({ slug, reason: 'empty-record' });
+            // Don't auto-delete the record — the admin may want to inspect it.
+            // Just remove from the index.
+            continue;
+          }
+        } catch(e) {
+          dropped.push({ slug, reason: 'invalid-json: ' + e.message });
+          continue;
+        }
+        seen[slug] = true;
+        kept.push(slug);
+      }
+
+      await env.DOSSIERS.put('__property_index', JSON.stringify(kept));
+
+      return jsonResponse({
+        ok: true,
+        before: original.length,
+        after: kept.length,
+        kept: kept,
+        dropped: dropped
+      });
     }
 
     // ── /api/upload — Cloudflare Images direct upload ─────────────
