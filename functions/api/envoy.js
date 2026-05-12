@@ -2021,11 +2021,11 @@ function jsonResponse(obj, status = 200) {
 
 // ── Settings helpers ──────────────────────────────────────────────
 // Notification recipients and admin allowlist are persisted in KV so they can be
-// edited via admin-settings.html without redeploying. The baseline founder
-// address `miguel@thebearing.io` (and the `admin@thebearing.io` admin login) is
-// always merged in as a failsafe so the admin can never lose access by mistake.
+// edited via admin-settings.html without redeploying. The baseline address
+// `admin@thebearing.io` (also the admin login) is always merged in as a failsafe
+// so notifications never silently break and admin access can never be lost.
 
-const BASELINE_NOTIFICATION_RECIPIENT = 'miguel@thebearing.io';
+const BASELINE_NOTIFICATION_RECIPIENT = 'admin@thebearing.io';
 
 async function loadNotificationRecipients(env) {
   if (!env.DOSSIERS) return [BASELINE_NOTIFICATION_RECIPIENT];

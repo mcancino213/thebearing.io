@@ -1,5 +1,5 @@
 # TheBearing.io — Handoff Document
-> Last updated: 2026-05-12 | Current build: v72g
+> Last updated: 2026-05-12 | Current build: v72h
 
 ---
 
@@ -179,7 +179,7 @@ Standard partner-facing pages: dashboard, listings, bookings, photos, rooms, ava
 - Email via Resend (RESEND_API_KEY secret in worker)
 - admin-bookings.html — real KV data, filter/confirm/cancel
 - Pricing: roomPrice is per-trip flat rate
-- **Recipient emails** for all operational admin alerts (booking, enquiry, conv reply, inbound email, 48h/72h stale escalation) are configurable from `admin-settings.html` and stored at `__settings:notifications`. `miguel@thebearing.io` is always merged in as a baseline failsafe.
+- **Recipient emails** for all operational admin alerts (booking, enquiry, conv reply, inbound email, 48h/72h stale escalation) are configurable from `admin-settings.html` and stored at `__settings:notifications`. `admin@thebearing.io` is always merged in as a baseline failsafe.
 
 ## Queued / Deferred (as of v72g)
 - **admin-analytics wiring** — deferred until there's real traffic to chart. Page exists at `admin-analytics.html` but is a stub.
@@ -306,6 +306,7 @@ id = "aa0c885871474266966e50f0676dd019"
 ## Build History (recent)
 | Build | Key changes |
 |-------|-------------|
+| v72h | Email policy update: `admin@thebearing.io` is the only address in use. Notification baseline `BASELINE_NOTIFICATION_RECIPIENT` in worker switched from `miguel@thebearing.io` → `admin@thebearing.io`. admin-settings.html help text updated. admin-properties.html: prospecting-email signature address and "From email" placeholder both updated to `admin@thebearing.io`. v72g build-history row left as-is (historical record). HANDOFF booking-system note updated to reflect new baseline |
 | v72g | **admin-settings.html built out.** Three sections: (1) Notification recipients — chip-list editor, baseline `miguel@thebearing.io` locked & always included; (2) Admin allowlist — chip-list editor, baseline `admin@thebearing.io` locked; (3) System health — live checks for KV, Resend (validates API key via `/domains`), Vectorize (`describe()`), Workers AI, Anthropic, Clerk, and cron last-run. Worker: `__settings:notifications` and `__settings:allowlist` KV-backed; 5 hardcoded `to:['miguel@thebearing.io']` recipients refactored to `loadNotificationRecipients()`; `ADMIN_EMAILS` refactored to `getAllowlist()` merging baseline + KV extras. New endpoints: `/api/settings` (GET/POST admin-gated), `/api/settings/allowlist-public` (GET unauth — used by client gate), `/api/health` (GET admin-gated). `assets/admin-gate.js` extended to fetch dynamic allowlist on every admin page load, 3s cap, baseline-only on failure. Cron persists `__cron:last_run` with `{ranAt, durationMs, scanned, sent, ok}` for the health check |
 | v72f | (build packaged but history row not recorded — inherited zip from previous session)  |
 | v72e | Envoy drawer positioning fix: lens/saved/bookings/preferences had dark-theme styling but were missing `position:fixed; right:0; width:25vw; transform:translateX(100%)` base rules — drawer rendered without positioning, breaking layout. Patched all 4 pages with full positioning + open-state + body-push + responsive rules |
