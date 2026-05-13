@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+  /* v73g: hide body until Clerk has confirmed auth state. Prevents the
+     1-2s flash of account content after sign-out before the sign-in
+     overlay mounts. The script at line ~380 sets visibility:visible
+     once Clerk's load+user-check completes. There's also an 8s failsafe
+     in case Clerk never loads.
+     The noscript fallback below makes sure JS-disabled users still see
+     the page (since the visibility:visible script won't run). */
+  body { visibility: hidden; }
+</style>
+<noscript><style>body{visibility:visible !important;}</style></noscript>
 <script>
 // Apply cached user data immediately (before render) to prevent flash
 (function(){try{

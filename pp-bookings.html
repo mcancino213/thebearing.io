@@ -178,10 +178,10 @@ tbody tr:hover{background:var(--bg);}
     <div class="sb-brand-tag">Partner Portal</div>
   </div>
   <div class="sb-context">
-    <div class="sb-context-avatar">NG</div>
+    <div class="sb-context-avatar" id="sb-context-avatar">NG</div>
     <div>
-      <div class="sb-context-name">Nour El Nil</div>
-      <div class="sb-context-role">River Cruise · Egypt</div>
+      <div class="sb-context-name" id="sb-context-name">Nour El Nil</div>
+      <div class="sb-context-role" id="sb-context-role">River Cruise · Egypt</div>
     </div>
   </div>
   <div class="sb-section">Manage</div>
@@ -850,6 +850,41 @@ function sendOffer() {
 
 // ── Boot ───────────────────────────────────────────────────────────
 loadBookings();
+
+// v73g: populate sidebar partner header from KV property record.
+// Without this, the sidebar still reads "Nour El Nil · River Cruise · Egypt"
+// even when ?as=gypsy-by-mekong-kingdoms is active.
+(function fetchPartnerIdentity(){
+  fetch('/api/property?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.data) return;
+      var p = d.data;
+      var name = p.name || PP_SLUG;
+      var nameEl = document.getElementById('sb-context-name');
+      if (nameEl) nameEl.textContent = name;
+      var roleEl = document.getElementById('sb-context-role');
+      if (roleEl) {
+        var type = (p.type || '').trim();
+        var country = '';
+        if (p.render && p.render.location_line) {
+          var parts = p.render.location_line.split(',');
+          country = (parts[parts.length-1] || '').trim();
+        } else if (p.details && p.details.country) {
+          country = p.details.country;
+        }
+        if (type && country)      roleEl.textContent = type + ' · ' + country;
+        else if (type)            roleEl.textContent = type;
+        else if (country)         roleEl.textContent = country;
+        else                      roleEl.textContent = '';
+      }
+      var avEl = document.getElementById('sb-context-avatar');
+      if (avEl && name) {
+        avEl.textContent = name.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+      }
+    })
+    .catch(function(e){ console.warn('[pp-bookings] partner identity fetch failed:', e); });
+})();
 </script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>

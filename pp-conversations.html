@@ -482,10 +482,10 @@ tbody tr:hover{background:var(--bg);}
     <div class="sb-brand-tag">Partner Portal</div>
   </div>
   <div class="sb-context">
-    <div class="sb-context-avatar">NG</div>
+    <div class="sb-context-avatar" id="sb-context-avatar">NG</div>
     <div>
-      <div class="sb-context-name">Nour El Nil</div>
-      <div class="sb-context-role">River Cruise · Egypt</div>
+      <div class="sb-context-name" id="sb-context-name">Nour El Nil</div>
+      <div class="sb-context-role" id="sb-context-role">River Cruise · Egypt</div>
     </div>
   </div>
   <div class="sb-section">Manage</div>
@@ -553,7 +553,11 @@ tbody tr:hover{background:var(--bg);}
 <script>
 var VIEWER_ROLE = 'partner';
 var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim(); // v73f: ?as=X override for testing as different partners
-var PP_NAME = 'Nour El Nil';
+// v73g: PP_NAME is now derived from the property KV record fetched on load.
+// Initially set to the slug as a sane fallback so any code that reads it
+// before the fetch resolves doesn't break. fetchPartnerIdentity() at the
+// bottom of init updates it and the sidebar header.
+var PP_NAME = PP_SLUG;
 var ppConvs = [];
 var ppActiveId = null;
 var ppPoll = null;
@@ -563,6 +567,46 @@ var soundEnabled = localStorage.getItem('tb_pp_sound') !== 'off';
 
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// v73g: pull the partner property record from KV and populate PP_NAME +
+// sidebar header. Without this, the page is hardcoded as "Nour El Nil"
+// regardless of ?as=X — so a partner viewing as Gypsy would reply with
+// "Nour El Nil" attribution and the sidebar would still read "River Cruise · Egypt".
+function fetchPartnerIdentity() {
+  fetch('/api/property?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.data) return;
+      var p = d.data;
+      PP_NAME = p.name || PP_SLUG;
+      var nameEl = document.getElementById('sb-context-name');
+      if (nameEl) nameEl.textContent = PP_NAME;
+      // Role line: "Property type · Country" if we have those; else type alone; else hide
+      var roleEl = document.getElementById('sb-context-role');
+      if (roleEl) {
+        var type = (p.type || '').trim();
+        var country = '';
+        // Country can live in render.location_line or details.country
+        if (p.render && p.render.location_line) {
+          // location_line is typically "Aswan, Egypt" — grab the trailing token after comma
+          var parts = p.render.location_line.split(',');
+          country = (parts[parts.length-1] || '').trim();
+        } else if (p.details && p.details.country) {
+          country = p.details.country;
+        }
+        if (type && country)      roleEl.textContent = type + ' · ' + country;
+        else if (type)            roleEl.textContent = type;
+        else if (country)         roleEl.textContent = country;
+        else                      roleEl.textContent = '';
+      }
+      // Avatar initials from name
+      var avEl = document.getElementById('sb-context-avatar');
+      if (avEl && PP_NAME) {
+        avEl.textContent = PP_NAME.split(/\s+/).map(function(w){return w[0]||'';}).join('').toUpperCase().slice(0,2);
+      }
+    })
+    .catch(function(e){ console.warn('[pp-conversations] partner identity fetch failed:', e); });
 }
 function fmt(d) {
   if (!d) return '';
@@ -1361,6 +1405,7 @@ setInterval(function() {
 
 loadConvs();
 paintSoundToggle();
+fetchPartnerIdentity(); // v73g: pull partner display name from KV
 </script>
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>

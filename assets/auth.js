@@ -78,7 +78,12 @@ var tbAuth = (function() {
 
     var overlay = document.createElement('div');
     overlay.id = 'tb-auth-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);';
+    // v73g: when the Clerk widget content makes the sheet taller than the
+    // viewport (laptop screens, mobile), align-items:center pushes the top
+    // of the sheet off-screen (Miguel's screenshot). Switch to flex-start
+    // with overflow-y:auto so the user can scroll within the overlay and
+    // sees the top of the modal. Padding-top gives breathing room.
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:5vh 0;';
 
     // v73f: bumped max-width from 480 → 560 to fit Clerk's widget without
     // overflow. Clerk's mountSignIn renders a ~440px-wide card with its own
@@ -184,7 +189,15 @@ var tbAuth = (function() {
         '</div>';
       }
 
-      // Poll for sign-in completion
+      // Poll for sign-in completion.
+      // v73g: if Clerk does a full-page OAuth redirect to its dashboard-
+      // configured home URL (instead of honoring our afterSignInUrl), this
+      // poll never fires because the page has navigated away. But if the
+      // popup OAuth flow stays in place, this catches the user signing in
+      // and we run onSuccess. As an extra defence: if onSuccess is set
+      // AND our afterUrl differs from current URL, we force-navigate too
+      // — that way even if Clerk's virtual routing left us on a stale
+      // page, the user lands where they expect.
       var pollInterval = setInterval(function() {
         if (window.Clerk && window.Clerk.user) {
           clearInterval(pollInterval);

@@ -1224,6 +1224,57 @@ View in admin: https://thebearing.io/admin-bookings.html
           propIds.push(id);
           await env.DOSSIERS.put('prop:' + propertySlug + ':convs', JSON.stringify(propIds));
 
+          // v73g: also create a stub booking with status:'enquiry' so the
+          // partner sees the enquiry in pp-bookings with a "Build offer" button.
+          // Previously enquiries existed only as conversations, leaving the
+          // partner with no surface to start an offer from. Linking
+          // conversation ↔ booking via booking.conversationId lets the
+          // offer-builder modal in pp-bookings find the right conv.
+          try {
+            const year = new Date().getFullYear();
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            const ref = 'TB-' + year + '-' + rand;
+            const enq = enquiry || {};
+            // Best-effort name split — guests usually paste "Miguel Cancino"
+            const nameStr = (guestName || guestEmail).trim();
+            const nameParts = nameStr.split(/\s+/);
+            const firstname = nameParts[0] || 'Guest';
+            const lastname  = nameParts.slice(1).join(' ') || '';
+            const booking = {
+              ref,
+              property: propertyName || propertySlug,
+              slug: propertySlug,
+              conversationId: id,
+              arrival:   enq.arrival   || '',
+              departure: enq.departure || '',
+              nights: '',
+              guests: enq.guests || '',
+              room: enq.cabin || '',
+              roomPrice: 0,
+              totalAmount: 0,
+              depositAmount: 0,
+              firstname, lastname,
+              email: guestEmail,
+              phone: '',
+              notes: enq.notes || '',
+              status: 'enquiry',       // enquiry → offer_sent → confirmed/cancelled
+              paymentStatus: 'none',
+              createdAt: now,
+              updatedAt: now
+            };
+            await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+            const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+            const bRefs = bIdxRaw ? JSON.parse(bIdxRaw) : [];
+            bRefs.push(ref);
+            await env.DOSSIERS.put('__bookings_index', JSON.stringify(bRefs));
+            // Link conversation → booking for later lookup from pp-conversations
+            conv.bookingRef = ref;
+            await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
+          } catch (e) {
+            console.error('[Conversation create] booking-stub create failed:', e);
+            // Non-fatal — conversation is already saved
+          }
+
           // Update aggregate counters
           await recomputeUnreadCounters(env);
 

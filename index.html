@@ -6,6 +6,30 @@
 <title>The Bearing — Rare Hotels & Cruises</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
+  // v73g: post-sign-in resume — if a user clicked Enquire on a property
+  // (which stashes tb_pending_action) and Clerk's OAuth redirect dropped
+  // them here on the home page instead of back at the property, bounce
+  // them to the property URL so their property.html resume IIFE can
+  // pick up the pending intent and open the enquiry overlay.
+  // Guard: 10-min expiry.
+  (function tbResumeFromHome(){
+    try {
+      var raw = sessionStorage.getItem('tb_pending_action');
+      if (!raw) return;
+      var p = JSON.parse(raw);
+      if (!p || p.action !== 'enquire' || !p.slug) return;
+      if (p.setAt && Date.now() - p.setAt > 10 * 60 * 1000) {
+        sessionStorage.removeItem('tb_pending_action');
+        return;
+      }
+      // Don't redirect if we're ALREADY at the right property — that would
+      // create a loop. Home page has no slug, so this is always a redirect.
+      var dest = '/property?slug=' + encodeURIComponent(p.slug);
+      window.location.replace(dest);
+    } catch(e) {}
+  })();
+</script>
+<script>
   /* All functions that onclick= attributes call must be defined here,
      before the body HTML is parsed. */
   function toggleMenu(){
