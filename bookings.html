@@ -369,12 +369,12 @@
   .bk-offer-card-prop{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1.2;}
   .bk-offer-card-room{font-size:.78rem;color:var(--stone);margin-top:2px;}
   .bk-offer-card-dates{font-size:.78rem;color:var(--bark);margin-top:8px;padding-top:8px;border-top:1px dashed rgba(80,60,30,.12);}
-  .bk-offer-card-pricing{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding:11px 12px;background:rgba(176,88,48,.06);border-radius:10px;}
+  .bk-offer-card-pricing{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding:13px 16px;background:rgba(176,88,48,.06);border-radius:10px;}
   .bk-offer-card-pricing .lbl{font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:3px;}
   .bk-offer-card-pricing .val{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);}
   .bk-offer-card-pricing .val.deposit{color:var(--terra);}
   .bk-offer-card-cta{margin-top:14px;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--terra);}
-  .bk-offer-card-cta::after{content:'\u2192';transition:transform .15s;}
+  .bk-offer-card-cta::after{content:'\2192';transition:transform .15s;margin-left:6px;}
   .bk-offer-card:hover .bk-offer-card-cta::after{transform:translateX(3px);}
 </style>
 <script src="/assets/envoy-prompt.js"></script>
@@ -584,28 +584,17 @@
       <div class="page-sub" id="bk-sub">Loading…</div>
     </div>
 
-    <!-- v73k: section navigation. Clicking scrolls to the section anchor. -->
-    <div style="display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap;">
-      <a href="#bk-enquiries" class="bk-section-pill"><span class="bk-section-pill-label">Enquiries</span><span class="bk-section-pill-count" id="bk-count-enq">0</span></a>
-      <a href="#bk-offers" class="bk-section-pill"><span class="bk-section-pill-label">Offers received</span><span class="bk-section-pill-count" id="bk-count-off">0</span></a>
-      <a href="#bk-confirmed" class="bk-section-pill"><span class="bk-section-pill-label">Confirmed</span><span class="bk-section-pill-count" id="bk-count-conf">0</span></a>
+    <!-- v73l: section navigation reordered to match new section order
+         (Offers first, since that's where action lives). Pills get
+         section-kind colors. -->
+    <div class="bk-pills-row">
+      <a href="#bk-offers" class="bk-section-pill bk-pill-offers"><span class="bk-section-pill-label">Offers received</span><span class="bk-section-pill-count" id="bk-count-off">0</span></a>
+      <a href="#bk-enquiries" class="bk-section-pill bk-pill-enquiries"><span class="bk-section-pill-label">Enquiries</span><span class="bk-section-pill-count" id="bk-count-enq">0</span></a>
+      <a href="#bk-confirmed" class="bk-section-pill bk-pill-confirmed"><span class="bk-section-pill-label">Confirmed</span><span class="bk-section-pill-count" id="bk-count-conf">0</span></a>
     </div>
 
-    <!-- ENQUIRIES section -->
-    <section id="bk-enquiries" style="margin-bottom:48px;scroll-margin-top:90px;">
-      <div class="bk-section-head">
-        <div>
-          <div class="bk-section-title">Enquiries</div>
-          <div class="bk-section-sub">Waiting on a personalised offer from the property.</div>
-        </div>
-      </div>
-      <div id="bk-enquiries-list" class="bk-list">
-        <div class="bk-loading">Loading your enquiries…</div>
-      </div>
-    </section>
-
-    <!-- OFFERS RECEIVED section -->
-    <section id="bk-offers" style="margin-bottom:48px;scroll-margin-top:90px;">
+    <!-- v73l: OFFERS RECEIVED — moved to top (most actionable) -->
+    <section id="bk-offers" class="bk-section bk-section-offers" data-kind="offers">
       <div class="bk-section-head">
         <div>
           <div class="bk-section-title">Offers received</div>
@@ -617,8 +606,21 @@
       </div>
     </section>
 
+    <!-- ENQUIRIES section -->
+    <section id="bk-enquiries" class="bk-section bk-section-enquiries" data-kind="enquiries">
+      <div class="bk-section-head">
+        <div>
+          <div class="bk-section-title">Enquiries</div>
+          <div class="bk-section-sub">Waiting on a personalised offer from the property.</div>
+        </div>
+      </div>
+      <div id="bk-enquiries-list" class="bk-list">
+        <div class="bk-loading">Loading your enquiries…</div>
+      </div>
+    </section>
+
     <!-- CONFIRMED section -->
-    <section id="bk-confirmed" style="margin-bottom:48px;scroll-margin-top:90px;">
+    <section id="bk-confirmed" class="bk-section bk-section-confirmed" data-kind="confirmed">
       <div class="bk-section-head">
         <div>
           <div class="bk-section-title">Confirmed bookings</div>
@@ -1246,7 +1248,6 @@ function renderOffersList(list) {
         '</div>' +
         (datesFull ? '<div class="bk-offer-card-dates">' + datesFull + '</div>' : '') +
         '<div class="bk-offer-card-pricing">' +
-          '<div><div class="lbl">Room</div><div class="val">' + (room ? esc(room) : '\u2014') + '</div></div>' +
           '<div><div class="lbl">Total</div><div class="val">' + total + '</div></div>' +
           '<div><div class="lbl">Deposit</div><div class="val deposit">' + deposit + '</div></div>' +
         '</div>' +

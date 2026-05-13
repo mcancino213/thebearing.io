@@ -1,5 +1,5 @@
 # TheBearing.io — Handoff Document
-> Last updated: 2026-05-13 | Current build: v73k
+> Last updated: 2026-05-13 | Current build: v73l (interim — partial; see notes)
 
 ---
 
@@ -306,7 +306,19 @@ id = "aa0c885871474266966e50f0676dd019"
 ## Build History (recent)
 | Build | Key changes |
 |-------|-------------|
-| v73k | **Customer `/bookings.html` rewritten from scratch — real KV data, three clear sections.** Old page had 3 hardcoded demo bookings with no backend. New: full Clerk-gated page that fetches `/api/booking?email={user.primaryEmail}` and buckets results by status into three sections: **Enquiries** (status='enquiry' or 'pending' — waiting for partner offer), **Offers received** (active_offer_id set, status='offer_sent' — partner sent a quote), and **Confirmed** (status='confirmed' — deposit paid, post-Stripe-launch). Each section has its own visual treatment, count pill at top, and an honest empty state. Section pills at top scroll to each section. **Offer rows render as inline summary cards** showing property, room, dates, total, deposit, validity-days-left badge — and the whole card is a button that opens the full offer detail modal (same `openOfferDetail()` modal used in `/conversations`, copy-pasted since customer pages don't share a build pipeline yet). Enquiry rows are anchor tags linking to `/conversations.html?id={conversationId}` so the customer can continue the chat. Worker side: `/api/booking` now accepts `?email=X` query param for customer-scoped filtering (case-insensitive). Body is hidden until Clerk confirms auth (same `body{visibility:hidden}` pattern as my-account); 8s failsafe redirects to a Back-to-The-Bearing screen if Clerk never loads. Signed-out users see a Clerk sign-in overlay with "Your Compass" branding and Back-to-The-Bearing link. **Legacy code left in place but unreachable:** the old `filterBookings()` function and `#help-modal` markup are still in the file because removing them is churn — they no longer have any DOM targets so they're dead code. Will clean up in a future grooming pass. **Deferred to v73l+:** Stripe Checkout integration for the "Accept & pay deposit" button (currently shows a placeholder alert). The Request Changes button on offers now navigates to the linked conversation so the user can reply there. Old offers sent before v73j won't have offer cards in their conversations — but they'll still appear correctly on the bookings page because the data model has been there since v72y |
+| v73l | **Three surgical fixes to /bookings page after smoke-test screenshot.** (1) **"View offer u2192" arrow bug fixed.** CSS pseudo-element was using JavaScript unicode escape syntax (`content:'\u2192'`) instead of CSS unicode escape (`content:'\2192'`). Result: the right-arrow character rendered as literal text "u2192" on the offer card. Fixed: `content:'\2192'; margin-left:6px;`. Other `\u2192` and `\u00b7` strings in JS contexts are correct and not touched. (2) **Redundant Room cell removed from offer card pricing grid.** Card header already shows the room name as a subtitle ("Luxury Room" under "Gypsy by Mekong Kingdoms"); having ROOM repeat inside the pricing grid was visual noise. Pricing grid is now a clean 2-column layout: Total + Deposit. (3) **Sections reordered — Offers Received is now first** (most actionable), then Enquiries, then Confirmed. Pills row reordered to match. Each section now carries `class="bk-section bk-section-{offers|enquiries|confirmed}"` and `data-kind="..."` plus the pills have `bk-pill-{kind}` classes, scaffolding for the section-specific color treatment landing in v73m. **Note: this is an INTERIM build.** Three larger items from the smoke-test feedback are deferred to v73m: (a) the actual color theming of section backgrounds + pills (waiting on Miguel's choice between soft-tinted / bold-panel / left-accent-strip), (b) the cancel-enquiry mechanism with admin batch action for the two stale pre-v73j enquiries, (c) the old-offer backfill admin button. The flagged flash protection on lens/saved/preferences/settings is also still deferred |
+| v73k | Customer /bookings.html rewritten with real KV data and three sections. Worker `/api/booking?email=` for customer-scoped lookup. Body flash-protection. Offer detail modal ported from conversations.html |
+| v73j | Enquiry message reformat. "Average nightly" labels. Save section defaults per property. Offer surfaces as card in conversation thread with full-detail modal |
+| v73i | Second-enquiry silent-discard fix. Backfill endpoint for stub bookings. Auth modal Grid centering |
+| v73h | "Your Cove" → "Your Compass" |
+| v73g | Stub-booking on enquiry create + four smoke-test fixes |
+| v73f | `?as=X` partner switching |
+| v73e | Bulletproof sign-out, "On request" fallback |
+| v73d | openEnquiry auth-gating |
+| v73c | Killed Step 3 enquiry |
+| v73b | property.html universal-template hardening |
+| v73a | Adults/Children inputs |
+| v72z | Critical: unclosed populateConfirmation() broke property.html |
 | v73j | Enquiry message reformatted (paragraph blocks instead of run-on sentence). "Average nightly" labels throughout offer builder. Partner can save section defaults per property (Inclusions, Cancellation terms, Notes). Offer surfaces as styled card in customer conversation thread + opens modal with full detail + Accept/Request actions |
 | v73i | Second-enquiry silent-discard bug fixed. Backfill endpoint for stub bookings. Auth modal Grid centering |
 | v73h | "Your Cove" → "Your Compass". Back-to-Bearing links on signed-out screens |
