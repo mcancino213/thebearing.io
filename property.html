@@ -2154,6 +2154,7 @@ function populateConfirmation(){
   })
   .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
 }
+} // close populateConfirmation — missing brace was causing SyntaxError that broke property.html entirely (fixed v72z)
 
 // setText already defined
 
