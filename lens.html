@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+  /* v73m: hide body until Clerk has confirmed auth state. Failsafe at the
+     bottom of <body> times out and reveals a Back-to-Bearing screen if
+     Clerk never loads. */
+  body { visibility: hidden; }
+</style>
+<noscript><style>body{visibility:visible !important;}</style></noscript>
 <script>
 // Apply cached user data immediately (before render) to prevent flash
 (function(){try{
@@ -824,10 +831,57 @@ function submitAccount(){
   type="text/javascript">
 </script>
 <script>
+// v73m: full flash-protected Clerk gate for Your Lens.
+window.__bearingAuthTimeout = setTimeout(function(){
+  if (document.body.style.visibility !== 'visible') {
+    document.body.style.visibility = 'visible';
+    document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
+      + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
+      +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
+      +   '<div style="font-family:\'Instrument Serif\',serif;font-size:2rem;color:#1e1810;">Your Compass</div>'
+      + '</a>'
+      + '<div style="font-size:.9rem;color:#9a8e80;max-width:360px;text-align:center;line-height:1.55;">Sign-in is temporarily unavailable. Please refresh, or contact <a href="mailto:admin@thebearing.io" style="color:#b05830;">admin@thebearing.io</a>.</div>'
+      + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:4px;">\u2190 Back to The Bearing</a>'
+      + '</div>';
+  }
+}, 8000);
+
 window.addEventListener('load', async function() {
   try {
     await window.Clerk.load();
-  } catch(err) { console.error('Clerk load failed:', err); }
+    clearTimeout(window.__bearingAuthTimeout);
+    var user = window.Clerk.user;
+    if (user) {
+      document.body.style.visibility = 'visible';
+    } else {
+      // Not signed in — show Compass sign-in overlay (same pattern as my-account / bookings)
+      document.body.style.visibility = 'visible';
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:#faf7f1;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:32px 16px;overflow-y:auto;';
+      overlay.innerHTML =
+          '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
+        +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:4px;">The Bearing</div>'
+        +   '<div style="font-family:\'Instrument Serif\',serif;font-size:1.8rem;color:#1e1810;margin-bottom:4px;">Your Compass</div>'
+        + '</a>'
+        + '<div style="font-size:.85rem;color:#9a8e80;margin-bottom:8px;">Sign in to access your Lens</div>'
+        + '<div id="clerk-signin-overlay" style="width:100%;max-width:420px;"></div>'
+        + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:8px;">\u2190 Back to The Bearing</a>';
+      document.body.appendChild(overlay);
+      window.Clerk.mountSignIn(document.getElementById('clerk-signin-overlay'), {
+        afterSignInUrl: '/lens.html',
+        afterSignUpUrl: '/lens.html',
+      });
+      window.Clerk.addListener(function(resources) {
+        if (resources.user && document.getElementById('clerk-signin-overlay')) {
+          window.location.reload();
+        }
+      });
+    }
+  } catch(err) {
+    console.error('Clerk load failed:', err);
+    clearTimeout(window.__bearingAuthTimeout);
+    document.body.style.visibility = 'visible';
+  }
 });
 </script>
 <script src="/assets/account-sidebar.js"></script>

@@ -878,6 +878,187 @@ export default {
       });
     }
 
+    // ── /api/booking/cancel-stale-enquiries ────────────────────────
+    // v73m: admin-gated. Cancels every booking with status='enquiry' or
+    // 'pending' that pre-dates a cutoff date (default: 2026-05-12, the
+    // day before v73j shipped). These are stub bookings created by v73g/i
+    // before the offer flow existed — they have no path forward because
+    // their linked conversations were never set up to receive an offer
+    // card. Cleanest UX is to mark them cancelled so they drop off the
+    // customer's bookings view.
+    // Body: { cutoff?: 'YYYY-MM-DD' } — optional override of cutoff
+    if (url.pathname === '/api/booking/cancel-stale-enquiries') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      let body = {};
+      try { body = await request.json(); } catch (e) {}
+      const cutoffStr = body.cutoff || '2026-05-12';
+      const cutoff = new Date(cutoffStr + 'T23:59:59Z').getTime();
+      if (isNaN(cutoff)) return jsonResponse({ error: 'invalid cutoff date' }, 400);
+
+      const idxRaw = await env.DOSSIERS.get('__bookings_index');
+      const refs = idxRaw ? JSON.parse(idxRaw) : [];
+      const cancelled = [];
+      const skipped = [];
+      const errors = [];
+
+      for (const ref of refs) {
+        try {
+          const raw = await env.DOSSIERS.get('booking:' + ref);
+          if (!raw) { skipped.push({ ref, reason: 'no-record' }); continue; }
+          const booking = JSON.parse(raw);
+          const status = (booking.status || '').toLowerCase();
+          if (status !== 'enquiry' && status !== 'pending') {
+            skipped.push({ ref, reason: 'status-not-enquiry', status });
+            continue;
+          }
+          const created = new Date(booking.createdAt || 0).getTime();
+          if (!created || created > cutoff) {
+            skipped.push({ ref, reason: 'after-cutoff', createdAt: booking.createdAt });
+            continue;
+          }
+          const now = new Date().toISOString();
+          booking.status = 'cancelled';
+          booking.cancelledAt = now;
+          booking.cancelledBy = 'admin-batch-stale';
+          booking.updatedAt = now;
+          await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+
+          // Archive linked conversation
+          if (booking.conversationId) {
+            try {
+              const convRaw = await env.DOSSIERS.get('conversation:' + booking.conversationId);
+              if (convRaw) {
+                const conv = JSON.parse(convRaw);
+                conv.status = 'archived';
+                conv.archivedAt = now;
+                conv.archivedReason = 'enquiry_cancelled_admin_batch';
+                await env.DOSSIERS.put('conversation:' + booking.conversationId, JSON.stringify(conv));
+              }
+            } catch (e) {
+              console.error('[cancel-stale] conv archive failed for ' + ref + ':', e);
+            }
+          }
+          cancelled.push({ ref, slug: booking.slug, createdAt: booking.createdAt });
+        } catch (e) {
+          errors.push({ ref, error: String(e && e.message || e) });
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        cutoff: cutoffStr,
+        scanned: refs.length,
+        cancelled: cancelled.length,
+        skipped: skipped.length,
+        errors: errors.length,
+        details: { cancelled, skipped: skipped.slice(0, 20), errors }
+      });
+    }
+
+    // ── /api/offer/backfill-cards ──────────────────────────────────
+    // v73m: admin-gated. For every offer with status='sent', check if its
+    // linked conversation already has an offer_card message. If not, post
+    // one. Idempotent — safe to run repeatedly. Used once to backfill
+    // offers sent before v73j (which added auto-card-posting on send).
+    if (url.pathname === '/api/offer/backfill-cards') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // Walk bookings to find all offers (no global offer index exists)
+      const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+      const bRefs = bIdxRaw ? JSON.parse(bIdxRaw) : [];
+      const allOfferIds = new Set();
+      for (const ref of bRefs) {
+        try {
+          const offerIdxRaw = await env.DOSSIERS.get('__offers_by_booking:' + ref);
+          if (!offerIdxRaw) continue;
+          const offerIds = JSON.parse(offerIdxRaw);
+          if (Array.isArray(offerIds)) offerIds.forEach(function(id) { allOfferIds.add(id); });
+        } catch (e) {}
+      }
+
+      const posted = [];
+      const skipped = [];
+      const errors = [];
+
+      for (const offerId of allOfferIds) {
+        try {
+          const raw = await env.DOSSIERS.get('offer:' + offerId);
+          if (!raw) { skipped.push({ offerId, reason: 'no-record' }); continue; }
+          const offer = JSON.parse(raw);
+          if (offer.status !== 'sent') {
+            skipped.push({ offerId, reason: 'not-sent-status', status: offer.status });
+            continue;
+          }
+          // Find conversation via booking
+          const brRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+          if (!brRaw) { skipped.push({ offerId, reason: 'no-booking' }); continue; }
+          const bk = JSON.parse(brRaw);
+          const convId = bk.conversationId;
+          if (!convId) { skipped.push({ offerId, reason: 'no-conversation' }); continue; }
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+          const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+          const alreadyPosted = messages.some(function(m) {
+            return m.type === 'offer_card' && m.offerId === offerId;
+          });
+          if (alreadyPosted) {
+            skipped.push({ offerId, reason: 'card-already-present' });
+            continue;
+          }
+          const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+          if (!convRaw) { skipped.push({ offerId, reason: 'conv-record-missing' }); continue; }
+          const conv = JSON.parse(convRaw);
+          // Skip archived/cancelled conversations
+          if (conv.status === 'archived') {
+            skipped.push({ offerId, reason: 'conv-archived' });
+            continue;
+          }
+
+          const cardTs = offer.sent_at || new Date().toISOString();
+          messages.push({
+            id: 'msg_' + Date.now() + '_card_bf',
+            role: 'partner',
+            type: 'offer_card',
+            offerId: offer.id,
+            offerSummary: {
+              propertyName: offer.propertyName || '',
+              arrival: offer.arrival || '',
+              departure: offer.departure || '',
+              nights: offer.nights || 0,
+              guests: offer.guests || 0,
+              room: offer.room || '',
+              total_amount: offer.total_amount || 0,
+              deposit_amount: offer.deposit_amount || 0,
+              currency: offer.currency || 'USD',
+              valid_until: offer.valid_until || null
+            },
+            text: 'Your offer is ready \u2014 ' + (offer.propertyName || 'the property') + ' has prepared a personalised quote. Open your conversation to view it.',
+            senderName: offer.propertyName || 'Property',
+            sentAt: cardTs,
+            readAt: null
+          });
+          await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+          // Don't bump unreadGuest — this is a historical backfill, not a fresh notification
+          posted.push({ offerId, convId, sentAt: cardTs });
+        } catch (e) {
+          errors.push({ offerId, error: String(e && e.message || e) });
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        scanned: allOfferIds.size,
+        posted: posted.length,
+        skipped: skipped.length,
+        errors: errors.length,
+        details: { posted, skipped: skipped.slice(0, 30), errors }
+      });
+    }
+
     // ── /api/property/cleanup ─────────────────────────────────────
     // Admin-gated. One-shot janitor: scrubs `__property_index` of (a) reserved
     // slugs starting with `__`, (b) slugs whose `{slug}:property` KV record is
@@ -1175,11 +1356,74 @@ View in admin: https://thebearing.io/admin-bookings.html
         let body;
         try { body = await request.json(); }
         catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
-        const { ref, status, paymentStatus, notes } = body;
+        const { ref, status, paymentStatus, notes, action, requesterEmail } = body;
         if (!ref) return jsonResponse({ error: 'ref required' }, 400);
         const raw = await env.DOSSIERS.get('booking:' + ref);
         if (!raw) return jsonResponse({ error: 'booking not found' }, 404);
         const booking = JSON.parse(raw);
+
+        // v73m: customer-driven cancel-enquiry. Only allowed when:
+        //  - booking is in enquiry/pending state (can't cancel confirmed bookings here)
+        //  - requesterEmail matches booking.email OR caller is admin
+        // Effect: booking.status='cancelled', linked conversation archived,
+        // booking dropped out of the customer's Enquiries bucket.
+        if (action === 'cancel-enquiry') {
+          const isAdminCaller = await isAdmin();
+          const bookingEmail = (booking.email || '').toLowerCase().trim();
+          const reqEmail = (requesterEmail || '').toLowerCase().trim();
+          if (!isAdminCaller && (!reqEmail || reqEmail !== bookingEmail)) {
+            return jsonResponse({ error: 'not authorised to cancel this booking' }, 403);
+          }
+          const cancellableStatuses = ['enquiry', 'pending', 'offer_sent'];
+          if (cancellableStatuses.indexOf((booking.status || '').toLowerCase()) === -1) {
+            return jsonResponse({ error: 'cannot cancel a booking with status: ' + booking.status }, 400);
+          }
+          booking.status = 'cancelled';
+          booking.cancelledAt = new Date().toISOString();
+          booking.cancelledBy = isAdminCaller ? 'admin' : 'guest';
+          booking.updatedAt = booking.cancelledAt;
+          await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+
+          // Archive the linked conversation so it stops showing as open.
+          if (booking.conversationId) {
+            try {
+              const convRaw = await env.DOSSIERS.get('conversation:' + booking.conversationId);
+              if (convRaw) {
+                const conv = JSON.parse(convRaw);
+                conv.status = 'archived';
+                conv.archivedAt = booking.cancelledAt;
+                conv.archivedReason = 'enquiry_cancelled_by_' + booking.cancelledBy;
+                await env.DOSSIERS.put('conversation:' + booking.conversationId, JSON.stringify(conv));
+              }
+            } catch (e) {
+              console.error('[Cancel enquiry] failed to archive conv:', e);
+              // Non-fatal — booking is already cancelled
+            }
+          }
+
+          // If there's an active offer, withdraw it too so the partner doesn't
+          // think the offer is still pending.
+          if (booking.active_offer_id) {
+            try {
+              const offerRaw = await env.DOSSIERS.get('offer:' + booking.active_offer_id);
+              if (offerRaw) {
+                const offer = JSON.parse(offerRaw);
+                if (offer.status === 'sent' || offer.status === 'draft') {
+                  offer.status = 'withdrawn';
+                  offer.responded_at = booking.cancelledAt;
+                  offer.withdrawn_reason = 'enquiry_cancelled';
+                  await env.DOSSIERS.put('offer:' + offer.id, JSON.stringify(offer));
+                }
+              }
+            } catch (e) {
+              console.error('[Cancel enquiry] failed to withdraw offer:', e);
+            }
+          }
+
+          return jsonResponse({ ok: true, ref, status: 'cancelled' });
+        }
+
+        // Legacy generic PATCH path (admin-driven status changes etc.)
         if (status) booking.status = status;
         if (paymentStatus) booking.paymentStatus = paymentStatus;
         if (notes !== undefined) booking.adminNotes = notes;

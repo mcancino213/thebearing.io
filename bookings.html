@@ -297,28 +297,85 @@
 
   /* v73k: bookings-page sections + cards */
   .bk-section-pill{
-    display:inline-flex;align-items:center;gap:8px;
-    padding:7px 14px;border-radius:100px;border:1px solid var(--border-hi);
-    background:#fff;color:var(--bark);text-decoration:none;
-    font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;
-    transition:background .15s,border-color .15s,color .15s;
+  /* v73m: pill row + section-kind colors. Each section gets a soft tint
+     and matching pill so the page reads as three distinct areas instead
+     of one monochrome scroll. Colors derive from the brand palette
+     (terracotta, sand, moss) at low saturation. */
+  .bk-pills-row{
+    display:flex;gap:10px;margin-bottom:36px;flex-wrap:wrap;
   }
-  .bk-section-pill:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .bk-section-pill{
+    display:inline-flex;align-items:center;gap:9px;
+    padding:9px 16px;border-radius:100px;border:1.5px solid transparent;
+    text-decoration:none;
+    font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;
+    letter-spacing:.01em;
+    transition:transform .15s, box-shadow .15s, border-color .15s;
+  }
+  .bk-section-pill:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(80,55,25,.12);}
   .bk-section-pill-count{
     display:inline-flex;align-items:center;justify-content:center;
-    min-width:20px;height:20px;padding:0 6px;border-radius:100px;
-    font-size:.68rem;font-weight:600;background:var(--linen);color:var(--stone);
+    min-width:22px;height:22px;padding:0 7px;border-radius:100px;
+    font-size:.7rem;font-weight:700;
   }
-  .bk-section-pill:hover .bk-section-pill-count{background:rgba(255,255,255,.18);color:#fff;}
+  /* Pill: Offers (terracotta) */
+  .bk-pill-offers{background:#fdf0e6;color:#8c4422;border-color:rgba(176,88,48,.3);}
+  .bk-pill-offers .bk-section-pill-count{background:#b05830;color:#fff;}
+  .bk-pill-offers:hover{border-color:#b05830;}
+  /* Pill: Enquiries (sand) */
+  .bk-pill-enquiries{background:#f5ecd9;color:#6b5320;border-color:rgba(154,114,48,.3);}
+  .bk-pill-enquiries .bk-section-pill-count{background:#9a7230;color:#fff;}
+  .bk-pill-enquiries:hover{border-color:#9a7230;}
+  /* Pill: Confirmed (moss) */
+  .bk-pill-confirmed{background:#e6efe2;color:#2e5430;border-color:rgba(74,106,72,.3);}
+  .bk-pill-confirmed .bk-section-pill-count{background:#4a6a48;color:#fff;}
+  .bk-pill-confirmed:hover{border-color:#4a6a48;}
 
-  .bk-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);}
-  .bk-section-title{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--ink);line-height:1.2;}
-  .bk-section-sub{font-size:.82rem;color:var(--stone);margin-top:4px;}
+  /* Tinted section panels (v73m). Each section becomes its own panel
+     with rounded corners, soft tint, and a colored top stripe. */
+  .bk-section{
+    margin-bottom:32px;
+    border-radius:20px;
+    padding:26px 26px 30px;
+    scroll-margin-top:90px;
+    position:relative;
+    border:1px solid transparent;
+    box-shadow:0 1px 0 rgba(80,55,25,.04);
+  }
+  .bk-section::before{
+    content:'';position:absolute;top:0;left:24px;right:24px;height:3px;border-radius:0 0 3px 3px;
+  }
+  .bk-section-offers{
+    background:linear-gradient(180deg,#fdf0e6 0%,#fbf5ec 100%);
+    border-color:rgba(176,88,48,.18);
+  }
+  .bk-section-offers::before{background:linear-gradient(90deg,#b05830,#d68a5e);}
+  .bk-section-enquiries{
+    background:linear-gradient(180deg,#f5ecd9 0%,#faf4e6 100%);
+    border-color:rgba(154,114,48,.18);
+  }
+  .bk-section-enquiries::before{background:linear-gradient(90deg,#9a7230,#c9a45e);}
+  .bk-section-confirmed{
+    background:linear-gradient(180deg,#e6efe2 0%,#f1f4ec 100%);
+    border-color:rgba(74,106,72,.18);
+  }
+  .bk-section-confirmed::before{background:linear-gradient(90deg,#4a6a48,#7a9676);}
+
+  .bk-section-head{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:16px;margin-bottom:18px;
+    padding-bottom:14px;
+    border-bottom:1px solid rgba(80,55,25,.08);
+  }
+  .bk-section-title{font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--ink);line-height:1.2;}
+  .bk-section-sub{font-size:.83rem;color:var(--stone);margin-top:4px;}
 
   .bk-list{display:flex;flex-direction:column;gap:12px;}
-  .bk-loading{padding:36px 20px;text-align:center;color:var(--stone);font-size:.85rem;}
+  .bk-loading{padding:24px 20px;text-align:center;color:var(--stone);font-size:.85rem;}
   .bk-empty{
-    padding:36px 24px;text-align:center;background:#fff;border:1px dashed var(--border-hi);
+    padding:32px 24px;text-align:center;
+    background:rgba(255,255,255,.55);
+    border:1px dashed rgba(80,55,25,.18);
     border-radius:var(--r-lg);color:var(--stone);font-size:.85rem;line-height:1.6;
   }
   .bk-empty-title{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);margin-bottom:6px;}
@@ -349,33 +406,54 @@
   .bk-row-status-green{background:rgba(58,112,85,.15);color:#2a5440;}
   .bk-row-status-gray{background:rgba(120,100,80,.12);color:#7a6a58;}
 
-  /* Offer card (inline summary that's also clickable) */
+  /* Offer card (inline summary that's also clickable). v73m: pure white
+     background since the surrounding section is already cream/terracotta
+     tinted — keeps the card from blending into the panel. Pricing-grid
+     inner panel keeps the soft terracotta wash for emphasis. */
   .bk-offer-card{
-    background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%);
+    background:#fff;
     border:1px solid rgba(176,88,48,.22);
     border-radius:var(--r-lg);
-    padding:18px 20px;
+    padding:20px 22px;
     cursor:pointer;
     transition:box-shadow .2s, transform .2s, border-color .2s;
     text-align:left;width:100%;font-family:inherit;
+    box-shadow:0 1px 0 rgba(80,55,25,.04);
   }
   .bk-offer-card:hover{
-    box-shadow:0 6px 28px rgba(176,88,48,.14);
-    border-color:rgba(176,88,48,.4);
-    transform:translateY(-1px);
+    box-shadow:0 8px 32px rgba(176,88,48,.16);
+    border-color:#b05830;
+    transform:translateY(-2px);
   }
   .bk-offer-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
-  .bk-offer-card-eyebrow{font-family:'Geist',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;}
-  .bk-offer-card-prop{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1.2;}
-  .bk-offer-card-room{font-size:.78rem;color:var(--stone);margin-top:2px;}
-  .bk-offer-card-dates{font-size:.78rem;color:var(--bark);margin-top:8px;padding-top:8px;border-top:1px dashed rgba(80,60,30,.12);}
-  .bk-offer-card-pricing{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding:13px 16px;background:rgba(176,88,48,.06);border-radius:10px;}
-  .bk-offer-card-pricing .lbl{font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:3px;}
-  .bk-offer-card-pricing .val{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);}
+  .bk-offer-card-eyebrow{font-family:'Geist',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:6px;}
+  .bk-offer-card-prop{font-family:'Instrument Serif',serif;font-size:1.3rem;color:var(--ink);line-height:1.15;}
+  .bk-offer-card-room{font-size:.8rem;color:var(--stone);margin-top:3px;}
+  .bk-offer-card-dates{font-size:.8rem;color:var(--bark);margin-top:10px;padding-top:10px;border-top:1px dashed rgba(80,60,30,.12);font-weight:500;}
+  .bk-offer-card-pricing{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;padding:14px 16px;background:rgba(176,88,48,.07);border-radius:10px;}
+  .bk-offer-card-pricing .lbl{font-size:.56rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:4px;}
+  .bk-offer-card-pricing .val{font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--ink);}
   .bk-offer-card-pricing .val.deposit{color:var(--terra);}
-  .bk-offer-card-cta{margin-top:14px;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--terra);}
+  .bk-offer-card-cta{margin-top:16px;display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;color:var(--terra);}
   .bk-offer-card-cta::after{content:'\2192';transition:transform .15s;margin-left:6px;}
-  .bk-offer-card:hover .bk-offer-card-cta::after{transform:translateX(3px);}
+  .bk-offer-card:hover .bk-offer-card-cta::after{transform:translateX(4px);}
+
+  /* v73m: row cards on tinted backgrounds — pure white for contrast,
+     plus a per-row Cancel action that's hidden until hover. */
+  .bk-row{
+    background:#fff;
+    box-shadow:0 1px 0 rgba(80,55,25,.04);
+  }
+  .bk-row-actions{
+    display:flex;align-items:center;gap:8px;flex-shrink:0;
+  }
+  .bk-cancel-btn{
+    padding:6px 12px;border-radius:100px;
+    border:1px solid rgba(160,30,30,.2);background:transparent;
+    color:#a01e1e;font-family:'Geist',sans-serif;font-size:.72rem;font-weight:500;
+    cursor:pointer;transition:background .15s, border-color .15s;
+  }
+  .bk-cancel-btn:hover{background:rgba(160,30,30,.08);border-color:#a01e1e;}
 </style>
 <script src="/assets/envoy-prompt.js"></script>
 <style>
@@ -1139,6 +1217,9 @@ function renderCustomerBookings(bookings) {
   var confirmed = [];
   bookings.forEach(function(b) {
     var s = (b.status || 'enquiry').toLowerCase();
+    // v73m: skip cancelled bookings entirely on the customer side. Admin can
+    // still see them via admin-bookings if needed.
+    if (s === 'cancelled' || s === 'withdrawn') return;
     if (s === 'confirmed' || s === 'completed') {
       confirmed.push(b);
     } else if (s === 'offer_sent' && b.active_offer_id) {
@@ -1151,12 +1232,13 @@ function renderCustomerBookings(bookings) {
     }
   });
 
-  // Update pill counts + subtitle
+  // Update pill counts + subtitle (using only non-cancelled bookings)
+  var visibleTotal = enquiries.length + offers.length + confirmed.length;
   document.getElementById('bk-count-enq').textContent = enquiries.length;
   document.getElementById('bk-count-off').textContent = offers.length;
   document.getElementById('bk-count-conf').textContent = confirmed.length;
   document.getElementById('bk-sub').textContent =
-    bookings.length + ' total · ' + enquiries.length + ' enquir' + (enquiries.length === 1 ? 'y' : 'ies') + ' · ' + offers.length + ' offer' + (offers.length === 1 ? '' : 's') + ' · ' + confirmed.length + ' confirmed';
+    visibleTotal + ' total · ' + enquiries.length + ' enquir' + (enquiries.length === 1 ? 'y' : 'ies') + ' · ' + offers.length + ' offer' + (offers.length === 1 ? '' : 's') + ' · ' + confirmed.length + ' confirmed';
 
   // Render each section
   renderEnquiriesList(enquiries);
@@ -1188,20 +1270,69 @@ function renderEnquiriesList(list) {
       '</div>';
     return;
   }
+  // v73m: row is now a div (not anchor) so the Cancel button can live alongside
+  // an Open-conversation button without nesting interactive elements.
   el.innerHTML = list.map(function(b) {
     var prop = esc(b.property || b.slug || 'Property');
     var dates = esc(fmtDates(b.arrival, b.departure));
     var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
     var convLink = b.conversationId ? '/conversations.html?id=' + encodeURIComponent(b.conversationId) : '/conversations.html';
-    return '<a class="bk-row" href="' + convLink + '">' +
+    var refAttr = esc(b.ref || '');
+    return '<div class="bk-row" data-ref="' + refAttr + '">' +
       '<div class="bk-row-thumb"></div>' +
       '<div class="bk-row-body">' +
         '<div class="bk-row-prop">' + prop + '</div>' +
         '<div class="bk-row-meta">' + dates + room + ' \u00b7 Sent ' + esc(fmtDate(b.createdAt)) + '</div>' +
       '</div>' +
-      '<span class="bk-row-status bk-row-status-amber">Awaiting offer</span>' +
-    '</a>';
+      '<div class="bk-row-actions">' +
+        '<span class="bk-row-status bk-row-status-amber">Awaiting offer</span>' +
+        '<a href="' + convLink + '" class="bk-cancel-btn" style="background:#fff;color:var(--bark);border-color:rgba(80,55,25,.18);text-decoration:none;">Open conversation</a>' +
+        '<button class="bk-cancel-btn" data-action="cancel-enquiry" data-ref="' + refAttr + '" type="button">Cancel</button>' +
+      '</div>' +
+    '</div>';
   }).join('');
+
+  // Wire Cancel buttons
+  el.querySelectorAll('button[data-action="cancel-enquiry"]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var ref = btn.getAttribute('data-ref');
+      if (!ref) return;
+      var row = btn.closest('.bk-row');
+      var prop = row ? row.querySelector('.bk-row-prop').textContent : 'this enquiry';
+      var ok = window.confirm('Cancel your enquiry for ' + prop + '?\n\nThis archives the conversation. You can\u2019t undo this from the website.');
+      if (!ok) return;
+      cancelEnquiry(ref, btn);
+    });
+  });
+}
+
+// v73m: customer-side cancel-enquiry handler. PATCHes the booking with
+// action:'cancel-enquiry' and the user's email so the worker can verify
+// ownership. On success, reload the bookings list — the cancelled row
+// drops out of the Enquiries bucket.
+function cancelEnquiry(ref, btn) {
+  var user = window.Clerk && window.Clerk.user;
+  var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+  if (!email) { alert('Sign-in expired. Please refresh.'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Cancelling…'; }
+  fetch('/api/booking', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: ref, action: 'cancel-enquiry', requesterEmail: email })
+  })
+    .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+    .then(function(res) {
+      if (!res.ok || res.body.error) {
+        alert('Could not cancel: ' + (res.body.error || 'unknown error'));
+        if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+        return;
+      }
+      loadCustomerBookings(window.Clerk.user);
+    })
+    .catch(function(e) {
+      alert('Network error \u2014 please try again.');
+      if (btn) { btn.disabled = false; btn.textContent = 'Cancel'; }
+    });
 }
 
 function renderOffersList(list) {

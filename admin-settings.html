@@ -351,6 +351,28 @@ window.addEventListener('load', async function() {
       <span class="save-status" id="backfill-bookings-status"></span>
     </div>
     <pre id="backfill-bookings-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <div class="help-text">
+      <strong>Cancel stale pre-v73j enquiries (v73m):</strong> finds every booking with <code>status:'enquiry'</code> or <code>'pending'</code> created on or before <strong>2026-05-12</strong> (the day before v73j shipped) and marks them <code>status:'cancelled'</code>, archiving their linked conversation. These are stub enquiries from before the offer flow existed — they have no path forward and just sit in the customer's bookings view forever. Run once. Idempotent (skips bookings already cancelled or post-cutoff).
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="cancel-stale-btn" type="button">Cancel stale enquiries</button>
+      <span class="save-status" id="cancel-stale-status"></span>
+    </div>
+    <pre id="cancel-stale-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <div class="help-text">
+      <strong>Backfill offer cards into conversations (v73m):</strong> for every offer with <code>status:'sent'</code>, post an <code>offer_card</code> message into the linked conversation if one isn't already there. v73j added auto-card-posting on send — this populates offers sent before that. Idempotent (skips conversations that already have a matching card). Skips archived conversations.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="backfill-cards-btn" type="button">Backfill offer cards</button>
+      <span class="save-status" id="backfill-cards-status"></span>
+    </div>
+    <pre id="backfill-cards-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
   </div>
 </div>
 
@@ -783,6 +805,118 @@ window.addEventListener('load', async function() {
           bfBtn.disabled = false;
           bfBtn.textContent = 'Backfill bookings from conversations';
           bfBtn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73m: Cancel stale pre-v73j enquiries (batch)
+  var csBtn = document.getElementById('cancel-stale-btn');
+  if (csBtn) {
+    csBtn.addEventListener('click', function() {
+      if (!confirm('Cancel every enquiry created on or before 2026-05-12 that hasn\u2019t been responded to?\n\nLinked conversations will be archived. This cannot be undone from the website.')) return;
+      csBtn.disabled = true;
+      csBtn.textContent = 'Cancelling…';
+      csBtn.style.opacity = '.6';
+      var out = document.getElementById('cancel-stale-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/booking/cancel-stale-enquiries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}) // use default cutoff
+      })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok || res.body.error) {
+            flashStatus('cancel-stale-status', false, (res.body && res.body.error) || 'Failed');
+            return;
+          }
+          var b = res.body;
+          flashStatus('cancel-stale-status', true,
+            'Done · cancelled ' + b.cancelled + ' · skipped ' + b.skipped + (b.errors ? ' · errors ' + b.errors : ''));
+          var lines = [];
+          lines.push('Cutoff:    ' + b.cutoff);
+          lines.push('Scanned:   ' + b.scanned + ' booking(s)');
+          lines.push('Cancelled: ' + b.cancelled);
+          lines.push('Skipped:   ' + b.skipped);
+          lines.push('Errors:    ' + b.errors);
+          var det = b.details || {};
+          if ((det.cancelled || []).length) {
+            lines.push('');
+            lines.push('CANCELLED:');
+            det.cancelled.forEach(function(c){ lines.push('  - ' + c.ref + ' (slug=' + c.slug + ', created=' + c.createdAt + ')'); });
+          }
+          if ((det.skipped || []).length) {
+            lines.push('');
+            lines.push('SKIPPED (first 20):');
+            det.skipped.forEach(function(s){ lines.push('  · ' + s.ref + ' — ' + s.reason + (s.status ? ' (status=' + s.status + ')' : '') + (s.createdAt ? ' (created=' + s.createdAt + ')' : '')); });
+          }
+          if ((det.errors || []).length) {
+            lines.push('');
+            lines.push('ERRORS:');
+            det.errors.forEach(function(e){ lines.push('  ! ' + e.ref + ' — ' + e.error); });
+          }
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('cancel-stale-status', false, 'Network error'); })
+        .finally(function(){
+          csBtn.disabled = false;
+          csBtn.textContent = 'Cancel stale enquiries';
+          csBtn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73m: Backfill offer cards into conversations
+  var bcBtn = document.getElementById('backfill-cards-btn');
+  if (bcBtn) {
+    bcBtn.addEventListener('click', function() {
+      bcBtn.disabled = true;
+      bcBtn.textContent = 'Backfilling…';
+      bcBtn.style.opacity = '.6';
+      var out = document.getElementById('backfill-cards-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/offer/backfill-cards', { method: 'POST', cache: 'no-store' })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok || res.body.error) {
+            flashStatus('backfill-cards-status', false, (res.body && res.body.error) || 'Failed');
+            return;
+          }
+          var b = res.body;
+          flashStatus('backfill-cards-status', true,
+            'Done · posted ' + b.posted + ' · skipped ' + b.skipped + (b.errors ? ' · errors ' + b.errors : ''));
+          var lines = [];
+          lines.push('Scanned: ' + b.scanned + ' offer(s)');
+          lines.push('Posted:  ' + b.posted + ' card(s)');
+          lines.push('Skipped: ' + b.skipped);
+          lines.push('Errors:  ' + b.errors);
+          var det = b.details || {};
+          if ((det.posted || []).length) {
+            lines.push('');
+            lines.push('POSTED:');
+            det.posted.forEach(function(p){ lines.push('  + ' + p.offerId + ' into conv ' + p.convId); });
+          }
+          if ((det.skipped || []).length) {
+            lines.push('');
+            lines.push('SKIPPED (first 30):');
+            det.skipped.forEach(function(s){ lines.push('  · ' + s.offerId + ' — ' + s.reason); });
+          }
+          if ((det.errors || []).length) {
+            lines.push('');
+            lines.push('ERRORS:');
+            det.errors.forEach(function(e){ lines.push('  ! ' + e.offerId + ' — ' + e.error); });
+          }
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('backfill-cards-status', false, 'Network error'); })
+        .finally(function(){
+          bcBtn.disabled = false;
+          bcBtn.textContent = 'Backfill offer cards';
+          bcBtn.style.opacity = '1';
         });
     });
   }
