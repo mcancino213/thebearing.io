@@ -3063,9 +3063,15 @@ loadProperty();
             <input class="f-inp" id="inq-checkout" name="checkout" type="date" onclick="try{this.showPicker()}catch(e){}">
           </div>
         </div>
-        <div class="f-field">
-          <label class="f-lbl" for="inq-guests">Guests</label>
-          <input class="f-inp" id="inq-guests" name="guests" type="text" placeholder="2 adults">
+        <div class="f-row">
+          <div class="f-field">
+            <label class="f-lbl" for="inq-adults">Adults</label>
+            <input class="f-inp" id="inq-adults" name="adults" type="number" min="1" max="40" step="1" value="2" inputmode="numeric" pattern="[0-9]*">
+          </div>
+          <div class="f-field">
+            <label class="f-lbl" for="inq-children">Children</label>
+            <input class="f-inp" id="inq-children" name="children" type="number" min="0" max="20" step="1" value="0" inputmode="numeric" pattern="[0-9]*">
+          </div>
         </div>
 
         <div class="f-field">
@@ -3157,7 +3163,7 @@ loadProperty();
         </div>
       </div>
 
-      <button class="f-next" onclick="submitEnquiryAndGo()">Open my conversation →</button>
+      <button class="f-next" onclick="goStep(3)">Open my conversation →</button>
       <p class="f-note">No payment now · No obligation · Cancel any time</p>
     </div>
 
@@ -3175,8 +3181,6 @@ loadProperty();
         </div>
         <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/conversations.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
           Go to conversation
-          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
-        </a>
           <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
       </div>
