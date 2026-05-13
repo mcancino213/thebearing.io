@@ -1698,6 +1698,13 @@ View in admin: https://thebearing.io/admin-bookings.html
           if (!convRaw) return jsonResponse({ error: 'conversation not found' }, 404);
           const conv = JSON.parse(convRaw);
 
+          // v73o: refuse new messages on archived conversations. The frontend
+          // disables the composer, but a direct API caller could otherwise
+          // bypass that. Belt-and-suspenders.
+          if (conv.status === 'archived') {
+            return jsonResponse({ error: 'conversation is archived (read-only)' }, 409);
+          }
+
           const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
           const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
 

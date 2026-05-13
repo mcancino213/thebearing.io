@@ -549,6 +549,40 @@ html, body { height: 100%; }
 }
 .ch-sound-toggle:hover{background:var(--cream);color:var(--ink);}
 .ch-sound-toggle.muted{opacity:.6;}
+
+/* v73o: Show/Hide archived toggle below the title row. Muted by default,
+   matches the sand color family used elsewhere for archived state. */
+.ch-archive-toggle{
+  margin-top:10px;
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;border:1px solid var(--border-hi);
+  padding:5px 10px;border-radius:100px;
+  color:var(--stone);cursor:pointer;
+  font-family:"Geist",sans-serif;font-size:.7rem;font-weight:500;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.ch-archive-toggle:hover{background:#f5ecd9;color:#6b5320;border-color:rgba(154,114,48,.35);}
+.ch-archive-toggle.active{background:#f5ecd9;color:#6b5320;border-color:rgba(154,114,48,.4);}
+.ch-archive-toggle svg{flex-shrink:0;}
+.ch-archive-toggle-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:16px;height:16px;padding:0 5px;border-radius:100px;
+  font-size:.6rem;font-weight:700;background:rgba(154,114,48,.18);color:#6b5320;
+}
+.ch-archive-toggle.active .ch-archive-toggle-count{display:none;}
+
+/* Muted treatment for archived items in the sidebar list when toggle is on */
+.ch-item.archived{opacity:.62;}
+.ch-item.archived:hover{opacity:.85;background:#f5f2eb;}
+.ch-item.archived.active{opacity:1;background:#fdf5ee;}
+.ch-item.archived .ch-prop::after{
+  content:'archived';
+  display:inline-block;margin-left:6px;
+  font-size:.55rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:#9a7230;background:#f5ecd9;
+  padding:2px 6px;border-radius:100px;vertical-align:middle;
+}
+
 .ch-group-label{
   padding:13px 20px 7px;font-size:.62rem;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;color:var(--stone);
@@ -610,6 +644,38 @@ html, body { height: 100%; }
 .ch-thread-sub{font-size:.72rem;color:var(--stone);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .ch-thread-sub-sep{color:var(--border-hi);}
 .ch-thread-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+/* v73o: archived conversation banner + composer notice + muted state.
+   Sits between header and messages. Sand-colored to match the bookings
+   page Enquiries section accent and signal "this is a paused state, not
+   an error." */
+.ch-archived-banner{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 18px;
+  background:#f5ecd9;
+  border-bottom:1px solid rgba(154,114,48,.2);
+  color:#6b5320;
+}
+.ch-archived-banner svg{flex-shrink:0;margin-top:2px;}
+.ch-archived-title{font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.01em;}
+.ch-archived-when{font-weight:400;color:#9a7230;}
+.ch-archived-sub{font-size:.72rem;color:#9a7230;margin-top:2px;line-height:1.45;}
+
+.ch-archived-composer-notice{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 22px;
+  background:#fff;
+  border-top:1px solid var(--border);
+  color:var(--stone);
+  font-family:'Geist',sans-serif;font-size:.78rem;
+}
+.ch-archived-composer-notice svg{flex-shrink:0;}
+
+/* Muted state for archived threads — messages still legible but the area
+   reads as inactive. */
+.ch-thread-archived .ch-msgs{background:#f5f2eb;}
+.ch-thread-archived .ch-bubble{opacity:.78;}
+.ch-thread-archived .ch-msg-day-sep{opacity:.7;}
 
 /* Messages */
 .ch-msgs{
@@ -1380,6 +1446,8 @@ window.addEventListener('load', async function() {
 <script src="/assets/conv-scroll.js"></script>
 <script>
 var chConvs = [];
+var chConvsAll = []; // v73o: full set including archived
+var chShowArchived = false; // v73o: toggle for sidebar archive view
 var chActiveId = null;
 var chPoll = null;
 var chQuotedMessage = null;
@@ -1477,6 +1545,13 @@ function initChannels(user) {
             '</div>' +
             '<button class="ch-sound-toggle" id="ch-sound-toggle" onclick="chToggleSound()"></button>' +
           '</div>' +
+          // v73o: archive toggle. Hidden until we know there are archived
+          // conversations to show — chRenderList will reveal it.
+          '<button class="ch-archive-toggle" id="ch-archive-toggle" onclick="chToggleArchived()" style="display:none;" type="button">' +
+            '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 6 L3 4 a1 1 0 0 1 1 -1 L20 3 a1 1 0 0 1 1 1 L21 6"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' +
+            '<span id="ch-archive-toggle-label">Show archived</span>' +
+            '<span class="ch-archive-toggle-count" id="ch-archive-toggle-count"></span>' +
+          '</button>' +
         '</div>' +
         '<div class="ch-list" id="ch-list"><div class="ch-loading">Loading conversations…</div></div>' +
       '</div>' +
@@ -1495,17 +1570,29 @@ function initChannels(user) {
   chPaintSoundToggle();
 
   var guestId = user.id;
+  // v73o: keep ALL conversations (active + archived) so we can switch the
+  // visible filter via the "Show archived" toggle without re-fetching.
+  // chConvs = currently-displayed set (used by chRenderList).
+  // chConvsAll = full set.
+  // chShowArchived = toggle state.
   fetch('/api/conversation?guestId=' + encodeURIComponent(guestId))
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(d){
-      chConvs = (d.conversations || []).filter(function(c) { return c.status !== 'archived'; });
+      chConvsAll = (d.conversations || []);
+      // v73o: if the URL points to an archived conversation, auto-flip the
+      // toggle so the user can see context in the sidebar.
+      var urlId = new URLSearchParams(window.location.search).get('id');
+      if (urlId) {
+        var target = chConvsAll.find(function(c) { return c.id === urlId; });
+        if (target && target.status === 'archived') chShowArchived = true;
+      }
+      chApplyArchiveFilter();
       chRenderList();
       chUpdateUnreadIndicator();
-      var urlId = new URLSearchParams(window.location.search).get('id');
       if (urlId) chOpen(urlId);
       else if (chConvs.length === 1) chOpen(chConvs[0].id);
     })
-    .catch(function(e){ 
+    .catch(function(e){
       var el = document.getElementById('ch-list');
       if(el) el.innerHTML = '<div class="ch-empty" style="color:#dc2626;">Error: ' + e.message + '</div>';
     });
@@ -1515,11 +1602,28 @@ function initChannels(user) {
     fetch('/api/conversation?guestId=' + encodeURIComponent(guestId))
       .then(function(r){ return r.json(); })
       .then(function(d){
-        chConvs = (d.conversations || []).filter(function(c) { return c.status !== 'archived'; });
+        chConvsAll = (d.conversations || []);
+        chApplyArchiveFilter();
         chRenderList();
         chUpdateUnreadIndicator();
       }).catch(function(){});
   }, 15000);
+}
+
+// v73o: apply or remove the archived filter on chConvs based on toggle.
+function chApplyArchiveFilter() {
+  if (chShowArchived) {
+    chConvs = chConvsAll.slice();
+  } else {
+    chConvs = chConvsAll.filter(function(c) { return c.status !== 'archived'; });
+  }
+}
+
+// v73o: toggle handler
+function chToggleArchived() {
+  chShowArchived = !chShowArchived;
+  chApplyArchiveFilter();
+  chRenderList();
 }
 
 function chUpdateUnreadIndicator() {
@@ -1540,6 +1644,23 @@ function chRenderList() {
     var unread = chConvs.filter(function(c){ return (c.unreadGuest || 0) > 0; }).length;
     countEl.textContent = chConvs.length + ' conversation' + (chConvs.length === 1 ? '' : 's') + (unread > 0 ? ' · ' + unread + ' unread' : '');
   }
+
+  // v73o: archive toggle visibility + label sync
+  var archivedCount = chConvsAll.filter(function(c) { return c.status === 'archived'; }).length;
+  var archToggle = document.getElementById('ch-archive-toggle');
+  var archLabel = document.getElementById('ch-archive-toggle-label');
+  var archCount = document.getElementById('ch-archive-toggle-count');
+  if (archToggle) {
+    if (archivedCount > 0) {
+      archToggle.style.display = '';
+      archToggle.classList.toggle('active', chShowArchived);
+      if (archLabel) archLabel.textContent = chShowArchived ? 'Hide archived' : 'Show archived';
+      if (archCount) archCount.textContent = chShowArchived ? '' : String(archivedCount);
+    } else {
+      archToggle.style.display = 'none';
+    }
+  }
+
   if (!chConvs.length) {
     el.innerHTML = '<div class="ch-empty"><div style="margin-bottom:8px;font-weight:500;color:var(--ink);">No conversations yet</div><div>Send an enquiry from a property page to start a conversation.</div></div>';
     return;
@@ -1577,9 +1698,10 @@ function chRenderList() {
 function chBuildConvItem(c) {
   var ini = (c.propertyName || c.propertySlug || '?')[0].toUpperCase();
   var unread = (c.unreadGuest || 0) > 0;
+  var isArchived = c.status === 'archived'; // v73o
 
   var item = document.createElement('div');
-  item.className = 'ch-item' + (c.id === chActiveId ? ' active' : '') + (unread ? ' unread' : '');
+  item.className = 'ch-item' + (c.id === chActiveId ? ' active' : '') + (unread && !isArchived ? ' unread' : '') + (isArchived ? ' archived' : '');
   item.addEventListener('click', function(){ chOpen(c.id); });
 
   var av = document.createElement('div');
@@ -1768,6 +1890,28 @@ function chRenderThread(conv, msgs) {
   hdr.appendChild(actions);
   thread.appendChild(hdr);
 
+  // v73o: archived banner — sits between header and messages on read-only
+  // conversations. Visually subtle but unmistakable. Banner also applies a
+  // class to the thread root so muted styling can cascade to messages.
+  var isArchived = conv.status === 'archived';
+  if (isArchived) {
+    thread.classList.add('ch-thread-archived');
+    var archBanner = document.createElement('div');
+    archBanner.className = 'ch-archived-banner';
+    var reason = '';
+    if (conv.archivedReason === 'enquiry_cancelled_by_guest') reason = 'You cancelled this enquiry.';
+    else if (conv.archivedReason === 'enquiry_cancelled_by_admin' || conv.archivedReason === 'enquiry_cancelled_admin_batch') reason = 'This enquiry was cancelled.';
+    else reason = 'This conversation is archived.';
+    var when = conv.archivedAt ? new Date(conv.archivedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+    archBanner.innerHTML =
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 6 L3 4 a1 1 0 0 1 1 -1 L20 3 a1 1 0 0 1 1 1 L21 6"/><line x1="10" y1="12" x2="14" y2="12"/></svg>' +
+      '<div>' +
+        '<div class="ch-archived-title">Read-only — ' + chEsc(reason) + (when ? ' <span class="ch-archived-when">' + chEsc(when) + '</span>' : '') + '</div>' +
+        '<div class="ch-archived-sub">History is preserved. Start a fresh enquiry from the property page if you\u2019d like to engage again.</div>' +
+      '</div>';
+    thread.appendChild(archBanner);
+  }
+
   // ── Messages ──
   var msgsWrap = document.createElement('div');
   msgsWrap.className = 'ch-msgs';
@@ -1776,6 +1920,25 @@ function chRenderThread(conv, msgs) {
   thread.appendChild(msgsWrap);
 
   // ── Composer ──
+  // v73o: archived conversations get a read-only notice strip instead of a
+  // composer. The notice mirrors the banner intent ("don't try to send
+  // messages here") without redundant reasoning since the banner already
+  // explained.
+  if (isArchived) {
+    var notice = document.createElement('div');
+    notice.className = 'ch-archived-composer-notice';
+    notice.innerHTML =
+      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      '<span>This conversation is closed. Replies aren\u2019t accepted.</span>';
+    thread.appendChild(notice);
+    // Reset quote state, render context panel, scroll, and bail before
+    // building the composer element.
+    chQuotedMessage = null;
+    chRenderContextPanel(conv);
+    window.pinToBottom(msgsWrap);
+    return;
+  }
+
   var inputWrap = document.createElement('div');
   inputWrap.className = 'ch-input-wrap';
   var container = document.createElement('div');

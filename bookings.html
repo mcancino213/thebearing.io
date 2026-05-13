@@ -359,6 +359,51 @@
   }
   .bk-section-confirmed::before{background:linear-gradient(90deg,#4a6a48,#7a9676);}
 
+  /* v73o: cancelled section — collapsed by default, muted, no accent stripe.
+     Sits below the three active sections. Only shown if there are
+     cancelled bookings (JS toggles display:block). */
+  .bk-cancelled-wrap{
+    margin-top:8px;margin-bottom:32px;
+    border-radius:14px;
+    background:rgba(120,100,80,.05);
+    border:1px solid rgba(120,100,80,.14);
+    padding:14px 18px;
+  }
+  .bk-cancelled-wrap[open]{padding-bottom:22px;}
+  .bk-cancelled-summary{
+    cursor:pointer;list-style:none;
+    display:flex;align-items:center;gap:10px;
+    font-family:'Geist',sans-serif;
+    color:var(--stone);
+    user-select:none;
+  }
+  .bk-cancelled-summary::-webkit-details-marker{display:none;}
+  .bk-cancelled-chev{
+    display:inline-block;transition:transform .15s;
+    font-size:1rem;line-height:1;color:var(--stone);
+  }
+  .bk-cancelled-wrap[open] .bk-cancelled-chev{transform:rotate(90deg);}
+  .bk-cancelled-title{font-size:.86rem;font-weight:600;color:var(--bark);}
+  .bk-cancelled-count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:20px;height:20px;padding:0 7px;border-radius:100px;
+    font-size:.68rem;font-weight:700;
+    background:rgba(120,100,80,.18);color:var(--stone);
+  }
+  .bk-cancelled-hint{font-size:.72rem;color:var(--mist);margin-left:auto;}
+  @media(max-width:600px){.bk-cancelled-hint{display:none;}}
+
+  /* Cancelled row — muted, opens conversation read-only */
+  .bk-cancelled-row{
+    background:#fff;border:1px solid var(--border);border-radius:var(--r-md);
+    padding:14px 16px;display:flex;align-items:center;gap:14px;
+    text-decoration:none;color:inherit;
+    opacity:.78;transition:opacity .15s;
+  }
+  .bk-cancelled-row:hover{opacity:1;}
+  .bk-cancelled-row .bk-row-prop{font-size:.86rem;color:var(--bark);}
+  .bk-cancelled-row .bk-row-meta{font-size:.72rem;color:var(--mist);}
+
   .bk-section-head{
     display:flex;align-items:flex-start;justify-content:space-between;
     gap:16px;margin-bottom:18px;
@@ -707,6 +752,20 @@
         <div class="bk-loading">Loading your confirmed bookings…</div>
       </div>
     </section>
+
+    <!-- v73o: CANCELLED section. Renders only if there are cancelled bookings.
+         Uses <details> for native collapse — closed by default since this is
+         historical reference, not active. Muted styling (no accent stripe,
+         neutral border) to signal "this is archive, not work-in-progress". -->
+    <details id="bk-cancelled-wrap" class="bk-cancelled-wrap" style="display:none;">
+      <summary class="bk-cancelled-summary">
+        <span class="bk-cancelled-chev">\u203a</span>
+        <span class="bk-cancelled-title">Cancelled</span>
+        <span class="bk-cancelled-count" id="bk-count-cancelled">0</span>
+        <span class="bk-cancelled-hint">Read-only archive of cancelled enquiries</span>
+      </summary>
+      <div id="bk-cancelled-list" class="bk-list" style="margin-top:14px;"></div>
+    </details>
 
   </main>
 </div>
@@ -1213,11 +1272,14 @@ function renderCustomerBookings(bookings) {
   var enquiries = [];
   var offers = [];
   var confirmed = [];
+  var cancelled = []; // v73o
   bookings.forEach(function(b) {
     var s = (b.status || 'enquiry').toLowerCase();
-    // v73m: skip cancelled bookings entirely on the customer side. Admin can
-    // still see them via admin-bookings if needed.
-    if (s === 'cancelled' || s === 'withdrawn') return;
+    // v73o: cancelled bookings flow into their own bucket (was: dropped entirely)
+    if (s === 'cancelled' || s === 'withdrawn') {
+      cancelled.push(b);
+      return;
+    }
     if (s === 'confirmed' || s === 'completed') {
       confirmed.push(b);
     } else if (s === 'offer_sent' && b.active_offer_id) {
@@ -1230,7 +1292,7 @@ function renderCustomerBookings(bookings) {
     }
   });
 
-  // Update pill counts + subtitle (using only non-cancelled bookings)
+  // Update pill counts + subtitle (active sections only; cancelled is archive)
   var visibleTotal = enquiries.length + offers.length + confirmed.length;
   document.getElementById('bk-count-enq').textContent = enquiries.length;
   document.getElementById('bk-count-off').textContent = offers.length;
@@ -1242,6 +1304,41 @@ function renderCustomerBookings(bookings) {
   renderEnquiriesList(enquiries);
   renderOffersList(offers);
   renderConfirmedList(confirmed);
+  renderCancelledList(cancelled); // v73o
+}
+
+// v73o: render cancelled bookings into the collapsible archive panel. The
+// wrap is display:none in markup; we toggle it on only when there are
+// cancelled entries to show. No empty state — invisible when there's
+// nothing to show.
+function renderCancelledList(list) {
+  var wrap = document.getElementById('bk-cancelled-wrap');
+  var listEl = document.getElementById('bk-cancelled-list');
+  var countEl = document.getElementById('bk-count-cancelled');
+  if (!wrap || !listEl || !countEl) return;
+  if (!list.length) {
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  countEl.textContent = list.length;
+  listEl.innerHTML = list.map(function(b) {
+    var prop = esc(b.property || b.slug || 'Property');
+    var dates = esc(fmtDates(b.arrival, b.departure));
+    var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
+    var when = b.cancelledAt ? fmtDate(b.cancelledAt) : (b.updatedAt ? fmtDate(b.updatedAt) : '');
+    var convLink = b.conversationId ? '/conversations.html?id=' + encodeURIComponent(b.conversationId) : null;
+    var inner =
+      '<div class="bk-row-thumb"></div>' +
+      '<div class="bk-row-body">' +
+        '<div class="bk-row-prop">' + prop + '</div>' +
+        '<div class="bk-row-meta">' + dates + room + (when ? ' \u00b7 Cancelled ' + esc(when) : '') + '</div>' +
+      '</div>' +
+      '<span class="bk-row-status bk-row-status-gray">Cancelled</span>';
+    return convLink
+      ? '<a class="bk-cancelled-row" href="' + convLink + '">' + inner + '</a>'
+      : '<div class="bk-cancelled-row" style="cursor:default;">' + inner + '</div>';
+  }).join('');
 }
 
 function esc(s) {
