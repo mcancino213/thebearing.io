@@ -2305,7 +2305,13 @@ function _continueEnquirySubmission(user, triggerBtn, ctx) {
   }
 
   // ── Check for existing open conversation, else create new ──
-  // Same property + same guest + open status → reuse instead of stacking duplicates.
+  // v73i: if an open conversation already exists for this property + guest,
+  // append the new enquiry message as a follow-up to that conversation
+  // (and also refresh the conversation's `enquiry` shape with the latest
+  // dates/room/guests). Previously we'd silently redirect to the old
+  // conversation and DISCARD the user's new message — so users who
+  // refined dates and resubmitted saw their second enquiry vanish.
+  // Now: every submit produces a visible message in the right channel.
   fetch('/api/conversation?guestId=' + encodeURIComponent(guestId), { cache: 'no-store' })
     .then(function(r){ return r.ok ? r.json() : { conversations: [] }; })
     .then(function(existing){
@@ -2313,11 +2319,39 @@ function _continueEnquirySubmission(user, triggerBtn, ctx) {
         return c.propertySlug === propSlug && c.status === 'open';
       });
       if (match) {
-        // Use existing — same as v73b behavior, but now under the right id.
-        window.location = '/conversations.html?id=' + encodeURIComponent(match.id);
-        return null;
+        // Post the new enquiry message as a follow-up to the existing thread.
+        // Worker's `action:'message'` appends a message + updates lastMessageAt.
+        // We also POST the updated enquiry shape so the partner sees the
+        // refined dates on the right panel.
+        return fetch('/api/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'message',
+            id: match.id,
+            role: 'guest',
+            text: guestMsg,
+            senderName: guestName,
+            updateEnquiry: { arrival: checkin, departure: checkout, guests: guests, cabin: cabin, notes: notes }
+          })
+        }).then(function(r){ return r.json(); })
+          .then(function(d){
+            // Navigate regardless of strict success — the message-append
+            // endpoint returns {ok:true} or an error. If error, surface it.
+            if (d && d.ok === false) {
+              inquiryError('Could not add to your existing conversation: ' + (d.error || 'unknown error') + '. Please try again.');
+              if (triggerBtn) {
+                triggerBtn.disabled = false;
+                triggerBtn.textContent = triggerBtn.dataset.origText || 'Open my conversation →';
+                triggerBtn.style.opacity = '';
+              }
+              return null;
+            }
+            window.location = '/conversations.html?id=' + encodeURIComponent(match.id);
+            return null; // signal to outer .then we already navigated
+          });
       }
-      // Create new
+      // No existing conversation — create new
       return fetch('/api/conversation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

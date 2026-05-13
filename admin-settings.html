@@ -340,6 +340,17 @@ window.addEventListener('load', async function() {
       <span class="save-status" id="cleanup-status"></span>
     </div>
     <pre id="cleanup-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <div class="help-text">
+      <strong>Backfill stub bookings from conversations (v73i):</strong> walks every conversation in <code>__conversations_index</code> and, for each one without a linked booking, creates a <code>booking:{ref}</code> record with <code>status:'enquiry'</code>. Old enquiries (created before v73g added auto-stub-creation) didn't have linked bookings, so they never appeared in <code>pp-bookings</code>. Run once after deploying to surface every existing enquiry as a bookable lead. Idempotent.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="backfill-bookings-btn" type="button">Backfill bookings from conversations</button>
+      <span class="save-status" id="backfill-bookings-status"></span>
+    </div>
+    <pre id="backfill-bookings-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
   </div>
 </div>
 
@@ -719,6 +730,59 @@ window.addEventListener('load', async function() {
           btn.disabled = false;
           btn.textContent = 'Clean property index';
           btn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73i: Backfill stub bookings from existing conversations
+  var bfBtn = document.getElementById('backfill-bookings-btn');
+  if (bfBtn) {
+    bfBtn.addEventListener('click', function() {
+      bfBtn.disabled = true;
+      bfBtn.textContent = 'Backfilling…';
+      bfBtn.style.opacity = '.6';
+      var out = document.getElementById('backfill-bookings-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/conversation/backfill-bookings', { method: 'POST', cache: 'no-store' })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok) {
+            flashStatus('backfill-bookings-status', false, (res.body && res.body.error) || 'Failed');
+            return;
+          }
+          var b = res.body;
+          flashStatus('backfill-bookings-status', true,
+            'Done · created ' + b.created + ' · skipped ' + b.skipped + (b.errors ? ' · errors ' + b.errors : ''));
+          var lines = [];
+          lines.push('Scanned:  ' + b.scanned + ' conversation(s)');
+          lines.push('Created:  ' + b.created + ' new booking(s)');
+          lines.push('Skipped:  ' + b.skipped);
+          lines.push('Errors:   ' + b.errors);
+          var det = b.details || {};
+          if ((det.created || []).length) {
+            lines.push('');
+            lines.push('CREATED:');
+            det.created.forEach(function(c){ lines.push('  + ' + c.ref + ' for conv ' + c.id + ' (slug=' + c.slug + ')'); });
+          }
+          if ((det.skipped || []).length) {
+            lines.push('');
+            lines.push('SKIPPED (first 20):');
+            det.skipped.forEach(function(s){ lines.push('  · ' + s.id + ' — ' + s.reason + (s.ref ? ' (ref=' + s.ref + ')' : '')); });
+          }
+          if ((det.errors || []).length) {
+            lines.push('');
+            lines.push('ERRORS:');
+            det.errors.forEach(function(e){ lines.push('  ! ' + e.id + ' — ' + e.error); });
+          }
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('backfill-bookings-status', false, 'Network error'); })
+        .finally(function(){
+          bfBtn.disabled = false;
+          bfBtn.textContent = 'Backfill bookings from conversations';
+          bfBtn.style.opacity = '1';
         });
     });
   }

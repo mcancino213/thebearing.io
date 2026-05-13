@@ -78,20 +78,38 @@ var tbAuth = (function() {
 
     var overlay = document.createElement('div');
     overlay.id = 'tb-auth-overlay';
-    // v73g: when the Clerk widget content makes the sheet taller than the
-    // viewport (laptop screens, mobile), align-items:center pushes the top
-    // of the sheet off-screen (Miguel's screenshot). Switch to flex-start
-    // with overflow-y:auto so the user can scroll within the overlay and
-    // sees the top of the modal. Padding-top gives breathing room.
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:flex-start;justify-content:center;backdrop-filter:blur(6px);overflow-y:auto;padding:5vh 0;';
+    // v73i: defensive centering. Previous attempts used flex centering but
+    // Miguel kept seeing the modal anchored incorrectly. CSS Grid with
+    // `place-items: start center` reliably puts the sheet centered
+    // horizontally and aligned to the TOP (so the top of the modal is
+    // always visible). Explicit `width:100vw; height:100vh` removes any
+    // ambiguity about the container filling the viewport. The sheet has
+    // `margin:5vh auto 5vh` for horizontal centering as a backup if grid
+    // misbehaves in some browser. `overflow-y:auto` lets the user scroll
+    // if the Clerk widget makes the sheet taller than the viewport.
+    overlay.style.cssText = [
+      'position:fixed',
+      'top:0',
+      'left:0',
+      'width:100vw',
+      'height:100vh',
+      'background:rgba(0,0,0,.6)',
+      'z-index:9000',
+      'display:grid',
+      'place-items:start center',
+      'backdrop-filter:blur(6px)',
+      'overflow-y:auto',
+      'padding:5vh 16px'
+    ].join(';');
 
     // v73f: bumped max-width from 480 → 560 to fit Clerk's widget without
     // overflow. Clerk's mountSignIn renders a ~440px-wide card with its own
     // padding — the old 480px sheet was just barely wider, which caused the
     // widget to anchor left while our header stayed at full width on the
     // right, producing the broken layout Miguel screenshotted.
+    // v73i: `margin:0 auto` for horizontal centering as a backup to grid.
     var sheet = document.createElement('div');
-    sheet.style.cssText = 'background:#faf7f1;border-radius:20px;width:100%;max-width:560px;padding:32px 28px 40px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .28s ease;margin:20px;';
+    sheet.style.cssText = 'background:#faf7f1;border-radius:20px;width:100%;max-width:560px;margin:0 auto;padding:32px 28px 40px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .28s ease;';
 
     // Header
     var title = opts.title || 'Sign in to continue';

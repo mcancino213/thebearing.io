@@ -745,6 +745,92 @@ export default {
       return new Response('Method not allowed', { status: 405 });
     }
 
+    // ── /api/conversation/backfill-bookings ────────────────────────
+    // v73i: admin-gated one-shot. Walks every conversation in
+    // __conversations_index; for each one that doesn't have a linked
+    // booking (conv.bookingRef missing), creates a stub `booking:{ref}`
+    // record with status:'enquiry' so it appears in pp-bookings.
+    // Needed because v73g added stub-on-create but didn't backfill old
+    // enquiries. Idempotent — safe to run multiple times.
+    if (url.pathname === '/api/conversation/backfill-bookings') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const idxRaw = await env.DOSSIERS.get('__conversations_index');
+      const convIds = idxRaw ? JSON.parse(idxRaw) : [];
+      const created = [];
+      const skipped = [];
+      const errors = [];
+
+      // Load current booking index once so we can append
+      const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+      const bRefs = bIdxRaw ? JSON.parse(bIdxRaw) : [];
+
+      for (const cid of convIds) {
+        try {
+          const raw = await env.DOSSIERS.get('conversation:' + cid);
+          if (!raw) { skipped.push({ id: cid, reason: 'no-record' }); continue; }
+          const conv = JSON.parse(raw);
+          if (conv.bookingRef) { skipped.push({ id: cid, reason: 'already-linked', ref: conv.bookingRef }); continue; }
+          if (conv.status === 'archived') { skipped.push({ id: cid, reason: 'archived' }); continue; }
+          if (!conv.propertySlug) { skipped.push({ id: cid, reason: 'no-slug' }); continue; }
+
+          const year = new Date(conv.createdAt || Date.now()).getFullYear();
+          const rand = Math.floor(1000 + Math.random() * 9000);
+          const ref = 'TB-' + year + '-' + rand;
+          const enq = conv.enquiry || {};
+          const nameStr = (conv.guestName || conv.guestEmail || '').trim();
+          const nameParts = nameStr.split(/\s+/);
+          const firstname = nameParts[0] || 'Guest';
+          const lastname  = nameParts.slice(1).join(' ') || '';
+
+          const booking = {
+            ref,
+            property: conv.propertyName || conv.propertySlug,
+            slug: conv.propertySlug,
+            conversationId: cid,
+            arrival:   enq.arrival   || '',
+            departure: enq.departure || '',
+            nights: '',
+            guests: enq.guests || '',
+            room: enq.cabin || '',
+            roomPrice: 0,
+            totalAmount: 0,
+            depositAmount: 0,
+            firstname, lastname,
+            email: conv.guestEmail || '',
+            phone: '',
+            notes: enq.notes || '',
+            status: 'enquiry',
+            paymentStatus: 'none',
+            createdAt: conv.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+          bRefs.push(ref);
+
+          conv.bookingRef = ref;
+          await env.DOSSIERS.put('conversation:' + cid, JSON.stringify(conv));
+          created.push({ id: cid, ref, slug: conv.propertySlug });
+        } catch (e) {
+          errors.push({ id: cid, error: String(e && e.message || e) });
+        }
+      }
+
+      // Persist updated bookings index once at end
+      await env.DOSSIERS.put('__bookings_index', JSON.stringify(bRefs));
+
+      return jsonResponse({
+        ok: true,
+        scanned: convIds.length,
+        created: created.length,
+        skipped: skipped.length,
+        errors: errors.length,
+        details: { created, skipped: skipped.slice(0, 20), errors }
+      });
+    }
+
     // ── /api/property/cleanup ─────────────────────────────────────
     // Admin-gated. One-shot janitor: scrubs `__property_index` of (a) reserved
     // slugs starting with `__`, (b) slugs whose `{slug}:property` KV record is
@@ -1230,11 +1316,13 @@ View in admin: https://thebearing.io/admin-bookings.html
           // partner with no surface to start an offer from. Linking
           // conversation ↔ booking via booking.conversationId lets the
           // offer-builder modal in pp-bookings find the right conv.
+          // v73i: log every step so we can diagnose if/why pp-bookings shows 0.
           try {
             const year = new Date().getFullYear();
             const rand = Math.floor(1000 + Math.random() * 9000);
             const ref = 'TB-' + year + '-' + rand;
             const enq = enquiry || {};
+            console.log('[Conv create] creating stub booking for conv ' + id + ' on slug ' + propertySlug + ' ref ' + ref);
             // Best-effort name split — guests usually paste "Miguel Cancino"
             const nameStr = (guestName || guestEmail).trim();
             const nameParts = nameStr.split(/\s+/);
@@ -1267,11 +1355,12 @@ View in admin: https://thebearing.io/admin-bookings.html
             const bRefs = bIdxRaw ? JSON.parse(bIdxRaw) : [];
             bRefs.push(ref);
             await env.DOSSIERS.put('__bookings_index', JSON.stringify(bRefs));
+            console.log('[Conv create] stub booking ' + ref + ' saved + indexed. Total bookings now: ' + bRefs.length);
             // Link conversation → booking for later lookup from pp-conversations
             conv.bookingRef = ref;
             await env.DOSSIERS.put('conversation:' + id, JSON.stringify(conv));
           } catch (e) {
-            console.error('[Conversation create] booking-stub create failed:', e);
+            console.error('[Conv create] booking-stub create FAILED for conv ' + id + ':', e && e.stack || e);
             // Non-fatal — conversation is already saved
           }
 
@@ -1301,7 +1390,7 @@ View in admin: https://thebearing.io/admin-bookings.html
 
         // Send a message to existing conversation
         if (body.action === 'message') {
-          const { id, role, text, senderName, senderEmail } = body;
+          const { id, role, text, senderName, senderEmail, updateEnquiry } = body;
           if (!id || !text) return jsonResponse({ error: 'id and text required' }, 400);
 
           const convRaw = await env.DOSSIERS.get('conversation:' + id);
@@ -1330,6 +1419,40 @@ View in admin: https://thebearing.io/admin-bookings.html
             // Admin/partner replied — clear reminder flags so future staleness can re-trigger
             if (conv.reminders) {
               conv.reminders = { lastResetAt: now };
+            }
+          }
+
+          // v73i: when a guest re-enquires on the same property, the
+          // frontend includes updateEnquiry={arrival,departure,...} so we
+          // can refresh the conversation's enquiry shape (visible on the
+          // partner side panel) with the latest dates/room/guests. Only
+          // overwrite fields that are non-empty so we don't blow away
+          // info from the original enquiry if the user left a field blank.
+          if (updateEnquiry && typeof updateEnquiry === 'object' && role === 'guest') {
+            conv.enquiry = conv.enquiry || {};
+            ['arrival','departure','guests','cabin','notes'].forEach(function(k){
+              if (updateEnquiry[k] != null && updateEnquiry[k] !== '') {
+                conv.enquiry[k] = updateEnquiry[k];
+              }
+            });
+            // Also update the linked booking record if one exists, so
+            // pp-bookings reflects the latest dates/room.
+            if (conv.bookingRef) {
+              try {
+                const bRaw = await env.DOSSIERS.get('booking:' + conv.bookingRef);
+                if (bRaw) {
+                  const b = JSON.parse(bRaw);
+                  if (updateEnquiry.arrival)   b.arrival   = updateEnquiry.arrival;
+                  if (updateEnquiry.departure) b.departure = updateEnquiry.departure;
+                  if (updateEnquiry.guests)    b.guests    = updateEnquiry.guests;
+                  if (updateEnquiry.cabin)     b.room      = updateEnquiry.cabin;
+                  if (updateEnquiry.notes)     b.notes     = updateEnquiry.notes;
+                  b.updatedAt = now;
+                  await env.DOSSIERS.put('booking:' + conv.bookingRef, JSON.stringify(b));
+                }
+              } catch(e) {
+                console.error('[Conversation message] booking-stub refresh failed:', e);
+              }
             }
           }
 
