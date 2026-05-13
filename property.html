@@ -1863,17 +1863,53 @@ function renderProperty(p,slug){
     if(p.details&&p.details.max_guests)dd.push(['Max guests',p.details.max_guests]);
     document.getElementById('dbc-details').innerHTML=dd.map(function(d){return '<div class="dbc-detail"><span class="dbc-detail-lbl">'+esc(d[0])+'</span><span class="dbc-detail-val">'+esc(d[1])+'</span></div>';}).join('');
   } else {
-    // v73d: no price set on the property → hide the "From" label and the
-    // empty price spans so the card doesn't show an orphan "FROM" with
-    // blank space below it. The Book / Enquire buttons stay; pricing will
-    // be quoted by the property in their offer.
+    // v73e: no per-night price set on the property → show a graceful
+    // "pricing on request" message instead of an orphan "FROM" label
+    // with blank space. Properties without explicit nightly rates get
+    // priced via the partner's custom offer (which is the right model
+    // for luxury / variable / experiential bookings anyway).
+    //
+    // If the property record has a `price_indicator` field (free-text
+    // partner-supplied range like "$500–1,200 / night, seasonal"), show
+    // that as a softer hint. Otherwise fall back to a neutral phrase.
+    var indicator = p.price_indicator || '';
     var fromLbl = document.querySelector('.dbc-card .dbc-price-from');
-    if (fromLbl) fromLbl.style.display = 'none';
-    var priceEl = document.getElementById('dbc-price'); if (priceEl) priceEl.style.display = 'none';
-    var ppEl    = document.getElementById('dbc-pp');    if (ppEl)    ppEl.style.display    = 'none';
-    // Hide the divider that sits right below the (now-hidden) price block too
-    var firstDivider = document.querySelector('.dbc-card .dbc-divider');
-    if (firstDivider) firstDivider.style.display = 'none';
+    if (fromLbl) {
+      fromLbl.textContent = indicator ? 'Starting from' : 'Pricing';
+      fromLbl.style.fontSize = '.6rem';
+    }
+    var priceEl = document.getElementById('dbc-price');
+    if (priceEl) {
+      priceEl.style.fontSize = '1.05rem';
+      priceEl.style.fontFamily = "'Geist', sans-serif";
+      priceEl.style.fontWeight = '500';
+      priceEl.style.color = 'var(--ink)';
+      priceEl.style.lineHeight = '1.4';
+      priceEl.textContent = indicator || 'On request';
+    }
+    var ppEl = document.getElementById('dbc-pp');
+    if (ppEl) {
+      ppEl.style.fontSize = '.7rem';
+      ppEl.textContent = indicator
+        ? 'Exact rate quoted in your offer · varies by season'
+        : 'Personalised quote in your offer · varies by season';
+    }
+    // Details list — still show location / rooms / max guests if known
+    var dd=[];
+    if(loc)dd.push(['Location',loc]);
+    if(p.details&&p.details.total_rooms)dd.push(['Rooms',p.details.total_rooms]);
+    if(r.duration_tagline)dd.push(['Duration',r.duration_tagline]);
+    if(p.details&&p.details.max_guests)dd.push(['Max guests',p.details.max_guests]);
+    var detailsEl = document.getElementById('dbc-details');
+    if (detailsEl) {
+      if (dd.length) {
+        detailsEl.innerHTML = dd.map(function(d){return '<div class="dbc-detail"><span class="dbc-detail-lbl">'+esc(d[0])+'</span><span class="dbc-detail-val">'+esc(d[1])+'</span></div>';}).join('');
+      } else {
+        // Hide divider before details if no details to show
+        var dividers = document.querySelectorAll('.dbc-card .dbc-divider');
+        if (dividers.length >= 2) dividers[1].style.display = 'none';
+      }
+    }
   }
 
   // Enquiry

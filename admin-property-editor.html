@@ -602,6 +602,18 @@ window.addEventListener('load', async function() {
               </div>
             </div>
           </div>
+
+          <!-- v73e: price_indicator — free-text seasonal price guidance.
+               Shown to members on the property page booking sidebar so they
+               don't enquire flying blind. Optional — leave blank to show
+               "On request · Personalised quote in your offer" fallback. -->
+          <div class="pe-field" style="margin-top:14px;">
+            <label class="pe-label">Price indicator <span style="font-size:10px;font-weight:500;color:#6a6660;margin-left:6px;">customer-visible</span></label>
+            <input class="pe-input" id="f-price-indicator" type="text" placeholder="e.g. $500–1,200 / night · varies by season" oninput="updateAll()">
+            <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
+              Free-text price range shown to members on the property page so they have a sense of expected pricing before enquiring. Use whatever phrasing fits your seasonality (per-night range, per-voyage, "from $X for 7-night charter," etc). The exact amount is always set in the offer — this is just an honest "starting from" hint to set expectations.
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2379,6 +2391,9 @@ function updateJSON() {
       return (isFinite(n) && n >= 1 && n <= 25) ? n : null;
     })(),
     booking_type: getFieldVal('f-booking-type') || 'enquiry',
+    // v73e: price_indicator — free-text seasonal pricing guidance shown to
+    // members on property page booking sidebar.
+    price_indicator: getFieldVal('f-price-indicator') || '',
 
     // Core identity
     name: getFieldVal('f-name'),
@@ -3704,6 +3719,11 @@ async function propLoad() {
     var bookingTypeSelect = document.getElementById('f-booking-type');
     if (bookingTypeSelect && saved.booking_type) {
       bookingTypeSelect.value = saved.booking_type;
+    }
+    // v73e: sync price_indicator
+    var priceIndInput = document.getElementById('f-price-indicator');
+    if (priceIndInput && saved.price_indicator && !priceIndInput.value) {
+      priceIndInput.value = saved.price_indicator;
     }
     // Refresh the inline help text after load
     if (typeof validateCommission === 'function') validateCommission();

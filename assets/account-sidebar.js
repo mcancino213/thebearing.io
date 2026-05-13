@@ -9,11 +9,51 @@
       if (btn.__wired) return;
       btn.__wired = true;
       btn.addEventListener('click', async function() {
-        try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
-        if (window.Clerk) {
-          await window.Clerk.signOut();
-          window.location.href = '/';
+        // v73e: make sign-out bulletproof.
+        // The previous version silently did NOTHING if window.Clerk wasn't
+        // loaded at click time (early click, slow network, etc.). Now:
+        //   1. Give immediate visual feedback so the click registers
+        //   2. If Clerk isn't loaded yet, wait for it (up to 4s)
+        //   3. Call signOut() and AWAIT it properly
+        //   4. Clear local + session storage caches that might hold session
+        //   5. Hard-redirect with cache-bust to ensure no stale state lingers
+
+        // Disable button + show progress
+        btn.disabled = true;
+        var origLabel = btn.textContent;
+        btn.textContent = 'Signing out…';
+        btn.style.opacity = '.7';
+
+        // Wait for Clerk to be available — up to 4s
+        async function waitForClerk() {
+          if (window.Clerk && typeof window.Clerk.signOut === 'function') return true;
+          for (var i = 0; i < 40; i++) { // 40 × 100ms = 4s
+            await new Promise(function(r){ setTimeout(r, 100); });
+            if (window.Clerk && typeof window.Clerk.signOut === 'function') return true;
+          }
+          return false;
         }
+
+        try {
+          // Clear caches first so even if signOut() hangs, the next page load
+          // doesn't show stale user details from sessionStorage.
+          try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
+          try { sessionStorage.clear(); } catch(e) {}
+
+          var clerkReady = await waitForClerk();
+          if (clerkReady) {
+            await window.Clerk.signOut();
+          } else {
+            console.warn('[Sign out] Clerk never loaded — proceeding with redirect anyway.');
+          }
+        } catch (err) {
+          console.error('[Sign out] error:', err);
+        }
+
+        // Hard reload to a known sign-in entry point with cache bust.
+        // Using location.replace so the previous page isn't in history
+        // (so the back button can't return to a "signed-in-looking" view).
+        window.location.replace('/?signedout=' + Date.now());
       });
     });
   }
