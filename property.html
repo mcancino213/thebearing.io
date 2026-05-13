@@ -1372,6 +1372,14 @@ function cfThumb(u){return u?(u+'').replace(/\/public$|\/thumb$|\/w=\d+$/,'/thum
 
 async function loadProperty(){
   var slug=new URLSearchParams(location.search).get('slug')||'';
+  // v73a: stash the slug on window so the enquiry flow (populateConfirmation,
+  // line ~2094) and the booking checkout flow (line ~2544) can read it.
+  // Previously they relied on `typeof SLUG !== 'undefined'`, but the only
+  // `var SLUG` was inside an obsolete `kvHydrate` IIFE — function-scoped,
+  // not visible globally — so propSlug was always empty string and every
+  // enquiry was saved with no property attribution. That obsolete IIFE
+  // has also been removed in v73a.
+  window.PROPERTY_SLUG = slug;
   if(!slug){console.log('[Property] No slug in URL');showError('No property slug provided in URL.');return;}
   if(!PROP_API){showDev(slug);return;}
   console.log('[Property] Loading slug:', slug);
@@ -2091,9 +2099,25 @@ function populateConfirmation(){
   var checkOut = checkout ? fmt(checkout) : 'Flexible';
 
   // Get property info from page
-  var propSlug = (typeof SLUG !== 'undefined') ? SLUG : '';
+  // v73a: prefer window.PROPERTY_SLUG (set by loadProperty from URL).
+  // Falls back to legacy `SLUG` variable if defined (for any standalone
+  // flagship pages that still set it). Final fallback is empty string —
+  // which is BAD (saves a conversation with no property), so we explicitly
+  // refuse to create one with an empty slug below.
+  var propSlug = window.PROPERTY_SLUG || ((typeof SLUG !== 'undefined') ? SLUG : '');
   var propNameEl = document.getElementById('prop-name');
   var propName = propNameEl ? propNameEl.textContent.trim() : propSlug;
+
+  // Refuse to create a conversation with no property — surface a clear error
+  // rather than silently saving an orphan record.
+  if (!propSlug) {
+    console.error('[Enquiry] No property slug — refusing to create conversation');
+    return;
+  }
+
+  // Update the Step 3 banner to show the actual property name
+  var convNameEl = document.getElementById('inq-conv-name');
+  if (convNameEl && propName) convNameEl.textContent = propName;
 
   // Build first message
   var guestMsg = 'Hi';
@@ -2541,7 +2565,9 @@ function tbSubmitBooking() {
   var guests = adultsVal + (adultsVal===1?' adult':' adults') + (childrenVal>0?', '+childrenVal+(childrenVal===1?' child':' children'):'');
   var notes = (document.getElementById('tb-co-notes') || {}).value || '';
 
-  var slug = (typeof SLUG !== 'undefined') ? SLUG : '';
+  // v73a: use window.PROPERTY_SLUG (set by loadProperty) — see populateConfirmation
+  // for explanation of why the old `typeof SLUG` pattern was unreliable.
+  var slug = window.PROPERTY_SLUG || ((typeof SLUG !== 'undefined') ? SLUG : '');
 
   var bookingData = {
     property: tbCheckout.property,
@@ -2590,112 +2616,14 @@ function tbSubmitBooking() {
   });
 }
 
-// ── KV HYDRATION — live content from Property Editor ─────────────────
-// Fetches /api/property?slug=nour-el-nil on load and patches dynamic
-// elements so the editor acts as the CMS for this page.
-(function kvHydrate() {
-  var SLUG = 'nour-el-nil';
-  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/api/property' : null;
-  if (!PROP_API) return;
-
-  fetch(PROP_API + '?slug=' + encodeURIComponent(SLUG))
-    .then(function(r) { return r.ok ? r.json() : null; })
-    .then(function(res) {
-      if (!res || !res.exists || !res.data) return;
-      var p = res.data;
-
-      function setText(sel, val) {
-        var el = document.querySelector(sel);
-        if (el && val != null && val !== '') el.textContent = val;
-      }
-
-      // Property name
-      setText('.prop-name', p.name);
-
-      // Type pill
-      if (p.render && p.render.type_pill) {
-        setText('.prop-type-pill', p.render.type_pill);
-      }
-
-      // Location line
-      if (p.render && p.render.location_line) {
-        var locEl = document.querySelector('.prop-location');
-        if (locEl) {
-          locEl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z"/><circle cx="8" cy="6" r="1.5"/></svg>' + p.render.location_line;
-        }
-      }
-
-      // Rating + reviews
-      if (p.render) {
-        var ratingRow = document.querySelector('.prop-rating-row');
-        if (ratingRow && p.render.rating) {
-          var stars = ratingRow.querySelector('.star-gold');
-          var ratingNum = ratingRow.querySelector('span[style*="font-weight:500"]') ||
-                          ratingRow.querySelectorAll('span')[1];
-          var reviewSpan = ratingRow.querySelectorAll('span')[2];
-          if (stars) stars.textContent = '★★★★★';
-          if (ratingNum) ratingNum.textContent = p.render.rating;
-          if (reviewSpan && p.render.reviews) {
-            reviewSpan.textContent = '· ' + p.render.reviews + ' journeys';
-          }
-        }
-      }
-
-      // Stats strip — patch up to 4 cells
-      if (p.render && Array.isArray(p.render.stats) && p.render.stats.length) {
-        var cells = document.querySelectorAll('.stats-strip .stat-cell');
-        p.render.stats.forEach(function(stat, i) {
-          if (!cells[i]) return;
-          var valEl = cells[i].querySelector('.stat-val');
-          var lblEl = cells[i].querySelector('.stat-lbl');
-          if (valEl && stat.value) valEl.textContent = stat.value;
-          if (lblEl && stat.label) lblEl.textContent = stat.label;
-        });
-      }
-
-      // Hero mosaic — replace tile images with KV hero photos (up to 6)
-      if (p.photos && p.photos.hero && p.photos.hero.length) {
-        var tiles = document.querySelectorAll('#mosaic-track [data-tile] img');
-        p.photos.hero.forEach(function(h, i) {
-          if (!tiles[i] || !h.url) return;
-          tiles[i].src = h.url;
-          if (h.position) tiles[i].style.objectPosition = h.position;
-        });
-      }
-
-      // Overview paragraphs — patch .prop-intro <p> tags
-      var introEl = document.querySelector('.prop-intro');
-      if (introEl && p.overview) {
-        var paras = [p.overview.p1, p.overview.p2, p.overview.p3, p.overview.body].filter(Boolean);
-        if (paras.length) {
-          introEl.innerHTML = paras.map(function(t) {
-            return '<p>' + t.replace(/</g, '&lt;') + '</p>';
-          }).join('<br>');
-        }
-      }
-
-      // Verdict block
-      if (p.verdict) {
-        var verdictP = document.querySelector('[style*="Bearing Verdict"] + p, [style*="Bearing Verdict"] ~ p');
-        // More robust: find the italic verdict paragraph after the verdict label
-        var verdictSection = document.querySelector('p[style*="font-style:italic"][style*="Instrument Serif"]');
-        if (verdictSection) verdictSection.textContent = p.verdict;
-      }
-
-      // Booking bar price — first room
-      if (p.rooms && p.rooms.length) {
-        var room = p.rooms[0];
-        if (room.price) {
-          setText('.dbc-price-num', '$' + parseInt(room.price).toLocaleString());
-          if (p.render && p.render.duration_tagline) {
-            setText('.dbc-price-pp', 'per person · ' + p.render.duration_tagline);
-          }
-        }
-      }
-    })
-    .catch(function(e) { console.log('[KV Hydrate] nour-el-nil:', e.message); });
-})();
+// ── KV HYDRATION ─────────────────────────────────────────────────────
+// (v73a) Removed obsolete `kvHydrate` IIFE that hardcoded SLUG='nour-el-nil'
+// and overwrote .prop-name / .prop-location / .prop-intro elements with
+// Nour El Nil's KV data — regardless of which property the user was viewing.
+// That code was leftover from when property.html was Nour El Nil's standalone
+// page before being repurposed as the universal template. The proper
+// `loadProperty()` function (above) reads the slug from the URL and renders
+// the right property; that's the only hydration path now.
 
 
 /* Envoy — context injection */
@@ -3170,107 +3098,37 @@ loadProperty();
     <!-- ── STEP 3: Confirmation + inbox preview ── -->
     <div class="step-panel" id="step-3" style="padding:14px 22px 32px;">
 
-      <!-- Confirm header -->
-      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;padding:14px 16px;background:#1e3a2e;border:1px solid rgba(120,220,140,.25);border-radius:14px;">
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,rgba(58,112,85,.7),rgba(58,112,85,.35));border:1px solid rgba(120,220,140,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg>
+      <!-- Confirm header — primary message + working CTA -->
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:18px 18px;background:#1e3a2e;border:1px solid rgba(120,220,140,.25);border-radius:14px;margin-bottom:14px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(58,112,85,.7),rgba(58,112,85,.35));border:1px solid rgba(120,220,140,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg>
         </div>
-        <div style="flex:1;">
-          <div style="font-family:'Instrument Serif',serif;font-size:1.08rem;color:#e8f4ff;line-height:1.25;margin-bottom:5px;">You're a few short messages away from your next dream trip.</div>
-          <div style="font-size:.74rem;color:#c8dcc8;line-height:1.55;">Your conversation with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">Nour El Nil</strong> is open — you're speaking directly with the property team, privately through The Bearing.</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Instrument Serif',serif;font-size:1.18rem;color:#e8f4ff;line-height:1.22;margin-bottom:5px;">Your request has been sent.</div>
+          <div style="font-size:.76rem;color:#c8dcc8;line-height:1.55;">You're now in communication with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">the property</strong>, privately through The Bearing. A member of their team will reply personally within 24 hours.</div>
         </div>
-        <a id="inq-go-channel-btn" onclick="closeOverlay('inq-overlay');goStep(1);window.location=this.href;return false;" href="/conversations.html" style="flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:100px;font-family:'Geist',sans-serif;font-size:.66rem;font-weight:500;color:#fff;text-decoration:none;cursor:pointer;white-space:nowrap;margin-top:2px;">
-          Go to conversation
-          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
+      </div>
+
+      <!-- What happens next — concise, neutral, no fake conversation -->
+      <div style="background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:16px 18px;margin-bottom:18px;">
+        <div style="font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:10px;">What happens next</div>
+        <ol style="margin:0;padding:0 0 0 18px;font-size:.85rem;line-height:1.6;color:var(--ink);">
+          <li style="margin-bottom:6px;">The property has received your enquiry — they'll respond personally within 24 hours.</li>
+          <li style="margin-bottom:6px;">All replies will appear in your conversations inbox here on The Bearing — not your regular email.</li>
+          <li>You'll receive an offer with full pricing, terms, and availability. When you accept, a booking deposit is collected to secure your stay.</li>
+        </ol>
+      </div>
+
+      <!-- Action row — both buttons navigate to the actual conversation -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="close-btn" type="button" onclick="closeOverlay('inq-overlay');goStep(1);" style="margin:0;padding:13px;">Close panel</button>
+        <a id="inq-go-channel-btn"
+           href="/conversations.html"
+           onclick="closeOverlay('inq-overlay');goStep(1);"
+           style="padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
+          Go to my conversation
+          <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
         </a>
-      </div>
-
-      <!-- iPhone-style conversation -->
-      <div class="inbox-wrap">
-
-        <div style="padding:10px 14px 9px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7a5820,#4a3010);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Instrument Serif',serif;font-style:italic;color:#fff;font-size:.85rem;" id="inbox-avatar-letter">N</div>
-          <div style="flex:1;">
-            <div id="inbox-header-name" style="font-size:.79rem;font-weight:500;color:#fff;">Nour El Nil</div>
-            <div style="font-size:.6rem;color:rgba(255,255,255,.3);">via The Bearing · encrypted</div>
-          </div>
-          <div class="inbox-badge">● Live</div>
-        </div>
-
-        <div class="inbox-thread" id="inbox-thread" style="max-height:400px;overflow-y:auto;">
-          <div style="text-align:center;margin:4px 0 8px;">
-            <span style="font-size:.57rem;color:rgba(255,255,255,.22);background:rgba(255,255,255,.05);padding:3px 10px;border-radius:100px;">Today</span>
-          </div>
-
-          <div class="inbox-msg guest">
-            <div class="inbox-bubble" id="preview-msg">Hi — I'd like to inquire about the Deluxe Suite on Nour El Nil for 2 guests, departing 15 October 2025. Please let me know availability and next steps.</div>
-            <div class="inbox-time">10:42 AM · Delivered ✓✓</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender" data-prop-sender>Nour El Nil</div>
-            <div class="inbox-bubble" data-prop-welcome>Thank you so much — we're genuinely thrilled to hear from you. The Nile in October is extraordinary. A member of our team will reply personally within 24 hours with availability and full details. Welcome.</div>
-            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">10:42 AM · Automatic reply</div>
-          </div>
-
-          <div class="inbox-msg guest" style="margin-top:12px;">
-            <div class="inbox-bubble">That's perfect — I've reviewed everything and I'm ready to confirm. Please go ahead and hold the Deluxe Suite for those dates.</div>
-            <div class="inbox-time">11:18 AM · Delivered ✓✓</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:12px;">
-            <div class="inbox-sender" data-prop-sender>Nour El Nil</div>
-            <div class="inbox-bubble" style="padding:0;overflow:hidden;background:none;border:none;">
-              <div class="booking-card" onclick="toast('Full booking details coming soon')">
-                <div style="height:88px;overflow:hidden;position:relative;">
-                  <img id="inbox-booking-img" src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&fit=crop" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 62%;">
-                  <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.08),rgba(13,38,13,.82));"></div>
-                  <div style="position:absolute;top:7px;right:8px;background:rgba(120,220,140,.15);border:1px solid rgba(120,220,140,.25);border-radius:100px;padding:2px 7px;display:flex;align-items:center;gap:3px;">
-                    <div style="width:4px;height:4px;border-radius:50%;background:#4ade80;"></div>
-                    <span style="font-size:.54rem;font-weight:600;color:rgba(120,220,140,.9);letter-spacing:.07em;">CONFIRMED</span>
-                  </div>
-                  <div style="position:absolute;bottom:8px;left:11px;">
-                    <div style="font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:1px;">Booking confirmation</div>
-                    <div id="inbox-booking-title" style="font-family:'Instrument Serif',serif;font-size:.92rem;color:#fff;font-style:italic;">Nour El Nil · Deluxe Suite</div>
-                  </div>
-                </div>
-                <div style="background:rgba(13,38,13,.95);padding:6px 12px 7px;">
-                  <div id="inbox-booking-sub" style="font-size:.64rem;color:rgba(255,255,255,.4);">Esna → Aswan · Nile, Egypt</div>
-                </div>
-                <div style="background:rgba(255,255,255,.06);padding:9px 12px;display:flex;border-top:1px solid rgba(255,255,255,.06);">
-                  <div style="flex:1;border-right:1px solid rgba(255,255,255,.06);padding-right:10px;">
-                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check in</div>
-                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkin-val">15 Oct 2025</div>
-                  </div>
-                  <div style="flex:1;padding-left:10px;">
-                    <div style="font-size:.54rem;color:rgba(255,255,255,.28);margin-bottom:1px;text-transform:uppercase;letter-spacing:.07em;">Check out</div>
-                    <div style="font-size:.76rem;font-weight:500;color:#fff;" class="checkout-val">21 Oct 2025</div>
-                  </div>
-                </div>
-                <div style="background:rgba(255,255,255,.04);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.05);">
-                  <div style="font-size:.65rem;color:rgba(255,255,255,.4);">2 guests · 6 days</div>
-                  <div style="font-size:.65rem;color:rgba(120,220,140,.7);font-weight:500;display:flex;align-items:center;gap:3px;">View details <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg></div>
-                </div>
-              </div>
-            </div>
-            <div style="font-size:.55rem;color:rgba(255,255,255,.2);margin-top:3px;padding-left:2px;">11:19 AM</div>
-          </div>
-
-          <div class="inbox-msg tc" style="margin-top:8px;">
-            <div class="inbox-typing"><div class="inbox-dot"></div><div class="inbox-dot"></div><div class="inbox-dot"></div></div>
-          </div>
-        </div>
-
-        <div class="inbox-input-row">
-          <div class="inbox-input-fake" id="inbox-composer-fake">Message Nour El Nil…</div>
-          <div class="inbox-send-btn"><svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg></div>
-        </div>
-      </div>
-
-      <!-- Action row -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
-        <button class="close-btn" onclick="closeOverlay('inq-overlay');goStep(1)" style="margin:0;padding:12px;">Close panel</button>
-        <button onclick="toast('Opening your conversation…');closeOverlay('inq-overlay');goStep(1);" style="padding:12px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Go to my conversation →</button>
       </div>
 
     </div>
