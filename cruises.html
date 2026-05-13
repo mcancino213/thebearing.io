@@ -1225,7 +1225,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
         </div>
         <div class="voyage-cta-row">
           <button class="voyage-cta" onclick="event.stopPropagation();tbOpenCheckout({property:'Nour El Nil · Nile, Egypt',title:'Book your voyage',roomLabel:'Cabin type',commissionRate:0.10,rooms:[{name:'Deluxe Suite · 22m²',price:2800},{name:'Luxury Suite · 28m²',price:3200},{name:'Panoramic Suite · 34m²',price:3800}]})">Book now →</button>
-          <button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry('Nour El Nil · Nile, Egypt')">Enquire first</button>
+          <button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry('Nour El Nil · Nile, Egypt', 'nour-el-nil')">Enquire first</button>
           <span class="voyage-price-note">From $4,200 pp</span>
         </div>
       </div>
@@ -1361,7 +1361,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
                 (price ? '<div class="voyage-stats"><div class="vstat"><div class="vstat-lbl">From</div><div class="vstat-val">' + price + '</div></div></div>' : '') +
                 '<div class="voyage-cta-row">' +
                   '<button class="voyage-cta" onclick="event.stopPropagation();tbOpenCheckout({property:\'' + esc(p.name||slug) + '\',title:\'Book your voyage\',commissionRate:0.10,rooms:[{name:\'Standard cabin\',price:' + (p.price_from||0) + '}]})">Book now →</button>' +
-                  '<button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry(\'' + esc(p.name||slug) + '\')">Enquire first</button>' +
+                  '<button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry(\'' + esc(p.name||slug) + '\', \'' + esc(slug) + '\')">Enquire first</button>' +
                   (price ? '<span class="voyage-price-note">From ' + price + ' pp</span>' : '') +
                 '</div>' +
               '</div>' +
@@ -1739,25 +1739,34 @@ function submitAccount(){
 </div>
 
 <script>
-function openQuickEnquiry(propertyName) {
-  var label = document.getElementById('eq-property-label');
-  if (label && propertyName) label.textContent = propertyName;
-  var el = document.getElementById('quick-enquiry-overlay');
-  el.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+// v73c: openQuickEnquiry redirects to the property page where the real
+// (auth-gated, KV-saving) enquiry flow lives. The previous inline modal
+// did nothing — its submit handler showed a toast and discarded the
+// data without ever hitting the API. Now if we have a slug we navigate;
+// if we don't (static demo cards), we show a "coming soon" toast.
+function openQuickEnquiry(propertyName, slug) {
+  if (slug) {
+    // Navigate to the property page. The user can click Enquire from there,
+    // which gates on auth and runs the real /api/conversation create flow.
+    window.location = '/property?slug=' + encodeURIComponent(slug);
+    return;
+  }
+  // No slug → static demo card without a real KV record. Be honest.
+  ppQuickToast('Coming soon to The Bearing — we curate properties carefully and this one isn\u2019t available to book yet.');
 }
 function closeQuickEnquiry() {
-  document.getElementById('quick-enquiry-overlay').style.display = 'none';
+  // Legacy — kept in case any code still calls it. The modal is no longer
+  // shown but the close handler is harmless.
+  var el = document.getElementById('quick-enquiry-overlay');
+  if (el) el.style.display = 'none';
   document.body.style.overflow = '';
 }
-function submitQuickEnquiry() {
-  closeQuickEnquiry();
-  // Show confirmation toast
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);animation:fadeUp .25s ease;display:flex;align-items:center;gap:8px;';
-  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+function ppQuickToast(message) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);max-width:90vw;text-align:center;';
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 4000);
 }
 </script>
 

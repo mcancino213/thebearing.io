@@ -1709,25 +1709,31 @@ function submitAccount(){
 </div>
 
 <script>
-function openQuickEnquiry(propertyName) {
-  var label = document.getElementById('eq-property-label');
-  if (label && propertyName) label.textContent = propertyName;
-  var el = document.getElementById('quick-enquiry-overlay');
-  el.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+// v73c: openQuickEnquiry redirects to the property page where the real
+// (auth-gated, KV-saving) enquiry flow lives. The previous inline modal
+// did nothing — its submit handler showed a toast and discarded the data
+// without ever hitting the API. Hotels listing pages are mostly static
+// demo cards without real KV records yet — those show a "coming soon"
+// toast. When KV-backed hotel cards land, they'll pass a slug arg and
+// redirect to /property?slug=X.
+function openQuickEnquiry(propertyName, slug) {
+  if (slug) {
+    window.location = '/property?slug=' + encodeURIComponent(slug);
+    return;
+  }
+  ppQuickToast('Coming soon to The Bearing — we curate properties carefully and this one isn\u2019t available to book yet.');
 }
 function closeQuickEnquiry() {
-  document.getElementById('quick-enquiry-overlay').style.display = 'none';
+  var el = document.getElementById('quick-enquiry-overlay');
+  if (el) el.style.display = 'none';
   document.body.style.overflow = '';
 }
-function submitQuickEnquiry() {
-  closeQuickEnquiry();
-  // Show confirmation toast
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);animation:fadeUp .25s ease;display:flex;align-items:center;gap:8px;';
-  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
+function ppQuickToast(message) {
+  var t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);max-width:90vw;text-align:center;';
+  t.textContent = message;
+  document.body.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 4000);
 }
 </script>
 

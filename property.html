@@ -2030,14 +2030,19 @@ function openOverlay(id){var e=document.getElementById(id);if(e){e.classList.add
 
 /* 3-step inquiry flow */
 
-/* ── 3-STEP BOOKING FLOW ── */
+/* ── 2-STEP ENQUIRY FLOW (was 3-step pre-v73c) ── */
 function goStep(n) {
-  [1,2,3].forEach(function(i){
-    document.getElementById('step-'+i).classList.toggle('active', i===n);
+  // Iterate [1,2] now that Step 3 is removed. Guard each lookup so the
+  // function doesn't throw if any element is missing.
+  [1,2].forEach(function(i){
+    var panel = document.getElementById('step-'+i);
+    if (panel) panel.classList.toggle('active', i===n);
     var pip = document.getElementById('pip-'+i);
-    pip.classList.remove('active','done');
-    if(i < n) pip.classList.add('done');
-    else if(i === n) pip.classList.add('active');
+    if (pip) {
+      pip.classList.remove('active','done');
+      if(i < n) pip.classList.add('done');
+      else if(i === n) pip.classList.add('active');
+    }
   });
 
   // Scroll sheet to top on step change
@@ -2045,7 +2050,6 @@ function goStep(n) {
   if(sheet) sheet.scrollTop = 0;
 
   if(n === 2) populateReview();
-  if(n === 3) populateConfirmation();
 }
 
 function val(id){ return (document.getElementById(id)||{}).value || ''; }
@@ -2083,9 +2087,23 @@ function populateReview(){
   }
 }
 
-function populateConfirmation(){
-  var name     = val('inq-name');
-  var email    = val('inq-email');
+// v73c: submitEnquiryAndOpenChannel replaces populateConfirmation.
+// Old flow: Step 2 "Open my conversation" → Step 3 (which then quietly
+// POSTed to /api/conversation and updated a button href). That meant
+// users saw a third confirmation screen, and the navigation only worked
+// if they clicked the right pill. Now: Step 2's button calls this
+// directly. We create the conversation, then redirect to the actual
+// conversation page in the customer account.
+//
+// Robust user-id resolution: tbAuth.getUser() can return null if Clerk
+// hasn't yet hydrated even though the user is signed in. We try three
+// sources before giving up. If all return null we surface a clear
+// error rather than creating an orphan conversation indexed by email
+// that the user can never find later (the v73b bug Miguel reported).
+function submitEnquiryAndOpenChannel(triggerBtn) {
+  // ── Collect & validate form ──
+  var name     = val('inq-name').trim();
+  var email    = val('inq-email').trim();
   var cabin    = val('inq-cabin') || 'Luxury Room';
   var checkin  = val('inq-checkin');
   var checkout = val('inq-checkout');
@@ -2094,32 +2112,42 @@ function populateConfirmation(){
   var guests = adultsInq2 + (adultsInq2===1?' adult':' adults') + (childrenInq2>0?', '+childrenInq2+(childrenInq2===1?' child':' children'):'');
   var notes = val('inq-notes');
 
-  var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
-  var checkIn = checkin ? fmt(checkin) : 'Flexible';
-  var checkOut = checkout ? fmt(checkout) : 'Flexible';
-
-  // Get property info from page
-  // v73a: prefer window.PROPERTY_SLUG (set by loadProperty from URL).
-  // Falls back to legacy `SLUG` variable if defined (for any standalone
-  // flagship pages that still set it). Final fallback is empty string —
-  // which is BAD (saves a conversation with no property), so we explicitly
-  // refuse to create one with an empty slug below.
-  var propSlug = window.PROPERTY_SLUG || ((typeof SLUG !== 'undefined') ? SLUG : '');
-  var propNameEl = document.getElementById('prop-name');
-  var propName = propNameEl ? propNameEl.textContent.trim() : propSlug;
-
-  // Refuse to create a conversation with no property — surface a clear error
-  // rather than silently saving an orphan record.
-  if (!propSlug) {
-    console.error('[Enquiry] No property slug — refusing to create conversation');
+  if (!email) {
+    inquiryError('Please add your email address before sending.');
     return;
   }
 
-  // Update the Step 3 banner to show the actual property name
-  var convNameEl = document.getElementById('inq-conv-name');
-  if (convNameEl && propName) convNameEl.textContent = propName;
+  var propSlug = window.PROPERTY_SLUG || ((typeof SLUG !== 'undefined') ? SLUG : '');
+  var propNameEl = document.getElementById('prop-name');
+  var propName = propNameEl ? propNameEl.textContent.trim() : propSlug;
+  if (!propSlug) {
+    inquiryError('Could not determine the property — please reload and try again.');
+    return;
+  }
 
-  // Build first message
+  // ── Resolve Clerk user with three fallbacks ──
+  // tbAuth.getUser() is the canonical helper but reads from a cache that
+  // can lag. Direct window.Clerk.user is the authoritative source.
+  var user =
+    (window.Clerk && window.Clerk.user) ||
+    (window.tbAuth && tbAuth.getUser && tbAuth.getUser()) ||
+    null;
+
+  if (!user || !user.id) {
+    // Should be unreachable — tbAuthEnquire gates this — but defend in depth.
+    inquiryError('Please sign in to send your enquiry. Click the Enquire button again to sign in.');
+    return;
+  }
+  var guestId = user.id;
+  var clerkEmail = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
+  // Prefer Clerk-known email if user didn't fill the form field
+  if (!email && clerkEmail) email = clerkEmail;
+  var guestName = name || [user.firstName, user.lastName].filter(Boolean).join(' ') || email;
+
+  // ── Build first message ──
+  var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+  var checkIn  = checkin  ? fmt(checkin)  : 'Flexible';
+  var checkOut = checkout ? fmt(checkout) : 'Flexible';
   var guestMsg = 'Hi';
   if(name) guestMsg += ' — my name is ' + name;
   guestMsg += '. I\'d like to enquire about the ' + cabin;
@@ -2131,54 +2159,88 @@ function populateConfirmation(){
   if(notes) guestMsg += '. ' + notes;
   guestMsg += '. Please let me know availability and next steps.';
 
-  // Get Clerk user
-  var user = tbAuth.getUser();
-  var guestId = user ? user.id : email;
-  var guestName = name || (user ? (user.firstName + ' ' + (user.lastName||'')).trim() : '') || email;
+  // ── Disable button + show progress ──
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    triggerBtn.dataset.origText = triggerBtn.textContent;
+    triggerBtn.textContent = 'Opening your conversation…';
+    triggerBtn.style.opacity = '.7';
+  }
 
-  // Check for existing open conversation first (prevent duplicates)
-  var guestIdForCheck = (window.Clerk && window.Clerk.user) ? window.Clerk.user.id : email;
-  fetch('/api/conversation?guestId=' + encodeURIComponent(guestIdForCheck))
-    .then(function(r){ return r.json(); })
+  // ── Check for existing open conversation, else create new ──
+  // Same property + same guest + open status → reuse instead of stacking duplicates.
+  fetch('/api/conversation?guestId=' + encodeURIComponent(guestId), { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : { conversations: [] }; })
     .then(function(existing){
-      var existingConv = (existing.conversations||[]).find(function(c){
+      var match = (existing.conversations || []).find(function(c){
         return c.propertySlug === propSlug && c.status === 'open';
       });
-      if (existingConv) {
-        closeOverlay('inq-overlay');
-        window.location = '/conversations.html?id=' + existingConv.id;
-        return;
+      if (match) {
+        // Use existing — same as v73b behavior, but now under the right id.
+        window.location = '/conversations.html?id=' + encodeURIComponent(match.id);
+        return null;
       }
-      createNewConversation();
+      // Create new
+      return fetch('/api/conversation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          propertySlug: propSlug,
+          propertyName: propName,
+          guestId: guestId,
+          guestEmail: email,
+          guestName: guestName,
+          enquiry: { arrival: checkin, departure: checkout, guests: guests, cabin: cabin, notes: notes },
+          firstMessage: guestMsg
+        })
+      }).then(function(r){ return r.json(); });
     })
-    .catch(function(){ createNewConversation(); });
-
-  function createNewConversation() {
-  fetch('/api/conversation', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'create',
-      propertySlug: propSlug,
-      propertyName: propName,
-      guestId: guestId,
-      guestEmail: email,
-      guestName: guestName,
-      enquiry: { arrival: checkin, departure: checkout, guests: guests, cabin: cabin, notes: notes },
-      firstMessage: guestMsg
+    .then(function(data){
+      if (!data) return; // navigated away above
+      if (data.ok && data.id) {
+        window.location = '/conversations.html?id=' + encodeURIComponent(data.id);
+      } else {
+        inquiryError('Could not open your conversation: ' + (data.error || 'unknown error') + '. Please try again.');
+        if (triggerBtn) {
+          triggerBtn.disabled = false;
+          triggerBtn.textContent = triggerBtn.dataset.origText || 'Open my conversation →';
+          triggerBtn.style.opacity = '';
+        }
+      }
     })
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    if(data.ok) {
-      window._lastConvId = data.id;
-      var goBtn = document.getElementById('inq-go-channel-btn');
-      if(goBtn) goBtn.href = '/conversations.html?id=' + data.id;
-    }
-  })
-  .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
+    .catch(function(e){
+      console.error('[Enquiry] submitEnquiryAndOpenChannel error:', e);
+      inquiryError('Network error — please check your connection and try again.');
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+        triggerBtn.textContent = triggerBtn.dataset.origText || 'Open my conversation →';
+        triggerBtn.style.opacity = '';
+      }
+    });
 }
-} // close populateConfirmation — missing brace was causing SyntaxError that broke property.html entirely (fixed v72z)
+
+// Show inline error inside the enquiry overlay (on Step 2 currently).
+// Uses a single #inq-error div that we ensure exists.
+function inquiryError(msg) {
+  var box = document.getElementById('inq-error');
+  if (!box) {
+    // Insert error box above the Step 2 button
+    var step2 = document.getElementById('step-2');
+    if (step2) {
+      box = document.createElement('div');
+      box.id = 'inq-error';
+      box.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:11px 14px;border-radius:10px;font-size:.78rem;line-height:1.5;margin:12px 22px 0;';
+      step2.appendChild(box);
+    } else {
+      alert(msg);
+      return;
+    }
+  }
+  box.textContent = msg;
+  box.style.display = 'block';
+  box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
 
 // setText already defined
 
@@ -2955,7 +3017,6 @@ loadProperty();
     <div class="step-bar">
       <div class="step-pip active" id="pip-1"></div>
       <div class="step-pip" id="pip-2"></div>
-      <div class="step-pip" id="pip-3"></div>
     </div>
 
     <!-- ── STEP 1: Your details ── -->
@@ -3091,47 +3152,17 @@ loadProperty();
         </div>
       </div>
 
-      <button class="f-next" onclick="goStep(3)">Open my conversation →</button>
+      <button class="f-next" onclick="submitEnquiryAndOpenChannel(this)">Open my conversation →</button>
       <p class="f-note">No payment now · No obligation · Cancel any time</p>
     </div>
 
-    <!-- ── STEP 3: Confirmation + inbox preview ── -->
-    <div class="step-panel" id="step-3" style="padding:14px 22px 32px;">
-
-      <!-- Confirm header — primary message + working CTA -->
-      <div style="display:flex;align-items:flex-start;gap:14px;padding:18px 18px;background:#1e3a2e;border:1px solid rgba(120,220,140,.25);border-radius:14px;margin-bottom:14px;">
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(58,112,85,.7),rgba(58,112,85,.35));border:1px solid rgba(120,220,140,.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg>
-        </div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-family:'Instrument Serif',serif;font-size:1.18rem;color:#e8f4ff;line-height:1.22;margin-bottom:5px;">Your request has been sent.</div>
-          <div style="font-size:.76rem;color:#c8dcc8;line-height:1.55;">You're now in communication with <strong id="inq-conv-name" style="color:#fff;font-weight:600;">the property</strong>, privately through The Bearing. A member of their team will reply personally within 24 hours.</div>
-        </div>
-      </div>
-
-      <!-- What happens next — concise, neutral, no fake conversation -->
-      <div style="background:rgba(0,0,0,.03);border:1px solid rgba(0,0,0,.06);border-radius:14px;padding:16px 18px;margin-bottom:18px;">
-        <div style="font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--stone);margin-bottom:10px;">What happens next</div>
-        <ol style="margin:0;padding:0 0 0 18px;font-size:.85rem;line-height:1.6;color:var(--ink);">
-          <li style="margin-bottom:6px;">The property has received your enquiry — they'll respond personally within 24 hours.</li>
-          <li style="margin-bottom:6px;">All replies will appear in your conversations inbox here on The Bearing — not your regular email.</li>
-          <li>You'll receive an offer with full pricing, terms, and availability. When you accept, a booking deposit is collected to secure your stay.</li>
-        </ol>
-      </div>
-
-      <!-- Action row — both buttons navigate to the actual conversation -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-        <button class="close-btn" type="button" onclick="closeOverlay('inq-overlay');goStep(1);" style="margin:0;padding:13px;">Close panel</button>
-        <a id="inq-go-channel-btn"
-           href="/conversations.html"
-           onclick="closeOverlay('inq-overlay');goStep(1);"
-           style="padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">
-          Go to my conversation
-          <svg width="11" height="11" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><line x1="2" y1="5" x2="8" y2="5"/><polyline points="5.5,2.5 8,5 5.5,7.5"/></svg>
-        </a>
-      </div>
-
-    </div>
+    <!-- ── STEP 3 was removed in v73c. The Step 2 button now calls
+         submitEnquiryAndOpenChannel() which creates the conversation
+         and navigates the user directly to /conversations.html?id=X.
+         The pip strip at the top of the sheet still shows three dots
+         since the step indicator markup is in step-1 (cosmetic only).
+         If we want the indicator to show two dots instead of three,
+         that's a separate UI cleanup. -->
 
   </div><!-- end .sheet -->
 </div><!-- end #inq-overlay -->
