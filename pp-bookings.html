@@ -167,6 +167,17 @@ tbody tr:hover{background:var(--bg);}
 .empty-desc{font-size:13px;color:var(--text2);}
 .tag{display:inline-block;padding:3px 9px;border-radius:5px;font-size:12px;font-weight:500;background:var(--bg);color:var(--text2);border:1px solid var(--border);}
 
+/* v73j: "Save as default" button on offer modal sections. Subtle so it
+   doesn't compete with the primary Send/Save Draft CTAs. */
+.om-save-default-btn{
+  font-size:11px;font-weight:500;color:var(--accent);background:transparent;
+  border:1px solid transparent;border-radius:6px;padding:3px 8px;cursor:pointer;
+  font-family:inherit;letter-spacing:.02em;
+  transition:background .15s, border-color .15s;
+}
+.om-save-default-btn:hover{background:var(--accent-bg);border-color:rgba(193,127,62,.3);}
+.om-save-default-btn:disabled{opacity:.55;cursor:default;color:var(--text3);}
+.om-save-default-btn.saved{color:#2d8a4e;background:rgba(45,138,78,.08);border-color:rgba(45,138,78,.25);}
 
 </style>
 </head>
@@ -292,7 +303,7 @@ tbody tr:hover{background:var(--bg);}
           <label>Pricing mode</label>
           <div style="display:flex;gap:8px;">
             <button type="button" class="om-mode-btn" data-mode="package" onclick="setPricingMode('package')" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);background:var(--bg);border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;">Package total<div style="font-size:12px;font-weight:400;color:var(--text3);margin-top:2px;">One all-in price (charter, package, fixed itinerary)</div></button>
-            <button type="button" class="om-mode-btn" data-mode="per_night" onclick="setPricingMode('per_night')" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);background:var(--bg);border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;">Per-night × nights<div style="font-size:12px;font-weight:400;color:var(--text3);margin-top:2px;">Nightly rate × number of nights</div></button>
+            <button type="button" class="om-mode-btn" data-mode="per_night" onclick="setPricingMode('per_night')" style="flex:1;padding:11px 14px;border:1.5px solid var(--border);background:var(--bg);border-radius:8px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;">Average nightly × nights<div style="font-size:12px;font-weight:400;color:var(--text3);margin-top:2px;">Average nightly rate × number of nights</div></button>
           </div>
         </div>
       </div>
@@ -310,7 +321,10 @@ tbody tr:hover{background:var(--bg);}
       </div>
 
       <!-- Inclusions -->
-      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin:24px 0 12px;">Included in this offer</div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 12px;gap:12px;">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;">Included in this offer</div>
+        <button type="button" onclick="saveOfferDefault('default_inclusions')" class="om-save-default-btn" id="om-save-incl-btn" title="Save this list as the default for future offers on this property">Save as default</button>
+      </div>
       <div id="om-inclusions-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
         <!-- One-line inclusion items, dynamically managed -->
       </div>
@@ -322,10 +336,22 @@ tbody tr:hover{background:var(--bg);}
         <div class="field"><label>Excluded / additional charges<span class="hint">free text</span></label><textarea id="om-exclusions" placeholder="Premium wines, spa treatments, gratuities" style="min-height:60px;"></textarea></div>
       </div>
       <div class="form-row c1">
-        <div class="field"><label>Cancellation terms<span class="hint">required</span></label><textarea id="om-cancellation" placeholder="Fully refundable until 60 days before arrival. Cancellations within 60 days forfeit 50% of total." style="min-height:70px;"></textarea></div>
+        <div class="field">
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span>Cancellation terms<span class="hint">required</span></span>
+            <button type="button" onclick="saveOfferDefault('default_cancellation_terms')" class="om-save-default-btn" title="Save this text as the default for future offers on this property">Save as default</button>
+          </label>
+          <textarea id="om-cancellation" placeholder="Fully refundable until 60 days before arrival. Cancellations within 60 days forfeit 50% of total." style="min-height:70px;"></textarea>
+        </div>
       </div>
       <div class="form-row c1">
-        <div class="field"><label>Notes to guest<span class="hint">optional</span></label><textarea id="om-notes" placeholder="Looking forward to hosting you and your family. Let us know if you'd like to add the private guide upgrade." style="min-height:60px;"></textarea></div>
+        <div class="field">
+          <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span>Notes to guest<span class="hint">optional</span></span>
+            <button type="button" onclick="saveOfferDefault('default_partner_notes')" class="om-save-default-btn" title="Save this text as the default for future offers on this property">Save as default</button>
+          </label>
+          <textarea id="om-notes" placeholder="Looking forward to hosting you and your family. Let us know if you'd like to add the private guide upgrade." style="min-height:60px;"></textarea>
+        </div>
       </div>
       <div class="form-row c2">
         <div class="field"><label>Offer valid until<span class="hint">defaults to 7 days</span></label><input type="date" id="om-valid-until"></div>
@@ -652,8 +678,22 @@ function openOfferModal(bookingRef, mode) {
             }
           });
       } else {
-        // Default to package mode, one empty inclusion row to invite input
-        setPricingMode('package');
+        // v73j: prefill from partner-saved defaults on the property record.
+        // `prop` is the property JSON we already fetched above. If the partner
+        // has saved any default_* fields via "Save as default" buttons,
+        // populate the offer modal with them. Otherwise the fields stay blank.
+        var defMode = prop.default_pricing_mode === 'per_night' ? 'per_night' : 'package';
+        setPricingMode(defMode);
+        if (prop.default_cancellation_terms) {
+          document.getElementById('om-cancellation').value = prop.default_cancellation_terms;
+        }
+        if (prop.default_partner_notes) {
+          document.getElementById('om-notes').value = prop.default_partner_notes;
+        }
+        var defInc = Array.isArray(prop.default_inclusions) ? prop.default_inclusions : [];
+        if (defInc.length) {
+          defInc.forEach(function(item) { addInclusion(item); });
+        }
       }
 
       // Show modal
@@ -680,12 +720,12 @@ function setPricingMode(mode) {
   var f = document.getElementById('om-pricing-fields');
   if (mode === 'per_night') {
     f.innerHTML =
-      '<div class="field"><label>Nightly rate (USD)<span class="req">*</span></label><input type="number" id="om-nightly" min="0" step="1" placeholder="800" oninput="recomputeFromNightly()"></div>' +
-      '<div class="field"><label>Total<span class="hint">auto from nightly × nights</span></label><input type="number" id="om-total" readonly style="background:var(--bg);color:var(--text2);"></div>';
+      '<div class="field"><label>Average nightly rate (USD)<span class="req">*</span><span class="hint">e.g. nights might vary — this is the blended average</span></label><input type="number" id="om-nightly" min="0" step="1" placeholder="800" oninput="recomputeFromNightly()"></div>' +
+      '<div class="field"><label>Total<span class="hint">auto from average nightly × nights</span></label><input type="number" id="om-total" readonly style="background:var(--bg);color:var(--text2);"></div>';
   } else {
     f.innerHTML =
       '<div class="field"><label>Package total (USD)<span class="req">*</span></label><input type="number" id="om-total" min="0" step="1" placeholder="8400" oninput="updateDepositPreview()"></div>' +
-      '<div class="field"><label>Equivalent nightly<span class="hint">auto</span></label><input type="text" id="om-nightly-eq" readonly style="background:var(--bg);color:var(--text2);"></div>';
+      '<div class="field"><label>Equivalent average nightly<span class="hint">auto: total ÷ nights</span></label><input type="text" id="om-nightly-eq" readonly style="background:var(--bg);color:var(--text2);"></div>';
   }
   // Date listeners
   ['om-arrival','om-departure'].forEach(function(id) {
@@ -846,6 +886,68 @@ function saveOfferDraft() {
 function sendOffer() {
   if (!validateOfferForm()) return;
   postOffer(buildOfferPayload(true), 'Offer sent to guest');
+}
+
+// v73j: persist current section value as the property's default for
+// future offers. POSTs to /api/property/offer-defaults which only allows
+// the four whitelisted fields. The button reads its trigger element via
+// the onclick attribute so we don't need to wire data attributes.
+function saveOfferDefault(field) {
+  // Find the button that triggered this — we use event.currentTarget
+  // when called inline so we can update its label.
+  var btn = (window.event && window.event.currentTarget) || null;
+  // Resolve the value from the modal based on which field is being saved
+  var value;
+  if (field === 'default_inclusions') {
+    var list = document.getElementById('om-inclusions-list');
+    if (!list) return;
+    value = Array.from(list.querySelectorAll('input[type="text"]'))
+      .map(function(i){ return (i.value || '').trim(); })
+      .filter(function(v){ return v.length > 0; });
+    if (!value.length) { ppToast('Add at least one inclusion before saving as default', 'error'); return; }
+  } else if (field === 'default_cancellation_terms') {
+    value = (document.getElementById('om-cancellation').value || '').trim();
+    if (!value) { ppToast('Cancellation terms are empty', 'error'); return; }
+  } else if (field === 'default_partner_notes') {
+    value = (document.getElementById('om-notes').value || '').trim();
+    if (!value) { ppToast('Notes are empty', 'error'); return; }
+  } else if (field === 'default_pricing_mode') {
+    value = modalState.pricingMode === 'per_night' ? 'per_night' : 'package';
+  } else {
+    return;
+  }
+
+  var origText = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  fetch('/api/property/offer-defaults', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug: PP_SLUG, field: field, value: value })
+  })
+    .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+    .then(function(res){
+      if (!res.ok || res.body.error) {
+        ppToast('Save failed: ' + (res.body.error || 'unknown'), 'error');
+        if (btn) { btn.disabled = false; btn.textContent = origText; }
+        return;
+      }
+      ppToast('Saved as default for ' + PP_SLUG, 'ok');
+      if (btn) {
+        btn.classList.add('saved');
+        btn.textContent = '✓ Saved';
+        // Reset label after 2.5s so partner can save again if they edit
+        setTimeout(function(){
+          btn.classList.remove('saved');
+          btn.disabled = false;
+          btn.textContent = origText || 'Save as default';
+        }, 2500);
+      }
+    })
+    .catch(function(e){
+      ppToast('Network error', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
+    });
 }
 
 // ── Boot ───────────────────────────────────────────────────────────

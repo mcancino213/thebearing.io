@@ -745,6 +745,53 @@ export default {
       return new Response('Method not allowed', { status: 405 });
     }
 
+    // ── /api/property/offer-defaults ───────────────────────────────
+    // v73j: lightweight admin-gated endpoint to patch ONLY the
+    // partner-saved offer defaults on a property record, without
+    // round-tripping the full property JSON through the admin editor.
+    // Used by the "Save as default" buttons on the pp-bookings offer
+    // modal so partners can preserve their inclusions / cancellation /
+    // notes between offers.
+    //
+    // POST body: { slug, field, value }
+    //   field: 'default_inclusions' | 'default_cancellation_terms' | 'default_partner_notes' | 'default_pricing_mode'
+    //   value: array for inclusions, string for others
+    if (url.pathname === '/api/property/offer-defaults') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      if (!body.slug) return jsonResponse({ error: 'slug required' }, 400);
+      const ALLOWED_FIELDS = ['default_inclusions', 'default_cancellation_terms', 'default_partner_notes', 'default_pricing_mode'];
+      if (ALLOWED_FIELDS.indexOf(body.field) === -1) {
+        return jsonResponse({ error: 'field must be one of: ' + ALLOWED_FIELDS.join(', ') }, 400);
+      }
+      // Type-check value
+      if (body.field === 'default_inclusions') {
+        if (!Array.isArray(body.value)) return jsonResponse({ error: 'inclusions must be an array' }, 400);
+      } else if (body.field === 'default_pricing_mode') {
+        if (body.value !== 'per_night' && body.value !== 'package') {
+          return jsonResponse({ error: 'pricing_mode must be per_night or package' }, 400);
+        }
+      } else {
+        if (typeof body.value !== 'string') return jsonResponse({ error: 'value must be a string' }, 400);
+      }
+
+      const raw = await env.DOSSIERS.get(body.slug + ':property');
+      if (!raw) return jsonResponse({ error: 'property not found: ' + body.slug }, 404);
+      let prop;
+      try { prop = JSON.parse(raw); } catch (e) { return jsonResponse({ error: 'corrupt property JSON' }, 500); }
+
+      prop[body.field] = body.value;
+      prop.updatedAt = new Date().toISOString();
+      await env.DOSSIERS.put(body.slug + ':property', JSON.stringify(prop));
+
+      return jsonResponse({ ok: true, slug: body.slug, field: body.field, value: body.value });
+    }
+
     // ── /api/conversation/backfill-bookings ────────────────────────
     // v73i: admin-gated one-shot. Walks every conversation in
     // __conversations_index; for each one that doesn't have a linked
@@ -2365,6 +2412,72 @@ View in admin: https://thebearing.io/admin-bookings.html
     if (url.pathname === '/api/offer') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
 
+      // v73j: shared helper — when an offer transitions into 'sent', post
+      // a special offer_card message into the conversation linked to its
+      // booking. The customer conversation renderer detects the
+      // `type:'offer_card'` field and renders a styled card with a
+      // "View offer" CTA instead of a plain text bubble.
+      // Idempotent against the conversation: each call appends one new
+      // message regardless of whether prior cards exist for the same offer
+      // — caller is responsible for not double-firing (we only call from
+      // the create-with-sendImmediately path and the PATCH action:'send').
+      async function postOfferCardToConversation(offer) {
+        try {
+          // Find linked conversation via booking.conversationId
+          const brRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+          if (!brRaw) return;
+          const bk = JSON.parse(brRaw);
+          const convId = bk.conversationId;
+          if (!convId) return; // legacy bookings without a conv link
+          const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+          if (!convRaw) return;
+          const conv = JSON.parse(convRaw);
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+          const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+          const cardTs = new Date().toISOString();
+          const card = {
+            id: 'msg_' + Date.now() + '_card',
+            role: 'partner',
+            type: 'offer_card',
+            // Compact summary for the card rendering — full offer fetched on click
+            offerId: offer.id,
+            offerSummary: {
+              propertyName: offer.propertyName || '',
+              arrival: offer.arrival || '',
+              departure: offer.departure || '',
+              nights: offer.nights || 0,
+              guests: offer.guests || 0,
+              room: offer.room || '',
+              total_amount: offer.total_amount || 0,
+              deposit_amount: offer.deposit_amount || 0,
+              currency: offer.currency || 'USD',
+              valid_until: offer.valid_until || null
+            },
+            // Plain-text fallback so renderers that don't know about
+            // offer_card (older clients, email digests) still show something.
+            text: 'Your offer is ready — ' + (offer.propertyName || 'the property') + ' has prepared a personalised quote. Open your conversation to view it.',
+            senderName: offer.propertyName || 'Property',
+            sentAt: cardTs,
+            readAt: null
+          };
+          messages.push(card);
+
+          conv.lastMessageAt = cardTs;
+          conv.lastMessagePreview = '📋 Offer ready · ' + (offer.propertyName || 'Property');
+          conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+          await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+          await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+          // Bump unread counters
+          if (typeof recomputeUnreadCounters === 'function') {
+            await recomputeUnreadCounters(env);
+          }
+          console.log('[Offer card] posted into conv ' + convId + ' for offer ' + offer.id);
+        } catch (e) {
+          console.error('[Offer card] failed:', e && e.stack || e);
+          // Non-fatal — offer is already saved
+        }
+      }
+
       // ─ GET ─
       // ?id=X           → single offer
       // ?bookingId=X    → all offers for a booking, oldest first
@@ -2524,6 +2637,13 @@ View in admin: https://thebearing.io/admin-bookings.html
         booking.updatedAt = now;
         await env.DOSSIERS.put('booking:' + body.bookingId, JSON.stringify(booking));
 
+        // v73j: if this offer was sent immediately, post an offer_card
+        // message into the linked conversation so the guest sees it
+        // alongside their enquiry thread.
+        if (sendImmediately) {
+          await postOfferCardToConversation(offer);
+        }
+
         return jsonResponse({ ok: true, offer });
       }
 
@@ -2563,6 +2683,8 @@ View in admin: https://thebearing.io/admin-bookings.html
             booking.updatedAt = now;
             await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
           }
+          // v73j: post offer_card message into linked conversation
+          await postOfferCardToConversation(offer);
         } else if (body.action === 'withdraw') {
           if (offer.status !== 'draft' && offer.status !== 'sent') {
             return jsonResponse({ error: 'can only withdraw from draft or sent' }, 400);

@@ -658,8 +658,72 @@ html, body { height: 100%; }
   padding:11px 16px;border-radius:18px;
   font-size:.86rem;line-height:1.55;
   word-break:break-word;
+  white-space:pre-line; /* v73j: preserve \n line breaks in enquiry messages */
   box-shadow:0 1px 2px rgba(0,0,0,.04);position:relative;
   transition:transform .12s ease, box-shadow .12s ease;
+}
+/* v73j: offer_card bubble — wider, no white-space:pre-line (it's structured HTML),
+   distinctive cream + terracotta border + soft inner glow so it stands out
+   from regular messages. */
+.ch-bubble.ch-offer-card{
+  padding:18px 20px 16px;
+  background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%);
+  border:1px solid rgba(176,88,48,.22);
+  color:var(--ink);
+  white-space:normal;
+  max-width:380px;
+  box-shadow:0 4px 24px rgba(176,88,48,.10), 0 1px 3px rgba(0,0,0,.04);
+}
+/* Guest-side bubble would normally be terracotta gradient; offer_card is
+   always from the partner so it should never get the guest variant. */
+.ch-msg.role-partner .ch-bubble.ch-offer-card,
+.ch-msg.role-guest .ch-bubble.ch-offer-card{
+  background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%);
+  color:var(--ink);
+  border:1px solid rgba(176,88,48,.22);
+}
+.ch-offer-card-eyebrow{
+  font-family:'Geist',sans-serif;font-size:.62rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--terra);
+  margin-bottom:8px;
+}
+.ch-offer-card-title{
+  font-family:'Instrument Serif',serif;font-size:1.25rem;line-height:1.2;
+  color:var(--ink);margin-bottom:3px;
+}
+.ch-offer-card-sub{
+  font-size:.78rem;color:var(--stone);margin-bottom:2px;
+}
+.ch-offer-card-dates{
+  font-size:.78rem;color:var(--bark);margin-top:6px;
+  padding-top:8px;border-top:1px dashed rgba(80,60,30,.12);
+}
+.ch-offer-card-pricing{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
+  padding:11px 12px;background:rgba(176,88,48,.06);border-radius:10px;
+}
+.ch-offer-card-pricing .lbl{
+  font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--stone);margin-bottom:3px;
+}
+.ch-offer-card-pricing .val{
+  font-family:'Instrument Serif',serif;font-size:1.1rem;color:var(--ink);
+}
+.ch-offer-card-valid{
+  font-size:.7rem;color:var(--stone);margin-top:8px;font-style:italic;
+}
+.ch-offer-card-cta{
+  width:100%;margin-top:14px;padding:11px 16px;
+  border:none;border-radius:10px;
+  background:linear-gradient(135deg,var(--terra),#8c4422);color:#fff;
+  font-family:'Geist',sans-serif;font-size:.85rem;font-weight:600;
+  letter-spacing:.02em;cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 2px 12px rgba(176,88,48,.25);
+}
+.ch-offer-card-cta:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 18px rgba(176,88,48,.35);
 }
 .ch-msg.role-guest .ch-bubble{background:linear-gradient(135deg,var(--terra),#8c4422);color:#fff;}
 .ch-msg.role-partner .ch-bubble{background:#fff;border:1px solid var(--border-hi);color:var(--ink);}
@@ -1848,16 +1912,59 @@ function chRenderMessagesInto(wrap, conv, messages) {
     }
 
     var bubble = document.createElement('div');
-    bubble.className = 'ch-bubble';
-    bubble.textContent = m.text;
-    if (m.source === 'email') {
-      var srcBadge = document.createElement('span');
-      srcBadge.className = 'ch-msg-source-badge';
-      srcBadge.textContent = 'via email';
-      bubble.appendChild(srcBadge);
+    if (m.type === 'offer_card' && m.offerSummary) {
+      // v73j: render offer card instead of plain text bubble.
+      bubble.className = 'ch-bubble ch-offer-card';
+      var s = m.offerSummary;
+      var dateStr = '';
+      if (s.arrival && s.departure) {
+        var fmt = function(iso) {
+          try { return new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+          catch(_) { return iso; }
+        };
+        dateStr = fmt(s.arrival) + ' → ' + fmt(s.departure) + (s.nights ? ' · ' + s.nights + ' night' + (s.nights > 1 ? 's' : '') : '');
+      }
+      var totalStr = s.total_amount ? '$' + Number(s.total_amount).toLocaleString() : '—';
+      var depositStr = s.deposit_amount ? '$' + Number(s.deposit_amount).toLocaleString() : '—';
+      var validStr = '';
+      if (s.valid_until) {
+        try {
+          var daysLeft = Math.ceil((new Date(s.valid_until) - new Date()) / (24*60*60*1000));
+          if (daysLeft > 0) validStr = 'Valid for ' + daysLeft + ' more day' + (daysLeft === 1 ? '' : 's');
+          else validStr = 'Expired';
+        } catch(_) {}
+      }
+      bubble.innerHTML =
+        '<div class="ch-offer-card-eyebrow">📋  Your offer is ready</div>' +
+        '<div class="ch-offer-card-title">' + chEsc(s.propertyName || 'Property') + '</div>' +
+        (s.room ? '<div class="ch-offer-card-sub">' + chEsc(s.room) + (s.guests ? ' · ' + chEsc(String(s.guests)) + ' guest' + (s.guests > 1 ? 's' : '') : '') + '</div>' : '') +
+        (dateStr ? '<div class="ch-offer-card-dates">' + chEsc(dateStr) + '</div>' : '') +
+        '<div class="ch-offer-card-pricing">' +
+          '<div><div class="lbl">Total</div><div class="val">' + totalStr + '</div></div>' +
+          '<div><div class="lbl">Deposit to confirm</div><div class="val">' + depositStr + '</div></div>' +
+        '</div>' +
+        (validStr ? '<div class="ch-offer-card-valid">' + chEsc(validStr) + '</div>' : '') +
+        '<button class="ch-offer-card-cta" type="button" data-offer-id="' + chEsc(m.offerId || '') + '">View offer →</button>';
+      // Wire the CTA — open modal on click
+      var ctaBtn = bubble.querySelector('.ch-offer-card-cta');
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', function() {
+          openOfferDetail(m.offerId);
+        });
+      }
+    } else {
+      bubble.className = 'ch-bubble';
+      bubble.textContent = m.text;
+      if (m.source === 'email') {
+        var srcBadge = document.createElement('span');
+        srcBadge.className = 'ch-msg-source-badge';
+        srcBadge.textContent = 'via email';
+        bubble.appendChild(srcBadge);
+      }
     }
 
-    // Hover actions
+    // Hover actions — skipped for offer_card system messages (v73j)
+    if (m.type !== 'offer_card') {
     var mActions = document.createElement('div');
     mActions.className = 'ch-msg-actions';
     var capturedText = m.text;
@@ -1915,6 +2022,7 @@ function chRenderMessagesInto(wrap, conv, messages) {
     mActions.appendChild(quoteBtn);
     mActions.appendChild(copyBtn);
     bubble.appendChild(mActions);
+    } // end if (m.type !== 'offer_card') — hover actions skipped for system cards
     msgEl.appendChild(bubble);
 
     // Reactions
@@ -2113,6 +2221,142 @@ function chCopyToClipboard(text) {
       showFlash();
     });
   }
+}
+
+// v73j: open offer detail modal. Fetches the offer record by ID and
+// renders a full read-only view with all terms, inclusions, cancellation,
+// notes from partner, and (placeholder) Accept / Request-changes actions.
+// Accept-and-pay flow (Stripe Checkout) is wired in v73k+.
+function openOfferDetail(offerId) {
+  if (!offerId) return;
+  // Build modal scaffold once
+  var existing = document.getElementById('tb-offer-modal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'tb-offer-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:grid;place-items:start center;backdrop-filter:blur(6px);overflow-y:auto;padding:5vh 16px;';
+  modal.innerHTML =
+    '<div id="tb-offer-sheet" style="background:#faf7f1;border-radius:20px;width:100%;max-width:620px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">' +
+    '  <div style="padding:18px 22px;border-bottom:1px solid rgba(80,60,30,.1);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+    '    <div>' +
+    '      <div style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">Your offer</div>' +
+    '      <div id="tb-offer-prop" style="font-family:\'Instrument Serif\',serif;font-size:1.4rem;line-height:1.15;margin-top:2px;color:#1e1810;">Loading…</div>' +
+    '    </div>' +
+    '    <button id="tb-offer-close" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+    '      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>' +
+    '    </button>' +
+    '  </div>' +
+    '  <div id="tb-offer-body" style="padding:22px;">' +
+    '    <div style="color:#9a8e80;font-size:.85rem;text-align:center;padding:36px 0;">Loading your offer…</div>' +
+    '  </div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  function closeModal() {
+    modal.remove();
+    document.body.style.overflow = '';
+  }
+  document.getElementById('tb-offer-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); }
+  });
+
+  // Fetch offer
+  fetch('/api/offer?id=' + encodeURIComponent(offerId), { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(resp){
+      if (!resp || !resp.data) {
+        document.getElementById('tb-offer-body').innerHTML =
+          '<div style="text-align:center;padding:30px 0;color:#9a8e80;font-size:.85rem;">Offer not found. It may have been withdrawn — please check with the property.</div>';
+        return;
+      }
+      var o = resp.data;
+      var fmt = function(iso) { try { return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return iso; } };
+      var statusBadge = '';
+      if (o.status === 'sent')         statusBadge = '<span style="background:rgba(58,112,85,.12);color:#3a7055;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Awaiting your reply</span>';
+      else if (o.status === 'accepted')   statusBadge = '<span style="background:rgba(45,138,78,.15);color:#1f6a3a;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Accepted</span>';
+      else if (o.status === 'declined')   statusBadge = '<span style="background:rgba(160,30,30,.1);color:#a01e1e;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Declined</span>';
+      else if (o.status === 'withdrawn')  statusBadge = '<span style="background:rgba(120,100,80,.12);color:#7a6a58;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Withdrawn</span>';
+      else if (o.status === 'superseded') statusBadge = '<span style="background:rgba(120,100,80,.12);color:#7a6a58;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Replaced by newer offer</span>';
+
+      document.getElementById('tb-offer-prop').textContent = o.propertyName || 'Property';
+
+      var inclList = '';
+      if (Array.isArray(o.inclusions) && o.inclusions.length) {
+        inclList = '<ul style="list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px;">' +
+          o.inclusions.map(function(i){
+            return '<li style="display:flex;align-items:flex-start;gap:8px;font-size:.85rem;color:#1e1810;line-height:1.5;">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:3px;"><polyline points="20 6 9 17 4 12"/></svg>' +
+              '<span>' + chEsc(i) + '</span>' +
+            '</li>';
+          }).join('') +
+          '</ul>';
+      }
+
+      var nightsStr = o.nights ? (o.nights + ' night' + (o.nights === 1 ? '' : 's')) : '';
+      var datesLine = (o.arrival && o.departure) ? (fmt(o.arrival) + ' → ' + fmt(o.departure) + (nightsStr ? ' · ' + nightsStr : '')) : '';
+      var guestsLine = o.guests ? (o.guests + ' guest' + (o.guests === 1 ? '' : 's')) : '';
+
+      var validLine = '';
+      if (o.valid_until) {
+        var days = Math.ceil((new Date(o.valid_until) - new Date()) / (24*60*60*1000));
+        validLine = days > 0 ? ('This offer is valid for ' + days + ' more day' + (days === 1 ? '' : 's')) : 'This offer has expired';
+      }
+
+      var html =
+        (statusBadge ? '<div style="text-align:center;margin-bottom:14px;">' + statusBadge + '</div>' : '') +
+        '<div style="text-align:center;padding:14px 0 16px;border-bottom:1px solid rgba(80,60,30,.1);">' +
+          (o.room ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + chEsc(o.room) + (guestsLine ? ' · ' + chEsc(guestsLine) : '') + '</div>' : (guestsLine ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + chEsc(guestsLine) + '</div>' : '')) +
+          (datesLine ? '<div style="font-family:\'Instrument Serif\',serif;font-size:1.05rem;color:#1e1810;">' + chEsc(datesLine) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;padding:18px;background:rgba(176,88,48,.06);border-radius:14px;">' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Total stay</div>' +
+            '<div style="font-family:\'Instrument Serif\',serif;font-size:1.5rem;color:#1e1810;">$' + Number(o.total_amount || 0).toLocaleString() + '</div>' +
+            (o.pricing_mode === 'per_night' && o.nightly_rate ? '<div style="font-size:.72rem;color:#9a8e80;margin-top:2px;">$' + Number(o.nightly_rate).toLocaleString() + ' avg nightly × ' + (o.nights || '?') + '</div>' : '') +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Deposit to confirm</div>' +
+            '<div style="font-family:\'Instrument Serif\',serif;font-size:1.5rem;color:#b05830;">$' + Number(o.deposit_amount || 0).toLocaleString() + '</div>' +
+            '<div style="font-size:.72rem;color:#9a8e80;margin-top:2px;">Balance settled with the property directly</div>' +
+          '</div>' +
+        '</div>' +
+        (inclList ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:8px;">Included</div>' + inclList + '</div>' : '') +
+        (o.exclusions ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Not included</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + chEsc(o.exclusions) + '</div></div>' : '') +
+        (o.cancellation_terms ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + chEsc(o.cancellation_terms) + '</div></div>' : '') +
+        (o.partner_notes ? '<div style="margin:18px 0;padding:14px 16px;background:#fff;border:1px solid rgba(80,60,30,.1);border-radius:12px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Note from the property</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;font-style:italic;">' + chEsc(o.partner_notes) + '</div></div>' : '') +
+        (validLine ? '<div style="font-size:.75rem;color:#9a8e80;text-align:center;margin:14px 0 18px;">' + chEsc(validLine) + '</div>' : '') +
+        // Actions — placeholder for v73k+
+        (o.status === 'sent' ?
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;">' +
+            '<button type="button" id="tb-offer-request-changes" style="padding:13px;border:1px solid rgba(80,60,30,.18);border-radius:12px;background:#fff;color:#5a4e40;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:500;cursor:pointer;">Request changes</button>' +
+            '<button type="button" id="tb-offer-accept" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Accept & pay deposit</button>' +
+          '</div>' +
+          '<div style="font-size:.7rem;color:#9a8e80;text-align:center;margin-top:10px;">Accept-and-pay activates with Stripe Checkout in the next build.</div>'
+          : '');
+
+      document.getElementById('tb-offer-body').innerHTML = html;
+
+      // Wire placeholder buttons
+      var acceptBtn = document.getElementById('tb-offer-accept');
+      if (acceptBtn) acceptBtn.addEventListener('click', function() {
+        alert('Accept & pay activates with Stripe Checkout in the next build. For now, please reply to the conversation to confirm acceptance with the property.');
+      });
+      var reqBtn = document.getElementById('tb-offer-request-changes');
+      if (reqBtn) reqBtn.addEventListener('click', function() {
+        closeModal();
+        // Focus the composer so the user can type their request
+        var composer = document.querySelector('.ch-composer textarea, #ch-composer-input, textarea[placeholder*="message"]');
+        if (composer) { composer.focus(); composer.value = 'I\u2019d like to discuss a change to this offer: '; }
+      });
+    })
+    .catch(function(e){
+      console.error('[offer-detail] fetch failed:', e);
+      document.getElementById('tb-offer-body').innerHTML =
+        '<div style="text-align:center;padding:30px 0;color:#a01e1e;font-size:.85rem;">Could not load offer details. Please refresh and try again.</div>';
+    });
 }
 
 // Sound

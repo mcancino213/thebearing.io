@@ -2283,18 +2283,38 @@ function _continueEnquirySubmission(user, triggerBtn, ctx) {
 
   // Build first message
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
-  var checkIn  = checkin  ? fmt(checkin)  : 'Flexible';
-  var checkOut = checkout ? fmt(checkout) : 'Flexible';
-  var guestMsg = 'Hi';
-  if(name) guestMsg += ' — my name is ' + name;
-  guestMsg += '. I\'d like to enquire about the ' + cabin;
-  if(propName) guestMsg += ' at ' + propName;
-  if(guests) guestMsg += ' for ' + guests;
-  if(checkin && checkout) guestMsg += ', arriving ' + checkIn + ' and departing ' + checkOut;
-  else if(checkin) guestMsg += ', arriving ' + checkIn;
-  else guestMsg += '. My dates are flexible';
-  if(notes) guestMsg += '. ' + notes;
-  guestMsg += '. Please let me know availability and next steps.';
+  var checkIn  = checkin  ? fmt(checkin)  : '';
+  var checkOut = checkout ? fmt(checkout) : '';
+  // v73j: restructured enquiry message for readability. Format:
+  //   1. Greeting + name
+  //   2. Property + room + guest count (introductory sentence ending with colon if dates follow, else period)
+  //   3. Blank line + "Arriving: X / Departing: Y" block (only if at least one date provided)
+  //   4. Blank line + free-text notes (if any)
+  //   5. Blank line + "Please let me know availability and next steps."
+  var lines = [];
+  var intro = 'Hi';
+  if (name) intro += ' — my name is ' + name;
+  intro += ". I'd like to enquire about the " + cabin;
+  if (propName) intro += ' at ' + propName;
+  if (guests) intro += ' for ' + guests;
+  var hasDates = checkin || checkout;
+  if (hasDates) {
+    intro += ':';
+    lines.push(intro);
+    lines.push(''); // blank line
+    if (checkIn)  lines.push('Arriving: '  + checkIn);
+    if (checkOut) lines.push('Departing: ' + checkOut);
+  } else {
+    intro += '. My dates are flexible.';
+    lines.push(intro);
+  }
+  if (notes) {
+    lines.push('');
+    lines.push(notes);
+  }
+  lines.push('');
+  lines.push('Please let me know availability and next steps.');
+  var guestMsg = lines.join('\n');
 
   // ── Disable button + show progress ──
   if (triggerBtn) {
