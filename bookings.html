@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+  /* v73k: hide body until Clerk has confirmed auth state. Same pattern as
+     my-account.html. The script at the bottom of <body> sets
+     visibility:visible once Clerk's load+user-check completes. There's
+     also a failsafe timeout in case Clerk never loads. */
+  body { visibility: hidden; }
+</style>
+<noscript><style>body{visibility:visible !important;}</style></noscript>
 <script>
 // Apply cached user data immediately (before render) to prevent flash
 (function(){try{
@@ -286,6 +294,88 @@
   .menu-cta.primary{background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;}
   .menu-cta.secondary{background:none;border:1px solid var(--border-hi);color:var(--bark);}
   .menu-cta:hover{opacity:.85;}
+
+  /* v73k: bookings-page sections + cards */
+  .bk-section-pill{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 14px;border-radius:100px;border:1px solid var(--border-hi);
+    background:#fff;color:var(--bark);text-decoration:none;
+    font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  .bk-section-pill:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .bk-section-pill-count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:20px;height:20px;padding:0 6px;border-radius:100px;
+    font-size:.68rem;font-weight:600;background:var(--linen);color:var(--stone);
+  }
+  .bk-section-pill:hover .bk-section-pill-count{background:rgba(255,255,255,.18);color:#fff;}
+
+  .bk-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .bk-section-title{font-family:'Instrument Serif',serif;font-size:1.6rem;color:var(--ink);line-height:1.2;}
+  .bk-section-sub{font-size:.82rem;color:var(--stone);margin-top:4px;}
+
+  .bk-list{display:flex;flex-direction:column;gap:12px;}
+  .bk-loading{padding:36px 20px;text-align:center;color:var(--stone);font-size:.85rem;}
+  .bk-empty{
+    padding:36px 24px;text-align:center;background:#fff;border:1px dashed var(--border-hi);
+    border-radius:var(--r-lg);color:var(--stone);font-size:.85rem;line-height:1.6;
+  }
+  .bk-empty-title{font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);margin-bottom:6px;}
+
+  /* Row cards (enquiries + confirmed) */
+  .bk-row{
+    background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);
+    padding:16px 18px;display:flex;align-items:center;gap:14px;
+    transition:box-shadow .2s, border-color .2s;
+    text-decoration:none;color:inherit;
+  }
+  .bk-row:hover{border-color:var(--border-hi);box-shadow:0 4px 18px rgba(80,55,25,.07);}
+  .bk-row-thumb{
+    width:64px;height:64px;border-radius:var(--r-md);object-fit:cover;
+    background:var(--linen);flex-shrink:0;
+  }
+  .bk-row-body{flex:1;min-width:0;}
+  .bk-row-prop{font-family:'Geist',sans-serif;font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:2px;}
+  .bk-row-meta{font-size:.76rem;color:var(--stone);line-height:1.5;}
+  .bk-row-status{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 10px;border-radius:100px;
+    font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .bk-row-status-amber{background:rgba(192,138,40,.12);color:#8a6320;}
+  .bk-row-status-blue{background:rgba(46,106,138,.12);color:#1e4f6b;}
+  .bk-row-status-green{background:rgba(58,112,85,.15);color:#2a5440;}
+  .bk-row-status-gray{background:rgba(120,100,80,.12);color:#7a6a58;}
+
+  /* Offer card (inline summary that's also clickable) */
+  .bk-offer-card{
+    background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%);
+    border:1px solid rgba(176,88,48,.22);
+    border-radius:var(--r-lg);
+    padding:18px 20px;
+    cursor:pointer;
+    transition:box-shadow .2s, transform .2s, border-color .2s;
+    text-align:left;width:100%;font-family:inherit;
+  }
+  .bk-offer-card:hover{
+    box-shadow:0 6px 28px rgba(176,88,48,.14);
+    border-color:rgba(176,88,48,.4);
+    transform:translateY(-1px);
+  }
+  .bk-offer-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px;}
+  .bk-offer-card-eyebrow{font-family:'Geist',sans-serif;font-size:.6rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;}
+  .bk-offer-card-prop{font-family:'Instrument Serif',serif;font-size:1.25rem;color:var(--ink);line-height:1.2;}
+  .bk-offer-card-room{font-size:.78rem;color:var(--stone);margin-top:2px;}
+  .bk-offer-card-dates{font-size:.78rem;color:var(--bark);margin-top:8px;padding-top:8px;border-top:1px dashed rgba(80,60,30,.12);}
+  .bk-offer-card-pricing{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding:11px 12px;background:rgba(176,88,48,.06);border-radius:10px;}
+  .bk-offer-card-pricing .lbl{font-size:.55rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--stone);margin-bottom:3px;}
+  .bk-offer-card-pricing .val{font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);}
+  .bk-offer-card-pricing .val.deposit{color:var(--terra);}
+  .bk-offer-card-cta{margin-top:14px;display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:600;color:var(--terra);}
+  .bk-offer-card-cta::after{content:'\u2192';transition:transform .15s;}
+  .bk-offer-card:hover .bk-offer-card-cta::after{transform:translateX(3px);}
 </style>
 <script src="/assets/envoy-prompt.js"></script>
 <style>
@@ -491,178 +581,54 @@
     <div class="page-header">
       <div class="page-eyebrow">My Travel</div>
       <div class="page-title">Your Journeys</div>
-      <div class="page-sub">3 bookings · 1 upcoming · 2 completed</div>
+      <div class="page-sub" id="bk-sub">Loading…</div>
     </div>
 
-    <!-- Filter tabs -->
-    <div style="display:flex;gap:8px;margin-bottom:28px;">
-      <button onclick="filterBookings('all',this)" style="padding:7px 16px;border-radius:100px;border:1px solid var(--border-hi);background:var(--ink);color:#fff;font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;">All</button>
-      <button onclick="filterBookings('upcoming',this)" style="padding:7px 16px;border-radius:100px;border:1px solid var(--border-hi);background:none;color:var(--bark);font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;">Upcoming</button>
-      <button onclick="filterBookings('completed',this)" style="padding:7px 16px;border-radius:100px;border:1px solid var(--border-hi);background:none;color:var(--bark);font-family:'Geist',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;">Completed</button>
+    <!-- v73k: section navigation. Clicking scrolls to the section anchor. -->
+    <div style="display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap;">
+      <a href="#bk-enquiries" class="bk-section-pill"><span class="bk-section-pill-label">Enquiries</span><span class="bk-section-pill-count" id="bk-count-enq">0</span></a>
+      <a href="#bk-offers" class="bk-section-pill"><span class="bk-section-pill-label">Offers received</span><span class="bk-section-pill-count" id="bk-count-off">0</span></a>
+      <a href="#bk-confirmed" class="bk-section-pill"><span class="bk-section-pill-label">Confirmed</span><span class="bk-section-pill-count" id="bk-count-conf">0</span></a>
     </div>
 
-    <!-- Booking 1: Confirmed / Upcoming -->
-    <div class="booking-card" data-status="upcoming">
-      <div class="booking-hero">
-        <img src="https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&fit=crop" alt="Nour El Nil">
-        <div class="booking-hero-grad"></div>
-        <div class="booking-hero-content">
-          <div class="booking-status status-confirmed">
-            <svg width="7" height="7" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 3,6 7,2"/></svg>
-            Confirmed
-          </div>
-          <div class="booking-hero-name">Nour El Nil</div>
-          <div class="booking-hero-loc">Esna → Aswan · Nile, Egypt · Dahabiya</div>
+    <!-- ENQUIRIES section -->
+    <section id="bk-enquiries" style="margin-bottom:48px;scroll-margin-top:90px;">
+      <div class="bk-section-head">
+        <div>
+          <div class="bk-section-title">Enquiries</div>
+          <div class="bk-section-sub">Waiting on a personalised offer from the property.</div>
         </div>
       </div>
-      <div class="booking-body">
-        <div class="booking-meta">
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Embark</div><div class="booking-meta-val">15 Oct 2025</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Return</div><div class="booking-meta-val">21 Oct 2025</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Cabin</div><div class="booking-meta-val">Deluxe Suite</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Guests</div><div class="booking-meta-val">2 adults</div></div>
-        </div>
-        <div class="booking-actions">
-          <button class="btn-primary" onclick="window.location='/nour-el-nil.html'">View property</button>
-          <button class="btn-ghost" onclick="toggleDetail('detail-1')">Details</button>
-          <button class="btn-text">Message property →</button>
-        </div>
+      <div id="bk-enquiries-list" class="bk-list">
+        <div class="bk-loading">Loading your enquiries…</div>
       </div>
-      <div class="booking-detail" id="detail-1">
-        <div class="detail-grid">
-          <div>
-            <div class="detail-col-title">Booking details</div>
-            <div class="detail-row"><span class="detail-lbl">Booking ref</span><span class="detail-val">TB-2025-0847</span></div>
-            <div class="detail-row"><span class="detail-lbl">Total</span><span class="detail-val">$11,200 USD</span></div>
-            <div class="detail-row"><span class="detail-lbl">Payment</span><span class="detail-val">Visa ···· 4821</span></div>
-            <div class="detail-row"><span class="detail-lbl">Reserve Credits earned</span><span class="detail-val" style="color:var(--sea);">$1,120</span></div>
-            <div class="detail-row"><span class="detail-lbl">Private access</span><span class="detail-val" style="color:var(--terra);">Edfu sunrise ✓</span></div>
-            <div class="detail-row"><span class="detail-lbl">The Lens</span><span class="detail-val" style="color:var(--moss);">4 experts unlocked</span></div>
-            <div class="detail-row"><span class="detail-lbl">Cancellation</span><span class="detail-val">Free until 14 Sep 2025</span></div>
-          </div>
-          <div>
-            <div class="detail-col-title">Journey timeline</div>
-            <div class="timeline">
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Inquiry submitted</div><div class="timeline-date">12 Mar 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Confirmed by Nour El Nil</div><div class="timeline-date">13 Mar 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Deposit paid · $3,000</div><div class="timeline-date">14 Mar 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot current"></div><div class="timeline-text"><div class="timeline-title">Balance due · $8,200</div><div class="timeline-date">14 Sep 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot future"></div><div class="timeline-text"><div class="timeline-title">Embarkation · Esna</div><div class="timeline-date">15 Oct 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot future"></div><div class="timeline-text"><div class="timeline-title">Disembarkation · Aswan</div><div class="timeline-date">21 Oct 2025</div></div></div>
-            </div>
-          
-        <div style="margin-top:20px;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:.76rem;color:var(--stone);line-height:1.55;">Having a problem with this booking?</div>
-          <button onclick="openHelpModal(this.closest('.booking-card').querySelector('.booking-hero-name').textContent)" class="btn-text" style="font-size:.76rem;white-space:nowrap;">Get help from TheBearing →</button>
-        </div></div>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Booking 2: Completed -->
-    <div class="booking-card" data-status="completed">
-      <div class="booking-hero">
-        <img src="https://static.prod.r53.tablethotels.com/media/hotels/slideshow_images_staged/large/1099841.jpg" alt="Four Seasons Seychelles">
-        <div class="booking-hero-grad"></div>
-        <div class="booking-hero-content">
-          <div class="booking-status status-completed">
-            <svg width="7" height="7" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="1,4 3,6 7,2"/></svg>
-            Completed
-          </div>
-          <div class="booking-hero-name">Four Seasons Resort Seychelles</div>
-          <div class="booking-hero-loc">Mahé, Seychelles · Ocean View Villa</div>
+    <!-- OFFERS RECEIVED section -->
+    <section id="bk-offers" style="margin-bottom:48px;scroll-margin-top:90px;">
+      <div class="bk-section-head">
+        <div>
+          <div class="bk-section-title">Offers received</div>
+          <div class="bk-section-sub">Review, accept, or request changes. Offers expire after their validity window.</div>
         </div>
       </div>
-      <div class="booking-body">
-        <div class="booking-meta">
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Check in</div><div class="booking-meta-val">3 Jan 2025</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Check out</div><div class="booking-meta-val">10 Jan 2025</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Room</div><div class="booking-meta-val">Ocean Villa</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Guests</div><div class="booking-meta-val">2 adults</div></div>
-        </div>
-        <div class="booking-actions">
-          <button class="btn-ghost" onclick="toggleDetail('detail-2')">View details</button>
-          <button class="btn-ghost">Leave a review</button>
-          <button class="btn-text" style="color:var(--stone);">Book again →</button>
-        </div>
+      <div id="bk-offers-list" class="bk-list">
+        <div class="bk-loading">Loading your offers…</div>
       </div>
-      <div class="booking-detail" id="detail-2">
-        <div class="detail-grid">
-          <div>
-            <div class="detail-col-title">Booking details</div>
-            <div class="detail-row"><span class="detail-lbl">Booking ref</span><span class="detail-val">TB-2025-0112</span></div>
-            <div class="detail-row"><span class="detail-lbl">Total paid</span><span class="detail-val">$9,100 USD</span></div>
-            <div class="detail-row"><span class="detail-lbl">Reserve Credits earned</span><span class="detail-val" style="color:var(--sea);">$910</span></div>
-            <div class="detail-row"><span class="detail-lbl">Private access</span><span class="detail-val" style="color:var(--terra);">Sunset dive · Used ✓</span></div>
-            <div class="detail-row"><span class="detail-lbl">The Lens</span><span class="detail-val" style="color:var(--moss);">Marine biologist · Used</span></div>
-            <div class="detail-row"><span class="detail-lbl">The Bearing fee</span><span class="detail-val">$0 · same price as direct</span></div>
-          </div>
-          <div>
-            <div class="detail-col-title">Journey timeline</div>
-            <div class="timeline">
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Booked</div><div class="timeline-date">18 Nov 2024</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Checked in · Mahé</div><div class="timeline-date">3 Jan 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Completed · 7 nights</div><div class="timeline-date">10 Jan 2025</div></div></div>
-            </div>
-          
-        <div style="margin-top:20px;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:.76rem;color:var(--stone);line-height:1.55;">Having a problem with this booking?</div>
-          <button onclick="openHelpModal(this.closest('.booking-card').querySelector('.booking-hero-name').textContent)" class="btn-text" style="font-size:.76rem;white-space:nowrap;">Get help from TheBearing →</button>
-        </div></div>
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <!-- Booking 3: Pending -->
-    <div class="booking-card" data-status="upcoming">
-      <div class="booking-hero" style="background:linear-gradient(135deg,#1a2e1a,#0d1a0d);">
-        <img src="https://images.unsplash.com/photo-1540202404-a2f29016b523?w=800&q=80&fit=crop" alt="Maldives" style="opacity:.6;">
-        <div class="booking-hero-grad"></div>
-        <div class="booking-hero-content">
-          <div class="booking-status status-pending">
-            <svg width="7" height="7" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="4" cy="4" r="3"/></svg>
-            Pending reply
-          </div>
-          <div class="booking-hero-name">Soneva Fushi</div>
-          <div class="booking-hero-loc">Baa Atoll, Maldives · Overwater Villa</div>
+    <!-- CONFIRMED section -->
+    <section id="bk-confirmed" style="margin-bottom:48px;scroll-margin-top:90px;">
+      <div class="bk-section-head">
+        <div>
+          <div class="bk-section-title">Confirmed bookings</div>
+          <div class="bk-section-sub">Stays you’ve secured with a deposit. Balance settled directly with the property.</div>
         </div>
       </div>
-      <div class="booking-body">
-        <div class="booking-meta">
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Requested</div><div class="booking-meta-val">Flexible</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Duration</div><div class="booking-meta-val">7 nights</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Villa</div><div class="booking-meta-val">Overwater</div></div>
-          <div class="booking-meta-cell"><div class="booking-meta-lbl">Guests</div><div class="booking-meta-val">2 adults</div></div>
-        </div>
-        <div class="booking-actions">
-          <button class="btn-ghost" onclick="toggleDetail('detail-3')">View inquiry</button>
-          <button class="btn-text" style="color:var(--stone);">Cancel inquiry →</button>
-        </div>
+      <div id="bk-confirmed-list" class="bk-list">
+        <div class="bk-loading">Loading your confirmed bookings…</div>
       </div>
-      <div class="booking-detail" id="detail-3">
-        <div class="detail-grid">
-          <div>
-            <div class="detail-col-title">Inquiry details</div>
-            <div class="detail-row"><span class="detail-lbl">Submitted</span><span class="detail-val">20 Mar 2025</span></div>
-            <div class="detail-row"><span class="detail-lbl">Status</span><span class="detail-val" style="color:var(--gold);">Awaiting reply</span></div>
-            <div class="detail-row"><span class="detail-lbl">Estimated reply</span><span class="detail-val">Within 24 hours</span></div>
-            <div class="detail-row"><span class="detail-lbl">Your channel</span><span class="detail-val" style="color:var(--sea);">Open →</span></div>
-          </div>
-          <div>
-            <div class="detail-col-title">Next steps</div>
-            <div class="timeline">
-              <div class="timeline-item"><div class="timeline-dot done"><svg viewBox="0 0 8 8"><polyline points="1,4 3,6 7,2"/></svg></div><div class="timeline-text"><div class="timeline-title">Inquiry sent to Soneva Fushi</div><div class="timeline-date">20 Mar 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot current"></div><div class="timeline-text"><div class="timeline-title">Awaiting availability & quote</div><div class="timeline-date">Expected by 21 Mar 2025</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot future"></div><div class="timeline-text"><div class="timeline-title">Review &amp; confirm booking</div><div class="timeline-date">Up to you</div></div></div>
-            </div>
-          
-        <div style="margin-top:20px;padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-          <div style="font-size:.76rem;color:var(--stone);line-height:1.55;">Having a problem with this booking?</div>
-          <button onclick="openHelpModal(this.closest('.booking-card').querySelector('.booking-hero-name').textContent)" class="btn-text" style="font-size:.76rem;white-space:nowrap;">Get help from TheBearing →</button>
-        </div></div>
-        </div>
-      </div>
-    </div>
+    </section>
 
   </main>
 </div>
@@ -1072,11 +1038,399 @@ function submitHelp() {
   type="text/javascript">
 </script>
 <script>
+// v73k: bookings page is now Clerk-gated like my-account.
+// Body is hidden by CSS until this script confirms signed-in user.
+// 8s failsafe in case Clerk never loads.
+window.__bearingAuthTimeout = setTimeout(function(){
+  if (document.body.style.visibility !== 'visible') {
+    document.body.style.visibility = 'visible';
+    document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
+      + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
+      +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
+      +   '<div style="font-family:\'Instrument Serif\',serif;font-size:2rem;color:#1e1810;">Your Compass</div>'
+      + '</a>'
+      + '<div style="font-size:.9rem;color:#9a8e80;max-width:360px;text-align:center;line-height:1.55;">Sign-in is temporarily unavailable. Please refresh, or contact <a href="mailto:admin@thebearing.io" style="color:#b05830;">admin@thebearing.io</a>.</div>'
+      + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:4px;">\u2190 Back to The Bearing</a>'
+      + '</div>';
+  }
+}, 8000);
+
 window.addEventListener('load', async function() {
   try {
     await window.Clerk.load();
-  } catch(err) { console.error('Clerk load failed:', err); }
+    clearTimeout(window.__bearingAuthTimeout);
+    var user = window.Clerk.user;
+    if (user) {
+      document.body.style.visibility = 'visible';
+      loadCustomerBookings(user);
+    } else {
+      // Not signed in — show same overlay pattern as my-account
+      document.body.style.visibility = 'visible';
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:#faf7f1;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:32px 16px;overflow-y:auto;';
+      overlay.innerHTML =
+          '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
+        +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:4px;">The Bearing</div>'
+        +   '<div style="font-family:\'Instrument Serif\',serif;font-size:1.8rem;color:#1e1810;margin-bottom:4px;">Your Compass</div>'
+        + '</a>'
+        + '<div style="font-size:.85rem;color:#9a8e80;margin-bottom:8px;">Sign in to see your bookings</div>'
+        + '<div id="clerk-signin-overlay" style="width:100%;max-width:420px;"></div>'
+        + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:8px;">\u2190 Back to The Bearing</a>';
+      document.body.appendChild(overlay);
+      window.Clerk.mountSignIn(document.getElementById('clerk-signin-overlay'), {
+        afterSignInUrl: '/bookings',
+        afterSignUpUrl: '/bookings',
+      });
+      window.Clerk.addListener(function(resources) {
+        if (resources.user && document.getElementById('clerk-signin-overlay')) {
+          window.location.reload();
+        }
+      });
+    }
+  } catch(err) {
+    console.error('Clerk load failed:', err);
+    clearTimeout(window.__bearingAuthTimeout);
+    document.body.style.visibility = 'visible';
+    document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
+      + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
+      +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
+      +   '<div style="font-family:\'Instrument Serif\',serif;font-size:2rem;color:#1e1810;">Your Compass</div>'
+      + '</a>'
+      + '<div style="font-size:.9rem;color:#9a8e80;max-width:360px;text-align:center;line-height:1.55;">Sign-in is temporarily unavailable. Please refresh, or contact <a href="mailto:admin@thebearing.io" style="color:#b05830;">admin@thebearing.io</a>.</div>'
+      + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:4px;">\u2190 Back to The Bearing</a>'
+      + '</div>';
+  }
 });
+
+// ── BOOKINGS DATA + RENDER ─────────────────────────────────────────
+// Fetches the signed-in user's bookings via /api/booking?email=, then
+// buckets them by status into three sections and renders inline.
+// - 'enquiry' or 'pending' → Enquiries section (awaiting partner response)
+// - 'offer_sent' (or has active_offer_id) → Offers Received section
+// - 'confirmed' → Confirmed section
+function loadCustomerBookings(user) {
+  var email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+  if (!email) {
+    document.querySelectorAll('.bk-list').forEach(function(el) {
+      el.innerHTML = '<div class="bk-empty">No email on your account — please update your profile to see bookings.</div>';
+    });
+    return;
+  }
+  fetch('/api/booking?email=' + encodeURIComponent(email), { cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+    .then(function(data) {
+      var bookings = (data && data.bookings) || [];
+      renderCustomerBookings(bookings);
+    })
+    .catch(function(err) {
+      console.error('[/bookings] load failed:', err);
+      document.querySelectorAll('.bk-list').forEach(function(el) {
+        el.innerHTML = '<div class="bk-empty" style="border-color:#fca5a5;color:#b91c1c;">Failed to load. Please refresh and try again.</div>';
+      });
+    });
+}
+
+function renderCustomerBookings(bookings) {
+  // Bucket by status
+  var enquiries = [];
+  var offers = [];
+  var confirmed = [];
+  bookings.forEach(function(b) {
+    var s = (b.status || 'enquiry').toLowerCase();
+    if (s === 'confirmed' || s === 'completed') {
+      confirmed.push(b);
+    } else if (s === 'offer_sent' && b.active_offer_id) {
+      offers.push(b);
+    } else if (b.active_offer_id) {
+      // Defensive: any other status with an active offer goes to Offers
+      offers.push(b);
+    } else {
+      enquiries.push(b);
+    }
+  });
+
+  // Update pill counts + subtitle
+  document.getElementById('bk-count-enq').textContent = enquiries.length;
+  document.getElementById('bk-count-off').textContent = offers.length;
+  document.getElementById('bk-count-conf').textContent = confirmed.length;
+  document.getElementById('bk-sub').textContent =
+    bookings.length + ' total · ' + enquiries.length + ' enquir' + (enquiries.length === 1 ? 'y' : 'ies') + ' · ' + offers.length + ' offer' + (offers.length === 1 ? '' : 's') + ' · ' + confirmed.length + ' confirmed';
+
+  // Render each section
+  renderEnquiriesList(enquiries);
+  renderOffersList(offers);
+  renderConfirmedList(confirmed);
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  try { return new Date(iso.length === 10 ? iso + 'T00:00' : iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+  catch(_) { return iso; }
+}
+function fmtDates(arrival, departure) {
+  if (!arrival && !departure) return 'Dates flexible';
+  if (arrival && departure) return fmtDate(arrival) + ' \u2192 ' + fmtDate(departure);
+  if (arrival) return 'Arriving ' + fmtDate(arrival);
+  return 'Departing ' + fmtDate(departure);
+}
+
+function renderEnquiriesList(list) {
+  var el = document.getElementById('bk-enquiries-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="bk-empty">' +
+      '<div class="bk-empty-title">No open enquiries</div>' +
+      'When you enquire about a property, it appears here while you wait for a personalised offer.' +
+      '</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(b) {
+    var prop = esc(b.property || b.slug || 'Property');
+    var dates = esc(fmtDates(b.arrival, b.departure));
+    var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
+    var convLink = b.conversationId ? '/conversations.html?id=' + encodeURIComponent(b.conversationId) : '/conversations.html';
+    return '<a class="bk-row" href="' + convLink + '">' +
+      '<div class="bk-row-thumb"></div>' +
+      '<div class="bk-row-body">' +
+        '<div class="bk-row-prop">' + prop + '</div>' +
+        '<div class="bk-row-meta">' + dates + room + ' \u00b7 Sent ' + esc(fmtDate(b.createdAt)) + '</div>' +
+      '</div>' +
+      '<span class="bk-row-status bk-row-status-amber">Awaiting offer</span>' +
+    '</a>';
+  }).join('');
+}
+
+function renderOffersList(list) {
+  var el = document.getElementById('bk-offers-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="bk-empty">' +
+      '<div class="bk-empty-title">No offers yet</div>' +
+      'Once a property responds to one of your enquiries with a personalised quote, the offer will appear here for you to review.' +
+      '</div>';
+    return;
+  }
+  // Fetch each offer in parallel to render the inline summary
+  el.innerHTML = '<div class="bk-loading">Loading offer details…</div>';
+  Promise.all(list.map(function(b) {
+    return fetch('/api/offer?id=' + encodeURIComponent(b.active_offer_id), { cache: 'no-store' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(resp){ return { booking: b, offer: resp && resp.data }; })
+      .catch(function(){ return { booking: b, offer: null }; });
+  })).then(function(rows) {
+    el.innerHTML = rows.map(function(row) {
+      var b = row.booking;
+      var o = row.offer || {};
+      var prop = esc(b.property || o.propertyName || b.slug || 'Property');
+      var room = o.room || b.room || '';
+      var dates = fmtDates(o.arrival || b.arrival, o.departure || b.departure);
+      var nights = o.nights || (b.nights || 0);
+      var datesFull = esc(dates + (nights ? ' \u00b7 ' + nights + ' night' + (nights === 1 ? '' : 's') : ''));
+      var total = o.total_amount ? '$' + Number(o.total_amount).toLocaleString() : '\u2014';
+      var deposit = o.deposit_amount ? '$' + Number(o.deposit_amount).toLocaleString() : '\u2014';
+      var validLine = '';
+      if (o.valid_until) {
+        var days = Math.ceil((new Date(o.valid_until) - new Date()) / (24*60*60*1000));
+        validLine = days > 0 ? (days + ' day' + (days === 1 ? '' : 's') + ' left') : 'Expired';
+      }
+      // Whole card is a button that opens the offer modal
+      return '<button class="bk-offer-card" type="button" data-offer-id="' + esc(o.id || '') + '">' +
+        '<div class="bk-offer-card-top">' +
+          '<div>' +
+            '<div class="bk-offer-card-eyebrow">\ud83d\udccb  Offer received</div>' +
+            '<div class="bk-offer-card-prop">' + prop + '</div>' +
+            (room ? '<div class="bk-offer-card-room">' + esc(room) + '</div>' : '') +
+          '</div>' +
+          (validLine ? '<span class="bk-row-status ' + (validLine === 'Expired' ? 'bk-row-status-gray' : 'bk-row-status-blue') + '">' + esc(validLine) + '</span>' : '') +
+        '</div>' +
+        (datesFull ? '<div class="bk-offer-card-dates">' + datesFull + '</div>' : '') +
+        '<div class="bk-offer-card-pricing">' +
+          '<div><div class="lbl">Room</div><div class="val">' + (room ? esc(room) : '\u2014') + '</div></div>' +
+          '<div><div class="lbl">Total</div><div class="val">' + total + '</div></div>' +
+          '<div><div class="lbl">Deposit</div><div class="val deposit">' + deposit + '</div></div>' +
+        '</div>' +
+        '<div class="bk-offer-card-cta">View offer</div>' +
+      '</button>';
+    }).join('');
+    // Wire each card to open modal
+    el.querySelectorAll('.bk-offer-card').forEach(function(btn) {
+      var id = btn.getAttribute('data-offer-id');
+      if (!id) return;
+      btn.addEventListener('click', function() { openOfferDetail(id); });
+    });
+  });
+}
+
+function renderConfirmedList(list) {
+  var el = document.getElementById('bk-confirmed-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="bk-empty">' +
+      '<div class="bk-empty-title">No confirmed bookings yet</div>' +
+      'When you accept an offer and pay the deposit, your booking will appear here with check-in details.' +
+      '</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(b) {
+    var prop = esc(b.property || b.slug || 'Property');
+    var dates = esc(fmtDates(b.arrival, b.departure));
+    var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
+    var ref   = b.ref ? ' \u00b7 ' + esc(b.ref) : '';
+    return '<div class="bk-row">' +
+      '<div class="bk-row-thumb"></div>' +
+      '<div class="bk-row-body">' +
+        '<div class="bk-row-prop">' + prop + '</div>' +
+        '<div class="bk-row-meta">' + dates + room + ref + '</div>' +
+      '</div>' +
+      '<span class="bk-row-status bk-row-status-green">Confirmed</span>' +
+    '</div>';
+  }).join('');
+}
+
+// v73k: offer-detail modal — same implementation as conversations.html so
+// clicking an offer card here opens the same rich view. Kept inline (not
+// extracted to a shared script) because customer-side pages don't share a
+// build-pipeline yet; copy-paste is the cheap option.
+function openOfferDetail(offerId) {
+  if (!offerId) return;
+  var existing = document.getElementById('tb-offer-modal');
+  if (existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'tb-offer-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:grid;place-items:start center;backdrop-filter:blur(6px);overflow-y:auto;padding:5vh 16px;';
+  modal.innerHTML =
+    '<div id="tb-offer-sheet" style="background:#faf7f1;border-radius:20px;width:100%;max-width:620px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">' +
+    '  <div style="padding:18px 22px;border-bottom:1px solid rgba(80,60,30,.1);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+    '    <div>' +
+    '      <div style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">Your offer</div>' +
+    '      <div id="tb-offer-prop" style="font-family:\'Instrument Serif\',serif;font-size:1.4rem;line-height:1.15;margin-top:2px;color:#1e1810;">Loading…</div>' +
+    '    </div>' +
+    '    <button id="tb-offer-close" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+    '      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>' +
+    '    </button>' +
+    '  </div>' +
+    '  <div id="tb-offer-body" style="padding:22px;">' +
+    '    <div style="color:#9a8e80;font-size:.85rem;text-align:center;padding:36px 0;">Loading your offer…</div>' +
+    '  </div>' +
+    '</div>';
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  function closeModal() {
+    modal.remove();
+    document.body.style.overflow = '';
+  }
+  document.getElementById('tb-offer-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); }
+  });
+
+  fetch('/api/offer?id=' + encodeURIComponent(offerId), { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(resp){
+      if (!resp || !resp.data) {
+        document.getElementById('tb-offer-body').innerHTML =
+          '<div style="text-align:center;padding:30px 0;color:#9a8e80;font-size:.85rem;">Offer not found. It may have been withdrawn — please check with the property.</div>';
+        return;
+      }
+      var o = resp.data;
+      var statusBadge = '';
+      if (o.status === 'sent')         statusBadge = '<span style="background:rgba(58,112,85,.12);color:#3a7055;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Awaiting your reply</span>';
+      else if (o.status === 'accepted')   statusBadge = '<span style="background:rgba(45,138,78,.15);color:#1f6a3a;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Accepted</span>';
+      else if (o.status === 'declined')   statusBadge = '<span style="background:rgba(160,30,30,.1);color:#a01e1e;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Declined</span>';
+      else if (o.status === 'withdrawn')  statusBadge = '<span style="background:rgba(120,100,80,.12);color:#7a6a58;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Withdrawn</span>';
+      else if (o.status === 'superseded') statusBadge = '<span style="background:rgba(120,100,80,.12);color:#7a6a58;padding:3px 10px;border-radius:100px;font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Replaced by newer offer</span>';
+
+      document.getElementById('tb-offer-prop').textContent = o.propertyName || 'Property';
+
+      var inclList = '';
+      if (Array.isArray(o.inclusions) && o.inclusions.length) {
+        inclList = '<ul style="list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px;">' +
+          o.inclusions.map(function(i){
+            return '<li style="display:flex;align-items:flex-start;gap:8px;font-size:.85rem;color:#1e1810;line-height:1.5;">' +
+              '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:3px;"><polyline points="20 6 9 17 4 12"/></svg>' +
+              '<span>' + esc(i) + '</span>' +
+            '</li>';
+          }).join('') +
+          '</ul>';
+      }
+
+      var nightsStr = o.nights ? (o.nights + ' night' + (o.nights === 1 ? '' : 's')) : '';
+      var datesLine = (o.arrival && o.departure) ? (fmtDate(o.arrival) + ' \u2192 ' + fmtDate(o.departure) + (nightsStr ? ' \u00b7 ' + nightsStr : '')) : '';
+      var guestsLine = o.guests ? (o.guests + ' guest' + (o.guests === 1 ? '' : 's')) : '';
+
+      var validLine = '';
+      if (o.valid_until) {
+        var days = Math.ceil((new Date(o.valid_until) - new Date()) / (24*60*60*1000));
+        validLine = days > 0 ? ('This offer is valid for ' + days + ' more day' + (days === 1 ? '' : 's')) : 'This offer has expired';
+      }
+
+      var html =
+        (statusBadge ? '<div style="text-align:center;margin-bottom:14px;">' + statusBadge + '</div>' : '') +
+        '<div style="text-align:center;padding:14px 0 16px;border-bottom:1px solid rgba(80,60,30,.1);">' +
+          (o.room ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + esc(o.room) + (guestsLine ? ' \u00b7 ' + esc(guestsLine) : '') + '</div>' : (guestsLine ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + esc(guestsLine) + '</div>' : '')) +
+          (datesLine ? '<div style="font-family:\'Instrument Serif\',serif;font-size:1.05rem;color:#1e1810;">' + esc(datesLine) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;padding:18px;background:rgba(176,88,48,.06);border-radius:14px;">' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Total stay</div>' +
+            '<div style="font-family:\'Instrument Serif\',serif;font-size:1.5rem;color:#1e1810;">$' + Number(o.total_amount || 0).toLocaleString() + '</div>' +
+            (o.pricing_mode === 'per_night' && o.nightly_rate ? '<div style="font-size:.72rem;color:#9a8e80;margin-top:2px;">$' + Number(o.nightly_rate).toLocaleString() + ' avg nightly \u00d7 ' + (o.nights || '?') + '</div>' : '') +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Deposit to confirm</div>' +
+            '<div style="font-family:\'Instrument Serif\',serif;font-size:1.5rem;color:#b05830;">$' + Number(o.deposit_amount || 0).toLocaleString() + '</div>' +
+            '<div style="font-size:.72rem;color:#9a8e80;margin-top:2px;">Balance settled with the property directly</div>' +
+          '</div>' +
+        '</div>' +
+        (inclList ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:8px;">Included</div>' + inclList + '</div>' : '') +
+        (o.exclusions ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Not included</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + esc(o.exclusions) + '</div></div>' : '') +
+        (o.cancellation_terms ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + esc(o.cancellation_terms) + '</div></div>' : '') +
+        (o.partner_notes ? '<div style="margin:18px 0;padding:14px 16px;background:#fff;border:1px solid rgba(80,60,30,.1);border-radius:12px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Note from the property</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;font-style:italic;">' + esc(o.partner_notes) + '</div></div>' : '') +
+        (validLine ? '<div style="font-size:.75rem;color:#9a8e80;text-align:center;margin:14px 0 18px;">' + esc(validLine) + '</div>' : '') +
+        (o.status === 'sent' ?
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;">' +
+            '<button type="button" id="tb-offer-request-changes" style="padding:13px;border:1px solid rgba(80,60,30,.18);border-radius:12px;background:#fff;color:#5a4e40;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:500;cursor:pointer;">Request changes</button>' +
+            '<button type="button" id="tb-offer-accept" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Accept & pay deposit</button>' +
+          '</div>' +
+          '<div style="font-size:.7rem;color:#9a8e80;text-align:center;margin-top:10px;">Accept-and-pay activates with Stripe Checkout in the next build.</div>'
+          : '');
+
+      document.getElementById('tb-offer-body').innerHTML = html;
+
+      var acceptBtn = document.getElementById('tb-offer-accept');
+      if (acceptBtn) acceptBtn.addEventListener('click', function() {
+        alert('Accept & pay activates with Stripe Checkout in the next build. For now, please reply to the conversation to confirm acceptance with the property.');
+      });
+      var reqBtn = document.getElementById('tb-offer-request-changes');
+      if (reqBtn) reqBtn.addEventListener('click', function() {
+        closeModal();
+        // Navigate to the conversation so the user can type their request
+        var b = (resp.data || {});
+        if (b.bookingId) {
+          // Fetch the booking to find the conversation
+          fetch('/api/booking?ref=' + encodeURIComponent(b.bookingId), { cache: 'no-store' })
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+              if (d && d.data && d.data.conversationId) {
+                window.location = '/conversations.html?id=' + encodeURIComponent(d.data.conversationId);
+              } else {
+                window.location = '/conversations.html';
+              }
+            })
+            .catch(function(){ window.location = '/conversations.html'; });
+        } else {
+          window.location = '/conversations.html';
+        }
+      });
+    })
+    .catch(function(e){
+      console.error('[offer-detail] fetch failed:', e);
+      document.getElementById('tb-offer-body').innerHTML =
+        '<div style="text-align:center;padding:30px 0;color:#a01e1e;font-size:.85rem;">Could not load offer details. Please refresh and try again.</div>';
+    });
+}
 </script>
 <script src="/assets/account-sidebar.js"></script>
 </body>

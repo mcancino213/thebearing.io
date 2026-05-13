@@ -1028,6 +1028,7 @@ export default {
           return jsonResponse({ ref, data, exists: !!data });
         }
         const slugFilter = url.searchParams.get('slug');
+        const emailFilter = url.searchParams.get('email'); // v73k: customer-scoped lookup
         const rawIndex = await env.DOSSIERS.get('__bookings_index');
         const refs = rawIndex ? JSON.parse(rawIndex) : [];
         let bookings = await Promise.all(refs.map(async (r) => {
@@ -1043,6 +1044,15 @@ export default {
           // are excluded from partner views (they shouldn't exist post-v72y
           // since the booking POST always stores slug now).
           bookings = bookings.filter(function(b) { return b.slug === slugFilter; });
+        }
+        if (emailFilter) {
+          // v73k: customer-scoped view — used by /bookings.html to show
+          // a guest their own bookings + enquiries. Case-insensitive match
+          // since email comparisons should be.
+          const needle = emailFilter.toLowerCase().trim();
+          bookings = bookings.filter(function(b) {
+            return b.email && b.email.toLowerCase().trim() === needle;
+          });
         }
         return jsonResponse({ bookings: bookings.reverse() });
       }
