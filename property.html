@@ -28,9 +28,24 @@ var _t;function toast(m){var e=document.getElementById('toast-el');if(!e)return;
 // confusing. Now openEnquiry forces sign-in first, same as the
 // tbAuthEnquire path the other Enquire buttons use.
 function openEnquiry(){
+  // v73f: stash pending enquiry intent for post-sign-in resume.
+  // See tbAuthEnquire() for the rationale.
+  try {
+    sessionStorage.setItem('tb_pending_action', JSON.stringify({
+      action: 'enquire',
+      slug: window.PROPERTY_SLUG || '',
+      setAt: Date.now()
+    }));
+  } catch(e) {}
+
+  function _proceed(){
+    try { sessionStorage.removeItem('tb_pending_action'); } catch(e) {}
+    openOverlay('inq-overlay');
+  }
+
   if (window.tbAuth && tbAuth.requireUser) {
     tbAuth.requireUser(
-      function() { openOverlay('inq-overlay'); },
+      _proceed,
       { title: 'Sign in to enquire',
         subtitle: 'Create a free account or sign in with Google or Apple to send your enquiry. No payment required.' }
     );
@@ -39,9 +54,9 @@ function openEnquiry(){
     // to the old behavior (open overlay; submission will catch auth issue).
     setTimeout(function() {
       if (window.tbAuth && tbAuth.requireUser) {
-        tbAuth.requireUser(function(){ openOverlay('inq-overlay'); });
+        tbAuth.requireUser(_proceed);
       } else {
-        openOverlay('inq-overlay');
+        _proceed();
       }
     }, 200);
   }
@@ -2514,8 +2529,27 @@ var tbCheckout = {
 
 // ── Auth-gated actions ─────────────────────────────────────────────────
 function tbAuthEnquire(propertyName) {
+  // v73f: stash "pending enquiry" intent in sessionStorage before triggering
+  // sign-in. After Clerk's OAuth full-page redirect brings the user back,
+  // the page-load handler (see bottom of this script) checks for this key
+  // and reopens the enquiry overlay automatically — so the user resumes
+  // exactly where they were instead of starting over.
+  try {
+    sessionStorage.setItem('tb_pending_action', JSON.stringify({
+      action: 'enquire',
+      slug: window.PROPERTY_SLUG || '',
+      propertyName: propertyName || '',
+      setAt: Date.now()
+    }));
+  } catch(e) {}
+
   tbAuth.requireUser(
-    function(user) { openOverlay('inq-overlay'); },
+    function(user) {
+      // User signed in synchronously (cookie session) or via modal — clear
+      // pending intent since we're proceeding right now.
+      try { sessionStorage.removeItem('tb_pending_action'); } catch(e) {}
+      openOverlay('inq-overlay');
+    },
     {
       title: 'Sign in to enquire',
       subtitle: 'Create a free account or sign in to send your enquiry to ' + (propertyName || 'this property') + '. No payment required.'
@@ -3125,6 +3159,59 @@ window.addEventListener('beforeunload', function() {
 });
 
 loadProperty();
+
+// v73f: resume pending action after sign-in redirect.
+// When a signed-out user clicks Enquire, tbAuthEnquire/openEnquiry stash
+// `tb_pending_action` in sessionStorage, then Clerk OAuth does a full-page
+// redirect. We come back to the same property URL — but the inq-overlay is
+// closed and the click handler that opened it has long since finished.
+// On page load: check for the pending key, wait for Clerk to confirm a
+// real signed-in user, then trigger the appropriate action.
+//
+// Important guards:
+//   - Only fires if the slug in the pending action matches the current URL slug.
+//     (Prevents an old "enquire on Gypsy" intent from triggering on a Singita
+//     page if the user navigated mid-flow.)
+//   - Times out after 8s — if Clerk never confirms a user, the intent expires.
+//   - Removes the key when fired or expired so subsequent visits are clean.
+(function resumePendingAction() {
+  var raw;
+  try { raw = sessionStorage.getItem('tb_pending_action'); } catch(e) { return; }
+  if (!raw) return;
+  var pending;
+  try { pending = JSON.parse(raw); } catch(e) { sessionStorage.removeItem('tb_pending_action'); return; }
+  if (!pending || pending.action !== 'enquire') return;
+
+  // Expire stale intents (> 10 min — covers the OAuth round trip even on slow networks)
+  if (pending.setAt && Date.now() - pending.setAt > 10 * 60 * 1000) {
+    try { sessionStorage.removeItem('tb_pending_action'); } catch(e) {}
+    return;
+  }
+
+  // Slug-match guard
+  var currentSlug = new URLSearchParams(location.search).get('slug') || '';
+  if (pending.slug && pending.slug !== currentSlug) return;
+
+  // Wait for Clerk to confirm signed-in user, then trigger overlay.
+  // 16 attempts × 500ms = 8s budget.
+  var attempts = 0;
+  var pollId = setInterval(function() {
+    attempts++;
+    if (attempts > 16) {
+      clearInterval(pollId);
+      // Expired — leave the key in case user signs in later on the same page
+      return;
+    }
+    var hasUser = (window.Clerk && window.Clerk.user) ||
+                  (window.tbAuth && tbAuth.getUser && tbAuth.getUser());
+    if (hasUser) {
+      clearInterval(pollId);
+      try { sessionStorage.removeItem('tb_pending_action'); } catch(e) {}
+      // Small delay so the page chrome finishes settling before overlay slides up
+      setTimeout(function() { openOverlay('inq-overlay'); }, 300);
+    }
+  }, 500);
+})();
 </script>
 
 

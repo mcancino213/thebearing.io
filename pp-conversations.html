@@ -552,7 +552,7 @@ tbody tr:hover{background:var(--bg);}
 <script src="/assets/conv-scroll.js"></script>
 <script>
 var VIEWER_ROLE = 'partner';
-var PP_SLUG = 'nour-el-nil'; // Partner's property slug
+var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim(); // v73f: ?as=X override for testing as different partners
 var PP_NAME = 'Nour El Nil';
 var ppConvs = [];
 var ppActiveId = null;

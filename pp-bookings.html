@@ -368,7 +368,13 @@ tbody tr:hover{background:var(--bg);}
 //   cancelled. The partner can revise offers when status is offer_sent.
 // ════════════════════════════════════════════════════════════════════
 
-var PP_SLUG = 'nour-el-nil';
+// v73f: PP_SLUG can be overridden by ?as=X URL param.
+// Lets admin test as different partners without real multi-tenant auth
+// (which is deferred — see PROJECT_CONTEXT.md). Usage:
+//   /pp-bookings?as=gypsy-by-mekong-kingdoms  → views Gypsy as partner
+//   /pp-bookings                              → defaults to nour-el-nil
+// No persistence — each visit is explicit via URL.
+var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
 var ALL_BOOKINGS = [];        // last-fetched list
 var CURRENT_FILTER = 'all';
 var CURRENT_SEARCH = '';

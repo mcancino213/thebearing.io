@@ -80,8 +80,13 @@ var tbAuth = (function() {
     overlay.id = 'tb-auth-overlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);';
 
+    // v73f: bumped max-width from 480 → 560 to fit Clerk's widget without
+    // overflow. Clerk's mountSignIn renders a ~440px-wide card with its own
+    // padding — the old 480px sheet was just barely wider, which caused the
+    // widget to anchor left while our header stayed at full width on the
+    // right, producing the broken layout Miguel screenshotted.
     var sheet = document.createElement('div');
-    sheet.style.cssText = 'background:#faf7f1;border-radius:20px;width:100%;max-width:480px;padding:32px 28px 40px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .28s ease;margin:20px;';
+    sheet.style.cssText = 'background:#faf7f1;border-radius:20px;width:100%;max-width:560px;padding:32px 28px 40px;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.96);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .28s ease;margin:20px;';
 
     // Header
     var title = opts.title || 'Sign in to continue';
@@ -97,7 +102,11 @@ var tbAuth = (function() {
       '</button>' +
     '</div>' +
     '<div style="font-size:.8rem;color:#7a6a58;line-height:1.6;margin-bottom:20px;">' + subtitle + '</div>' +
-    '<div id="tb-clerk-mount" style="min-height:200px;display:flex;align-items:center;justify-content:center;"><div style="color:#9a8e80;font-size:.8rem;">Loading sign-in…</div></div>';
+    // v73f: removed inline flex-center on the mount container — Clerk's
+    // widget has its own internal flex layout and our wrapper was conflicting
+    // with it (Loading… text stayed visible alongside Clerk's mounted widget).
+    // Now the mount container is just a min-height block; Clerk fills it.
+    '<div id="tb-clerk-mount" style="min-height:200px;"><div id="tb-clerk-loading" style="color:#9a8e80;font-size:.8rem;text-align:center;padding:60px 0;">Loading sign-in…</div></div>';
 
     overlay.appendChild(sheet);
     document.body.appendChild(overlay);
@@ -127,18 +136,36 @@ var tbAuth = (function() {
         return;
       }
 
-      // Determine where to land after sign-in:
-      //   - Property pages, enquiry flows, conversation threads → stay (so flow continues)
-      //   - Homepage and generic browse pages → go to my-account
-      //   - Already on an account page → stay
+      // v73f: include clean URLs (no .html) alongside legacy .html paths.
+      // Cloudflare Pages serves /property?slug=X — that's the canonical form
+      // now, not /property.html?slug=X. The old whitelist failed to match
+      // and sent users to /my-account after sign-in, blowing away the
+      // enquiry overlay they were in the middle of completing.
       var path = window.location.pathname || '/';
       var stayInPlacePaths = [
-        '/property.html', '/nour-el-nil.html',
-        '/my-account.html', '/conversations.html', '/bookings.html',
-        '/saved.html', '/lens.html', '/preferences.html', '/settings.html'
+        '/property', '/property.html',
+        '/nour-el-nil', '/nour-el-nil.html',
+        '/my-account', '/my-account.html',
+        '/conversations', '/conversations.html',
+        '/bookings', '/bookings.html',
+        '/saved', '/saved.html',
+        '/lens', '/lens.html',
+        '/preferences', '/preferences.html',
+        '/settings', '/settings.html'
       ];
-      var stayInPlace = stayInPlacePaths.some(function(p) { return path === p || path.indexOf(p) === 0; });
+      var stayInPlace = stayInPlacePaths.some(function(p) {
+        // Exact match (clean URL) OR prefix match (path === p covers clean,
+        // path === p + '.html' or path.indexOf(p + '.html') covers .html).
+        return path === p || path === (p + '.html') || path.indexOf(p + '.html') === 0;
+      });
       var afterUrl = stayInPlace ? window.location.href : '/my-account.html';
+
+      // v73f: drop the "Loading sign-in…" placeholder before mounting Clerk.
+      // Clerk's mountSignIn appends to the container — it doesn't replace
+      // existing children — so the placeholder text would stay visible
+      // alongside the rendered widget, breaking the layout.
+      var loadingEl = document.getElementById('tb-clerk-loading');
+      if (loadingEl) loadingEl.remove();
 
       // Use Clerk's hosted sign-in page in an iframe as fallback
       // First try mountSignIn, fall back to redirect

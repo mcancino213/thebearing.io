@@ -1,6 +1,7 @@
 // Partner portal — Conversations badge uses lean /api/unread-count
 (function() {
-  var PP_SLUG = 'nour-el-nil';
+  // v73f: ?as=X URL param overrides default slug (for cross-partner testing)
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
   var inFlight = false;
 
   function updateConvBadge() {
@@ -45,6 +46,36 @@
   }
 
   function init() {
+    // v73f: preserve ?as=X across partner-portal navigation. If the current
+    // URL has ?as=X, rewrite every `.sb-item` sidebar link to carry the same
+    // param. Without this, clicking Conversations from /pp-bookings?as=gypsy
+    // would drop you on /pp-conversations (back to nour-el-nil default).
+    var asParam = new URLSearchParams(location.search).get('as');
+    if (asParam) {
+      var encoded = encodeURIComponent(asParam.trim());
+      document.querySelectorAll('.sb-item').forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (!href) return;
+        // Only rewrite partner-portal internal links; skip external URLs and anchors
+        if (href.indexOf('://') !== -1) return;
+        if (href.charAt(0) === '#') return;
+        // Strip any existing ?as= (avoid double-appending on re-runs)
+        var clean = href.split('?')[0];
+        link.setAttribute('href', clean + '?as=' + encoded);
+      });
+      // Also surface which partner we're viewing as — small banner so admin
+      // doesn't forget. Inject once.
+      if (!document.getElementById('pp-as-banner')) {
+        var banner = document.createElement('div');
+        banner.id = 'pp-as-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#fef3c7;border-bottom:1px solid #f59e0b;color:#92400e;font-family:Geist,sans-serif;font-size:12px;font-weight:500;padding:6px 16px;text-align:center;';
+        banner.innerHTML = 'Viewing partner portal as <strong>' + asParam + '</strong> · <a href="?" style="color:#92400e;text-decoration:underline;">Switch back to default</a>';
+        document.body.appendChild(banner);
+        // Push page content down so the banner doesn't overlap
+        document.body.style.paddingTop = '32px';
+      }
+    }
+
     updateConvBadge();
     updateBookingsBadge();
     setInterval(updateConvBadge, 4000);
