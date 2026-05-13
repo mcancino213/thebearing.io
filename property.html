@@ -22,7 +22,30 @@ function initScrollSpy(){
 }
 document.addEventListener('DOMContentLoaded',initScrollSpy);
 var _t;function toast(m){var e=document.getElementById('toast-el');if(!e)return;e.textContent=m;e.classList.add('show');clearTimeout(_t);_t=setTimeout(function(){e.classList.remove('show');},2800);}
-function openEnquiry(){openOverlay('inq-overlay');}
+// v73d: openEnquiry was a non-auth-gated shortcut that let users open
+// the enquiry overlay without signing in. They'd fill the form, hit
+// submit, and only THEN we'd discover they weren't authenticated —
+// confusing. Now openEnquiry forces sign-in first, same as the
+// tbAuthEnquire path the other Enquire buttons use.
+function openEnquiry(){
+  if (window.tbAuth && tbAuth.requireUser) {
+    tbAuth.requireUser(
+      function() { openOverlay('inq-overlay'); },
+      { title: 'Sign in to enquire',
+        subtitle: 'Create a free account or sign in with Google or Apple to send your enquiry. No payment required.' }
+    );
+  } else {
+    // tbAuth not loaded yet — defer briefly. If it never loads, fall back
+    // to the old behavior (open overlay; submission will catch auth issue).
+    setTimeout(function() {
+      if (window.tbAuth && tbAuth.requireUser) {
+        tbAuth.requireUser(function(){ openOverlay('inq-overlay'); });
+      } else {
+        openOverlay('inq-overlay');
+      }
+    }, 200);
+  }
+}
 function closeEnquiry(){closeOverlay('inq-overlay');}
 </script>
 <style>
@@ -1839,6 +1862,18 @@ function renderProperty(p,slug){
     if(r.duration_tagline)dd.push(['Duration',r.duration_tagline]);
     if(p.details&&p.details.max_guests)dd.push(['Max guests',p.details.max_guests]);
     document.getElementById('dbc-details').innerHTML=dd.map(function(d){return '<div class="dbc-detail"><span class="dbc-detail-lbl">'+esc(d[0])+'</span><span class="dbc-detail-val">'+esc(d[1])+'</span></div>';}).join('');
+  } else {
+    // v73d: no price set on the property → hide the "From" label and the
+    // empty price spans so the card doesn't show an orphan "FROM" with
+    // blank space below it. The Book / Enquire buttons stay; pricing will
+    // be quoted by the property in their offer.
+    var fromLbl = document.querySelector('.dbc-card .dbc-price-from');
+    if (fromLbl) fromLbl.style.display = 'none';
+    var priceEl = document.getElementById('dbc-price'); if (priceEl) priceEl.style.display = 'none';
+    var ppEl    = document.getElementById('dbc-pp');    if (ppEl)    ppEl.style.display    = 'none';
+    // Hide the divider that sits right below the (now-hidden) price block too
+    var firstDivider = document.querySelector('.dbc-card .dbc-divider');
+    if (firstDivider) firstDivider.style.display = 'none';
   }
 
   // Enquiry
@@ -2128,23 +2163,74 @@ function submitEnquiryAndOpenChannel(triggerBtn) {
   // ── Resolve Clerk user with three fallbacks ──
   // tbAuth.getUser() is the canonical helper but reads from a cache that
   // can lag. Direct window.Clerk.user is the authoritative source.
-  var user =
-    (window.Clerk && window.Clerk.user) ||
-    (window.tbAuth && tbAuth.getUser && tbAuth.getUser()) ||
-    null;
-
-  if (!user || !user.id) {
-    // Should be unreachable — tbAuthEnquire gates this — but defend in depth.
-    inquiryError('Please sign in to send your enquiry. Click the Enquire button again to sign in.');
-    return;
+  // v73d: if window.Clerk exists but .user is still null, ASK tbAuth to
+  // load Clerk and try again — handles the race where a user is signed
+  // in via cookie but Clerk hasn't yet hydrated session/user on this page.
+  function resolveUserOrFail(then) {
+    var u =
+      (window.Clerk && window.Clerk.user) ||
+      (window.tbAuth && tbAuth.getUser && tbAuth.getUser()) ||
+      null;
+    if (u && u.id) { then(u); return; }
+    // No user — try forcing Clerk to load/hydrate, then check again.
+    if (window.tbAuth && tbAuth.loadClerk) {
+      tbAuth.loadClerk(function() {
+        var u2 = (window.Clerk && window.Clerk.user) || null;
+        then(u2);
+      });
+    } else {
+      then(null);
+    }
   }
+
+  resolveUserOrFail(function(user) {
+    if (!user || !user.id) {
+      // Genuinely signed out (or auth library failed to load).
+      // Open the sign-in modal directly instead of just telling the user
+      // to "click Enquire again" — meet them where they are.
+      console.warn('[Enquiry] No Clerk user after hydration attempt — showing sign-in modal.');
+      if (window.tbAuth && tbAuth.showSignIn) {
+        tbAuth.showSignIn({
+          title: 'Sign in to send your enquiry',
+          subtitle: 'You need to be signed in so the property can reply privately. We don\'t share your email.',
+          onSuccess: function() {
+            // Recurse — user is now signed in, run the submission
+            if (triggerBtn) {
+              triggerBtn.disabled = false;
+              triggerBtn.textContent = triggerBtn.dataset.origText || 'Open my conversation →';
+              triggerBtn.style.opacity = '';
+            }
+            submitEnquiryAndOpenChannel(triggerBtn);
+          }
+        });
+      } else {
+        inquiryError('Sign in is unavailable right now. Please reload the page and try again.');
+      }
+      return;
+    }
+    // Real user — proceed with submission
+    _continueEnquirySubmission(user, triggerBtn, {
+      name: name, email: email, cabin: cabin, checkin: checkin,
+      checkout: checkout, guests: guests, notes: notes,
+      propSlug: propSlug, propName: propName
+    });
+  });
+}
+
+// Internal continuation — kept separate so we can call it after the async
+// Clerk hydration check resolves. Receives a guaranteed real user object.
+function _continueEnquirySubmission(user, triggerBtn, ctx) {
+  var name = ctx.name, email = ctx.email, cabin = ctx.cabin;
+  var checkin = ctx.checkin, checkout = ctx.checkout;
+  var guests = ctx.guests, notes = ctx.notes;
+  var propSlug = ctx.propSlug, propName = ctx.propName;
+
   var guestId = user.id;
   var clerkEmail = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
-  // Prefer Clerk-known email if user didn't fill the form field
   if (!email && clerkEmail) email = clerkEmail;
   var guestName = name || [user.firstName, user.lastName].filter(Boolean).join(' ') || email;
 
-  // ── Build first message ──
+  // Build first message
   var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
   var checkIn  = checkin  ? fmt(checkin)  : 'Flexible';
   var checkOut = checkout ? fmt(checkout) : 'Flexible';
