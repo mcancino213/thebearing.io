@@ -384,6 +384,17 @@ window.addEventListener('load', async function() {
       <span class="save-status" id="restore-booking-dates-status"></span>
     </div>
     <pre id="restore-booking-dates-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <div class="help-text">
+      <strong>Send test email (v73v):</strong> fires a single test email through Resend to the currently-configured notification recipients (baseline plus any extras in section 1 above). Use this to confirm end-to-end email delivery without going through the full booking flow. If the email arrives, your Resend + domain setup is healthy. If it doesn't, check the System Health card above for the Resend row \u2014 it now surfaces specifically whether <code>thebearing.io</code> is verified.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="test-email-btn" type="button">Send test email</button>
+      <span class="save-status" id="test-email-status"></span>
+    </div>
+    <pre id="test-email-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
   </div>
 </div>
 
@@ -984,6 +995,50 @@ window.addEventListener('load', async function() {
           rbdBtn.disabled = false;
           rbdBtn.textContent = 'Restore booking dates from active offer';
           rbdBtn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73v: send test email
+  var teBtn = document.getElementById('test-email-btn');
+  if (teBtn) {
+    teBtn.addEventListener('click', function() {
+      teBtn.disabled = true;
+      teBtn.textContent = 'Sending\u2026';
+      teBtn.style.opacity = '.6';
+      var out = document.getElementById('test-email-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/test-email', { method: 'POST', cache: 'no-store' })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok || res.body.error) {
+            flashStatus('test-email-status', false, (res.body && res.body.error) || 'Failed');
+            out.textContent = JSON.stringify(res.body, null, 2);
+            out.style.display = 'block';
+            return;
+          }
+          flashStatus('test-email-status', true,
+            'Sent to ' + (res.body.recipients ? res.body.recipients.join(', ') : '(unknown)'));
+          var lines = [];
+          lines.push('Recipients: ' + (res.body.recipients || []).join(', '));
+          lines.push('Resend response: ' + (res.body.resendStatus || '?'));
+          if (res.body.resendId) lines.push('Email ID: ' + res.body.resendId);
+          if (res.body.resendError) lines.push('Error from Resend: ' + res.body.resendError);
+          lines.push('');
+          lines.push('If you don\'t see this email within a minute:');
+          lines.push('  1. Check Spam / Promotions folders');
+          lines.push('  2. In Gmail, search: from:bookings@thebearing.io');
+          lines.push('  3. Check the Resend dashboard \u2192 Logs');
+          lines.push('  4. Check System Health card above for Resend status');
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('test-email-status', false, 'Network error: ' + e.message); })
+        .finally(function(){
+          teBtn.disabled = false;
+          teBtn.textContent = 'Send test email';
+          teBtn.style.opacity = '1';
         });
     });
   }

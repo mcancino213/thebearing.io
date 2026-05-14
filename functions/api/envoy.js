@@ -2611,6 +2611,60 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ error: 'GET or POST only' }, 405);
     }
 
+    // ── /api/test-email ────────────────────────────────────────────
+    // v73v: admin-gated. Fires a single test email through Resend to the
+    // configured notification recipients. Returns Resend's response status
+    // + email id (or error) so admin can confirm delivery without running
+    // the full booking flow. Most useful when diagnosing "why am I not
+    // getting emails" — gives a clean cause for silent failures.
+    if (url.pathname === '/api/test-email') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+
+      if (!env.RESEND_API_KEY) {
+        return jsonResponse({ error: 'RESEND_API_KEY not configured on worker' }, 503);
+      }
+
+      const recipients = await loadNotificationRecipients(env);
+      const now = new Date().toISOString();
+
+      try {
+        const resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'The Bearing <bookings@thebearing.io>',
+            to: recipients,
+            subject: 'Test email from The Bearing admin · ' + now.slice(0,16),
+            text: 'This is a diagnostic test email triggered from admin-settings.\n\nIf you can read this, your Resend integration is delivering successfully to the configured recipients.\n\nTimestamp: ' + now + '\nRecipients: ' + recipients.join(', '),
+          }),
+        });
+        let body = null;
+        try { body = await resp.json(); } catch(_) {}
+        if (resp.ok) {
+          return jsonResponse({
+            ok: true,
+            recipients: recipients,
+            resendStatus: resp.status + ' OK',
+            resendId: body && body.id || null,
+          });
+        } else {
+          return jsonResponse({
+            ok: false,
+            recipients: recipients,
+            resendStatus: resp.status,
+            resendError: (body && (body.message || body.error)) || ('HTTP ' + resp.status),
+            error: 'Resend rejected the send: ' + ((body && (body.message || body.error)) || 'HTTP ' + resp.status),
+          });
+        }
+      } catch (e) {
+        return jsonResponse({ ok: false, error: 'Network/runtime error: ' + (e && e.message || String(e)) }, 500);
+      }
+    }
+
     // ── /api/health ────────────────────────────────────────────────
     // Admin-gated. Reports the status of dependent systems so the founder can
     // diagnose issues from the admin-settings page without hitting each service.
@@ -2651,14 +2705,37 @@ View in admin: https://thebearing.io/admin-bookings.html
           });
           if (resp.ok) {
             let domainCount = null;
+            let domainSummary = '';
+            // v73v: surface whether the `thebearing.io` sender domain is
+            // actually verified. The most common cause of silent email
+            // failures: API key works, code attempts to send from
+            // `bookings@thebearing.io`, but Resend rejects with 403 because
+            // the domain isn't verified — and our worker's .catch() swallows
+            // the error silently. This check makes that visible in
+            // admin-settings without needing to scroll worker logs.
             try {
               const j = await resp.json();
-              if (Array.isArray(j && j.data)) domainCount = j.data.length;
+              if (Array.isArray(j && j.data)) {
+                domainCount = j.data.length;
+                const ours = j.data.find(function(d) { return d && (d.name === 'thebearing.io'); });
+                if (ours) {
+                  const status = (ours.status || 'unknown').toLowerCase();
+                  if (status === 'verified') {
+                    domainSummary = 'thebearing.io verified — sending OK';
+                  } else {
+                    domainSummary = 'thebearing.io status: ' + status + ' — emails from bookings@thebearing.io WILL FAIL';
+                  }
+                } else if (domainCount === 0) {
+                  domainSummary = 'NO sending domains configured — every send will fail';
+                } else {
+                  domainSummary = 'thebearing.io NOT in configured domains — every send will fail';
+                }
+              }
             } catch(_) {}
             checks.resend = {
-              ok: true,
+              ok: domainSummary.indexOf('OK') !== -1 || (domainCount === null),
               status: 'connected',
-              detail: domainCount === null ? 'API key valid' : (domainCount + ' sending domain(s) configured')
+              detail: domainSummary || (domainCount === null ? 'API key valid' : (domainCount + ' sending domain(s) configured'))
             };
           } else {
             checks.resend = {
