@@ -2545,13 +2545,15 @@ function openOfferDetail(offerId) {
         (o.cancellation_terms ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + chEsc(o.cancellation_terms) + '</div></div>' : '') +
         (o.partner_notes ? '<div style="margin:18px 0;padding:14px 16px;background:#fff;border:1px solid rgba(80,60,30,.1);border-radius:12px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Note from the property</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;font-style:italic;">' + chEsc(o.partner_notes) + '</div></div>' : '') +
         (validLine ? '<div style="font-size:.75rem;color:#9a8e80;text-align:center;margin:14px 0 18px;">' + chEsc(validLine) + '</div>' : '') +
-        // Actions — placeholder for v73k+
+        // Actions — primary Accept, secondary Request changes, tertiary Decline
         (o.status === 'sent' ?
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;">' +
             '<button type="button" id="tb-offer-request-changes" style="padding:13px;border:1px solid rgba(80,60,30,.18);border-radius:12px;background:#fff;color:#5a4e40;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:500;cursor:pointer;">Request changes</button>' +
             '<button type="button" id="tb-offer-accept" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Accept & pay deposit</button>' +
           '</div>' +
-          '<div style="font-size:.7rem;color:#9a8e80;text-align:center;margin-top:10px;">Accept-and-pay activates with Stripe Checkout in the next build.</div>'
+          '<div style="text-align:center;margin-top:14px;">' +
+            '<button type="button" id="tb-offer-decline" data-offer-id="' + chEsc(o.id || '') + '" style="background:transparent;border:none;color:#9a8e80;font-size:.78rem;cursor:pointer;text-decoration:underline;font-family:inherit;padding:6px 10px;">Decline this offer</button>' +
+          '</div>'
           : '');
 
       document.getElementById('tb-offer-body').innerHTML = html;
@@ -2597,6 +2599,46 @@ function openOfferDetail(offerId) {
         // Focus the composer so the user can type their request
         var composer = document.querySelector('.ch-composer textarea, #ch-composer-input, textarea[placeholder*="message"]');
         if (composer) { composer.focus(); composer.value = 'I\u2019d like to discuss a change to this offer: '; }
+      });
+
+      // v73t: Decline this offer — calls PATCH /api/offer action:'decline'
+      var declineBtn = document.getElementById('tb-offer-decline');
+      if (declineBtn) declineBtn.addEventListener('click', function() {
+        var user = window.Clerk && window.Clerk.user;
+        var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+        if (!email) {
+          alert('Sign-in expired. Please refresh and try again.');
+          return;
+        }
+        var ok = window.confirm('Decline this offer?\n\nYour enquiry stays open so the property can send you a different offer. You can also start a fresh enquiry afterward. This can\u2019t be undone.');
+        if (!ok) return;
+        declineBtn.disabled = true;
+        declineBtn.style.opacity = '.6';
+        declineBtn.textContent = 'Declining\u2026';
+        fetch('/api/offer', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: offerId, action: 'decline', requesterEmail: email }),
+        })
+          .then(function(r) { return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+          .then(function(res) {
+            if (!res.ok) {
+              alert('Could not decline the offer: ' + (res.body && res.body.error || 'unknown error'));
+              declineBtn.disabled = false;
+              declineBtn.style.opacity = '1';
+              declineBtn.textContent = 'Decline this offer';
+              return;
+            }
+            closeModal();
+            // Reload the conversation so the new system message appears
+            window.location.reload();
+          })
+          .catch(function() {
+            alert('Network error \u2014 please try again.');
+            declineBtn.disabled = false;
+            declineBtn.style.opacity = '1';
+            declineBtn.textContent = 'Decline this offer';
+          });
       });
     })
     .catch(function(e){

@@ -2579,6 +2579,11 @@ function showActiveOfferInterstitial(booking, propName, user, opts) {
     var btn = this;
     btn.disabled = true;
     btn.style.opacity = '.6';
+    // v73t: explicit loading state. The full cycle (worker write + page nav
+    // + new conv fetch) takes 2-3s; without a visible signal it feels frozen.
+    // Replace the entire button content with a centered "Submitting..." line.
+    var origHtml = btn.innerHTML;
+    btn.innerHTML = '<div style="font-size:.92rem;font-weight:600;color:#1e1810;text-align:center;padding:6px 0;">Sending your request\u2026</div>';
     fetch('/api/conversation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2603,6 +2608,7 @@ function showActiveOfferInterstitial(booking, propName, user, opts) {
           alert('Could not send your message: ' + (d.error || 'unknown error'));
           btn.disabled = false;
           btn.style.opacity = '1';
+          btn.innerHTML = origHtml;
           return;
         }
         closeModal();
@@ -2612,6 +2618,7 @@ function showActiveOfferInterstitial(booking, propName, user, opts) {
         alert('Network error \u2014 please try again.');
         btn.disabled = false;
         btn.style.opacity = '1';
+        btn.innerHTML = origHtml;
       });
   });
 

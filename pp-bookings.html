@@ -475,6 +475,25 @@ function fmtDateRange(arrival, departure, nights) {
   }
 }
 
+// v73t: plain-text variant of fmtDateRange for contexts where the string
+// will be passed through escHtml or composed into another HTML string.
+// The HTML-emitting fmtDateRange above is fine when injected directly,
+// but if escaped it leaks raw <div> markup into the rendered output
+// (caught when v73r's pendingChangeRequest pill on pp-bookings showed
+// literal HTML inside the amber pill).
+function fmtDateRangePlain(arrival, departure, nights) {
+  if (!arrival || !departure) return 'Dates TBD';
+  try {
+    var a = new Date(arrival), d = new Date(departure);
+    var aOpts = { month: 'short', day: 'numeric' };
+    var dOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    var base = a.toLocaleDateString('en-US', aOpts) + ' \u2013 ' + d.toLocaleDateString('en-US', dOpts);
+    return nights ? (base + ' \u00b7 ' + nights + ' nights') : base;
+  } catch(e) {
+    return 'Invalid dates';
+  }
+}
+
 // Booking status → user-facing badge + label.
 // Note: legacy bookings (pre-v72y) used status = 'pending'/'confirmed'/'cancelled'.
 // v72y adds 'offer_sent' as the state between enquiry submission and acceptance.
@@ -557,7 +576,7 @@ function renderBookings() {
     var datesCol = fmtDateRange(b.arrival, b.departure, b.nights);
     if (hasPCR) {
       var requestedDates = (pcr.arrival && pcr.departure)
-        ? fmtDateRange(pcr.arrival, pcr.departure, null)
+        ? fmtDateRangePlain(pcr.arrival, pcr.departure, null)
         : 'updated details';
       var requestedExtras = [];
       if (pcr.guests && pcr.guests !== b.guests) requestedExtras.push(pcr.guests + ' guests');
@@ -744,8 +763,8 @@ function openOfferModal(bookingRef, mode) {
                 var was = [];
                 var now = [];
                 if (pcr.arrival && pcr.departure && (pcr.arrival !== prev.arrival || pcr.departure !== prev.departure)) {
-                  was.push(fmtDateRange(prev.arrival, prev.departure, null));
-                  now.push(fmtDateRange(pcr.arrival, pcr.departure, null));
+                  was.push(fmtDateRangePlain(prev.arrival, prev.departure, null));
+                  now.push(fmtDateRangePlain(pcr.arrival, pcr.departure, null));
                 }
                 if (pcr.guests && pcr.guests !== prev.guests) {
                   was.push(prev.guests + ' guests');

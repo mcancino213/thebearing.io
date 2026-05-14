@@ -1687,7 +1687,9 @@ function openOfferDetail(offerId) {
             '<button type="button" id="tb-offer-request-changes" style="padding:13px;border:1px solid rgba(80,60,30,.18);border-radius:12px;background:#fff;color:#5a4e40;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:500;cursor:pointer;">Request changes</button>' +
             '<button type="button" id="tb-offer-accept" style="padding:13px;border:none;border-radius:12px;background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;font-family:\'Geist\',sans-serif;font-size:.84rem;font-weight:600;cursor:pointer;box-shadow:0 4px 18px rgba(176,88,48,.3);">Accept & pay deposit</button>' +
           '</div>' +
-          '<div style="font-size:.7rem;color:#9a8e80;text-align:center;margin-top:10px;">Accept-and-pay activates with Stripe Checkout in the next build.</div>'
+          '<div style="text-align:center;margin-top:14px;">' +
+            '<button type="button" id="tb-offer-decline" data-offer-id="' + esc(o.id || '') + '" style="background:transparent;border:none;color:#9a8e80;font-size:.78rem;cursor:pointer;text-decoration:underline;font-family:inherit;padding:6px 10px;">Decline this offer</button>' +
+          '</div>'
           : '');
 
       document.getElementById('tb-offer-body').innerHTML = html;
@@ -1747,6 +1749,46 @@ function openOfferDetail(offerId) {
         } else {
           window.location = '/conversations.html';
         }
+      });
+
+      // v73t: Decline this offer — calls PATCH /api/offer action:'decline'
+      var declineBtn = document.getElementById('tb-offer-decline');
+      if (declineBtn) declineBtn.addEventListener('click', function() {
+        var user = window.Clerk && window.Clerk.user;
+        var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+        if (!email) {
+          alert('Sign-in expired. Please refresh and try again.');
+          return;
+        }
+        var ok = window.confirm('Decline this offer?\n\nYour enquiry stays open so the property can send you a different offer. You can also start a fresh enquiry afterward. This can\u2019t be undone.');
+        if (!ok) return;
+        declineBtn.disabled = true;
+        declineBtn.style.opacity = '.6';
+        declineBtn.textContent = 'Declining\u2026';
+        fetch('/api/offer', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: offerId, action: 'decline', requesterEmail: email }),
+        })
+          .then(function(r) { return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+          .then(function(res) {
+            if (!res.ok) {
+              alert('Could not decline the offer: ' + (res.body && res.body.error || 'unknown error'));
+              declineBtn.disabled = false;
+              declineBtn.style.opacity = '1';
+              declineBtn.textContent = 'Decline this offer';
+              return;
+            }
+            closeModal();
+            // Reload the bookings page so the booking shape refreshes
+            window.location.reload();
+          })
+          .catch(function() {
+            alert('Network error \u2014 please try again.');
+            declineBtn.disabled = false;
+            declineBtn.style.opacity = '1';
+            declineBtn.textContent = 'Decline this offer';
+          });
       });
     })
     .catch(function(e){
