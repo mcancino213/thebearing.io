@@ -141,12 +141,46 @@
             if (result.error) {
               modal.setStatus('error', result.error.message || 'Payment failed');
             } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
-              // No 3DS needed \u2014 we got synchronous success
-              modal.setStatus('success', 'Payment confirmed. Redirecting\u2026');
-              // Brief delay so webhook has a moment to fire + KV update
-              setTimeout(function() {
-                onSuccess(result.paymentIntent);
-              }, 1500);
+              // v73af: Stripe accepted the payment client-side. The webhook
+              // will eventually fire and update the booking record, but we
+              // can't trust the webhook always being subscribed to
+              // payment_intent.succeeded (operator could have it set to only
+              // checkout.session.completed). So we proactively call
+              // /api/checkout/sync-payment which verifies with Stripe and
+              // runs the booking-confirmation flow directly. Idempotent
+              // with the webhook \u2014 whichever lands first wins, the other
+              // no-ops.
+              modal.setStatus('processing', 'Confirming your booking\u2026');
+              fetch('/api/checkout/sync-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentIntentId: result.paymentIntent.id,
+                  requesterEmail: email,
+                }),
+              })
+                .then(function(r) { return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+                .then(function(syncRes) {
+                  if (syncRes.ok && syncRes.body.status) {
+                    modal.setStatus('success', 'Payment confirmed. Redirecting\u2026');
+                    setTimeout(function() { onSuccess(result.paymentIntent); }, 900);
+                  } else {
+                    // Payment succeeded at Stripe but our sync failed \u2014 surface
+                    // this to the user honestly. Their card WAS charged.
+                    console.error('[Stripe inline] sync-payment failed:', syncRes);
+                    modal.setStatus('error',
+                      'Payment received but we could not finalise your booking on our side. ' +
+                      'Please contact us at admin@thebearing.io with reference ' +
+                      result.paymentIntent.id + ' \u2014 your payment is safe.');
+                  }
+                })
+                .catch(function(err) {
+                  console.error('[Stripe inline] sync-payment error:', err);
+                  modal.setStatus('error',
+                    'Payment received but we could not finalise your booking on our side. ' +
+                    'Please contact us at admin@thebearing.io with reference ' +
+                    result.paymentIntent.id + ' \u2014 your payment is safe.');
+                });
             } else if (result.paymentIntent && result.paymentIntent.status === 'requires_action') {
               // 3DS challenge in progress (shouldn't reach here with redirect:'if_required'
               // but defensive)

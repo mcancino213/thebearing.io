@@ -3007,8 +3007,22 @@ View in admin: https://thebearing.io/admin-bookings.html
           };
           messages.push(card);
 
+          // v73af: backfill conv.enquiry from the offer when the customer
+          // didn't originally specify dates/room/guests. The customer's
+          // conv list shows enquiry dates as a disambiguation subline; if
+          // the original enquiry was open-ended, those fields are empty and
+          // the subline doesn't render. Once the partner sends an offer with
+          // dates, the conversation now has those facts \u2014 reflect them.
+          // Only fills fields that are currently empty (never overwrites a
+          // customer-supplied value).
+          conv.enquiry = conv.enquiry || {};
+          if (!conv.enquiry.arrival   && offer.arrival)   conv.enquiry.arrival   = offer.arrival;
+          if (!conv.enquiry.departure && offer.departure) conv.enquiry.departure = offer.departure;
+          if (!conv.enquiry.guests    && offer.guests)    conv.enquiry.guests    = offer.guests;
+          if (!conv.enquiry.cabin     && offer.room)      conv.enquiry.cabin     = offer.room;
+
           conv.lastMessageAt = cardTs;
-          conv.lastMessagePreview = '📋 Offer ready · ' + (offer.propertyName || 'Property');
+          conv.lastMessagePreview = '\ud83d\udccb Offer ready \u00b7 ' + (offer.propertyName || 'Property');
           conv.unreadGuest = (conv.unreadGuest || 0) + 1;
           await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
           await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
@@ -3514,6 +3528,305 @@ View in admin: https://thebearing.io/admin-bookings.html
         console.error('[Checkout/intent] Stripe error:', err && err.message);
         return jsonResponse({ error: 'PaymentIntent creation failed: ' + (err.message || 'unknown') }, 500);
       }
+    }
+
+    // ── /api/admin/sync-stripe-payment ────────────────────────────
+    // v73af: admin-gated rescue endpoint. Same as /api/checkout/sync-payment
+    // but bypasses the requesterEmail check (since admin won't necessarily
+    // know the customer's email). For one-off manual repair of bookings
+    // where the inline payment succeeded at Stripe but our records are
+    // stuck. Paste the PaymentIntent ID from Stripe dashboard.
+    if (url.pathname === '/api/admin/sync-stripe-payment') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      const stripe = getStripe(env);
+      if (!stripe) return jsonResponse({ error: 'Stripe not configured' }, 503);
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { paymentIntentId } = body;
+      if (!paymentIntentId) return jsonResponse({ error: 'paymentIntentId required' }, 400);
+
+      let pi;
+      try {
+        pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      } catch (err) {
+        return jsonResponse({ error: 'could not retrieve PI: ' + (err.message || 'unknown') }, 500);
+      }
+      if (!pi || pi.status !== 'succeeded') {
+        return jsonResponse({ error: 'payment status: ' + (pi && pi.status || 'unknown'), status: pi && pi.status }, 400);
+      }
+      const meta = pi.metadata || {};
+      const offerId = meta.offerId;
+      const bookingRef = meta.bookingRef;
+      if (!offerId || !bookingRef) {
+        return jsonResponse({ error: 'PI missing offerId/bookingRef metadata' }, 400);
+      }
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + bookingRef);
+      if (!bookingRaw) return jsonResponse({ error: 'booking not found: ' + bookingRef }, 404);
+      const booking = JSON.parse(bookingRaw);
+
+      // Idempotency
+      if (booking.paymentStatus === 'deposit_paid' && booking.stripeSessionId === pi.id) {
+        return jsonResponse({
+          ok: true, status: 'already-processed',
+          booking: { ref: bookingRef, status: booking.status, paymentStatus: booking.paymentStatus }
+        });
+      }
+
+      const now = new Date().toISOString();
+      const depositPaid = Number(pi.amount_received || pi.amount || 0) / 100;
+      let acceptedOffer = null;
+      try {
+        const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+        if (offerRaw) acceptedOffer = JSON.parse(offerRaw);
+      } catch (e) {}
+
+      booking.status = 'confirmed';
+      booking.paymentStatus = 'deposit_paid';
+      booking.stripeSessionId = pi.id;
+      booking.stripePaymentIntent = pi.id;
+      booking.depositPaidAmount = depositPaid;
+      booking.depositPaidAt = now;
+      booking.updatedAt = now;
+      if (acceptedOffer) {
+        booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
+        booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
+        booking.confirmed_balance_due_date = acceptedOffer.balance_due_date || '';
+        booking.confirmed_inclusions = Array.isArray(acceptedOffer.inclusions) ? acceptedOffer.inclusions : [];
+        booking.confirmed_exclusions = acceptedOffer.exclusions || '';
+        booking.confirmed_cancellation_terms = acceptedOffer.cancellation_terms || '';
+        booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
+        booking.confirmed_offer_id = acceptedOffer.id;
+        booking.confirmed_currency = acceptedOffer.currency || 'USD';
+      }
+      await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+      if (acceptedOffer) {
+        try {
+          acceptedOffer.status = 'accepted';
+          acceptedOffer.responded_at = now;
+          acceptedOffer.stripeSessionId = pi.id;
+          await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(acceptedOffer));
+        } catch (e) {}
+      }
+
+      // Conversation message
+      const convId = booking.conversationId || meta.conversationId || null;
+      if (convId) {
+        try {
+          const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+          if (convRaw) {
+            const conv = JSON.parse(convRaw);
+            const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+            const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+            // Don't duplicate if a booking_confirmed already exists for this booking
+            const alreadyPosted = messages.some(function(m) {
+              return m && m.type === 'booking_confirmed' && m.bookingRef === bookingRef;
+            });
+            if (!alreadyPosted) {
+              messages.push({
+                id: 'msg_' + Date.now() + '_paid',
+                role: 'system',
+                type: 'booking_confirmed',
+                text: '\u2713 Deposit paid \u00b7 Booking confirmed \u00b7 ' + bookingRef + '\n\n$' + depositPaid.toLocaleString() + ' received. The property has been notified.',
+                senderName: 'The Bearing',
+                sentAt: now,
+                readAt: null,
+                bookingRef: bookingRef,
+              });
+              conv.lastMessageAt = now;
+              conv.lastMessagePreview = '\u2713 Booking confirmed';
+              conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+              await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+              await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+              try { await recomputeUnreadCounters(env); } catch(_) {}
+            }
+          }
+        } catch (e) {
+          console.error('[Admin sync] conv message post failed:', e && e.message);
+        }
+      }
+
+      return jsonResponse({
+        ok: true,
+        status: 'confirmed',
+        booking: {
+          ref: bookingRef,
+          status: 'confirmed',
+          paymentStatus: 'deposit_paid',
+          depositPaidAmount: depositPaid,
+        }
+      });
+    }
+
+    // ── /api/checkout/sync-payment ────────────────────────────────
+    // v73af: client-side safety net for the inline Stripe Payment Element
+    // flow. After stripe.confirmPayment() succeeds client-side, the client
+    // calls this endpoint with the PaymentIntent ID. We:
+    //   1. Verify with Stripe that the PI is actually 'succeeded' (don't
+    //      trust the client claim alone).
+    //   2. Run the same booking-confirmation flow the webhook would run:
+    //      mark booking confirmed, post system message, snapshot offer
+    //      details onto booking.
+    //   3. Skip emails here (the webhook will fire them; if the webhook
+    //      isn't subscribed to payment_intent.succeeded, that's a known
+    //      gap the operator must fix in Stripe dashboard).
+    //
+    // Idempotency: shares the same guard as the webhook
+    // (booking.paymentStatus === 'deposit_paid' && booking.stripeSessionId === pi.id).
+    // Multiple calls (client retry, webhook firing later) all no-op safely.
+    //
+    // Auth: requesterEmail must match booking.email (same pattern as
+    // create-intent / cancel-enquiry / decline-offer).
+    if (url.pathname === '/api/checkout/sync-payment') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      const stripe = getStripe(env);
+      if (!stripe) return jsonResponse({ error: 'Stripe not configured' }, 503);
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { paymentIntentId, requesterEmail } = body;
+      if (!paymentIntentId) return jsonResponse({ error: 'paymentIntentId required' }, 400);
+      if (!requesterEmail) return jsonResponse({ error: 'requesterEmail required' }, 400);
+
+      // Step 1: verify with Stripe
+      let pi;
+      try {
+        pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      } catch (err) {
+        console.error('[Sync payment] Stripe retrieve failed:', err && err.message);
+        return jsonResponse({ error: 'could not verify payment: ' + (err.message || 'unknown') }, 500);
+      }
+      if (!pi || pi.status !== 'succeeded') {
+        return jsonResponse({ error: 'payment not succeeded (status: ' + (pi && pi.status || 'unknown') + ')', status: pi && pi.status }, 400);
+      }
+      const meta = pi.metadata || {};
+      const offerId = meta.offerId;
+      const bookingRef = meta.bookingRef;
+      if (!offerId || !bookingRef) {
+        console.error('[Sync payment] PI ' + pi.id + ' missing offerId/bookingRef metadata');
+        return jsonResponse({ error: 'payment intent missing booking metadata' }, 400);
+      }
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + bookingRef);
+      if (!bookingRaw) {
+        console.error('[Sync payment] booking ' + bookingRef + ' not found');
+        return jsonResponse({ error: 'booking not found' }, 404);
+      }
+      const booking = JSON.parse(bookingRaw);
+
+      // Auth: requesterEmail must match booking.email
+      const bookingEmail = (booking.email || '').toLowerCase().trim();
+      const reqEmail = (requesterEmail || '').toLowerCase().trim();
+      if (!bookingEmail || bookingEmail !== reqEmail) {
+        return jsonResponse({ error: 'not authorised for this booking' }, 403);
+      }
+
+      // Idempotency: if already processed for this PI, return current state.
+      if (booking.paymentStatus === 'deposit_paid' && booking.stripeSessionId === pi.id) {
+        console.log('[Sync payment] booking ' + bookingRef + ' already processed for PI ' + pi.id);
+        return jsonResponse({
+          ok: true,
+          status: 'already-processed',
+          booking: { ref: bookingRef, status: booking.status, paymentStatus: booking.paymentStatus }
+        });
+      }
+
+      const now = new Date().toISOString();
+      const depositPaid = Number(pi.amount_received || pi.amount || 0) / 100;
+
+      // Snapshot the accepted offer's details onto the booking (v73aa pattern)
+      let acceptedOffer = null;
+      try {
+        const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+        if (offerRaw) acceptedOffer = JSON.parse(offerRaw);
+      } catch (e) {
+        console.error('[Sync payment] offer read for snapshot failed:', e && e.message);
+      }
+
+      // Update booking
+      booking.status = 'confirmed';
+      booking.paymentStatus = 'deposit_paid';
+      booking.stripeSessionId = pi.id; // use PI id as the "session" identifier for idempotency
+      booking.stripePaymentIntent = pi.id;
+      booking.depositPaidAmount = depositPaid;
+      booking.depositPaidAt = now;
+      booking.updatedAt = now;
+      if (acceptedOffer) {
+        booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
+        booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
+        booking.confirmed_balance_due_date = acceptedOffer.balance_due_date || '';
+        booking.confirmed_inclusions = Array.isArray(acceptedOffer.inclusions) ? acceptedOffer.inclusions : [];
+        booking.confirmed_exclusions = acceptedOffer.exclusions || '';
+        booking.confirmed_cancellation_terms = acceptedOffer.cancellation_terms || '';
+        booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
+        booking.confirmed_offer_id = acceptedOffer.id;
+        booking.confirmed_currency = acceptedOffer.currency || 'USD';
+      }
+      await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+      // Mark offer accepted
+      try {
+        if (acceptedOffer) {
+          acceptedOffer.status = 'accepted';
+          acceptedOffer.responded_at = now;
+          acceptedOffer.stripeSessionId = pi.id;
+          await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(acceptedOffer));
+        }
+      } catch (e) {
+        console.error('[Sync payment] offer update failed:', e && e.message);
+      }
+
+      // Post system message into conversation
+      const convId = booking.conversationId || meta.conversationId || null;
+      if (convId) {
+        try {
+          const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+          if (convRaw) {
+            const conv = JSON.parse(convRaw);
+            const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+            const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+            const sysMsg = {
+              id: 'msg_' + Date.now() + '_paid',
+              role: 'system',
+              type: 'booking_confirmed',
+              text: '\u2713 Deposit paid \u00b7 Booking confirmed \u00b7 ' + bookingRef + '\n\n$' + depositPaid.toLocaleString() + ' received. The property has been notified.',
+              senderName: 'The Bearing',
+              sentAt: now,
+              readAt: null,
+              bookingRef: bookingRef,
+            };
+            messages.push(sysMsg);
+            conv.lastMessageAt = now;
+            conv.lastMessagePreview = '\u2713 Booking confirmed';
+            conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+            await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+            await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+            try { await recomputeUnreadCounters(env); } catch(_) {}
+            console.log('[Sync payment] posted booking_confirmed system message to conversation ' + convId);
+          }
+        } catch (e) {
+          console.error('[Sync payment] conversation message post failed:', e && e.message);
+        }
+      } else {
+        console.warn('[Sync payment] booking ' + bookingRef + ' has no conversationId \u2014 system message NOT posted');
+      }
+
+      console.log('[Sync payment] booking ' + bookingRef + ' confirmed via client sync for PI ' + pi.id);
+      return jsonResponse({
+        ok: true,
+        status: 'confirmed',
+        booking: {
+          ref: bookingRef,
+          status: 'confirmed',
+          paymentStatus: 'deposit_paid',
+          depositPaidAmount: depositPaid,
+        }
+      });
     }
 
     // ── /api/checkout/create-session ───────────────────────────────

@@ -736,6 +736,13 @@ function openOfferModal(bookingRef, mode) {
       document.getElementById('om-guests').value = b.guests || '';
       document.getElementById('om-room').value = b.room || '';
 
+      // v73ae: if arrival is prefilled, also set departure's min so the
+      // partner can't accidentally pick an invalid date before they interact
+      // with arrival.
+      if (b.arrival) {
+        document.getElementById('om-departure').min = b.arrival;
+      }
+
       // v73y: populate room/package dropdown from property's rooms array.
       // Uses a <datalist> so the input still accepts custom text (for special
       // packages, charters, etc) while exposing the known room types as
@@ -787,6 +794,8 @@ function openOfferModal(bookingRef, mode) {
               document.getElementById('om-nights').value = prev.nights || '';
               document.getElementById('om-guests').value = prev.guests || '';
               document.getElementById('om-room').value = prev.room || '';
+              // v73ae: keep departure's min constraint in sync with arrival.
+              if (prev.arrival) document.getElementById('om-departure').min = prev.arrival;
               document.getElementById('om-exclusions').value = prev.exclusions || '';
               document.getElementById('om-cancellation').value = prev.cancellation_terms || '';
               document.getElementById('om-notes').value = prev.partner_notes || '';
@@ -808,6 +817,8 @@ function openOfferModal(bookingRef, mode) {
                 if (pcr.departure) document.getElementById('om-departure').value = pcr.departure;
                 if (pcr.guests)    document.getElementById('om-guests').value    = pcr.guests;
                 if (pcr.cabin)     document.getElementById('om-room').value      = pcr.cabin;
+                // v73ae: keep departure's min in sync with the pcr arrival override
+                if (pcr.arrival) document.getElementById('om-departure').min = pcr.arrival;
                 // Show a banner above the form explaining what changed
                 var banner = document.createElement('div');
                 banner.id = 'om-pcr-banner';
@@ -907,6 +918,28 @@ function setPricingMode(mode) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('change', recomputeNights);
   });
+  // v73ae: when arrival changes, seed departure's picker to open on the same
+  // month/year and constrain its min so the partner can't pick a date before
+  // arrival. Mirrors the customer enquiry form UX (property.html line 3545).
+  // Guard with __dateAutoOpenBound so setPricingMode toggling doesn't stack
+  // duplicate listeners (which would call showPicker() N times per change).
+  var arrEl = document.getElementById('om-arrival');
+  var depEl = document.getElementById('om-departure');
+  if (arrEl && depEl && !arrEl.__dateAutoOpenBound) {
+    arrEl.__dateAutoOpenBound = true;
+    arrEl.addEventListener('change', function() {
+      if (!this.value) return;
+      depEl.min = this.value;
+      if (!depEl.value || depEl.value <= this.value) {
+        depEl.value = this.value;
+        depEl.focus();
+        setTimeout(function() {
+          try { depEl.showPicker(); } catch(e) { try { depEl.click(); } catch(_){} }
+        }, 120);
+        depEl.value = '';
+      }
+    });
+  }
   recomputeNights();
   updateDepositPreview();
 }

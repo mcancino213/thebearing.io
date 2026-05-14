@@ -388,6 +388,18 @@ window.addEventListener('load', async function() {
     <div style="height:1px;background:var(--border);margin:24px 0;"></div>
 
     <div class="help-text">
+      <strong>Sync a Stripe payment to a booking (v73af):</strong> if an inline payment succeeded at Stripe but our booking record is stuck in <code>offer_sent</code> (no webhook fired, or our webhook isn't subscribed to <code>payment_intent.succeeded</code>), paste the PaymentIntent ID from your Stripe dashboard here. We'll verify the PI with Stripe, then mark the booking confirmed, post the system message, and snapshot offer details onto the booking. Idempotent. The customer-facing inline flow also calls this automatically on success, so you should only need this for legacy stuck payments.
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap;">
+      <input type="text" id="sync-pi-input" placeholder="pi_..." style="flex:1;min-width:280px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:13px;">
+      <button class="btn btn-primary" id="sync-pi-btn" type="button">Sync payment</button>
+      <span class="save-status" id="sync-pi-status"></span>
+    </div>
+    <pre id="sync-pi-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
+    <div class="help-text">
       <strong>Send test email (v73v):</strong> fires a single test email through Resend to the currently-configured notification recipients (baseline plus any extras in section 1 above). Use this to confirm end-to-end email delivery without going through the full booking flow. If the email arrives, your Resend + domain setup is healthy. If it doesn't, check the System Health card above for the Resend row \u2014 it now surfaces specifically whether <code>thebearing.io</code> is verified.
     </div>
     <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
@@ -995,6 +1007,56 @@ window.addEventListener('load', async function() {
           rbdBtn.disabled = false;
           rbdBtn.textContent = 'Restore booking dates from active offer';
           rbdBtn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73af: sync a Stripe payment to a booking (manual rescue for legacy stuck payments)
+  var syncBtn = document.getElementById('sync-pi-btn');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', function() {
+      var input = document.getElementById('sync-pi-input');
+      var pi = (input.value || '').trim();
+      if (!pi || !/^pi_/.test(pi)) {
+        flashStatus('sync-pi-status', false, 'Enter a PaymentIntent ID starting with pi_');
+        return;
+      }
+      syncBtn.disabled = true;
+      syncBtn.textContent = 'Syncing\u2026';
+      syncBtn.style.opacity = '.6';
+      var out = document.getElementById('sync-pi-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      // Admin uses its own email as requesterEmail. The worker checks
+      // requesterEmail against booking.email, so admin must use the booking
+      // customer's email. We don't know that here \u2014 the sync endpoint
+      // bypasses email check when called by admin? No, it doesn't currently.
+      //
+      // For this rescue path, we call a separate admin-gated endpoint that
+      // does NOT require email match. Worker side handles auth via X-Admin-Email.
+      fetch('/api/admin/sync-stripe-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentIntentId: pi }),
+        cache: 'no-store',
+      })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok || res.body.error) {
+            flashStatus('sync-pi-status', false, (res.body && res.body.error) || 'Failed');
+            out.textContent = JSON.stringify(res.body, null, 2);
+            out.style.display = 'block';
+            return;
+          }
+          flashStatus('sync-pi-status', true, 'Synced: ' + (res.body.status || 'ok'));
+          out.textContent = JSON.stringify(res.body, null, 2);
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('sync-pi-status', false, 'Network error'); })
+        .finally(function(){
+          syncBtn.disabled = false;
+          syncBtn.textContent = 'Sync payment';
+          syncBtn.style.opacity = '1';
         });
     });
   }
