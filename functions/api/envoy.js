@@ -1927,7 +1927,7 @@ View in admin: https://thebearing.io/admin-bookings.html
                     body: JSON.stringify({
                       from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
                       to: [conv.guestEmail],
-                      reply_to: `reply+${id}@thebearing.io`,
+                      reply_to: `reply+${id}@replies.thebearing.io`,
                       subject: `New message about your ${conv.propertyName} enquiry`,
                       text: `${displaySender} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                     })
@@ -2260,7 +2260,11 @@ View in admin: https://thebearing.io/admin-bookings.html
 
       let convId = null;
       for (const addr of toAddresses) {
-        const m = String(addr).match(/reply\+([a-zA-Z0-9_]+)@thebearing\.io/i);
+        // v73w: accept both legacy `reply+X@thebearing.io` (from emails sent before
+        // v73w) and new `reply+X@replies.thebearing.io` (post-v73w when root MX is
+        // pointed at Google). Subdomain is the going-forward path; root form may
+        // continue arriving briefly during the Phase 5 MX cutover.
+        const m = String(addr).match(/reply\+([a-zA-Z0-9_]+)@(?:replies\.)?thebearing\.io/i);
         if (m) { convId = m[1]; break; }
       }
 
