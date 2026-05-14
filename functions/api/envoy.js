@@ -1770,6 +1770,12 @@ View in admin: https://thebearing.io/admin-bookings.html
             return jsonResponse({ error: 'conversation is archived (read-only)' }, 409);
           }
 
+          // v73u: hoisted flag — set inside the updateEnquiry block if a
+          // pendingChangeRequest was stored. Used later to swap the email
+          // subject/body so admin sees "Change request" vs generic "Reply".
+          let storedChangeRequest = false;
+          let changeRequestSummary = null;
+
           const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
           const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
 
@@ -1850,6 +1856,10 @@ View in admin: https://thebearing.io/admin-bookings.html
                     b.updatedAt = now;
                     await env.DOSSIERS.put(bookingPath, JSON.stringify(b));
                     console.log('[Conv msg] booking ' + conv.bookingRef + ' has active offer — stored change request instead of mutating');
+                    // v73u: mark for the email branch below so admin sees a
+                    // "Change request" subject instead of generic "Reply"
+                    storedChangeRequest = true;
+                    changeRequestSummary = b.pendingChangeRequest;
                   }
                 }
               } catch (e) {
@@ -1928,14 +1938,47 @@ View in admin: https://thebearing.io/admin-bookings.html
                 if (conv.notifyAdmin !== false) {
                   const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
                   const adminRecipients = await loadNotificationRecipients(env);
+
+                  // v73u: distinct subject/body when this message triggered a
+                  // pendingChangeRequest store (guest sent updateEnquiry on a
+                  // booking that already has an active offer). Helps admin/
+                  // partner triage their inbox: "Change request" is
+                  // categorically more urgent than a chatty reply.
+                  let subject, bodyText;
+                  if (storedChangeRequest && changeRequestSummary) {
+                    const fmt = function(s){ try { return new Date(s.length===10?s+'T00:00':s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return s; } };
+                    const cr = changeRequestSummary;
+                    const prev = cr.previousValues || {};
+                    const changeLines = [];
+                    if (cr.arrival && cr.departure && (cr.arrival !== prev.arrival || cr.departure !== prev.departure)) {
+                      changeLines.push('Dates: ' + (prev.arrival && prev.departure ? (fmt(prev.arrival) + ' → ' + fmt(prev.departure) + '   →   ') : '') + fmt(cr.arrival) + ' → ' + fmt(cr.departure));
+                    }
+                    if (cr.guests && cr.guests !== prev.guests) {
+                      changeLines.push('Guests: ' + (prev.guests || '(unset)') + '   →   ' + cr.guests);
+                    }
+                    if (cr.cabin && cr.cabin !== prev.room) {
+                      changeLines.push('Room: ' + (prev.room || '(unset)') + '   →   ' + cr.cabin);
+                    }
+                    subject = `Change request from ${conv.guestName} — ${conv.propertyName}`;
+                    bodyText = `${conv.guestName} requested a change to the active offer on ${conv.propertyName}.\n\n` +
+                               (changeLines.length ? changeLines.join('\n') + '\n\n' : '') +
+                               `Their message:\n\n"${text}"\n\n` +
+                               `Action: open the booking in the partner portal, click "Revise offer" — the form will pre-fill with the requested values.\n\n` +
+                               `View conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n` +
+                               `—\nMute email notifications for this conversation: ${unsubUrl}`;
+                  } else {
+                    subject = `Reply from ${conv.guestName} — ${conv.propertyName}`;
+                    bodyText = `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`;
+                  }
+
                   await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       from: 'The Bearing <bookings@thebearing.io>',
                       to: adminRecipients,
-                      subject: `Reply from ${conv.guestName} — ${conv.propertyName}`,
-                      text: `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
+                      subject: subject,
+                      text: bodyText,
                     })
                   });
                 }
@@ -3112,9 +3155,33 @@ View in admin: https://thebearing.io/admin-bookings.html
           if (bookingDecline.active_offer_id === offer.id) {
             bookingDecline.active_offer_id = null;
             // Reset back to 'enquiry' so partner sees a "Build offer" button
-            // again. pendingChangeRequest is cleared since the slate is fresh.
+            // again.
             bookingDecline.status = 'enquiry';
-            delete bookingDecline.pendingChangeRequest;
+
+            // v73u: if there's a pendingChangeRequest, copy it onto the
+            // booking shape so the partner sees a fresh enquiry with the
+            // customer's most recent ask already populated. The customer's
+            // most recent request is what they actually want; the offer's
+            // dates were the partner's prior proposal, which the customer
+            // just rejected. After copying, clear pendingChangeRequest so
+            // the new state is a normal enquiry, not a flagged one.
+            const pcr = bookingDecline.pendingChangeRequest;
+            if (pcr) {
+              if (pcr.arrival)   bookingDecline.arrival   = pcr.arrival;
+              if (pcr.departure) bookingDecline.departure = pcr.departure;
+              if (pcr.guests)    bookingDecline.guests    = pcr.guests;
+              if (pcr.cabin)     bookingDecline.room      = pcr.cabin;
+              if (pcr.notes)     bookingDecline.notes     = pcr.notes;
+              delete bookingDecline.pendingChangeRequest;
+            }
+            // If no change request existed, leave the booking dates at the
+            // offer's frozen dates (better than empty, partner can revise).
+
+            // Flag the booking as previously-declined so partner sees a
+            // sand-colored row treatment + "Previously declined offer" pill
+            // rather than the row looking like a brand-new enquiry.
+            bookingDecline.declinedAt = now;
+            bookingDecline.lastDeclinedOfferId = offer.id;
           }
           bookingDecline.updatedAt = now;
           await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(bookingDecline));

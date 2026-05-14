@@ -1333,7 +1333,59 @@ function showCheckoutBanner(result) {
   }
 }
 
+// v73u: cache property thumbnail URLs by slug, populated before rendering
+// rows. One fetch per unique slug, parallelized via Promise.all. Cached
+// across the page session — only re-fetched on hard refresh. <10 props
+// in current state so the cache is small and the N+1 is bounded.
+var propertyThumbCache = {};
+
+function prefetchPropertyThumbs(bookings) {
+  var slugs = {};
+  bookings.forEach(function(b) {
+    if (b.slug && !(b.slug in propertyThumbCache)) slugs[b.slug] = true;
+  });
+  var uniqueSlugs = Object.keys(slugs);
+  if (!uniqueSlugs.length) return Promise.resolve();
+  return Promise.all(uniqueSlugs.map(function(slug) {
+    return fetch('/api/property?slug=' + encodeURIComponent(slug), { cache: 'force-cache' })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(resp) {
+        // v73u: /api/property GET returns { slug, data, exists } where data
+        // is the property JSON (or null). Photos hero is data.photos.hero.
+        var prop = resp && resp.data;
+        var heroUrl = '';
+        if (prop && prop.photos && Array.isArray(prop.photos.hero) && prop.photos.hero[0]) {
+          heroUrl = prop.photos.hero[0].url || '';
+        }
+        propertyThumbCache[slug] = heroUrl;
+      })
+      .catch(function() {
+        propertyThumbCache[slug] = ''; // mark as resolved-with-no-image so we don't retry
+      });
+  }));
+}
+
+// v73u: build the thumb element for a booking row. Returns an <img> if we
+// have a hero URL cached; otherwise the current empty div (CSS gives it
+// a linen background as fallback). Either case is the same 64x64 footprint.
+function thumbHtml(b) {
+  var url = propertyThumbCache[b.slug];
+  if (!url) return '<div class="bk-row-thumb"></div>';
+  return '<img class="bk-row-thumb" src="' + esc(url) + '" alt="" loading="lazy">';
+}
+
 function renderCustomerBookings(bookings) {
+  // v73u: kick off the thumbnail prefetch in the background. Render runs
+  // immediately with cache hits (empty div fallback); when prefetch resolves
+  // we re-render so images populate. Cheap two-pass approach avoids
+  // making the user wait for property data.
+  prefetchPropertyThumbs(bookings).then(function() {
+    _renderCustomerBookingsInner(bookings);
+  });
+  _renderCustomerBookingsInner(bookings);
+}
+
+function _renderCustomerBookingsInner(bookings) {
   // Bucket by status
   var enquiries = [];
   var offers = [];
@@ -1395,7 +1447,7 @@ function renderCancelledList(list) {
     var when = b.cancelledAt ? fmtDate(b.cancelledAt) : (b.updatedAt ? fmtDate(b.updatedAt) : '');
     var convLink = b.conversationId ? '/conversations.html?id=' + encodeURIComponent(b.conversationId) : null;
     var inner =
-      '<div class="bk-row-thumb"></div>' +
+      thumbHtml(b) +
       '<div class="bk-row-body">' +
         '<div class="bk-row-prop">' + prop + '</div>' +
         '<div class="bk-row-meta">' + dates + room + (when ? ' \u00b7 Cancelled ' + esc(when) : '') + '</div>' +
@@ -1440,7 +1492,7 @@ function renderEnquiriesList(list) {
     var convLink = b.conversationId ? '/conversations.html?id=' + encodeURIComponent(b.conversationId) : '/conversations.html';
     var refAttr = esc(b.ref || '');
     return '<div class="bk-row" data-ref="' + refAttr + '">' +
-      '<div class="bk-row-thumb"></div>' +
+      thumbHtml(b) +
       '<div class="bk-row-body">' +
         '<div class="bk-row-prop">' + prop + '</div>' +
         '<div class="bk-row-meta">' + dates + room + ' \u00b7 Sent ' + esc(fmtDate(b.createdAt)) + '</div>' +
@@ -1570,7 +1622,7 @@ function renderConfirmedList(list) {
     var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
     var ref   = b.ref ? ' \u00b7 ' + esc(b.ref) : '';
     return '<div class="bk-row">' +
-      '<div class="bk-row-thumb"></div>' +
+      thumbHtml(b) +
       '<div class="bk-row-body">' +
         '<div class="bk-row-prop">' + prop + '</div>' +
         '<div class="bk-row-meta">' + dates + room + ref + '</div>' +

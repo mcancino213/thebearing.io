@@ -171,6 +171,21 @@ tr.row-has-pcr:hover{background:#fef3c7;}
   0%,100%{opacity:1;transform:scale(1);}
   50%{opacity:.5;transform:scale(.85);}
 }
+
+/* v73u: previously-declined offer flagging — sand-colored row treatment
+   and pill, distinct from the amber change-request pattern above. Sand =
+   "historical context, no action needed right now"; amber = "action
+   needed now". */
+tr.row-was-declined td:first-child{box-shadow:inset 3px 0 0 #9a7230;}
+tr.row-was-declined{background:#fdf8ef;}
+tr.row-was-declined:hover{background:#f5ecd9;}
+.declined-pill{
+  display:inline-flex;align-items:center;margin-top:6px;
+  font-family:'Geist',sans-serif;font-size:11px;font-weight:500;
+  color:#6b5320;background:#f5ecd9;border:1px solid rgba(154,114,48,.35);
+  padding:3px 9px;border-radius:100px;
+  cursor:help;
+}
 .avatar-lg{width:48px;height:48px;font-size:16px;}
 
 /* ── PAGE HEADER ── */
@@ -583,12 +598,23 @@ function renderBookings() {
       if (pcr.cabin && pcr.cabin !== b.room) requestedExtras.push(pcr.cabin);
       var extrasStr = requestedExtras.length ? ' \u00b7 ' + escHtml(requestedExtras.join(' \u00b7 ')) : '';
       datesCol += '<div class="pcr-pill" title="Guest requested a change after the offer was sent. Click Revise offer to address.">'
-        + '<span class="pcr-pill-dot"></span>'
         + 'Change requested: ' + escHtml(requestedDates) + extrasStr
         + '</div>';
     }
 
-    html += '<tr' + (hasPCR ? ' class="row-has-pcr"' : '') + '>' +
+    // v73u: declined-offer flag — when the booking was previously an offer
+    // that the guest declined, surface a sand-colored "Previously declined"
+    // pill so the partner doesn't mistake it for a fresh enquiry. Only
+    // shows in the enquiry state (status reverted on decline); other
+    // states already convey their own meaning.
+    var wasDeclined = b.declinedAt && b.status === 'enquiry' && !hasPCR;
+    if (wasDeclined) {
+      datesCol += '<div class="declined-pill" title="Guest declined a previous offer for this booking. The dates above are what they currently want.">'
+        + 'Previously declined offer'
+        + '</div>';
+    }
+
+    html += '<tr' + (hasPCR ? ' class="row-has-pcr"' : (wasDeclined ? ' class="row-was-declined"' : '')) + '>' +
       '<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text2);">' + escHtml(b.ref) + '</span></td>' +
       '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escHtml(initials(guestName)) + '</div><div><div style="font-size:14px;font-weight:500;">' + escHtml(guestName) + '</div><div style="font-size:12px;color:var(--text3);">' + escHtml(b.email || '') + '</div></div></div></td>' +
       '<td>' + datesCol + '</td>' +
@@ -778,11 +804,23 @@ function openOfferModal(bookingRef, mode) {
                   + (was.length ? '<div>Was: <span style="opacity:.7;">' + escHtml(was.join(' \u00b7 ')) + '</span></div>' : '')
                   + (now.length ? '<div>Now: <strong>' + escHtml(now.join(' \u00b7 ')) + '</strong></div>' : '')
                   + '<div style="margin-top:8px;font-size:12px;opacity:.85;">Fields below have been pre-filled with the requested values. Update pricing as needed and send a fresh offer.</div>';
-                var modalBody = document.querySelector('#om-form, .modal-body, #offer-modal-body, .om-form');
-                // Fallback: prepend banner to the form via the title's parent
-                var titleEl = document.getElementById('om-title');
-                if (titleEl && titleEl.parentNode && titleEl.parentNode.parentNode) {
-                  titleEl.parentNode.parentNode.insertBefore(banner, titleEl.parentNode.nextSibling);
+
+                // v73u: insert the banner as a BLOCK-level sibling between
+                // the modal header and the modal body, NOT inside the
+                // header's flex row (where it competed with title+close for
+                // horizontal space and squished the title). Also widen the
+                // side-margin so the banner doesn't kiss the modal edges.
+                banner.style.marginLeft = '28px';
+                banner.style.marginRight = '28px';
+                banner.style.marginTop = '18px';
+                var modalHeader = document.getElementById('om-title');
+                if (modalHeader) {
+                  // Walk up to the actual modal-header flex container, then
+                  // insert banner AFTER it.
+                  var hdrContainer = modalHeader.parentNode && modalHeader.parentNode.parentNode;
+                  if (hdrContainer && hdrContainer.parentNode) {
+                    hdrContainer.parentNode.insertBefore(banner, hdrContainer.nextSibling);
+                  }
                 }
               }
               updateDepositPreview();
