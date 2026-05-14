@@ -2997,6 +2997,113 @@ View in admin: https://thebearing.io/admin-bookings.html
       return new Response('Method not allowed', { status: 405 });
     }
 
+    // ── /api/checkout/create-session ──────────────────────────────
+    // v73q: Customer-initiated Stripe Checkout for offer acceptance.
+    // POST body: { offerId, requesterEmail }
+    //   offerId — the offer the customer is accepting
+    //   requesterEmail — Clerk-supplied email of the customer, used to
+    //                    verify ownership against booking.email
+    // Returns: { url } — Stripe-hosted checkout URL for the frontend to
+    //          redirect to. Or { error } on validation failure.
+    //
+    // Why email-based auth (not Clerk session): the cancel-enquiry endpoint
+    // (v73m) established the requesterEmail pattern. Worst case if a third
+    // party knows the booking + email: they could PAY for someone else's
+    // booking. Financial harm accrues to the attacker, not the victim.
+    // Real fix is Clerk session verification, deferred.
+    if (url.pathname === '/api/checkout/create-session') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      const stripe = getStripe(env);
+      if (!stripe) return jsonResponse({ error: 'Stripe not configured' }, 503);
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { offerId, requesterEmail } = body;
+      if (!offerId) return jsonResponse({ error: 'offerId required' }, 400);
+      if (!requesterEmail) return jsonResponse({ error: 'requesterEmail required' }, 400);
+
+      const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+      if (!offerRaw) return jsonResponse({ error: 'offer not found' }, 404);
+      const offer = JSON.parse(offerRaw);
+
+      if (offer.status !== 'sent') {
+        return jsonResponse({ error: 'offer is not in a payable state (status: ' + offer.status + ')' }, 400);
+      }
+      if (offer.valid_until) {
+        const expired = new Date(offer.valid_until).getTime() < Date.now();
+        if (expired) return jsonResponse({ error: 'offer has expired' }, 400);
+      }
+      const depositCents = Math.round(Number(offer.deposit_amount || 0) * 100);
+      if (!depositCents || depositCents < 50) {
+        // Stripe minimum charge is $0.50 USD
+        return jsonResponse({ error: 'invalid deposit amount' }, 400);
+      }
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+      if (!bookingRaw) return jsonResponse({ error: 'booking not found' }, 404);
+      const booking = JSON.parse(bookingRaw);
+      const bookingEmail = (booking.email || '').toLowerCase().trim();
+      const reqEmail = (requesterEmail || '').toLowerCase().trim();
+      if (!bookingEmail || bookingEmail !== reqEmail) {
+        return jsonResponse({ error: 'not authorised for this offer' }, 403);
+      }
+      if (booking.status === 'confirmed' || booking.paymentStatus === 'deposit_paid') {
+        return jsonResponse({ error: 'booking is already confirmed' }, 400);
+      }
+
+      const origin = url.origin;
+      const productName = (offer.propertyName || 'TheBearing booking') + ' — deposit';
+      let productDescription = '';
+      if (offer.arrival && offer.departure) {
+        productDescription = offer.arrival + ' → ' + offer.departure;
+        if (offer.nights) productDescription += ' · ' + offer.nights + ' night' + (offer.nights === 1 ? '' : 's');
+      }
+      if (offer.room) productDescription = (productDescription ? productDescription + ' · ' : '') + offer.room;
+
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          customer_email: bookingEmail,
+          line_items: [{
+            quantity: 1,
+            price_data: {
+              currency: (offer.currency || 'usd').toLowerCase(),
+              unit_amount: depositCents,
+              product_data: {
+                name: productName,
+                description: productDescription || undefined,
+              },
+            },
+          }],
+          // Metadata is what the webhook reads to identify which offer/booking
+          // this payment is for. Stored on session + payment intent.
+          metadata: {
+            offerId: offer.id,
+            bookingRef: offer.bookingId,
+            propertySlug: offer.propertySlug || '',
+            conversationId: booking.conversationId || '',
+          },
+          payment_intent_data: {
+            metadata: {
+              offerId: offer.id,
+              bookingRef: offer.bookingId,
+            },
+            statement_descriptor_suffix: 'BEARING',
+          },
+          success_url: origin + '/bookings.html?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+          cancel_url: origin + '/bookings.html?checkout=cancelled',
+          expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
+        });
+        console.log('[Checkout] created session ' + session.id + ' for offer ' + offer.id + ' (deposit ' + depositCents + ' cents)');
+        return jsonResponse({ url: session.url, sessionId: session.id });
+      } catch (err) {
+        console.error('[Checkout] Stripe error:', err && err.message);
+        return jsonResponse({ error: 'checkout creation failed: ' + (err.message || 'unknown') }, 500);
+      }
+    }
+
     // ── Stripe health check (admin-gated) ─────────────────────────
     // Returns whether STRIPE_SECRET_KEY is set AND Stripe accepts it. The
     // admin-settings System Health card calls this; admin-payments uses it
@@ -3063,9 +3170,6 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (!signature) {
         return new Response('Missing signature', { status: 400 });
       }
-      // Stripe needs the raw body bytes exactly as sent — don't parse, don't
-      // trim, don't transform. Reading as text preserves byte-for-byte
-      // fidelity for the signature verification.
       const rawBody = await request.text();
       let event;
       try {
@@ -3076,9 +3180,213 @@ View in admin: https://thebearing.io/admin-bookings.html
         console.error('[Stripe webhook] signature verification failed:', err.message);
         return new Response('Invalid signature', { status: 400 });
       }
-      // Log every event so v72w smoke-tests can confirm the pipe works.
-      // Future builds (v72z) will branch on event.type and update KV.
+
       console.log('[Stripe webhook]', event.type, event.id);
+
+      // v73q: handle checkout.session.completed → mark booking confirmed,
+      // post system message, send Resend emails. All other event types are
+      // logged-and-ack'd; we don't 4xx them so Stripe doesn't retry.
+      //
+      // Idempotency: Stripe retries webhooks on non-2xx. To handle a retry
+      // of an already-processed event safely, we check booking.paymentStatus
+      // before mutating. If already 'deposit_paid' with the same session id,
+      // we 200 OK and skip side effects.
+      if (event.type === 'checkout.session.completed') {
+        try {
+          const session = event.data.object;
+          const meta = session.metadata || {};
+          const offerId = meta.offerId;
+          const bookingRef = meta.bookingRef;
+          if (!offerId || !bookingRef) {
+            console.error('[Stripe webhook] missing metadata on session ' + session.id);
+            return jsonResponse({ received: true, type: event.type, error: 'missing metadata' });
+          }
+
+          const bookingRaw = await env.DOSSIERS.get('booking:' + bookingRef);
+          if (!bookingRaw) {
+            console.error('[Stripe webhook] booking ' + bookingRef + ' not found');
+            return jsonResponse({ received: true, type: event.type, error: 'booking not found' });
+          }
+          const booking = JSON.parse(bookingRaw);
+
+          // Idempotency guard
+          if (booking.paymentStatus === 'deposit_paid' && booking.stripeSessionId === session.id) {
+            console.log('[Stripe webhook] duplicate event for session ' + session.id + ' — already processed');
+            return jsonResponse({ received: true, type: event.type, status: 'already-processed' });
+          }
+
+          const now = new Date().toISOString();
+          const depositPaid = Number(session.amount_total || 0) / 100;
+
+          // 1. Update booking
+          booking.status = 'confirmed';
+          booking.paymentStatus = 'deposit_paid';
+          booking.stripeSessionId = session.id;
+          booking.stripePaymentIntent = session.payment_intent || null;
+          booking.depositPaidAmount = depositPaid;
+          booking.depositPaidAt = now;
+          booking.updatedAt = now;
+          await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+          // 2. Update offer
+          try {
+            const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+            if (offerRaw) {
+              const offer = JSON.parse(offerRaw);
+              offer.status = 'accepted';
+              offer.responded_at = now;
+              offer.stripeSessionId = session.id;
+              await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(offer));
+            }
+          } catch (e) {
+            console.error('[Stripe webhook] offer update failed:', e && e.message);
+          }
+
+          // 3. Post system message into conversation
+          const convId = booking.conversationId;
+          if (convId) {
+            try {
+              const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+              if (convRaw) {
+                const conv = JSON.parse(convRaw);
+                const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+                const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+                const sysMsg = {
+                  id: 'msg_' + Date.now() + '_paid',
+                  role: 'system',
+                  type: 'booking_confirmed',
+                  text: '✓ Deposit paid · Booking confirmed · ' + bookingRef + '\n\n$' + depositPaid.toLocaleString() + ' received. The property has been notified.',
+                  senderName: 'The Bearing',
+                  sentAt: now,
+                  readAt: null,
+                  bookingRef: bookingRef,
+                };
+                messages.push(sysMsg);
+                conv.lastMessageAt = now;
+                conv.lastMessagePreview = '✓ Booking confirmed';
+                conv.unreadGuest = (conv.unreadGuest || 0);  // not bumped — customer just paid, no surprise
+                conv.unreadAdmin = (conv.unreadAdmin || 0) + 1; // bump admin/partner
+                await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+                await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+              }
+            } catch (e) {
+              console.error('[Stripe webhook] conversation message post failed:', e && e.message);
+            }
+          }
+
+          // 4. Send Resend emails (customer + admin + partner)
+          // Email recipient strategy:
+          //   - Customer: booking.email
+          //   - Admin: loadNotificationRecipients() — configurable in admin-settings
+          //   - Partner: admin@thebearing.io (placeholder until partner auth has
+          //     real contact emails per property — flagged in handoff)
+          if (env.RESEND_API_KEY) {
+            const customerEmail = booking.email;
+            const adminRecipients = await loadNotificationRecipients(env);
+            const partnerEmail = 'admin@thebearing.io'; // placeholder, see note above
+            const propName = booking.property || booking.slug || 'Property';
+            const stayLine = (booking.arrival && booking.departure)
+              ? booking.arrival + ' → ' + booking.departure + (booking.nights ? ' · ' + booking.nights + ' nights' : '')
+              : '';
+            const roomLine = booking.room || '';
+            const guestName = (booking.firstname || '') + (booking.lastname ? ' ' + booking.lastname : '');
+
+            // Customer confirmation
+            if (customerEmail) {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'The Bearing <bookings@thebearing.io>',
+                  to: [customerEmail],
+                  subject: 'Booking confirmed · ' + propName + ' · ' + bookingRef,
+                  html: '<div style="font-family:Geist,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#faf7f1;color:#1e1810;">'
+                    + '<div style="font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">The Bearing</div>'
+                    + '<h1 style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.8rem;line-height:1.2;margin:8px 0 18px;font-weight:400;">Your booking is confirmed.</h1>'
+                    + '<p style="line-height:1.55;margin:0 0 18px;">Hi ' + (guestName || 'there') + ', your deposit of <strong>$' + depositPaid.toLocaleString() + '</strong> has been received and your stay at <strong>' + propName + '</strong> is confirmed.</p>'
+                    + '<div style="background:#fff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px;margin:18px 0;">'
+                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Booking</div>'
+                    + '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.2rem;margin-bottom:6px;">' + propName + '</div>'
+                    + (stayLine ? '<div style="color:#5a4a38;margin-bottom:4px;">' + stayLine + '</div>' : '')
+                    + (roomLine ? '<div style="color:#5a4a38;margin-bottom:4px;">' + roomLine + '</div>' : '')
+                    + '<div style="color:#7a6a58;font-size:.85rem;margin-top:10px;">Reference: <strong>' + bookingRef + '</strong></div>'
+                    + '</div>'
+                    + '<p style="line-height:1.55;margin:0 0 12px;">The property has been notified and will be in touch directly with check-in details and any remaining balance.</p>'
+                    + '<p style="line-height:1.55;margin:0 0 12px;">You can view this booking anytime at <a href="https://thebearing.io/bookings" style="color:#b05830;">thebearing.io/bookings</a>.</p>'
+                    + '<p style="margin:32px 0 0;color:#7a6a58;font-size:.85rem;">Bon voyage,<br>The Bearing</p>'
+                    + '</div>',
+                }),
+              }).catch(function(e) { console.error('[Stripe webhook] customer email failed:', e); });
+            }
+
+            // Admin notification
+            if (adminRecipients.length) {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'The Bearing Bookings <bookings@thebearing.io>',
+                  to: adminRecipients,
+                  subject: '[CONFIRMED] ' + propName + ' · ' + bookingRef + ' · $' + depositPaid.toLocaleString(),
+                  html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                    + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Booking confirmed</h2>'
+                    + '<p><strong>' + propName + '</strong></p>'
+                    + (stayLine ? '<p>' + stayLine + '</p>' : '')
+                    + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
+                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' · ' + (customerEmail || 'no email') + '</p>'
+                    + '<p>Deposit paid: <strong>$' + depositPaid.toLocaleString() + '</strong></p>'
+                    + '<p>Reference: <code>' + bookingRef + '</code></p>'
+                    + '<p>Stripe session: <code>' + session.id + '</code></p>'
+                    + '<p style="margin-top:24px;"><a href="https://thebearing.io/admin-bookings">View in admin</a></p>'
+                    + '</div>',
+                }),
+              }).catch(function(e) { console.error('[Stripe webhook] admin email failed:', e); });
+            }
+
+            // Partner notification (currently same as admin baseline)
+            if (partnerEmail && adminRecipients.indexOf(partnerEmail) === -1) {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'The Bearing Bookings <bookings@thebearing.io>',
+                  to: [partnerEmail],
+                  subject: '[PARTNER] New confirmed booking · ' + propName + ' · ' + bookingRef,
+                  html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                    + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">New confirmed booking</h2>'
+                    + '<p>You have a confirmed booking at <strong>' + propName + '</strong>.</p>'
+                    + (stayLine ? '<p>' + stayLine + '</p>' : '')
+                    + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
+                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' · ' + (customerEmail || 'no email') + '</p>'
+                    + '<p>Reference: <code>' + bookingRef + '</code></p>'
+                    + '<p style="margin-top:24px;">The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.</p>'
+                    + '</div>',
+                }),
+              }).catch(function(e) { console.error('[Stripe webhook] partner email failed:', e); });
+            }
+          } else {
+            console.warn('[Stripe webhook] RESEND_API_KEY not set — skipping notifications for ' + bookingRef);
+          }
+
+          console.log('[Stripe webhook] booking ' + bookingRef + ' confirmed via session ' + session.id);
+        } catch (err) {
+          // Catch-all so we still 200 the webhook even if KV/Resend errors —
+          // Stripe doesn't need to retry for our infra bugs. Errors are logged
+          // and visible in admin-bookings (booking will show as cancelled-but-
+          // -paid which is a useful signal for manual intervention).
+          console.error('[Stripe webhook] processing error for event ' + event.id + ':', err && (err.stack || err.message));
+        }
+      }
+
       return jsonResponse({ received: true, type: event.type, id: event.id });
     }
 

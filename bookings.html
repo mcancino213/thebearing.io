@@ -1253,6 +1253,23 @@ function loadCustomerBookings(user) {
     });
     return;
   }
+
+  // v73q: surface checkout result if user just returned from Stripe.
+  // Stripe redirects to /bookings.html?checkout=success&session_id=X on
+  // success, or ?checkout=cancelled on abandonment. Either way we strip
+  // those params after showing a banner so refresh doesn't re-show it.
+  var qs = new URLSearchParams(window.location.search);
+  var checkoutResult = qs.get('checkout');
+  if (checkoutResult) {
+    showCheckoutBanner(checkoutResult);
+    // Clean the URL without reload
+    qs.delete('checkout');
+    qs.delete('session_id');
+    var newSearch = qs.toString();
+    var newPath = window.location.pathname + (newSearch ? '?' + newSearch : '');
+    window.history.replaceState({}, '', newPath);
+  }
+
   fetch('/api/booking?email=' + encodeURIComponent(email), { cache: 'no-store' })
     .then(function(r) { return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
     .then(function(data) {
@@ -1265,6 +1282,55 @@ function loadCustomerBookings(user) {
         el.innerHTML = '<div class="bk-empty" style="border-color:#fca5a5;color:#b91c1c;">Failed to load. Please refresh and try again.</div>';
       });
     });
+}
+
+// v73q: Toast-style banner for Stripe checkout return state. Auto-dismisses
+// after a few seconds; user can also tap × to close.
+function showCheckoutBanner(result) {
+  var existing = document.getElementById('tb-checkout-banner');
+  if (existing) existing.remove();
+  var banner = document.createElement('div');
+  banner.id = 'tb-checkout-banner';
+  var isSuccess = result === 'success';
+  var bg, fg, border, icon, title, sub;
+  if (isSuccess) {
+    bg = '#e6efe2'; fg = '#1f6a3a'; border = 'rgba(74,106,72,.35)';
+    icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    title = 'Deposit received \u2014 your booking is confirmed.';
+    sub = 'Confirmation emails are on the way. The property will be in touch directly.';
+  } else if (result === 'cancelled') {
+    bg = '#f5ecd9'; fg = '#6b5320'; border = 'rgba(154,114,48,.35)';
+    icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+    title = 'Checkout cancelled.';
+    sub = 'Your offer is still here \u2014 you can accept anytime before it expires.';
+  } else {
+    return; // unknown result, do nothing
+  }
+  banner.style.cssText = 'position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:9500;max-width:520px;width:calc(100% - 32px);background:' + bg + ';color:' + fg + ';border:1px solid ' + border + ';border-radius:14px;padding:14px 18px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.12);font-family:Geist,system-ui,sans-serif;animation:tb-banner-in .35s cubic-bezier(.22,.61,.36,1);';
+  banner.innerHTML =
+    '<div style="flex-shrink:0;margin-top:1px;">' + icon + '</div>' +
+    '<div style="flex:1;min-width:0;">' +
+      '<div style="font-size:.88rem;font-weight:600;line-height:1.3;">' + title + '</div>' +
+      '<div style="font-size:.78rem;margin-top:3px;line-height:1.45;opacity:.85;">' + sub + '</div>' +
+    '</div>' +
+    '<button type="button" aria-label="Dismiss" style="flex-shrink:0;background:transparent;border:none;color:inherit;cursor:pointer;padding:2px;opacity:.6;" onclick="document.getElementById(\'tb-checkout-banner\').remove()">' +
+      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>' +
+    '</button>';
+  document.body.appendChild(banner);
+  // Inject keyframes if not present
+  if (!document.getElementById('tb-banner-anim')) {
+    var st = document.createElement('style');
+    st.id = 'tb-banner-anim';
+    st.textContent = '@keyframes tb-banner-in{from{opacity:0;transform:translate(-50%,-12px);}to{opacity:1;transform:translate(-50%,0);}}';
+    document.head.appendChild(st);
+  }
+  // Auto-dismiss success after 8s; leave cancelled visible until user dismisses
+  if (isSuccess) {
+    setTimeout(function(){
+      var b = document.getElementById('tb-checkout-banner');
+      if (b) { b.style.transition = 'opacity .4s'; b.style.opacity = '0'; setTimeout(function(){ if(b.parentNode) b.remove(); }, 400); }
+    }, 8000);
+  }
 }
 
 function renderCustomerBookings(bookings) {
@@ -1626,9 +1692,40 @@ function openOfferDetail(offerId) {
 
       document.getElementById('tb-offer-body').innerHTML = html;
 
+      // v73q: Accept & pay → POST /api/checkout/create-session → redirect to Stripe
       var acceptBtn = document.getElementById('tb-offer-accept');
       if (acceptBtn) acceptBtn.addEventListener('click', function() {
-        alert('Accept & pay activates with Stripe Checkout in the next build. For now, please reply to the conversation to confirm acceptance with the property.');
+        var user = window.Clerk && window.Clerk.user;
+        var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+        if (!email) {
+          alert('Sign-in expired. Please refresh the page and try again.');
+          return;
+        }
+        acceptBtn.disabled = true;
+        acceptBtn.textContent = 'Redirecting to checkout\u2026';
+        acceptBtn.style.opacity = '.6';
+        fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offerId: offerId, requesterEmail: email }),
+        })
+          .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+          .then(function(res) {
+            if (!res.ok || !res.body.url) {
+              alert('Could not start checkout: ' + (res.body.error || 'unknown error'));
+              acceptBtn.disabled = false;
+              acceptBtn.textContent = 'Accept & pay deposit';
+              acceptBtn.style.opacity = '1';
+              return;
+            }
+            window.location.href = res.body.url;
+          })
+          .catch(function(e) {
+            alert('Network error \u2014 please try again.');
+            acceptBtn.disabled = false;
+            acceptBtn.textContent = 'Accept & pay deposit';
+            acceptBtn.style.opacity = '1';
+          });
       });
       var reqBtn = document.getElementById('tb-offer-request-changes');
       if (reqBtn) reqBtn.addEventListener('click', function() {

@@ -791,6 +791,48 @@ html, body { height: 100%; }
   transform:translateY(-1px);
   box-shadow:0 4px 18px rgba(176,88,48,.35);
 }
+
+/* v73q: booking_confirmed system message — moss-green celebratory card
+   posted by the Stripe webhook after successful deposit payment. */
+.ch-bubble.ch-booking-confirmed-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  border:1px solid rgba(74,106,72,.3);
+  color:#1f3a26;
+  white-space:normal;
+  max-width:380px;
+  padding:16px 18px;
+  display:flex;align-items:flex-start;gap:12px;
+  box-shadow:0 4px 20px rgba(74,106,72,.12);
+}
+.ch-bc-icon{
+  flex-shrink:0;width:36px;height:36px;border-radius:50%;
+  background:#4a6a48;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.ch-bc-body{flex:1;min-width:0;}
+.ch-bc-title{
+  font-family:'Geist',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:#2a5440;
+  margin-bottom:4px;
+}
+.ch-bc-text{font-size:.85rem;line-height:1.5;color:#1f3a26;}
+.ch-bc-cta{
+  display:inline-block;margin-top:10px;
+  font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;
+  color:#4a6a48;text-decoration:none;
+}
+.ch-bc-cta:hover{text-decoration:underline;}
+
+/* Override role gradient for booking_confirmed cards — always green, never
+   pulled into role-guest terracotta or role-admin dark gradient. */
+.ch-msg.role-guest .ch-bubble.ch-booking-confirmed-card,
+.ch-msg.role-partner .ch-bubble.ch-booking-confirmed-card,
+.ch-msg.role-admin .ch-bubble.ch-booking-confirmed-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  color:#1f3a26;
+  border:1px solid rgba(74,106,72,.3);
+}
+
 .ch-msg.role-guest .ch-bubble{background:linear-gradient(135deg,var(--terra),#8c4422);color:#fff;}
 .ch-msg.role-partner .ch-bubble{background:#fff;border:1px solid var(--border-hi);color:var(--ink);}
 .ch-msg.role-admin .ch-bubble{background:linear-gradient(135deg,#1a1a1a,#2d2d2d);color:#fff;}
@@ -2115,6 +2157,18 @@ function chRenderMessagesInto(wrap, conv, messages) {
           openOfferDetail(m.offerId);
         });
       }
+    } else if (m.type === 'booking_confirmed') {
+      // v73q: confirmation system message posted by the Stripe webhook
+      // after successful deposit payment. Styled as a moss-green
+      // celebratory card rather than a regular bubble.
+      bubble.className = 'ch-bubble ch-booking-confirmed-card';
+      bubble.innerHTML =
+        '<div class="ch-bc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+        '<div class="ch-bc-body">' +
+          '<div class="ch-bc-title">Booking confirmed</div>' +
+          '<div class="ch-bc-text">' + chEsc(m.text || '').replace(/\n/g, '<br>') + '</div>' +
+          (m.bookingRef ? '<a href="/bookings.html" class="ch-bc-cta">View booking \u2192</a>' : '') +
+        '</div>';
     } else {
       bubble.className = 'ch-bubble';
       bubble.textContent = m.text;
@@ -2126,8 +2180,8 @@ function chRenderMessagesInto(wrap, conv, messages) {
       }
     }
 
-    // Hover actions — skipped for offer_card system messages (v73j)
-    if (m.type !== 'offer_card') {
+    // Hover actions — skipped for offer_card + booking_confirmed system messages
+    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed') {
     var mActions = document.createElement('div');
     mActions.className = 'ch-msg-actions';
     var capturedText = m.text;
@@ -2502,10 +2556,40 @@ function openOfferDetail(offerId) {
 
       document.getElementById('tb-offer-body').innerHTML = html;
 
-      // Wire placeholder buttons
+      // v73q: Accept & pay → POST /api/checkout/create-session → redirect to Stripe
       var acceptBtn = document.getElementById('tb-offer-accept');
       if (acceptBtn) acceptBtn.addEventListener('click', function() {
-        alert('Accept & pay activates with Stripe Checkout in the next build. For now, please reply to the conversation to confirm acceptance with the property.');
+        var user = window.Clerk && window.Clerk.user;
+        var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+        if (!email) {
+          alert('Sign-in expired. Please refresh the page and try again.');
+          return;
+        }
+        acceptBtn.disabled = true;
+        acceptBtn.textContent = 'Redirecting to checkout\u2026';
+        acceptBtn.style.opacity = '.6';
+        fetch('/api/checkout/create-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offerId: offerId, requesterEmail: email }),
+        })
+          .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+          .then(function(res) {
+            if (!res.ok || !res.body.url) {
+              alert('Could not start checkout: ' + (res.body.error || 'unknown error'));
+              acceptBtn.disabled = false;
+              acceptBtn.textContent = 'Accept & pay deposit';
+              acceptBtn.style.opacity = '1';
+              return;
+            }
+            window.location.href = res.body.url;
+          })
+          .catch(function(e) {
+            alert('Network error \u2014 please try again.');
+            acceptBtn.disabled = false;
+            acceptBtn.textContent = 'Accept & pay deposit';
+            acceptBtn.style.opacity = '1';
+          });
       });
       var reqBtn = document.getElementById('tb-offer-request-changes');
       if (reqBtn) reqBtn.addEventListener('click', function() {
