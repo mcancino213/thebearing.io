@@ -373,9 +373,9 @@ window.addEventListener('load', async function() {
       <span class="save-status" id="backfill-cards-status"></span>
     </div>
     <pre id="backfill-cards-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
-  </div>
 
-  <div class="fs-row" style="margin-top:24px;">
+    <div style="height:1px;background:var(--border);margin:24px 0;"></div>
+
     <div class="help-text">
       <strong>Restore booking dates from active offer (v73r):</strong> finds bookings with <code>active_offer_id</code> set and copies the offer's <code>arrival</code>, <code>departure</code>, <code>guests</code>, and <code>room</code> back to the booking record. Fixes the data corruption introduced when a guest re-enquired on a property with an open offer (pre-v73r the worker silently rewrote booking dates without updating the offer). Also clears any stale <code>pendingChangeRequest</code>. Idempotent. Run once after deploying v73r to repair existing corrupted bookings.
     </div>
