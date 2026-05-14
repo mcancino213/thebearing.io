@@ -314,6 +314,98 @@ tbody tr:hover{background:var(--bg);}
 .msg.group-mid.from-self .msg-bubble{border-top-right-radius:6px;border-bottom-right-radius:6px;}
 .msg.group-end.from-other .msg-bubble{border-top-left-radius:6px;}
 .msg.group-end.from-self .msg-bubble{border-top-right-radius:6px;}
+
+/* v73ad: structured system message cards \u2014 offer_card + booking_confirmed.
+   Parity with customer + admin. Light "document" treatment regardless of role. */
+.msg-bubble.offer-card{
+  background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%) !important;
+  border:1px solid rgba(176,88,48,.22) !important;
+  color:#1e1810 !important;
+  white-space:normal;
+  max-width:380px;
+  padding:18px 20px 16px !important;
+  box-shadow:0 4px 24px rgba(176,88,48,.10), 0 1px 3px rgba(0,0,0,.04) !important;
+}
+.msg.role-partner .msg-bubble.offer-card,
+.msg.role-admin .msg-bubble.offer-card,
+.msg.role-guest .msg-bubble.offer-card{
+  background:linear-gradient(180deg,#fff 0%,#fdf9f1 100%) !important;
+  color:#1e1810 !important;
+  border:1px solid rgba(176,88,48,.22) !important;
+}
+.offer-card-eyebrow{
+  font-family:'DM Sans','Geist',sans-serif;font-size:.62rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:#b05830;
+  margin-bottom:8px;
+}
+.offer-card-title{
+  font-family:'Fraunces','Instrument Serif',Georgia,serif;font-size:1.25rem;line-height:1.2;
+  color:#1e1810;margin-bottom:3px;
+}
+.offer-card-sub{font-size:.78rem;color:#9a8e80;margin-bottom:2px;}
+.offer-card-dates{
+  font-size:.78rem;color:#5a4e40;margin-top:6px;
+  padding-top:8px;border-top:1px dashed rgba(80,60,30,.12);
+}
+.offer-card-pricing{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;
+  padding:11px 12px;background:rgba(176,88,48,.06);border-radius:10px;
+}
+.offer-card-pricing .lbl{
+  font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:#9a8e80;margin-bottom:3px;
+}
+.offer-card-pricing .val{
+  font-family:'Fraunces','Instrument Serif',Georgia,serif;font-size:1.1rem;color:#1e1810;
+}
+.offer-card-valid{font-size:.7rem;color:#9a8e80;margin-top:8px;font-style:italic;}
+.offer-card-cta{
+  width:100%;margin-top:14px;padding:11px 16px;
+  border:none;border-radius:10px;
+  background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;
+  font-family:'DM Sans','Geist',sans-serif;font-size:.85rem;font-weight:600;
+  letter-spacing:.02em;cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 2px 12px rgba(176,88,48,.25);
+}
+.offer-card-cta:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(176,88,48,.35);}
+
+.msg-bubble.booking-confirmed-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%) !important;
+  border:1px solid rgba(74,106,72,.3) !important;
+  color:#1f3a26 !important;
+  white-space:normal;
+  max-width:380px;
+  padding:16px 18px !important;
+  display:flex !important;align-items:flex-start;gap:12px;
+  box-shadow:0 4px 20px rgba(74,106,72,.12) !important;
+}
+.msg.role-guest .msg-bubble.booking-confirmed-card,
+.msg.role-partner .msg-bubble.booking-confirmed-card,
+.msg.role-admin .msg-bubble.booking-confirmed-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%) !important;
+  color:#1f3a26 !important;
+  border:1px solid rgba(74,106,72,.3) !important;
+}
+.bc-icon{
+  flex-shrink:0;width:36px;height:36px;border-radius:50%;
+  background:#4a6a48;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.bc-body{flex:1;min-width:0;}
+.bc-title{
+  font-family:'DM Sans','Geist',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:#2a5440;
+  margin-bottom:4px;
+}
+.bc-text{font-size:.85rem;line-height:1.5;color:#1f3a26;}
+.bc-cta{
+  display:inline-block;margin-top:10px;
+  font-family:'DM Sans','Geist',sans-serif;font-size:.78rem;font-weight:600;
+  color:#4a6a48;text-decoration:none;cursor:pointer;
+}
+.bc-cta:hover{text-decoration:underline;}
+
 .msg-time{font-size:.62rem;color:var(--text3);margin:4px 12px 0;font-variant-numeric:tabular-nums;}
 .msg-source-badge{
   font-size:.55rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
@@ -576,6 +668,7 @@ tbody tr:hover{background:var(--bg);}
 
 <script src="/assets/conv-presence.js"></script>
 <script src="/assets/conv-scroll.js"></script>
+<script src="/assets/offer-detail-modal.js"></script>
 <script>
 var VIEWER_ROLE = 'partner';
 var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim(); // v73f: ?as=X override for testing as different partners
@@ -1075,8 +1168,61 @@ function renderMessagesInto(wrap, conv, messages) {
     }
 
     var bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.textContent = m.text;
+    // v73ad: parity with customer + admin \u2014 render structured cards for
+    // offer_card and booking_confirmed types.
+    if (m.type === 'offer_card' && m.offerSummary) {
+      bubble.className = 'msg-bubble offer-card';
+      var s = m.offerSummary;
+      var dateStr = '';
+      if (s.arrival && s.departure) {
+        var fmt = function(iso) {
+          try { return new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+          catch(_) { return iso; }
+        };
+        dateStr = fmt(s.arrival) + ' \u2192 ' + fmt(s.departure) + (s.nights ? ' \u00b7 ' + s.nights + ' night' + (s.nights > 1 ? 's' : '') : '');
+      }
+      var totalStr = s.total_amount ? '$' + Number(s.total_amount).toLocaleString() : '\u2014';
+      var depositStr = s.deposit_amount ? '$' + Number(s.deposit_amount).toLocaleString() : '\u2014';
+      var validStr = '';
+      if (s.valid_until) {
+        try {
+          var daysLeft = Math.ceil((new Date(s.valid_until) - new Date()) / (24*60*60*1000));
+          if (daysLeft > 0) validStr = 'Valid for ' + daysLeft + ' more day' + (daysLeft === 1 ? '' : 's');
+          else validStr = 'Expired';
+        } catch(_) {}
+      }
+      function escH(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+      bubble.innerHTML =
+        '<div class="offer-card-eyebrow">\ud83d\udccb  Offer sent to guest</div>' +
+        '<div class="offer-card-title">' + escH(s.propertyName || 'Property') + '</div>' +
+        (s.room ? '<div class="offer-card-sub">' + escH(s.room) + (s.guests ? ' \u00b7 ' + escH(String(s.guests)) + ' guest' + (s.guests > 1 ? 's' : '') : '') + '</div>' : '') +
+        (dateStr ? '<div class="offer-card-dates">' + escH(dateStr) + '</div>' : '') +
+        '<div class="offer-card-pricing">' +
+          '<div><div class="lbl">Total</div><div class="val">' + totalStr + '</div></div>' +
+          '<div><div class="lbl">Deposit</div><div class="val">' + depositStr + '</div></div>' +
+        '</div>' +
+        (validStr ? '<div class="offer-card-valid">' + escH(validStr) + '</div>' : '') +
+        '<button class="offer-card-cta" type="button" data-offer-id="' + escH(m.offerId || '') + '">View offer \u2192</button>';
+      var ctaBtn = bubble.querySelector('.offer-card-cta');
+      if (ctaBtn) {
+        ctaBtn.addEventListener('click', function() {
+          if (window.TBOfferDetail) window.TBOfferDetail.open(m.offerId, { mode: 'partner' });
+        });
+      }
+    } else if (m.type === 'booking_confirmed') {
+      bubble.className = 'msg-bubble booking-confirmed-card';
+      function escH2(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      bubble.innerHTML =
+        '<div class="bc-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+        '<div class="bc-body">' +
+          '<div class="bc-title">Booking confirmed</div>' +
+          '<div class="bc-text">' + escH2(m.text || '').replace(/\n/g, '<br>') + '</div>' +
+          (m.bookingRef ? '<a href="pp-bookings.html" class="bc-cta">View in bookings \u2192</a>' : '') +
+        '</div>';
+    } else {
+      bubble.className = 'msg-bubble';
+      bubble.textContent = m.text;
+    }
     if (m.source === 'email') {
       var srcBadge = document.createElement('span');
       srcBadge.className = 'msg-source-badge';
@@ -1084,7 +1230,9 @@ function renderMessagesInto(wrap, conv, messages) {
       bubble.appendChild(srcBadge);
     }
 
-    // Hover actions
+    // Hover actions \u2014 skipped for card-type system messages (parity with
+    // customer + admin).
+    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed') {
     var mActions = document.createElement('div');
     mActions.className = 'msg-actions';
     var capturedText = m.text;
@@ -1141,6 +1289,7 @@ function renderMessagesInto(wrap, conv, messages) {
     mActions.appendChild(quoteBtn);
     mActions.appendChild(copyBtn);
     bubble.appendChild(mActions);
+    } // end if (m.type !== 'offer_card' && 'booking_confirmed')
     msgEl.appendChild(bubble);
 
     // Reactions
