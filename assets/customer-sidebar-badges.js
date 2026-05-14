@@ -37,23 +37,24 @@
     fetch('/api/booking?email=' + encodeURIComponent(primaryEmail))
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        // v73aa: badge counts only items needing customer action, not all
-        // bookings. Previously it counted all non-cancelled bookings, so
-        // having even one confirmed booking left the badge always-on.
-        // New criteria:
-        //   1. Offers waiting for customer's response (status:'offer_sent'
-        //      with active_offer_id and not yet paid)
-        //   2. New enquiries with no offer yet (waiting on partner, but
-        //      customer still has a fresh ticket they may want to see)
-        // Confirmed and cancelled bookings are static — no action needed.
+        // v73ac: badge counts ONLY items the customer must act on.
+        // Removed the "new enquiry awaiting partner" branch from v73aa \u2014
+        // a submitted enquiry waiting on partner response is NOT a customer
+        // action item, the ball is in the partner's court.
+        //
+        // Current action items:
+        //   1. Offer waiting for customer's response (status:'offer_sent'
+        //      with active_offer_id and not yet paid). Stays counted until
+        //      they accept, decline, or request changes.
+        //
+        // Not counted (no customer action required):
+        //   - Fresh enquiries waiting on partner reply
+        //   - Confirmed bookings (static record)
+        //   - Cancelled bookings (static record)
         var needsAction = (d.bookings || []).filter(function(b) {
           if (b.status === 'cancelled') return false;
           if (b.status === 'confirmed') return false;
-          // Offer waiting on customer
           if (b.status === 'offer_sent' && b.active_offer_id && b.paymentStatus !== 'deposit_paid') return true;
-          // Fresh enquiry awaiting partner — surface to customer too so they
-          // know they have a pending request
-          if (b.status === 'enquiry') return true;
           return false;
         });
         var count = needsAction.length;
