@@ -1286,6 +1286,11 @@ function loadCustomerBookings(user) {
 
 // v73q: Toast-style banner for Stripe checkout return state. Auto-dismisses
 // after a few seconds; user can also tap × to close.
+// v73x: also injects a persistent "Booking confirmed" hero card at the top
+// of the Confirmed section so the receipt-style acknowledgement stays
+// visible until the user navigates away. The toast was disappearing in 8s
+// which was too subtle for a payment-completion event — users reported
+// "no clear confirmation that the booking was confirmed."
 function showCheckoutBanner(result) {
   var existing = document.getElementById('tb-checkout-banner');
   if (existing) existing.remove();
@@ -1331,6 +1336,56 @@ function showCheckoutBanner(result) {
       if (b) { b.style.transition = 'opacity .4s'; b.style.opacity = '0'; setTimeout(function(){ if(b.parentNode) b.remove(); }, 400); }
     }, 8000);
   }
+
+  // v73x: also queue a persistent hero card to render at the top of the
+  // Confirmed section after bookings load. Stored as a flag rather than
+  // injected immediately because the Confirmed list rerenders when bookings
+  // fetch completes — and would clobber any prior injection. The render
+  // function checks the flag and renders the card inline.
+  if (isSuccess) {
+    window.__tbShowConfirmedHero = true;
+  }
+}
+
+// v73x: render the persistent "Booking confirmed" hero card at the top of
+// the Confirmed section. Called from renderConfirmedList when the flag is set.
+// The most recent booking (by depositPaidAt or updatedAt) is highlighted as
+// "just confirmed" with a substantive receipt-style card.
+function renderConfirmedHeroCard(confirmedList) {
+  if (!window.__tbShowConfirmedHero) return '';
+  // Find the most recently paid booking — it's the one the user just paid for
+  var sorted = (confirmedList || []).slice().sort(function(a, b) {
+    var aT = new Date(a.depositPaidAt || a.updatedAt || 0).getTime();
+    var bT = new Date(b.depositPaidAt || b.updatedAt || 0).getTime();
+    return bT - aT;
+  });
+  var b = sorted[0];
+  if (!b) return '';
+  var propName = esc(b.property || b.slug || 'Property');
+  var dates = esc(fmtDates(b.arrival, b.departure));
+  var room = b.room ? ' \u00b7 ' + esc(b.room) : '';
+  var ref = esc(b.ref || '');
+  var amount = b.depositPaidAmount ? '$' + Number(b.depositPaidAmount).toLocaleString() : '';
+  return '<div id="tb-confirmed-hero" style="position:relative;background:linear-gradient(135deg,#e6efe2,#f1f7ec);border:1px solid rgba(74,106,72,.3);border-radius:18px;padding:24px 28px;margin-bottom:20px;font-family:Geist,system-ui,sans-serif;">' +
+    '<button type="button" aria-label="Dismiss" onclick="document.getElementById(\'tb-confirmed-hero\').remove();window.__tbShowConfirmedHero=false;" style="position:absolute;top:14px;right:14px;background:transparent;border:none;color:#3a5a3a;cursor:pointer;padding:6px;opacity:.55;line-height:1;">' +
+      '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>' +
+    '</button>' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
+      '<div style="width:36px;height:36px;border-radius:50%;background:#1f6a3a;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+      '</div>' +
+      '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.5rem;font-weight:400;color:#1f3a26;line-height:1.15;">Booking confirmed</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.84rem;color:#2c4a30;line-height:1.5;">' +
+      '<div style="opacity:.7;">Property</div><div style="font-weight:500;">' + propName + '</div>' +
+      '<div style="opacity:.7;">Dates</div><div>' + dates + room + '</div>' +
+      (amount ? '<div style="opacity:.7;">Deposit paid</div><div style="font-weight:600;">' + amount + '</div>' : '') +
+      (ref ? '<div style="opacity:.7;">Reference</div><div style="font-family:\'JetBrains Mono\',monospace;font-size:.78rem;opacity:.85;">' + ref + '</div>' : '') +
+    '</div>' +
+    '<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(74,106,72,.18);font-size:.78rem;color:#3a5a3a;line-height:1.55;">' +
+      'A receipt has been emailed to you. The property has been notified and will be in touch directly to confirm logistics. The remaining balance is settled with the property at the time of stay.' +
+    '</div>' +
+  '</div>';
 }
 
 // v73u: cache property thumbnail URLs by slug, populated before rendering
@@ -1616,7 +1671,11 @@ function renderConfirmedList(list) {
       '</div>';
     return;
   }
-  el.innerHTML = list.map(function(b) {
+  // v73x: hero card injected when user just returned from successful Stripe
+  // checkout. Persistent until dismissed, replaces the 8-second toast that
+  // was too easy to miss.
+  var heroHtml = renderConfirmedHeroCard(list);
+  el.innerHTML = heroHtml + list.map(function(b) {
     var prop = esc(b.property || b.slug || 'Property');
     var dates = esc(fmtDates(b.arrival, b.departure));
     var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';

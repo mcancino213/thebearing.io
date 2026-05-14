@@ -3602,11 +3602,23 @@ View in admin: https://thebearing.io/admin-bookings.html
           }
 
           // 3. Post system message into conversation
-          const convId = booking.conversationId;
-          if (convId) {
+          // v73x: fall back to metadata.conversationId if the booking record
+          // doesn't have it. Some older bookings created before the standard
+          // enquiry flow may be missing the field; the Stripe session metadata
+          // captures it at create-session time so we have a backup reference.
+          // Also: explicit logging at every branch so we can diagnose silent
+          // skips without guessing. v73w investigation found a booking whose
+          // system message never posted with no error log — turned out the
+          // if(convId) check was falsy. Don't want to repeat that.
+          const convId = booking.conversationId || meta.conversationId || null;
+          if (!convId) {
+            console.error('[Stripe webhook] NO conversationId on booking ' + bookingRef + ' AND no fallback in metadata. System message will NOT be posted. Booking is still confirmed.');
+          } else {
             try {
               const convRaw = await env.DOSSIERS.get('conversation:' + convId);
-              if (convRaw) {
+              if (!convRaw) {
+                console.error('[Stripe webhook] booking ' + bookingRef + ' references conversation ' + convId + ' but that conversation does not exist in KV. System message NOT posted.');
+              } else {
                 const conv = JSON.parse(convRaw);
                 const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
                 const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
@@ -3625,8 +3637,19 @@ View in admin: https://thebearing.io/admin-bookings.html
                 conv.lastMessagePreview = '✓ Booking confirmed';
                 conv.unreadGuest = (conv.unreadGuest || 0);  // not bumped — customer just paid, no surprise
                 conv.unreadAdmin = (conv.unreadAdmin || 0) + 1; // bump admin/partner
+
+                // v73x: if booking record had no conversationId, write it back
+                // now so future operations on this booking find the conversation
+                // directly. Self-healing.
+                if (!booking.conversationId) {
+                  console.log('[Stripe webhook] booking ' + bookingRef + ' had no conversationId; backfilling from metadata: ' + convId);
+                  booking.conversationId = convId;
+                  await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+                }
+
                 await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
                 await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+                console.log('[Stripe webhook] posted booking_confirmed system message to conversation ' + convId);
               }
             } catch (e) {
               console.error('[Stripe webhook] conversation message post failed:', e && e.message);
