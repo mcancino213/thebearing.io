@@ -3417,6 +3417,106 @@ View in admin: https://thebearing.io/admin-bookings.html
     // party knows the booking + email: they could PAY for someone else's
     // booking. Financial harm accrues to the attacker, not the victim.
     // Real fix is Clerk session verification, deferred.
+    // ── /api/checkout/create-intent ────────────────────────────────
+    // v73ab: inline Stripe Payment Element flow. Creates a PaymentIntent
+    // and returns its client_secret so the frontend can embed Stripe's
+    // Payment Element on the page instead of redirecting to Stripe-hosted
+    // checkout. Mirrors create-session's auth + validation; differs only
+    // in what it returns.
+    //
+    // POST body: { offerId, requesterEmail }
+    // Returns: { client_secret, publishable_key, payment_intent_id, amount, currency }
+    //          or { error }.
+    //
+    // The webhook handler is the source of truth — it processes
+    // payment_intent.succeeded the same way it processes
+    // checkout.session.completed, so booking confirmation flow is shared.
+    if (url.pathname === '/api/checkout/create-intent') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      const stripe = getStripe(env);
+      if (!stripe) return jsonResponse({ error: 'Stripe not configured' }, 503);
+      if (!env.STRIPE_PUBLISHABLE_KEY) {
+        console.error('[Checkout/intent] STRIPE_PUBLISHABLE_KEY not set');
+        return jsonResponse({ error: 'Stripe publishable key not configured' }, 503);
+      }
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { offerId, requesterEmail } = body;
+      if (!offerId) return jsonResponse({ error: 'offerId required' }, 400);
+      if (!requesterEmail) return jsonResponse({ error: 'requesterEmail required' }, 400);
+
+      const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+      if (!offerRaw) return jsonResponse({ error: 'offer not found' }, 404);
+      const offer = JSON.parse(offerRaw);
+
+      if (offer.status !== 'sent') {
+        return jsonResponse({ error: 'offer is not in a payable state (status: ' + offer.status + ')' }, 400);
+      }
+      if (offer.valid_until) {
+        const expired = new Date(offer.valid_until).getTime() < Date.now();
+        if (expired) return jsonResponse({ error: 'offer has expired' }, 400);
+      }
+      const depositCents = Math.round(Number(offer.deposit_amount || 0) * 100);
+      if (!depositCents || depositCents < 50) {
+        return jsonResponse({ error: 'invalid deposit amount' }, 400);
+      }
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + offer.bookingId);
+      if (!bookingRaw) return jsonResponse({ error: 'booking not found' }, 404);
+      const booking = JSON.parse(bookingRaw);
+      const bookingEmail = (booking.email || '').toLowerCase().trim();
+      const reqEmail = (requesterEmail || '').toLowerCase().trim();
+      if (!bookingEmail || bookingEmail !== reqEmail) {
+        return jsonResponse({ error: 'not authorised for this offer' }, 403);
+      }
+      if (booking.status === 'confirmed' || booking.paymentStatus === 'deposit_paid') {
+        return jsonResponse({ error: 'booking is already confirmed' }, 400);
+      }
+
+      const productName = (offer.propertyName || 'TheBearing booking') + ' \u2014 deposit';
+      let productDescription = '';
+      if (offer.arrival && offer.departure) {
+        productDescription = offer.arrival + ' \u2192 ' + offer.departure;
+        if (offer.nights) productDescription += ' \u00b7 ' + offer.nights + ' night' + (offer.nights === 1 ? '' : 's');
+      }
+      if (offer.room) productDescription = (productDescription ? productDescription + ' \u00b7 ' : '') + offer.room;
+
+      try {
+        const intent = await stripe.paymentIntents.create({
+          amount: depositCents,
+          currency: (offer.currency || 'usd').toLowerCase(),
+          // Automatic payment methods lets Stripe surface card / Apple Pay /
+          // Google Pay / Link as appropriate for the customer. With the
+          // Payment Element they all render in one component.
+          automatic_payment_methods: { enabled: true },
+          receipt_email: bookingEmail,
+          description: productName + (productDescription ? ' (' + productDescription + ')' : ''),
+          metadata: {
+            offerId: offer.id,
+            bookingRef: offer.bookingId,
+            propertySlug: offer.propertySlug || '',
+            conversationId: booking.conversationId || '',
+            inlineFlow: 'true',
+          },
+          statement_descriptor_suffix: 'BEARING',
+        });
+        console.log('[Checkout/intent] created PI ' + intent.id + ' for offer ' + offer.id + ' (' + depositCents + ' cents)');
+        return jsonResponse({
+          client_secret: intent.client_secret,
+          publishable_key: env.STRIPE_PUBLISHABLE_KEY,
+          payment_intent_id: intent.id,
+          amount: depositCents,
+          currency: (offer.currency || 'usd').toLowerCase(),
+        });
+      } catch (err) {
+        console.error('[Checkout/intent] Stripe error:', err && err.message);
+        return jsonResponse({ error: 'PaymentIntent creation failed: ' + (err.message || 'unknown') }, 500);
+      }
+    }
+
+    // ── /api/checkout/create-session ───────────────────────────────
     if (url.pathname === '/api/checkout/create-session') {
       if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
       const stripe = getStripe(env);
@@ -3593,6 +3693,46 @@ View in admin: https://thebearing.io/admin-bookings.html
       // post system message, send Resend emails. All other event types are
       // logged-and-ack'd; we don't 4xx them so Stripe doesn't retry.
       //
+      // v73ab: handle BOTH event types via a normalized shape. The inline
+      // Payment Element flow fires payment_intent.succeeded; the redirect
+      // Checkout flow fires checkout.session.completed. Below we adapt the
+      // PaymentIntent to look like a Checkout Session so the rest of the
+      // handler works unchanged.
+      //
+      // Field mapping (PI \u2192 session-shaped object we synthesize):
+      //   pi.metadata        \u2192 session.metadata
+      //   pi.id              \u2192 session.id (used for idempotency key + log)
+      //   pi.id              \u2192 session.payment_intent (so booking.stripePaymentIntent is set)
+      //   pi.amount_received \u2192 session.amount_total (cents paid)
+      //
+      // Idempotency relies on booking.stripeSessionId matching the incoming
+      // event's session.id. Since PI events use pi.id as the synthesized
+      // session.id, a PI retry will land on the same idempotency check.
+      if (event.type === 'payment_intent.succeeded') {
+        const pi = event.data.object;
+        // Skip if this PaymentIntent came from a Checkout Session \u2014 that
+        // payment will be processed via the matching checkout.session.completed
+        // event. Without this guard we'd double-process redirect-flow payments.
+        const fromCheckout = pi && pi.metadata && pi.metadata.fromCheckoutSession === 'true';
+        // Detect by absence of our explicit inline marker. Stripe sets some
+        // PI fields when the source is a Checkout Session, but the cleanest
+        // signal is whether WE set inlineFlow=true in metadata at create-intent.
+        const fromInline = pi && pi.metadata && pi.metadata.inlineFlow === 'true';
+        if (!fromInline) {
+          console.log('[Stripe webhook] payment_intent.succeeded ' + pi.id + ' not from inline flow \u2014 will be handled by checkout.session.completed instead');
+          return jsonResponse({ received: true, type: event.type, status: 'deferred-to-checkout-session' });
+        }
+        // Adapt to session shape; existing handler below references session.*
+        event.data.object = {
+          id: pi.id,
+          metadata: pi.metadata || {},
+          amount_total: pi.amount_received || pi.amount || 0,
+          payment_intent: pi.id,
+        };
+        // Rewrite the event type so the existing if-block below catches it.
+        event.type = 'checkout.session.completed';
+      }
+
       // Idempotency: Stripe retries webhooks on non-2xx. To handle a retry
       // of an already-processed event safely, we check booking.paymentStatus
       // before mutating. If already 'deposit_paid' with the same session id,

@@ -1727,25 +1727,11 @@ function renderProperty(p,slug){
     var rl=document.getElementById('rooms-list');
     var isCruise=ts.includes('cruise');
     if(isCruise)document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
-    // Build checkout rooms config for Select buttons
-    var checkoutRooms=p.rooms.filter(function(rm){return rm.price;}).map(function(rm){return {name:rm.name,price:parseInt(rm.price)};});
-    // Wire the main "Book now" button in the desktop booking card to the checkout modal
-    var bookBtn=document.getElementById('dbc-book-btn');
-    if(bookBtn && checkoutRooms.length){
-      var _propLabel = (p.name||'') + ((p.render&&p.render.location_line) ? ' · '+p.render.location_line : (p.location?' · '+p.location:''));
-      bookBtn.onclick = function(){
-        tbOpenCheckout({
-          property: _propLabel,
-          title: isCruise ? 'Book your voyage' : 'Book your stay',
-          roomLabel: isCruise ? 'Cabin type' : 'Room type',
-          commissionRate: 0.10,
-          rooms: checkoutRooms
-        });
-      };
-    } else if (bookBtn) {
-      // No bookable rooms — fall back to the enquiry flow
-      bookBtn.onclick = function(){ openOverlay('inq-overlay'); };
-    }
+    // v73ab: removed the post-hydration override that wired dbc-book-btn
+    // to tbOpenCheckout. Instant booking isn't a real flow yet \u2014 every
+    // path on a property page should open the enquiry overlay. The inline
+    // onclick="openEnquiry()" on the button is now authoritative; this
+    // hydration block no longer touches it.
     rl.innerHTML=p.rooms.map(function(rm){
       var meta=[rm.size?rm.size+(rm.size_unit==='sqft'?' ft²':' m²'):'',rm.beds||'',rm.max_occupancy?'Max '+rm.max_occupancy:''].filter(Boolean).join(' · ');
       var price=rm.price?'$'+parseInt(rm.price).toLocaleString():'POA';
@@ -1753,7 +1739,8 @@ function renderProperty(p,slug){
       var photos=(rm.photos||[]).filter(function(ph){return ph&&(typeof ph==='string'?ph:ph.url);});
       var imgUrl=photos.length?esc(cfThumb(typeof photos[0]==='string'?photos[0]:photos[0].url)):'';
       var img=imgUrl?'<div class="cabin-img"><img src="'+imgUrl+'" alt="'+esc(rm.name||'')+'" loading="lazy"></div>':'';
-      var selectBtn='<button class="cabin-btn" onclick="tbOpenCheckout({property:\''+esc(p.name||'')+' · '+esc(p.location||'')+'\',title:\''+(isCruise?'Book your voyage':'Book your stay')+'\',roomLabel:\''+(isCruise?'Cabin type':'Room type')+'\',commissionRate:0.10,rooms:'+JSON.stringify(checkoutRooms).replace(/"/g,'&quot;')+'})">Select</button>';
+      // v73ab: cabin-card "Select" button opens enquiry overlay, not checkout.
+      var selectBtn='<button class="cabin-btn" onclick="openEnquiry()">Enquire</button>';
       return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+(meta?'<div class="cabin-detail" style="font-size:.7rem;color:var(--mist);">'+esc(meta)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div>'+selectBtn+'</div></div>';
     }).join('');
     show('rooms-section');

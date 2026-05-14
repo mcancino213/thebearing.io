@@ -2592,7 +2592,10 @@ function openOfferDetail(offerId) {
 
       document.getElementById('tb-offer-body').innerHTML = html;
 
-      // v73q: Accept & pay → POST /api/checkout/create-session → redirect to Stripe
+      // v73ab: inline Stripe Payment Element flow. Replaces the previous
+      // redirect to Stripe-hosted Checkout. Customer stays on thebearing.io
+      // throughout payment. Webhook (payment_intent.succeeded) confirms
+      // server-side, same as before.
       var acceptBtn = document.getElementById('tb-offer-accept');
       if (acceptBtn) acceptBtn.addEventListener('click', function() {
         var user = window.Clerk && window.Clerk.user;
@@ -2601,31 +2604,44 @@ function openOfferDetail(offerId) {
           alert('Sign-in expired. Please refresh the page and try again.');
           return;
         }
-        acceptBtn.disabled = true;
-        acceptBtn.textContent = 'Redirecting to checkout\u2026';
-        acceptBtn.style.opacity = '.6';
-        fetch('/api/checkout/create-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ offerId: offerId, requesterEmail: email }),
-        })
-          .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
-          .then(function(res) {
-            if (!res.ok || !res.body.url) {
-              alert('Could not start checkout: ' + (res.body.error || 'unknown error'));
-              acceptBtn.disabled = false;
-              acceptBtn.textContent = 'Accept & pay deposit';
-              acceptBtn.style.opacity = '1';
-              return;
-            }
-            window.location.href = res.body.url;
-          })
-          .catch(function(e) {
-            alert('Network error \u2014 please try again.');
-            acceptBtn.disabled = false;
-            acceptBtn.textContent = 'Accept & pay deposit';
-            acceptBtn.style.opacity = '1';
-          });
+        if (!window.TBStripeInline) {
+          alert('Payment widget failed to load. Please refresh the page and try again.');
+          return;
+        }
+        // Build a brief offer label for the payment modal header
+        var labelParts = [];
+        if (o.propertyName) labelParts.push(o.propertyName);
+        if (o.room) labelParts.push(o.room);
+        if (o.arrival && o.departure) {
+          try {
+            var aF = new Date(o.arrival).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+            var dF = new Date(o.departure).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+            labelParts.push(aF + ' \u2192 ' + dF);
+          } catch(_) {}
+        }
+        var offerLabel = labelParts.join(' \u00b7 ');
+
+        // Close the offer-detail modal so the payment modal owns the screen
+        closeModal();
+
+        window.TBStripeInline.payDeposit({
+          offerId: offerId,
+          offerLabel: offerLabel,
+          onSuccess: function() {
+            // Webhook will have fired by now (or will momentarily). Redirect
+            // to /bookings with success flag \u2014 the persistent hero card
+            // (v73x) will surface the confirmation.
+            window.location.href = '/bookings?checkout=success';
+          },
+          onCancel: function() {
+            // No-op; customer chose to back out. They can reopen the offer
+            // and try again.
+          },
+          onError: function(msg) {
+            // Errors are shown inline in the payment modal. We just log here.
+            console.error('[Inline payment]', msg);
+          },
+        });
       });
       var reqBtn = document.getElementById('tb-offer-request-changes');
       if (reqBtn) reqBtn.addEventListener('click', function() {
@@ -2788,6 +2804,7 @@ function chEsc(t) {
 }
 </script>
 <script src="/assets/customer-sidebar-badges.js"></script>
+<script src="/assets/stripe-inline.js"></script>
 <script src="/assets/account-sidebar.js"></script>
 </body>
 </html>
