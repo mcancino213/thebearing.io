@@ -394,7 +394,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
       </div>
       <div class="form-row c2">
         <div class="field"><label>Offer valid until<span class="hint">defaults to 7 days</span></label><input type="date" id="om-valid-until"></div>
-        <div class="field"><label style="visibility:hidden;">spacer</label></div>
+        <div class="field"><label>Balance due date<span class="hint">optional — when guest pays the remaining balance</span></label><input type="date" id="om-balance-due"></div>
       </div>
     </div>
 
@@ -758,6 +758,7 @@ function openOfferModal(bookingRef, mode) {
       document.getElementById('om-exclusions').value = '';
       document.getElementById('om-cancellation').value = '';
       document.getElementById('om-notes').value = '';
+      document.getElementById('om-balance-due').value = '';
       // Default valid_until = 7 days out
       var sevenOut = new Date(Date.now() + 7*24*60*60*1000);
       document.getElementById('om-valid-until').value = sevenOut.toISOString().slice(0, 10);
@@ -790,6 +791,7 @@ function openOfferModal(bookingRef, mode) {
               document.getElementById('om-cancellation').value = prev.cancellation_terms || '';
               document.getElementById('om-notes').value = prev.partner_notes || '';
               if (prev.valid_until) document.getElementById('om-valid-until').value = prev.valid_until.slice(0, 10);
+              if (prev.balance_due_date) document.getElementById('om-balance-due').value = prev.balance_due_date.slice(0, 10);
               (prev.inclusions || []).forEach(function(item) { addInclusion(item); });
               setPricingMode(prev.pricing_mode || 'package');
               if (prev.pricing_mode === 'per_night') {
@@ -1021,6 +1023,9 @@ function buildOfferPayload(sendImmediately) {
     valid_until: document.getElementById('om-valid-until').value
       ? new Date(document.getElementById('om-valid-until').value + 'T23:59:59Z').toISOString()
       : null,
+    balance_due_date: document.getElementById('om-balance-due').value
+      ? new Date(document.getElementById('om-balance-due').value + 'T23:59:59Z').toISOString()
+      : '',
     supersedes: modalState.supersedesId,
     sendImmediately: !!sendImmediately
   };

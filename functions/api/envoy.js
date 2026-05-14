@@ -3132,6 +3132,11 @@ View in admin: https://thebearing.io/admin-bookings.html
           // room. Falls back to booking.room if enquiry_snapshot was not
           // captured (older bookings created pre-v73y).
           enquiry_cabin: (booking.enquiry_snapshot && booking.enquiry_snapshot.cabin) || booking.room || '',
+          // v73aa: balance-due date for the remaining (non-deposit) amount.
+          // Partner sets in the offer builder. Surfaced on customer's
+          // confirmed-booking detail view. Optional — empty string means
+          // "balance due upon arrival" (default for cruises/all-inclusives).
+          balance_due_date: typeof body.balance_due_date === 'string' ? body.balance_due_date.trim() : '',
           // Pricing
           pricing_mode: body.pricing_mode === 'per_night' ? 'per_night' : 'package',
           nightly_rate: Number(body.nightly_rate) || 0,
@@ -3619,6 +3624,18 @@ View in admin: https://thebearing.io/admin-bookings.html
           const now = new Date().toISOString();
           const depositPaid = Number(session.amount_total || 0) / 100;
 
+          // v73aa: snapshot the accepted offer's details onto the booking
+          // so the customer's expandable detail view can read everything
+          // from the booking record without an extra offer fetch. Read the
+          // offer FIRST (before mutating the booking) so we have it in scope.
+          let acceptedOffer = null;
+          try {
+            const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
+            if (offerRaw) acceptedOffer = JSON.parse(offerRaw);
+          } catch (e) {
+            console.error('[Stripe webhook] offer read for snapshot failed:', e && e.message);
+          }
+
           // 1. Update booking
           booking.status = 'confirmed';
           booking.paymentStatus = 'deposit_paid';
@@ -3627,17 +3644,29 @@ View in admin: https://thebearing.io/admin-bookings.html
           booking.depositPaidAmount = depositPaid;
           booking.depositPaidAt = now;
           booking.updatedAt = now;
+          // v73aa: snapshot key offer fields for customer detail view.
+          // Booking already has arrival/departure/room/guests (mutated on
+          // offer-send), but we add the monetary + contract fields here.
+          if (acceptedOffer) {
+            booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
+            booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
+            booking.confirmed_balance_due_date = acceptedOffer.balance_due_date || '';
+            booking.confirmed_inclusions = Array.isArray(acceptedOffer.inclusions) ? acceptedOffer.inclusions : [];
+            booking.confirmed_exclusions = acceptedOffer.exclusions || '';
+            booking.confirmed_cancellation_terms = acceptedOffer.cancellation_terms || '';
+            booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
+            booking.confirmed_offer_id = acceptedOffer.id;
+            booking.confirmed_currency = acceptedOffer.currency || 'USD';
+          }
           await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
 
-          // 2. Update offer
+          // 2. Update offer (mark accepted)
           try {
-            const offerRaw = await env.DOSSIERS.get('offer:' + offerId);
-            if (offerRaw) {
-              const offer = JSON.parse(offerRaw);
-              offer.status = 'accepted';
-              offer.responded_at = now;
-              offer.stripeSessionId = session.id;
-              await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(offer));
+            if (acceptedOffer) {
+              acceptedOffer.status = 'accepted';
+              acceptedOffer.responded_at = now;
+              acceptedOffer.stripeSessionId = session.id;
+              await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(acceptedOffer));
             }
           } catch (e) {
             console.error('[Stripe webhook] offer update failed:', e && e.message);

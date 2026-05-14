@@ -921,14 +921,11 @@
     </div>
   </div>
   <div style="display:flex;gap:8px;flex-shrink:0;">
-    <button class="book-bar-btn" onclick="tbAuth.requireUser(function(){var d=document.querySelector('.dbc-cta');if(d)d.click();},{title:'Sign in to book',subtitle:'Create a free account to continue your booking.'})">
+    <button class="book-bar-btn" onclick="tbAuthEnquire()">
       <div class="book-bar-btn-icon">
-        <svg viewBox="0 0 16 16"><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9,4.5 13,8 9,11.5"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       </div>
-      Book now
-    </button>
-    <button class="book-bar-enq-btn" onclick="tbAuthEnquire()">
-      Enquire
+      Enquire to book
     </button>
   </div>
 </div>
@@ -947,20 +944,14 @@
       <div class="dbc-detail"><span class="dbc-detail-lbl">Duration</span><span class="dbc-detail-val">6 days · 5 nights</span></div>
       <div class="dbc-detail"><span class="dbc-detail-lbl">Max guests</span><span class="dbc-detail-val">24 per boat</span></div>
       <div class="dbc-detail"><span class="dbc-detail-lbl">Vessel</span><span class="dbc-detail-val">Dahabiya · private sail</span></div>
-            <!-- ── DUAL CTA: Book now + Enquire ── -->
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-        <!-- Primary: Instant Book -->
-        <button class="dbc-cta" onclick="tbAuthBook({property:'Nour El Nil · Nile, Egypt',title:'Book your voyage',roomLabel:'Cabin type',commissionRate:0.10,rooms:[{name:'Luxury Room',price:4200},{name:'Panoramic Suite',price:8150}]})" style="display:flex;align-items:center;justify-content:center;gap:8px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          Book now
-        </button>
-        <!-- Secondary: Enquire first -->
-        <button onclick="tbAuthEnquire()" style="width:100%;padding:13px;background:transparent;border:1.5px solid var(--border-hi);border-radius:var(--r-xl);font-family:'Geist',sans-serif;font-size:.88rem;font-weight:500;color:var(--bark);cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.borderColor='var(--terra)';this.style.color='var(--terra)';" onmouseout="this.style.borderColor='var(--border-hi)';this.style.color='var(--bark)';">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          Send an enquiry first
+            <!-- ── CTA: Enquire ── -->
+      <div style="margin-bottom:16px;">
+        <button class="dbc-cta" onclick="tbAuthEnquire()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Enquire to book
         </button>
       </div>
-      <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-bottom:4px;">Both options: same price as booking direct · 0% fees</div>
+      <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-bottom:4px;">Same price as booking direct · 0% fees</div>
       <div class="dbc-divider"></div>
       <div class="dbc-trust">
         <div class="dbc-trust-item"><svg stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>

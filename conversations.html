@@ -1779,11 +1779,28 @@ function chBuildConvItem(c) {
   line1.appendChild(prop);
   line1.appendChild(timeEl);
 
+  // v73aa: enquiry-dates sublabel for disambiguating multiple convs on the
+  // same property. When a customer has more than one conv at the same
+  // property (e.g. one confirmed booking + one new enquiry), property name
+  // alone can't distinguish them. The dates do.
+  var datesSub = null;
+  if (c.enquiry && c.enquiry.arrival && c.enquiry.departure) {
+    try {
+      var aFmt = new Date(c.enquiry.arrival + (c.enquiry.arrival.length === 10 ? 'T00:00' : '')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      var dFmt = new Date(c.enquiry.departure + (c.enquiry.departure.length === 10 ? 'T00:00' : '')).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      datesSub = document.createElement('div');
+      datesSub.className = 'ch-dates';
+      datesSub.style.cssText = 'font-size:.72rem;color:var(--stone);margin-top:1px;line-height:1.2;';
+      datesSub.textContent = aFmt + ' \u2192 ' + dFmt;
+    } catch(_) {}
+  }
+
   var preview = document.createElement('div');
   preview.className = 'ch-preview';
   preview.textContent = c.lastMessagePreview || 'No messages yet';
 
   meta.appendChild(line1);
+  if (datesSub) meta.appendChild(datesSub);
   meta.appendChild(preview);
 
   if (unread) {

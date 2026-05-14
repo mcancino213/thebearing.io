@@ -431,6 +431,11 @@
     text-decoration:none;color:inherit;
   }
   .bk-row:hover{border-color:var(--border-hi);box-shadow:0 4px 18px rgba(80,55,25,.07);}
+  /* v73aa: clickable confirmed booking row + expandable detail block. */
+  .bk-conf-wrap{display:block;}
+  .bk-conf-row:hover{border-color:var(--terra);}
+  .bk-conf-detail{animation:bkConfReveal .25s ease;}
+  @keyframes bkConfReveal{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
   .bk-row-thumb{
     width:64px;height:64px;border-radius:var(--r-md);object-fit:cover;
     background:var(--linen);flex-shrink:0;
@@ -1675,20 +1680,149 @@ function renderConfirmedList(list) {
   // checkout. Persistent until dismissed, replaces the 8-second toast that
   // was too easy to miss.
   var heroHtml = renderConfirmedHeroCard(list);
-  el.innerHTML = heroHtml + list.map(function(b) {
+  el.innerHTML = heroHtml + list.map(function(b, idx) {
     var prop = esc(b.property || b.slug || 'Property');
     var dates = esc(fmtDates(b.arrival, b.departure));
     var room  = b.room ? ' \u00b7 ' + esc(b.room) : '';
     var ref   = b.ref ? ' \u00b7 ' + esc(b.ref) : '';
-    return '<div class="bk-row">' +
-      thumbHtml(b) +
-      '<div class="bk-row-body">' +
-        '<div class="bk-row-prop">' + prop + '</div>' +
-        '<div class="bk-row-meta">' + dates + room + ref + '</div>' +
+    var rowId = 'bk-conf-' + idx;
+    var detailId = 'bk-conf-detail-' + idx;
+    // v73aa: row is clickable, expands inline below to show full booking
+    // detail (totals, balance, due date, inclusions, exclusions, etc).
+    return '<div class="bk-conf-wrap" data-ref="' + esc(b.ref || '') + '">' +
+      '<div class="bk-row bk-conf-row" id="' + rowId + '" onclick="toggleConfDetail(' + idx + ')" style="cursor:pointer;">' +
+        thumbHtml(b) +
+        '<div class="bk-row-body">' +
+          '<div class="bk-row-prop">' + prop + '</div>' +
+          '<div class="bk-row-meta">' + dates + room + ref + '</div>' +
+        '</div>' +
+        '<span class="bk-row-status bk-row-status-green">Confirmed</span>' +
+        '<svg class="bk-conf-chev" id="' + rowId + '-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a8e80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>' +
       '</div>' +
-      '<span class="bk-row-status bk-row-status-green">Confirmed</span>' +
+      '<div class="bk-conf-detail" id="' + detailId + '" style="display:none;">' +
+        renderConfirmedDetail(b) +
+      '</div>' +
     '</div>';
   }).join('');
+}
+
+// v73aa: render the expandable detail block under a confirmed booking row.
+// All data comes from the booking record itself (snapshotted from the offer
+// at payment confirmation, see envoy.js webhook handler). Older bookings
+// confirmed before v73aa won't have the snapshot fields — show partial info
+// and a "Some details unavailable" note in that case.
+function renderConfirmedDetail(b) {
+  var hasSnapshot = (typeof b.confirmed_total_amount === 'number' && b.confirmed_total_amount > 0);
+  var currency = b.confirmed_currency || 'USD';
+  var fmtMoney = function(amt) {
+    if (typeof amt !== 'number' || isNaN(amt)) return '\u2014';
+    return '$' + Number(amt).toLocaleString();
+  };
+  var fmtDate = function(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso.length === 10 ? (iso + 'T00:00') : iso);
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch(_) { return iso; }
+  };
+
+  var total = b.confirmed_total_amount || 0;
+  var deposit = b.depositPaidAmount || b.confirmed_deposit_amount || 0;
+  var balance = Math.max(0, total - deposit);
+  var balanceDueDate = b.confirmed_balance_due_date ? fmtDate(b.confirmed_balance_due_date) : '';
+  var depositPaidDate = b.depositPaidAt ? fmtDate(b.depositPaidAt) : '';
+
+  var html = '<div style="background:#f6f1e6;border-radius:12px;padding:18px 20px;margin:0 16px 16px;">';
+
+  if (!hasSnapshot) {
+    html += '<div style="font-size:.78rem;color:#6b5320;background:#f5ecd9;border:1px solid rgba(154,114,48,.35);border-radius:8px;padding:10px 12px;margin-bottom:14px;">' +
+      'Some details are unavailable for this booking. It was confirmed before our detail view was added. For full info please reach out via your conversation thread.' +
+    '</div>';
+  }
+
+  // Payment summary block
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:14px;background:#fff;border-radius:10px;margin-bottom:14px;">' +
+    '<div>' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Total stay</div>' +
+      '<div style="font-family:\'Instrument Serif\',serif;font-size:1.25rem;color:#1e1810;">' + fmtMoney(total) + '</div>' +
+    '</div>' +
+    '<div>' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#3a7055;margin-bottom:4px;">Deposit paid</div>' +
+      '<div style="font-family:\'Instrument Serif\',serif;font-size:1.25rem;color:#3a7055;">' + fmtMoney(deposit) + '</div>' +
+      (depositPaidDate ? '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">' + esc(depositPaidDate) + '</div>' : '') +
+    '</div>' +
+    '<div>' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b05830;margin-bottom:4px;">Balance due</div>' +
+      '<div style="font-family:\'Instrument Serif\',serif;font-size:1.25rem;color:#b05830;">' + fmtMoney(balance) + '</div>' +
+      (balanceDueDate ? '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">by ' + esc(balanceDueDate) + '</div>' : '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">due directly with property</div>') +
+    '</div>' +
+  '</div>';
+
+  // Inclusions
+  if (Array.isArray(b.confirmed_inclusions) && b.confirmed_inclusions.length) {
+    html += '<div style="margin-bottom:12px;">' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Included</div>' +
+      '<ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px;">' +
+      b.confirmed_inclusions.map(function(i){
+        return '<li style="display:flex;align-items:flex-start;gap:8px;font-size:.84rem;color:#1e1810;line-height:1.45;">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:3px;"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<span>' + esc(i) + '</span>' +
+        '</li>';
+      }).join('') +
+      '</ul>' +
+    '</div>';
+  }
+
+  // Exclusions
+  if (b.confirmed_exclusions) {
+    html += '<div style="margin-bottom:12px;">' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Not included</div>' +
+      '<div style="font-size:.83rem;color:#1e1810;line-height:1.5;white-space:pre-line;">' + esc(b.confirmed_exclusions) + '</div>' +
+    '</div>';
+  }
+
+  // Cancellation
+  if (b.confirmed_cancellation_terms) {
+    html += '<div style="margin-bottom:12px;">' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div>' +
+      '<div style="font-size:.83rem;color:#1e1810;line-height:1.5;white-space:pre-line;">' + esc(b.confirmed_cancellation_terms) + '</div>' +
+    '</div>';
+  }
+
+  // Partner notes
+  if (b.confirmed_partner_notes) {
+    html += '<div style="margin-bottom:12px;padding:12px;background:rgba(176,88,48,.06);border-radius:8px;border-left:3px solid #b05830;">' +
+      '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">A note from the property</div>' +
+      '<div style="font-size:.84rem;color:#1e1810;line-height:1.5;white-space:pre-line;font-style:italic;">' + esc(b.confirmed_partner_notes) + '</div>' +
+    '</div>';
+  }
+
+  // Link to conversation thread
+  if (b.conversationId) {
+    html += '<div style="margin-top:14px;text-align:center;">' +
+      '<a href="/conversations.html?id=' + esc(b.conversationId) + '" style="display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:#b05830;text-decoration:none;font-weight:500;">' +
+        'Open conversation with the property' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>' +
+      '</a>' +
+    '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function toggleConfDetail(idx) {
+  var detail = document.getElementById('bk-conf-detail-' + idx);
+  var chev = document.getElementById('bk-conf-' + idx + '-chev');
+  if (!detail) return;
+  var isOpen = detail.style.display !== 'none';
+  if (isOpen) {
+    detail.style.display = 'none';
+    if (chev) chev.style.transform = '';
+  } else {
+    detail.style.display = 'block';
+    if (chev) chev.style.transform = 'rotate(180deg)';
+  }
 }
 
 // v73k: offer-detail modal — same implementation as conversations.html so

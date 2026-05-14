@@ -29,10 +29,34 @@
   function updateBookingsBadge() {
     var user = window.Clerk && window.Clerk.user;
     if (!user) return;
-    fetch('/api/booking?guestId=' + encodeURIComponent(user.id))
+    // v73aa: /api/booking filters by `email`, not `guestId`. Previous code
+    // sent `?guestId=X` which was silently ignored — endpoint returned ALL
+    // bookings from ALL guests, badge count was meaningless. Fixed now.
+    var primaryEmail = user.primaryEmailAddress && user.primaryEmailAddress.emailAddress;
+    if (!primaryEmail) return;
+    fetch('/api/booking?email=' + encodeURIComponent(primaryEmail))
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        var count = (d.bookings || []).filter(function(b){ return b.status !== 'cancelled'; }).length;
+        // v73aa: badge counts only items needing customer action, not all
+        // bookings. Previously it counted all non-cancelled bookings, so
+        // having even one confirmed booking left the badge always-on.
+        // New criteria:
+        //   1. Offers waiting for customer's response (status:'offer_sent'
+        //      with active_offer_id and not yet paid)
+        //   2. New enquiries with no offer yet (waiting on partner, but
+        //      customer still has a fresh ticket they may want to see)
+        // Confirmed and cancelled bookings are static — no action needed.
+        var needsAction = (d.bookings || []).filter(function(b) {
+          if (b.status === 'cancelled') return false;
+          if (b.status === 'confirmed') return false;
+          // Offer waiting on customer
+          if (b.status === 'offer_sent' && b.active_offer_id && b.paymentStatus !== 'deposit_paid') return true;
+          // Fresh enquiry awaiting partner — surface to customer too so they
+          // know they have a pending request
+          if (b.status === 'enquiry') return true;
+          return false;
+        });
+        var count = needsAction.length;
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
           if (link.getAttribute('href') === '/bookings' || link.getAttribute('href') === '/bookings.html' || link.textContent.indexOf('Bookings') >= 0) {
