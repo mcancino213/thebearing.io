@@ -1383,7 +1383,7 @@ function renderConfirmedHeroCard(confirmedList) {
       (ref ? '<div style="opacity:.7;">Reference</div><div style="font-family:\'JetBrains Mono\',monospace;font-size:.78rem;opacity:.85;">' + ref + '</div>' : '') +
     '</div>' +
     '<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(74,106,72,.18);font-size:.78rem;color:#3a5a3a;line-height:1.55;">' +
-      'A receipt has been emailed to you. The property has been notified and will be in touch directly to confirm logistics. The remaining balance is settled with the property at the time of stay.' +
+      'A receipt has been emailed to you. The property has been notified and will be in touch directly to confirm logistics. The remaining balance is settled directly with the property. They will be in touch with details when the balance is due.' +
     '</div>' +
   '</div>';
 }
@@ -1730,9 +1730,20 @@ function openOfferDetail(offerId) {
     if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); }
   });
 
+  // v73y: timing instrumentation. Miguel reported the offer modal taking
+  // ~10 seconds to load on at least one occasion. KV reads should be sub-100ms;
+  // the only reason this would be slow is (a) Cloudflare worker cold start,
+  // (b) network latency, (c) the worker doing something unexpected. The
+  // console.time markers below let us localize next time.
+  var __offerT0 = performance.now();
+  console.log('[Offer modal] fetch starting for', offerId);
   fetch('/api/offer?id=' + encodeURIComponent(offerId), { cache: 'no-store' })
-    .then(function(r){ return r.json(); })
+    .then(function(r){
+      console.log('[Offer modal] fetch responded at', (performance.now() - __offerT0).toFixed(0), 'ms, status', r.status);
+      return r.json();
+    })
     .then(function(resp){
+      console.log('[Offer modal] json parsed at', (performance.now() - __offerT0).toFixed(0), 'ms');
       if (!resp || !resp.data) {
         document.getElementById('tb-offer-body').innerHTML =
           '<div style="text-align:center;padding:30px 0;color:#9a8e80;font-size:.85rem;">Offer not found. It may have been withdrawn — please check with the property.</div>';
@@ -1764,6 +1775,18 @@ function openOfferDetail(offerId) {
       var datesLine = (o.arrival && o.departure) ? (fmtDate(o.arrival) + ' \u2192 ' + fmtDate(o.departure) + (nightsStr ? ' \u00b7 ' + nightsStr : '')) : '';
       var guestsLine = o.guests ? (o.guests + ' guest' + (o.guests === 1 ? '' : 's')) : '';
 
+      // v73y: flag when offer's room differs from original enquiry's room.
+      // Reads o.enquiry_cabin snapshotted at offer-create time.
+      var enquiryRoom = o.enquiry_cabin ? String(o.enquiry_cabin).trim() : '';
+      var offerRoom = o.room ? String(o.room).trim() : '';
+      var roomChanged = enquiryRoom && offerRoom &&
+        enquiryRoom.toLowerCase() !== offerRoom.toLowerCase();
+      var roomChangeNote = roomChanged
+        ? '<div style="margin-top:8px;padding:8px 12px;background:#f5ecd9;border:1px solid rgba(154,114,48,.35);border-radius:10px;font-size:.74rem;color:#6b5320;line-height:1.45;text-align:left;">' +
+            '<strong>Note:</strong> the property is offering <strong>' + esc(offerRoom) + '</strong> instead of the <em>' + esc(enquiryRoom) + '</em> you asked about.' +
+          '</div>'
+        : '';
+
       var validLine = '';
       if (o.valid_until) {
         var days = Math.ceil((new Date(o.valid_until) - new Date()) / (24*60*60*1000));
@@ -1775,6 +1798,7 @@ function openOfferDetail(offerId) {
         '<div style="text-align:center;padding:14px 0 16px;border-bottom:1px solid rgba(80,60,30,.1);">' +
           (o.room ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + esc(o.room) + (guestsLine ? ' \u00b7 ' + esc(guestsLine) : '') + '</div>' : (guestsLine ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + esc(guestsLine) + '</div>' : '')) +
           (datesLine ? '<div style="font-family:\'Instrument Serif\',serif;font-size:1.05rem;color:#1e1810;">' + esc(datesLine) + '</div>' : '') +
+          roomChangeNote +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;padding:18px;background:rgba(176,88,48,.06);border-radius:14px;">' +
           '<div>' +

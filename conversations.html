@@ -2516,6 +2516,22 @@ function openOfferDetail(offerId) {
       var datesLine = (o.arrival && o.departure) ? (fmt(o.arrival) + ' → ' + fmt(o.departure) + (nightsStr ? ' · ' + nightsStr : '')) : '';
       var guestsLine = o.guests ? (o.guests + ' guest' + (o.guests === 1 ? '' : 's')) : '';
 
+      // v73y: flag when the property's offer suggests a different room than
+      // what the customer originally asked for. Reads from o.enquiry_cabin
+      // which is snapshotted at offer-create time (worker line 3092).
+      // Falls back to conv.enquiry.cabin for offers created before v73y.
+      var enquiryRoom = o.enquiry_cabin
+        ? String(o.enquiry_cabin).trim()
+        : ((conv && conv.enquiry && conv.enquiry.cabin) ? String(conv.enquiry.cabin).trim() : '');
+      var offerRoom = o.room ? String(o.room).trim() : '';
+      var roomChanged = enquiryRoom && offerRoom &&
+        enquiryRoom.toLowerCase() !== offerRoom.toLowerCase();
+      var roomChangeNote = roomChanged
+        ? '<div style="margin-top:8px;padding:8px 12px;background:#f5ecd9;border:1px solid rgba(154,114,48,.35);border-radius:10px;font-size:.74rem;color:#6b5320;line-height:1.45;text-align:left;">' +
+            '<strong>Note:</strong> the property is offering <strong>' + chEsc(offerRoom) + '</strong> instead of the <em>' + chEsc(enquiryRoom) + '</em> you asked about.' +
+          '</div>'
+        : '';
+
       var validLine = '';
       if (o.valid_until) {
         var days = Math.ceil((new Date(o.valid_until) - new Date()) / (24*60*60*1000));
@@ -2527,6 +2543,7 @@ function openOfferDetail(offerId) {
         '<div style="text-align:center;padding:14px 0 16px;border-bottom:1px solid rgba(80,60,30,.1);">' +
           (o.room ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + chEsc(o.room) + (guestsLine ? ' · ' + chEsc(guestsLine) : '') + '</div>' : (guestsLine ? '<div style="font-size:.86rem;color:#5a4e40;margin-bottom:6px;">' + chEsc(guestsLine) + '</div>' : '')) +
           (datesLine ? '<div style="font-family:\'Instrument Serif\',serif;font-size:1.05rem;color:#1e1810;">' + chEsc(datesLine) + '</div>' : '') +
+          roomChangeNote +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0;padding:18px;background:rgba(176,88,48,.06);border-radius:14px;">' +
           '<div>' +

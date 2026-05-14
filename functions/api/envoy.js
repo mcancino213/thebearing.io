@@ -1704,6 +1704,19 @@ View in admin: https://thebearing.io/admin-bookings.html
               nights: '',
               guests: enq.guests || '',
               room: enq.cabin || '',
+              // v73y: immutable snapshot of original enquiry values. The
+              // `room`/`arrival`/`departure`/`guests` fields above get mutated
+              // when offers are sent/revised, losing the original ask. This
+              // snapshot lets the customer offer card flag changes vs what
+              // they originally asked for. Only set at booking creation;
+              // never updated after.
+              enquiry_snapshot: {
+                arrival:   enq.arrival   || '',
+                departure: enq.departure || '',
+                guests:    enq.guests    || '',
+                cabin:     enq.cabin     || '',
+                notes:     enq.notes     || '',
+              },
               roomPrice: 0,
               totalAmount: 0,
               depositAmount: 0,
@@ -3090,6 +3103,11 @@ View in admin: https://thebearing.io/admin-bookings.html
           nights: body.nights || 0,
           guests: body.guests || 0,
           room: body.room || '',
+          // v73y: snapshot of the original enquiry's cabin so customer-side
+          // offer card can flag when the property is offering a different
+          // room. Falls back to booking.room if enquiry_snapshot was not
+          // captured (older bookings created pre-v73y).
+          enquiry_cabin: (booking.enquiry_snapshot && booking.enquiry_snapshot.cabin) || booking.room || '',
           // Pricing
           pricing_mode: body.pricing_mode === 'per_night' ? 'per_night' : 'package',
           nightly_rate: Number(body.nightly_rate) || 0,
@@ -3650,6 +3668,14 @@ View in admin: https://thebearing.io/admin-bookings.html
                 await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
                 await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
                 console.log('[Stripe webhook] posted booking_confirmed system message to conversation ' + convId);
+                // v73y: refresh the cached unread counters so partner sidebar
+                // badge picks up the new message immediately. Previously this
+                // was skipped, causing the badge to stay at 0 even though
+                // the conversation had a new system message after deposit
+                // payment. Same pattern as other places that write conv.unread*
+                // (admin reply at line 2042, decline at line 3309, etc.) —
+                // each writer is responsible for triggering recompute.
+                try { await recomputeUnreadCounters(env); } catch(_) {}
               }
             } catch (e) {
               console.error('[Stripe webhook] conversation message post failed:', e && e.message);

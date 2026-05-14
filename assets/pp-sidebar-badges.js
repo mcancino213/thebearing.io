@@ -30,13 +30,25 @@
     fetch('/api/booking?slug=' + PP_SLUG)
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
-        var bookings = (d.bookings || []).filter(function(b){ return b.status !== 'cancelled'; });
+        // v73y: badge counts only bookings that need partner action, not the
+        // full list. Previously this showed all non-cancelled bookings, which
+        // meant the number was always-on and noisy. New criteria:
+        //   1. New enquiries (status:'enquiry', no active_offer, no offer ever sent)
+        //   2. Pending change requests (booking.pendingChangeRequest present)
+        // Confirmed bookings are not actionable from this view; they just exist.
+        // Offer_sent state isn't actionable either (partner is waiting on guest).
+        var needsAction = (d.bookings || []).filter(function(b) {
+          if (b.status === 'cancelled') return false;
+          if (b.pendingChangeRequest) return true;
+          if (b.status === 'enquiry' && !b.active_offer_id) return true;
+          return false;
+        });
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
           if (link.getAttribute('href') === 'pp-bookings' || link.getAttribute('href') === 'pp-bookings.html') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
-              if (bookings.length > 0) { badge.textContent = bookings.length; badge.style.display = ''; }
+              if (needsAction.length > 0) { badge.textContent = needsAction.length; badge.style.display = ''; }
               else badge.style.display = 'none';
             }
           }

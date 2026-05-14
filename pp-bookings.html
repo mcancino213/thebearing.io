@@ -328,7 +328,11 @@ tr.row-was-declined:hover{background:#f5ecd9;}
       </div>
       <div class="form-row c2">
         <div class="field"><label>Guests</label><input type="number" id="om-guests" min="1" max="40" placeholder="2"></div>
-        <div class="field"><label>Room / package</label><input type="text" id="om-room" placeholder="Pool Villa · 7-night charter · ..."></div>
+        <div class="field">
+          <label>Room / package</label>
+          <input type="text" id="om-room" list="om-room-options" placeholder="Pool Villa · 7-night charter · ..." autocomplete="off">
+          <datalist id="om-room-options"></datalist>
+        </div>
       </div>
 
       <!-- Pricing -->
@@ -731,6 +735,26 @@ function openOfferModal(bookingRef, mode) {
       document.getElementById('om-nights').value = b.nights || '';
       document.getElementById('om-guests').value = b.guests || '';
       document.getElementById('om-room').value = b.room || '';
+
+      // v73y: populate room/package dropdown from property's rooms array.
+      // Uses a <datalist> so the input still accepts custom text (for special
+      // packages, charters, etc) while exposing the known room types as
+      // tappable options. Format: room name with capacity hint if available.
+      try {
+        var roomOptionsEl = document.getElementById('om-room-options');
+        if (roomOptionsEl) {
+          var roomOpts = '';
+          var rooms = Array.isArray(prop.rooms) ? prop.rooms : [];
+          rooms.forEach(function(r) {
+            if (!r || !r.name) return;
+            var label = r.name;
+            if (r.capacity) label += ' \u00b7 ' + r.capacity + ' guest' + (r.capacity === 1 ? '' : 's');
+            roomOpts += '<option value="' + escHtml(r.name) + '" label="' + escHtml(label) + '"></option>';
+          });
+          roomOptionsEl.innerHTML = roomOpts;
+        }
+      } catch(e) { console.warn('[Offer modal] room options populate failed:', e); }
+
       document.getElementById('om-exclusions').value = '';
       document.getElementById('om-cancellation').value = '';
       document.getElementById('om-notes').value = '';
