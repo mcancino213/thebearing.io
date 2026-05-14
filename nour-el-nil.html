@@ -2174,12 +2174,29 @@ function populateConfirmation(){
 
   // Create real conversation via API
   // Check for existing open conversation first (prevent duplicates)
+  // v73z: filter by linked booking status \u2014 only reuse when the linked
+  // booking is still in negotiation (enquiry/offer_sent/pending). Confirmed
+  // or cancelled bookings get a fresh conversation so separate stays don't
+  // overwrite paid commitments.
   var guestIdForCheck = (window.Clerk && window.Clerk.user) ? window.Clerk.user.id : email;
-  fetch('/api/conversation?guestId=' + encodeURIComponent(guestIdForCheck))
-    .then(function(r){ return r.json(); })
-    .then(function(existing){
+  Promise.all([
+    fetch('/api/conversation?guestId=' + encodeURIComponent(guestIdForCheck)).then(function(r){ return r.json(); }).catch(function(){ return { conversations: [] }; }),
+    fetch('/api/booking?email=' + encodeURIComponent(email), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : { bookings: [] }; }).catch(function(){ return { bookings: [] }; }),
+  ])
+    .then(function(results){
+      var existing = results[0];
+      var bookingList = results[1].bookings || [];
+      var statusByRef = {};
+      bookingList.forEach(function(b){ if (b && b.ref) statusByRef[b.ref] = b.status; });
+
       var existingConv = (existing.conversations||[]).find(function(c){
-        return c.propertySlug === propSlug && c.status === 'open';
+        if (c.propertySlug !== propSlug) return false;
+        if (c.status !== 'open') return false;
+        if (c.bookingRef) {
+          var bStatus = statusByRef[c.bookingRef];
+          if (bStatus !== 'enquiry' && bStatus !== 'offer_sent' && bStatus !== 'pending') return false;
+        }
+        return true;
       });
       if (existingConv) {
         closeOverlay('inq-overlay');

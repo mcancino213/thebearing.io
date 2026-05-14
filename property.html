@@ -2392,12 +2392,38 @@ function _continueEnquirySubmissionInner(user, triggerBtn, ctx) {
   // dates/room/guests). Previously we'd silently redirect to the old
   // conversation and DISCARD the user's new message — so users who
   // refined dates and resubmitted saw their second enquiry vanish.
-  // Now: every submit produces a visible message in the right channel.
-  fetch('/api/conversation?guestId=' + encodeURIComponent(guestId), { cache: 'no-store' })
-    .then(function(r){ return r.ok ? r.json() : { conversations: [] }; })
-    .then(function(existing){
+  //
+  // v73z: ALSO filter by the linked booking's status. The naive "any open
+  // conversation = follow-up" rule caused silent date overwrites on
+  // already-confirmed bookings when a customer submitted a separate
+  // enquiry on the same property. Now: only reuse the conversation when
+  // its linked booking is in 'enquiry' or 'offer_sent' state (still in
+  // negotiation). For confirmed/cancelled/etc, create a new conversation
+  // so the customer's separate stay request gets its own thread + booking.
+  Promise.all([
+    fetch('/api/conversation?guestId=' + encodeURIComponent(guestId), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : { conversations: [] }; }),
+    fetch('/api/booking?email=' + encodeURIComponent(email), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : { bookings: [] }; }).catch(function(){ return { bookings: [] }; }),
+  ])
+    .then(function(results){
+      var existing = results[0];
+      var bookingList = results[1].bookings || [];
+      // Build map: bookingRef → status for fast lookup
+      var statusByRef = {};
+      bookingList.forEach(function(b){ if (b && b.ref) statusByRef[b.ref] = b.status; });
+
       var match = (existing.conversations || []).find(function(c){
-        return c.propertySlug === propSlug && c.status === 'open';
+        if (c.propertySlug !== propSlug) return false;
+        if (c.status !== 'open') return false;
+        // v73z: only reuse if linked booking is still negotiable
+        if (c.bookingRef) {
+          var bStatus = statusByRef[c.bookingRef];
+          // Only reuse for fresh enquiry or offer-in-progress states.
+          // 'confirmed', 'cancelled', or any unrecognized status → don't reuse.
+          if (bStatus !== 'enquiry' && bStatus !== 'offer_sent' && bStatus !== 'pending') {
+            return false;
+          }
+        }
+        return true;
       });
       if (match) {
         // Post the new enquiry message as a follow-up to the existing thread.

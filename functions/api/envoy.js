@@ -1847,9 +1847,36 @@ View in admin: https://thebearing.io/admin-bookings.html
                 const bRaw = await env.DOSSIERS.get(bookingPath);
                 if (bRaw) {
                   const b = JSON.parse(bRaw);
-                  bookingHasActiveOffer = !!b.active_offer_id && (b.status === 'offer_sent' || b.status === 'pending');
-                  if (bookingHasActiveOffer) {
-                    // Record the change request without mutating booking dates
+                  // v73z: expanded guard with state-aware behavior. v73r
+                  // covered only 'offer_sent' / 'pending' which left
+                  // confirmed bookings open to silent date mutation.
+                  //
+                  // Three buckets:
+                  //   (a) Fresh enquiry (status:'enquiry' && no offer history) →
+                  //       mutate freely. Customer refining their original ask.
+                  //   (b) Active offer (offer_sent / pending) → store
+                  //       pendingChangeRequest. Partner will see "guest wants
+                  //       these changes" and respond with revised offer.
+                  //   (c) Confirmed / cancelled → do NOTHING. These bookings
+                  //       are paid commitments or closed records; mutating or
+                  //       even storing a change-request would be misleading.
+                  //       Frontend should NOT route here \u2014 it should create a
+                  //       new conversation/booking for separate stays. This
+                  //       branch is belt-and-suspenders for direct API callers.
+                  const isFreshEnquiry = b.status === 'enquiry' && !b.active_offer_id && !b.lastDeclinedOfferId;
+                  const isOfferStage = !!b.active_offer_id && (b.status === 'offer_sent' || b.status === 'pending');
+                  const isClosed = b.status === 'confirmed' || b.status === 'cancelled';
+
+                  if (isClosed) {
+                    // Bucket (c) — don't mutate, don't store change request.
+                    // The guest probably wants a new separate booking. Frontend
+                    // should have created a new conversation for this. Log
+                    // explicitly so we notice if frontend filter regresses.
+                    console.warn('[Conv msg] booking ' + conv.bookingRef + ' is closed (' + b.status + ') \u2014 ignoring updateEnquiry to prevent silent mutation. Guest message still appended; consider whether frontend should have created a new conversation instead.');
+                    bookingHasActiveOffer = true; // suppress the fall-through mutation below
+                  } else if (isOfferStage) {
+                    // Bucket (b) — store pendingChangeRequest
+                    bookingHasActiveOffer = true;
                     b.pendingChangeRequest = {
                       arrival:   updateEnquiry.arrival   || '',
                       departure: updateEnquiry.departure || '',
@@ -1857,8 +1884,6 @@ View in admin: https://thebearing.io/admin-bookings.html
                       cabin:     updateEnquiry.cabin     || '',
                       notes:     updateEnquiry.notes     || '',
                       requestedAt: now,
-                      // Snapshot what the booking was at the time of the
-                      // request, so the partner sees "was X, now Y"
                       previousValues: {
                         arrival: b.arrival || '',
                         departure: b.departure || '',
@@ -1868,12 +1893,11 @@ View in admin: https://thebearing.io/admin-bookings.html
                     };
                     b.updatedAt = now;
                     await env.DOSSIERS.put(bookingPath, JSON.stringify(b));
-                    console.log('[Conv msg] booking ' + conv.bookingRef + ' has active offer — stored change request instead of mutating');
-                    // v73u: mark for the email branch below so admin sees a
-                    // "Change request" subject instead of generic "Reply"
+                    console.log('[Conv msg] booking ' + conv.bookingRef + ' has active offer \u2014 stored change request instead of mutating');
                     storedChangeRequest = true;
                     changeRequestSummary = b.pendingChangeRequest;
                   }
+                  // Bucket (a) — isFreshEnquiry → falls through to mutation below
                 }
               } catch (e) {
                 console.error('[Conv msg] booking probe failed:', e);
