@@ -2276,6 +2276,67 @@ function _continueEnquirySubmission(user, triggerBtn, ctx) {
   var guests = ctx.guests, notes = ctx.notes;
   var propSlug = ctx.propSlug, propName = ctx.propName;
 
+  var clerkEmailForCheck = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || email || '';
+
+  // v73r: before submitting, check if this user has an ACTIVE OFFER for the
+  // current property. If so, intercept with an interstitial: making a new
+  // enquiry would just append a follow-up message into the existing
+  // conversation. The customer probably doesn't realise that — they think
+  // they're starting fresh, but the partner sees a chatty guest with a
+  // pending offer. Worse, before v73r, this silently rewrote booking dates.
+  // The interstitial gives the customer three explicit choices.
+  if (clerkEmailForCheck) {
+    fetch('/api/booking?email=' + encodeURIComponent(clerkEmailForCheck), { cache: 'no-store' })
+      .then(function(r) { return r.ok ? r.json() : { bookings: [] }; })
+      .then(function(data) {
+        var bookings = (data && data.bookings) || [];
+        var activeOfferBooking = bookings.find(function(b) {
+          return b.slug === propSlug
+            && b.active_offer_id
+            && (b.status === 'offer_sent' || b.status === 'pending');
+        });
+        if (activeOfferBooking) {
+          // Reset trigger button so it's clickable again after interstitial
+          if (triggerBtn) {
+            triggerBtn.disabled = false;
+            triggerBtn.textContent = triggerBtn.dataset.origText || 'Open my conversation \u2192';
+            triggerBtn.style.opacity = '';
+          }
+          showActiveOfferInterstitial(activeOfferBooking, propName, user, {
+            triggerBtn: triggerBtn,
+            ctx: ctx,
+            // pass updated values from the form in case user wants to use
+            // them as a "request changes" body
+            requestedArrival: checkin,
+            requestedDeparture: checkout,
+            requestedGuests: guests,
+            requestedCabin: cabin,
+            requestedNotes: notes,
+          });
+          return;
+        }
+        // No active offer — proceed normally
+        _continueEnquirySubmissionInner(user, triggerBtn, ctx);
+      })
+      .catch(function() {
+        // If the booking lookup fails, fail open — proceed with submission.
+        // Better to occasionally allow a redundant enquiry than block legit
+        // ones because of a transient API error.
+        _continueEnquirySubmissionInner(user, triggerBtn, ctx);
+      });
+    return;
+  }
+  _continueEnquirySubmissionInner(user, triggerBtn, ctx);
+}
+
+// v73r: original submission body, now wrapped so the new active-offer check
+// can decide whether to invoke it directly or after the interstitial.
+function _continueEnquirySubmissionInner(user, triggerBtn, ctx) {
+  var name = ctx.name, email = ctx.email, cabin = ctx.cabin;
+  var checkin = ctx.checkin, checkout = ctx.checkout;
+  var guests = ctx.guests, notes = ctx.notes;
+  var propSlug = ctx.propSlug, propName = ctx.propName;
+
   var guestId = user.id;
   var clerkEmail = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
   if (!email && clerkEmail) email = clerkEmail;
@@ -2431,6 +2492,166 @@ function inquiryError(msg) {
   box.textContent = msg;
   box.style.display = 'block';
   box.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+// v73r: interstitial shown when customer tries to submit a fresh enquiry on
+// a property where they already have an active offer. Three options:
+//   - View offer (opens the conversation, offer modal triggered)
+//   - Request changes (opens conversation; populates composer with the form
+//     values they just entered so the partner sees what they want)
+//   - Decline offer (calls PATCH /api/offer action:decline, reopens booking)
+function showActiveOfferInterstitial(booking, propName, user, opts) {
+  var existing = document.getElementById('tb-active-offer-modal');
+  if (existing) existing.remove();
+
+  var convId = booking.conversationId || '';
+  var offerId = booking.active_offer_id || '';
+
+  var modal = document.createElement('div');
+  modal.id = 'tb-active-offer-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:grid;place-items:center;backdrop-filter:blur(6px);padding:20px;';
+
+  var requestedSummary = '';
+  if (opts.requestedArrival && opts.requestedDeparture) {
+    var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+    requestedSummary = fmt(opts.requestedArrival) + ' \u2192 ' + fmt(opts.requestedDeparture);
+  }
+
+  modal.innerHTML =
+    '<div style="background:#faf7f1;border-radius:20px;width:100%;max-width:520px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;">' +
+      '<div style="padding:22px 24px 12px;border-bottom:1px solid rgba(80,60,30,.1);">' +
+        '<div style="font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">You already have an offer</div>' +
+        '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.45rem;line-height:1.2;color:#1e1810;">' + esc(propName) + ' has sent you an offer.</div>' +
+        '<div style="font-size:.85rem;color:#5a4e40;margin-top:8px;line-height:1.5;">Before sending a new enquiry, you should decide what to do with the existing offer. Sending another enquiry will only add a message to your existing conversation \u2014 it won\u2019t replace the offer.</div>' +
+      '</div>' +
+      '<div style="padding:18px 24px 22px;">' +
+        // View offer
+        '<button type="button" id="aoi-view" style="display:block;width:100%;text-align:left;padding:14px 16px;border:1px solid #e8e3d8;border-radius:12px;background:#fff;cursor:pointer;margin-bottom:10px;font-family:inherit;">' +
+          '<div style="font-size:.92rem;font-weight:600;color:#1e1810;margin-bottom:3px;">View the offer</div>' +
+          '<div style="font-size:.78rem;color:#7a6a58;">Open it in your conversation to review dates, pricing, and what\u2019s included.</div>' +
+        '</button>' +
+        // Request changes
+        '<button type="button" id="aoi-request" style="display:block;width:100%;text-align:left;padding:14px 16px;border:1px solid #e8e3d8;border-radius:12px;background:#fff;cursor:pointer;margin-bottom:10px;font-family:inherit;">' +
+          '<div style="font-size:.92rem;font-weight:600;color:#1e1810;margin-bottom:3px;">Request changes</div>' +
+          '<div style="font-size:.78rem;color:#7a6a58;">Ask ' + esc(propName) + ' to adjust the offer' + (requestedSummary ? ' to <strong>' + esc(requestedSummary) + '</strong>' : '') + '. They\u2019ll send a revised offer.</div>' +
+        '</button>' +
+        // Decline
+        '<button type="button" id="aoi-decline" style="display:block;width:100%;text-align:left;padding:14px 16px;border:1px solid #fca5a5;border-radius:12px;background:#fff;cursor:pointer;font-family:inherit;">' +
+          '<div style="font-size:.92rem;font-weight:600;color:#991b1b;margin-bottom:3px;">Decline this offer</div>' +
+          '<div style="font-size:.78rem;color:#7a6a58;">Tell ' + esc(propName) + ' the offer doesn\u2019t work for you. Your enquiry stays open for a fresh offer.</div>' +
+        '</button>' +
+        '<div style="text-align:right;margin-top:14px;">' +
+          '<button type="button" id="aoi-cancel" style="background:transparent;border:none;color:#9a8e80;font-size:.78rem;cursor:pointer;padding:6px 10px;font-family:inherit;">Cancel \u2014 don\u2019t do anything</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(modal);
+
+  function closeModal() { modal.remove(); }
+
+  document.getElementById('aoi-cancel').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+  });
+
+  document.getElementById('aoi-view').addEventListener('click', function() {
+    closeModal();
+    if (convId) window.location = '/conversations.html?id=' + encodeURIComponent(convId);
+  });
+
+  document.getElementById('aoi-request').addEventListener('click', function() {
+    if (!convId) {
+      alert('Could not open your conversation. Please refresh and try again.');
+      return;
+    }
+    // Build a "request changes" message from the form values they entered
+    var msgLines = ['Hi \u2014 I\u2019d like to discuss a change to the offer you sent.'];
+    if (opts.requestedArrival && opts.requestedDeparture) {
+      var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+      msgLines.push('\nNew dates: ' + fmt(opts.requestedArrival) + ' \u2192 ' + fmt(opts.requestedDeparture));
+    }
+    if (opts.requestedGuests) msgLines.push('Guests: ' + opts.requestedGuests);
+    if (opts.requestedCabin) msgLines.push('Room: ' + opts.requestedCabin);
+    if (opts.requestedNotes) msgLines.push('\n' + opts.requestedNotes);
+    msgLines.push('\nCould you send a revised offer? Thanks.');
+    var msg = msgLines.join('\n');
+
+    var btn = this;
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+    fetch('/api/conversation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'message',
+        id: convId,
+        role: 'guest',
+        text: msg,
+        senderName: [user.firstName, user.lastName].filter(Boolean).join(' ') || (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || 'Guest',
+        updateEnquiry: {
+          arrival: opts.requestedArrival,
+          departure: opts.requestedDeparture,
+          guests: opts.requestedGuests,
+          cabin: opts.requestedCabin,
+          notes: opts.requestedNotes
+        }
+      })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.ok === false) {
+          alert('Could not send your message: ' + (d.error || 'unknown error'));
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          return;
+        }
+        closeModal();
+        window.location = '/conversations.html?id=' + encodeURIComponent(convId);
+      })
+      .catch(function() {
+        alert('Network error \u2014 please try again.');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+  });
+
+  document.getElementById('aoi-decline').addEventListener('click', function() {
+    var ok = window.confirm('Decline this offer from ' + propName + '?\n\nYour enquiry will stay open so the property can send you a different offer. This can\u2019t be undone.');
+    if (!ok) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+    var email = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
+    fetch('/api/offer', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: offerId,
+        action: 'decline',
+        requesterEmail: email
+      })
+    })
+      .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+      .then(function(res) {
+        if (!res.ok) {
+          alert('Could not decline the offer: ' + (res.body && res.body.error || 'unknown error'));
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          return;
+        }
+        closeModal();
+        if (convId) {
+          window.location = '/conversations.html?id=' + encodeURIComponent(convId);
+        } else {
+          window.location = '/bookings.html';
+        }
+      })
+      .catch(function() {
+        alert('Network error \u2014 please try again.');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      });
+  });
 }
 
 // setText already defined

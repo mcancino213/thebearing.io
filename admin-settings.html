@@ -374,6 +374,17 @@ window.addEventListener('load', async function() {
     </div>
     <pre id="backfill-cards-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
   </div>
+
+  <div class="fs-row" style="margin-top:24px;">
+    <div class="help-text">
+      <strong>Restore booking dates from active offer (v73r):</strong> finds bookings with <code>active_offer_id</code> set and copies the offer's <code>arrival</code>, <code>departure</code>, <code>guests</code>, and <code>room</code> back to the booking record. Fixes the data corruption introduced when a guest re-enquired on a property with an open offer (pre-v73r the worker silently rewrote booking dates without updating the offer). Also clears any stale <code>pendingChangeRequest</code>. Idempotent. Run once after deploying v73r to repair existing corrupted bookings.
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap;">
+      <button class="btn btn-primary" id="restore-booking-dates-btn" type="button">Restore booking dates from active offer</button>
+      <span class="save-status" id="restore-booking-dates-status"></span>
+    </div>
+    <pre id="restore-booking-dates-output" style="display:none;margin-top:14px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:280px;overflow:auto;white-space:pre-wrap;"></pre>
+  </div>
 </div>
 
 </div>
@@ -917,6 +928,62 @@ window.addEventListener('load', async function() {
           bcBtn.disabled = false;
           bcBtn.textContent = 'Backfill offer cards';
           bcBtn.style.opacity = '1';
+        });
+    });
+  }
+
+  // v73r: restore booking dates from active offer
+  var rbdBtn = document.getElementById('restore-booking-dates-btn');
+  if (rbdBtn) {
+    rbdBtn.addEventListener('click', function() {
+      if (!window.confirm('Restore booking dates from active offers?\n\nFor every booking with an active_offer_id, this will copy the offer\'s arrival/departure/guests/room back to the booking record, and clear any stale pendingChangeRequest. Safe to run multiple times.')) return;
+      rbdBtn.disabled = true;
+      rbdBtn.textContent = 'Restoring\u2026';
+      rbdBtn.style.opacity = '.6';
+      var out = document.getElementById('restore-booking-dates-output');
+      out.style.display = 'none';
+      out.textContent = '';
+      fetch('/api/booking/restore-from-offer', { method: 'POST', cache: 'no-store' })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+        .then(function(res){
+          if (!res.ok || res.body.error) {
+            flashStatus('restore-booking-dates-status', false, (res.body && res.body.error) || 'Failed');
+            return;
+          }
+          var b = res.body;
+          flashStatus('restore-booking-dates-status', true,
+            'Done · restored ' + b.restored + ' · skipped ' + b.skipped);
+          var lines = [];
+          lines.push('Scanned: ' + b.scanned + ' booking(s) with active_offer_id');
+          lines.push('Restored: ' + b.restored);
+          lines.push('Skipped:  ' + b.skipped);
+          lines.push('Errors:   ' + b.errors);
+          var det = b.details || {};
+          if ((det.restored || []).length) {
+            lines.push('');
+            lines.push('RESTORED:');
+            det.restored.forEach(function(p){
+              lines.push('  + ' + p.ref + ': ' + (p.was || '?') + ' \u2192 ' + (p.now || '?'));
+            });
+          }
+          if ((det.skipped || []).length) {
+            lines.push('');
+            lines.push('SKIPPED (first 30):');
+            det.skipped.forEach(function(s){ lines.push('  \u00b7 ' + s.ref + ' \u2014 ' + s.reason); });
+          }
+          if ((det.errors || []).length) {
+            lines.push('');
+            lines.push('ERRORS:');
+            det.errors.forEach(function(e){ lines.push('  ! ' + e.ref + ' \u2014 ' + e.error); });
+          }
+          out.textContent = lines.join('\n');
+          out.style.display = 'block';
+        })
+        .catch(function(e){ flashStatus('restore-booking-dates-status', false, 'Network error'); })
+        .finally(function(){
+          rbdBtn.disabled = false;
+          rbdBtn.textContent = 'Restore booking dates from active offer';
+          rbdBtn.style.opacity = '1';
         });
     });
   }

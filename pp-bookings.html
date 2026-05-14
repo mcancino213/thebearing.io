@@ -151,6 +151,26 @@ tbody tr:hover{background:var(--bg);}
 /* ── AVATAR ── */
 .avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#c17f3e,#e09a55);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
 .avatar-sm{width:28px;height:28px;font-size:11px;}
+
+/* v73r: pending change request flagging */
+tr.row-has-pcr td:first-child{box-shadow:inset 3px 0 0 #f59e0b;}
+tr.row-has-pcr{background:#fffbeb;}
+tr.row-has-pcr:hover{background:#fef3c7;}
+.pcr-pill{
+  display:inline-flex;align-items:center;gap:6px;margin-top:6px;
+  font-family:'Geist',sans-serif;font-size:11px;font-weight:500;
+  color:#78350f;background:#fef3c7;border:1px solid #fcd34d;
+  padding:3px 9px 3px 7px;border-radius:100px;
+  cursor:help;
+}
+.pcr-pill-dot{
+  width:6px;height:6px;border-radius:50%;background:#f59e0b;
+  animation:pcr-pulse 1.8s ease-in-out infinite;
+}
+@keyframes pcr-pulse{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:.5;transform:scale(.85);}
+}
 .avatar-lg{width:48px;height:48px;font-size:16px;}
 
 /* ── PAGE HEADER ── */
@@ -512,6 +532,13 @@ function renderBookings() {
       actionBtn = '<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed;">View</button>';
     }
 
+    // v73r: pendingChangeRequest flag — surfaced in dates column + offer
+    // column so the partner sees that the guest's follow-up message
+    // contained a request for different dates/room/guests that the
+    // worker did NOT silently apply to the booking.
+    var pcr = b.pendingChangeRequest;
+    var hasPCR = pcr && (pcr.arrival || pcr.departure || pcr.guests || pcr.cabin);
+
     // Offer / value column shows different content per state.
     var offerCol;
     if (category === 'enquiry') {
@@ -524,10 +551,28 @@ function renderBookings() {
       offerCol = '<span style="color:var(--text3);">—</span>';
     }
 
-    html += '<tr>' +
+    // Dates column — if there's a pending change request, append amber pill
+    // showing the requested values inline. Partner sees current booking
+    // dates AND what the guest asked for in one place.
+    var datesCol = fmtDateRange(b.arrival, b.departure, b.nights);
+    if (hasPCR) {
+      var requestedDates = (pcr.arrival && pcr.departure)
+        ? fmtDateRange(pcr.arrival, pcr.departure, null)
+        : 'updated details';
+      var requestedExtras = [];
+      if (pcr.guests && pcr.guests !== b.guests) requestedExtras.push(pcr.guests + ' guests');
+      if (pcr.cabin && pcr.cabin !== b.room) requestedExtras.push(pcr.cabin);
+      var extrasStr = requestedExtras.length ? ' \u00b7 ' + escHtml(requestedExtras.join(' \u00b7 ')) : '';
+      datesCol += '<div class="pcr-pill" title="Guest requested a change after the offer was sent. Click Revise offer to address.">'
+        + '<span class="pcr-pill-dot"></span>'
+        + 'Change requested: ' + escHtml(requestedDates) + extrasStr
+        + '</div>';
+    }
+
+    html += '<tr' + (hasPCR ? ' class="row-has-pcr"' : '') + '>' +
       '<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text2);">' + escHtml(b.ref) + '</span></td>' +
       '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escHtml(initials(guestName)) + '</div><div><div style="font-size:14px;font-weight:500;">' + escHtml(guestName) + '</div><div style="font-size:12px;color:var(--text3);">' + escHtml(b.email || '') + '</div></div></div></td>' +
-      '<td>' + fmtDateRange(b.arrival, b.departure, b.nights) + '</td>' +
+      '<td>' + datesCol + '</td>' +
       '<td>' + escHtml(b.guests || '') + '</td>' +
       '<td>' + statusBadge(b) + '</td>' +
       '<td>' + offerCol + '</td>' +
@@ -650,7 +695,15 @@ function openOfferModal(bookingRef, mode) {
       // Clear inclusions list
       document.getElementById('om-inclusions-list').innerHTML = '';
 
-      // If revising, fetch the previous offer and prefill
+      // If revising, fetch the previous offer and prefill. v73r: if there's
+      // a pendingChangeRequest on the booking, use those values for the
+      // date/guests/room fields instead of the previous offer's values, so
+      // the partner is editing toward what the guest actually asked for.
+      // A banner at the top of the modal explains what changed.
+      var hasPendingChangeRequest = b.pendingChangeRequest && (b.pendingChangeRequest.arrival || b.pendingChangeRequest.departure || b.pendingChangeRequest.guests || b.pendingChangeRequest.cabin);
+      var pcrBannerEl = document.getElementById('om-pcr-banner');
+      if (pcrBannerEl) pcrBannerEl.remove();
+
       if (mode === 'revise' && b.active_offer_id) {
         fetch('/api/offer?id=' + encodeURIComponent(b.active_offer_id))
           .then(function(r) { return r.json(); })
@@ -658,6 +711,7 @@ function openOfferModal(bookingRef, mode) {
             if (resp && resp.data) {
               var prev = resp.data;
               modalState.supersedesId = prev.id;
+              // Default to previous offer's values...
               document.getElementById('om-arrival').value = prev.arrival || '';
               document.getElementById('om-departure').value = prev.departure || '';
               document.getElementById('om-nights').value = prev.nights || '';
@@ -673,6 +727,44 @@ function openOfferModal(bookingRef, mode) {
                 document.getElementById('om-nightly').value = prev.nightly_rate || '';
               } else {
                 document.getElementById('om-total').value = prev.total_amount || '';
+              }
+
+              // ...then OVERRIDE with the pending change request values where
+              // the guest has asked for something different.
+              if (hasPendingChangeRequest) {
+                var pcr = b.pendingChangeRequest;
+                if (pcr.arrival)   document.getElementById('om-arrival').value   = pcr.arrival;
+                if (pcr.departure) document.getElementById('om-departure').value = pcr.departure;
+                if (pcr.guests)    document.getElementById('om-guests').value    = pcr.guests;
+                if (pcr.cabin)     document.getElementById('om-room').value      = pcr.cabin;
+                // Show a banner above the form explaining what changed
+                var banner = document.createElement('div');
+                banner.id = 'om-pcr-banner';
+                banner.style.cssText = 'margin:0 0 16px;padding:12px 14px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;font-size:13px;color:#78350f;line-height:1.5;';
+                var was = [];
+                var now = [];
+                if (pcr.arrival && pcr.departure && (pcr.arrival !== prev.arrival || pcr.departure !== prev.departure)) {
+                  was.push(fmtDateRange(prev.arrival, prev.departure, null));
+                  now.push(fmtDateRange(pcr.arrival, pcr.departure, null));
+                }
+                if (pcr.guests && pcr.guests !== prev.guests) {
+                  was.push(prev.guests + ' guests');
+                  now.push(pcr.guests + ' guests');
+                }
+                if (pcr.cabin && pcr.cabin !== prev.room) {
+                  was.push(prev.room || '(no room)');
+                  now.push(pcr.cabin);
+                }
+                banner.innerHTML = '<div style="font-weight:600;margin-bottom:4px;">Guest requested a change after your offer was sent.</div>'
+                  + (was.length ? '<div>Was: <span style="opacity:.7;">' + escHtml(was.join(' \u00b7 ')) + '</span></div>' : '')
+                  + (now.length ? '<div>Now: <strong>' + escHtml(now.join(' \u00b7 ')) + '</strong></div>' : '')
+                  + '<div style="margin-top:8px;font-size:12px;opacity:.85;">Fields below have been pre-filled with the requested values. Update pricing as needed and send a fresh offer.</div>';
+                var modalBody = document.querySelector('#om-form, .modal-body, #offer-modal-body, .om-form');
+                // Fallback: prepend banner to the form via the title's parent
+                var titleEl = document.getElementById('om-title');
+                if (titleEl && titleEl.parentNode && titleEl.parentNode.parentNode) {
+                  titleEl.parentNode.parentNode.insertBefore(banner, titleEl.parentNode.nextSibling);
+                }
               }
               updateDepositPreview();
             }

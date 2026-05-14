@@ -958,6 +958,71 @@ export default {
       });
     }
 
+    // ── /api/booking/restore-from-offer ────────────────────────────
+    // v73r: admin-gated. For every booking with active_offer_id set, copy
+    // arrival/departure/guests/room from the offer back to the booking.
+    // Repairs the data corruption introduced when a guest re-enquired on
+    // a property with an open offer — pre-v73r the worker silently rewrote
+    // booking dates while the offer kept its original dates, leaving the
+    // two records disagreeing. Also clears any stale pendingChangeRequest.
+    // Idempotent.
+    if (url.pathname === '/api/booking/restore-from-offer') {
+      if (!(await isAdmin())) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+      const bRefs = bIdxRaw ? JSON.parse(bIdxRaw) : [];
+      let scanned = 0, restored = 0, skipped = 0, errors = 0;
+      const details = { restored: [], skipped: [], errors: [] };
+      const now = new Date().toISOString();
+      const fmt = function(s){ try { return new Date(s.length===10?s+'T00:00':s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return s; } };
+
+      for (const ref of bRefs) {
+        try {
+          const bRaw = await env.DOSSIERS.get('booking:' + ref);
+          if (!bRaw) continue;
+          const booking = JSON.parse(bRaw);
+          if (!booking.active_offer_id) continue;
+          scanned++;
+          const offerRaw = await env.DOSSIERS.get('offer:' + booking.active_offer_id);
+          if (!offerRaw) {
+            skipped++;
+            if (details.skipped.length < 30) details.skipped.push({ ref: ref, reason: 'offer not found: ' + booking.active_offer_id });
+            continue;
+          }
+          const offer = JSON.parse(offerRaw);
+          const beforeArr = booking.arrival, beforeDep = booking.departure;
+          const matchesAlready = (booking.arrival === offer.arrival) && (booking.departure === offer.departure) && (!booking.pendingChangeRequest);
+          if (matchesAlready) {
+            skipped++;
+            if (details.skipped.length < 30) details.skipped.push({ ref: ref, reason: 'already matches offer' });
+            continue;
+          }
+          if (offer.arrival)   booking.arrival   = offer.arrival;
+          if (offer.departure) booking.departure = offer.departure;
+          if (offer.nights)    booking.nights    = offer.nights;
+          if (offer.guests)    booking.guests    = offer.guests;
+          if (offer.room)      booking.room      = offer.room;
+          delete booking.pendingChangeRequest;
+          booking.updatedAt = now;
+          await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+          restored++;
+          if (details.restored.length < 100) {
+            details.restored.push({
+              ref: ref,
+              was: (beforeArr && beforeDep) ? (fmt(beforeArr) + ' \u2192 ' + fmt(beforeDep)) : '(unset)',
+              now: (offer.arrival && offer.departure) ? (fmt(offer.arrival) + ' \u2192 ' + fmt(offer.departure)) : '(unset)',
+            });
+          }
+        } catch (e) {
+          errors++;
+          if (details.errors.length < 30) details.errors.push({ ref: ref, error: e.message });
+        }
+      }
+      return jsonResponse({ ok: true, scanned: scanned, restored: restored, skipped: skipped, errors: errors, details: details });
+    }
+
     // ── /api/offer/backfill-cards ──────────────────────────────────
     // v73m: admin-gated. For every offer with status='sent', check if its
     // linked conversation already has an offer_card message. If not, post
@@ -1736,30 +1801,88 @@ View in admin: https://thebearing.io/admin-bookings.html
           // partner side panel) with the latest dates/room/guests. Only
           // overwrite fields that are non-empty so we don't blow away
           // info from the original enquiry if the user left a field blank.
+          // v73r: when a guest follow-up message arrives on a conversation
+          // whose linked booking already has an active offer, we MUST NOT
+          // silently mutate the booking's dates/room/guests. That created a
+          // data-corruption bug (v73q): the booking would show new dates while
+          // the offer kept its original dates frozen, and the partner's
+          // pp-bookings row would silently flip to the new dates with no
+          // indication anything had changed. Worst case: customer pays the
+          // deposit thinking they're getting the new dates, property confirms
+          // for the original dates, no one notices until check-in.
+          //
+          // New policy: once an offer is in flight, the booking is locked.
+          // Customer asks for new dates → store as `pendingChangeRequest` on
+          // the booking, which the partner UI surfaces as an amber flag.
+          // Partner clicks Revise → modal prefills from the change request
+          // and shows a banner explaining what changed.
+          //
+          // updateEnquiry mutation of conv.enquiry is also blocked here so
+          // the partner's side panel doesn't get re-written without context.
           if (updateEnquiry && typeof updateEnquiry === 'object' && role === 'guest') {
-            conv.enquiry = conv.enquiry || {};
-            ['arrival','departure','guests','cabin','notes'].forEach(function(k){
-              if (updateEnquiry[k] != null && updateEnquiry[k] !== '') {
-                conv.enquiry[k] = updateEnquiry[k];
-              }
-            });
-            // Also update the linked booking record if one exists, so
-            // pp-bookings reflects the latest dates/room.
+            let bookingHasActiveOffer = false;
+            let bookingPath = null;
             if (conv.bookingRef) {
               try {
-                const bRaw = await env.DOSSIERS.get('booking:' + conv.bookingRef);
+                bookingPath = 'booking:' + conv.bookingRef;
+                const bRaw = await env.DOSSIERS.get(bookingPath);
                 if (bRaw) {
                   const b = JSON.parse(bRaw);
-                  if (updateEnquiry.arrival)   b.arrival   = updateEnquiry.arrival;
-                  if (updateEnquiry.departure) b.departure = updateEnquiry.departure;
-                  if (updateEnquiry.guests)    b.guests    = updateEnquiry.guests;
-                  if (updateEnquiry.cabin)     b.room      = updateEnquiry.cabin;
-                  if (updateEnquiry.notes)     b.notes     = updateEnquiry.notes;
-                  b.updatedAt = now;
-                  await env.DOSSIERS.put('booking:' + conv.bookingRef, JSON.stringify(b));
+                  bookingHasActiveOffer = !!b.active_offer_id && (b.status === 'offer_sent' || b.status === 'pending');
+                  if (bookingHasActiveOffer) {
+                    // Record the change request without mutating booking dates
+                    b.pendingChangeRequest = {
+                      arrival:   updateEnquiry.arrival   || '',
+                      departure: updateEnquiry.departure || '',
+                      guests:    updateEnquiry.guests    || '',
+                      cabin:     updateEnquiry.cabin     || '',
+                      notes:     updateEnquiry.notes     || '',
+                      requestedAt: now,
+                      // Snapshot what the booking was at the time of the
+                      // request, so the partner sees "was X, now Y"
+                      previousValues: {
+                        arrival: b.arrival || '',
+                        departure: b.departure || '',
+                        guests: b.guests || '',
+                        room: b.room || '',
+                      }
+                    };
+                    b.updatedAt = now;
+                    await env.DOSSIERS.put(bookingPath, JSON.stringify(b));
+                    console.log('[Conv msg] booking ' + conv.bookingRef + ' has active offer — stored change request instead of mutating');
+                  }
                 }
-              } catch(e) {
-                console.error('[Conversation message] booking-stub refresh failed:', e);
+              } catch (e) {
+                console.error('[Conv msg] booking probe failed:', e);
+              }
+            }
+
+            // Only mutate conv.enquiry + booking record when there's NO
+            // active offer to protect. Same behavior as v73q for fresh
+            // enquiries that haven't received an offer yet.
+            if (!bookingHasActiveOffer) {
+              conv.enquiry = conv.enquiry || {};
+              ['arrival','departure','guests','cabin','notes'].forEach(function(k){
+                if (updateEnquiry[k] != null && updateEnquiry[k] !== '') {
+                  conv.enquiry[k] = updateEnquiry[k];
+                }
+              });
+              if (conv.bookingRef) {
+                try {
+                  const bRaw = await env.DOSSIERS.get(bookingPath);
+                  if (bRaw) {
+                    const b = JSON.parse(bRaw);
+                    if (updateEnquiry.arrival)   b.arrival   = updateEnquiry.arrival;
+                    if (updateEnquiry.departure) b.departure = updateEnquiry.departure;
+                    if (updateEnquiry.guests)    b.guests    = updateEnquiry.guests;
+                    if (updateEnquiry.cabin)     b.room      = updateEnquiry.cabin;
+                    if (updateEnquiry.notes)     b.notes     = updateEnquiry.notes;
+                    b.updatedAt = now;
+                    await env.DOSSIERS.put(bookingPath, JSON.stringify(b));
+                  }
+                } catch(e) {
+                  console.error('[Conv msg] booking-stub refresh failed:', e);
+                }
               }
             }
           }
@@ -2962,6 +3085,94 @@ View in admin: https://thebearing.io/admin-bookings.html
             }
             booking.updatedAt = now;
             await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
+          }
+        } else if (body.action === 'decline') {
+          // v73r: customer-initiated decline. Requires requesterEmail to match
+          // the booking's guest email. Reopens the booking to 'enquiry' so the
+          // partner can build a fresh offer (or the customer can re-enquire
+          // cleanly). Posts a system message into the conversation so the
+          // partner sees the decline reason if provided.
+          if (offer.status !== 'sent') {
+            return jsonResponse({ error: 'can only decline a sent offer (current: ' + offer.status + ')' }, 400);
+          }
+          const reqEmail = (body.requesterEmail || '').toLowerCase().trim();
+          const brRawDecline = await env.DOSSIERS.get('booking:' + offer.bookingId);
+          if (!brRawDecline) return jsonResponse({ error: 'booking not found' }, 404);
+          const bookingDecline = JSON.parse(brRawDecline);
+          const bookingEmailDecline = (bookingDecline.email || '').toLowerCase().trim();
+          const isAdminCaller = await isAdmin();
+          if (!isAdminCaller && (!reqEmail || reqEmail !== bookingEmailDecline)) {
+            return jsonResponse({ error: 'not authorised to decline this offer' }, 403);
+          }
+
+          offer.status = 'declined';
+          offer.responded_at = now;
+          offer.declined_reason = (body.reason || '').slice(0, 500);
+
+          if (bookingDecline.active_offer_id === offer.id) {
+            bookingDecline.active_offer_id = null;
+            // Reset back to 'enquiry' so partner sees a "Build offer" button
+            // again. pendingChangeRequest is cleared since the slate is fresh.
+            bookingDecline.status = 'enquiry';
+            delete bookingDecline.pendingChangeRequest;
+          }
+          bookingDecline.updatedAt = now;
+          await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(bookingDecline));
+
+          // Post system message into linked conversation so partner sees it
+          if (bookingDecline.conversationId) {
+            try {
+              const convDeclineRaw = await env.DOSSIERS.get('conversation:' + bookingDecline.conversationId);
+              if (convDeclineRaw) {
+                const convDecline = JSON.parse(convDeclineRaw);
+                const msgsDeclineRaw = await env.DOSSIERS.get('conversation:' + bookingDecline.conversationId + ':messages');
+                const messagesDecline = msgsDeclineRaw ? JSON.parse(msgsDeclineRaw) : [];
+                const declineMsg = {
+                  id: 'msg_' + Date.now() + '_decl',
+                  role: 'system',
+                  type: 'offer_declined',
+                  text: 'Guest declined the offer.' + (offer.declined_reason ? ' Reason: ' + offer.declined_reason : '') + ' The booking is open for a fresh offer.',
+                  senderName: 'The Bearing',
+                  sentAt: now,
+                  readAt: null,
+                  offerId: offer.id,
+                };
+                messagesDecline.push(declineMsg);
+                convDecline.lastMessageAt = now;
+                convDecline.lastMessagePreview = 'Offer declined by guest';
+                convDecline.unreadAdmin = (convDecline.unreadAdmin || 0) + 1; // bump admin/partner attention
+                await env.DOSSIERS.put('conversation:' + bookingDecline.conversationId, JSON.stringify(convDecline));
+                await env.DOSSIERS.put('conversation:' + bookingDecline.conversationId + ':messages', JSON.stringify(messagesDecline));
+              }
+            } catch (e) {
+              console.error('[Offer decline] system message post failed:', e);
+            }
+          }
+
+          // Notify admin + partner via Resend (best-effort)
+          if (env.RESEND_API_KEY) {
+            try {
+              const adminRecipients = await loadNotificationRecipients(env);
+              if (adminRecipients.length) {
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: 'The Bearing <bookings@thebearing.io>',
+                    to: adminRecipients,
+                    subject: '[DECLINED] ' + (bookingDecline.property || bookingDecline.slug) + ' · ' + bookingDecline.ref,
+                    html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                      + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined</h2>'
+                      + '<p><strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong></p>'
+                      + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
+                      + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
+                      + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
+                      + '<p>The booking is now back to <code>enquiry</code> — partner can build a fresh offer.</p>'
+                      + '</div>',
+                  }),
+                }).catch(function(e) { console.error('[Offer decline] admin email failed:', e); });
+              }
+            } catch (e) { console.error('[Offer decline] email block failed:', e); }
           }
         } else if (body.action === 'edit-draft') {
           if (offer.status !== 'draft') {
