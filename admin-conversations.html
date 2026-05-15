@@ -1038,6 +1038,20 @@ function loadList() {
         }
       }
       if (typeof updateUnreadIndicator === 'function') updateUnreadIndicator();
+      // v73am: auto-open ?id=X if specified in URL (e.g. from notification
+      // email link). Guard so it only fires once per page load.
+      if (!window._admAutoOpened) {
+        var urlId = new URLSearchParams(location.search).get('id');
+        if (urlId) {
+          window._admAutoOpened = true;
+          var match = conversations.find(function(c) { return c.id === urlId; });
+          if (match) {
+            openConv(urlId);
+          } else {
+            console.warn('[admin-conversations] requested conv ' + urlId + ' not in list');
+          }
+        }
+      }
     })
     .catch(function(e){
       document.getElementById('conv-list').innerHTML = '<div style="padding:16px;color:#dc2626;font-size:.82rem;">Error: ' + e.message + '<br><br>Try: <a href="/api/conversation" target="_blank" style="color:#dc2626;">/api/conversation</a></div>';

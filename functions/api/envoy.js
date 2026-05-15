@@ -1851,15 +1851,21 @@ View in admin: https://thebearing.io/admin-bookings.html
                   return adminRecipients.indexOf(e) === -1;
                 });
                 if (partnerToSend.length) {
-                  const ppUrl = `https://thebearing.io/pp-conversations.html?id=${id}`;
+                  // v73am: include ?as=slug so partner-portal page knows which
+                  // property's conversations to scope to. Without this, the
+                  // page defaults to nour-el-nil and the conv won't show.
+                  // Also include reply_to so partner can reply directly from
+                  // their email client and the reply routes to /api/inbound-email.
+                  const ppUrl = `https://thebearing.io/pp-conversations.html?id=${id}&as=${encodeURIComponent(propertySlug)}`;
                   await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       from: 'The Bearing <bookings@thebearing.io>',
                       to: partnerToSend,
+                      reply_to: `reply+${id}@replies.thebearing.io`,
                       subject: `[PARTNER] New enquiry — ${propertyName} from ${guestName || guestEmail}`,
-                      text: `You have a new enquiry at ${propertyName}.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\n\nMessage:\n${firstMessage}\n\nReply via the partner portal: ${ppUrl}\n\n— The Bearing`
+                      text: `You have a new enquiry at ${propertyName}.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\n\nMessage:\n${firstMessage}\n\nReply by replying directly to this email, or via the partner portal: ${ppUrl}\n\n— The Bearing`
                     })
                   }).catch(function(e) { console.error('[Conv] Partner email error:', e.message); });
                 }
@@ -2133,16 +2139,21 @@ View in admin: https://thebearing.io/admin-bookings.html
                       return adminRecipients.indexOf(e) === -1;
                     });
                     if (partnerToSend.length) {
-                      // Swap the admin-portal link in the body for the partner-portal one
+                      // v73am: swap admin-portal link for partner-portal +
+                      // append ?as=slug so partner sees the right property's
+                      // conversations on click. Also reply_to so direct
+                      // email replies route to /api/inbound-email.
+                      const asParam = '&as=' + encodeURIComponent(conv.propertySlug);
                       const partnerBodyText = bodyText
-                        .replace(/admin-conversations\.html/g, 'pp-conversations.html')
-                        .replace(/View conversation: /g, 'Reply via the partner portal: ');
+                        .replace(/admin-conversations\.html\?id=([^\s\n]+)/g, 'pp-conversations.html?id=$1' + asParam)
+                        .replace(/View conversation: /g, 'Reply directly to this email, or open the conversation: ');
                       await fetch('https://api.resend.com/emails', {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                           from: 'The Bearing <bookings@thebearing.io>',
                           to: partnerToSend,
+                          reply_to: `reply+${id}@replies.thebearing.io`,
                           subject: '[PARTNER] ' + subject,
                           text: partnerBodyText,
                         })
@@ -2539,16 +2550,41 @@ View in admin: https://thebearing.io/admin-bookings.html
         });
       }
 
-      // Save message as guest reply
+      // Save message — disambiguate sender as partner vs guest based on the
+      // From address (v73am). If from-email matches one of the property's
+      // partner_emails (or the transition default fallback), classify as
+      // partner; otherwise default to guest. This is the symmetric of v73al's
+      // outbound flow: partner gets [PARTNER] emails with reply_to that comes
+      // back here, and we need to mark those replies as `role: 'partner'` so
+      // they appear correctly in the conversation thread.
       const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
       const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
       const now = new Date().toISOString();
-      const fromAddr = body.from || (body.data && body.data.from) || '';
+      const fromAddrRaw = body.from || (body.data && body.data.from) || '';
+      // Extract bare email address from formats like '"Name" <a@b.com>' or 'a@b.com'
+      const fromEmailMatch = String(fromAddrRaw).match(/<([^>]+)>/) || String(fromAddrRaw).match(/([^\s<>"']+@[^\s<>"']+)/);
+      const fromEmail = (fromEmailMatch ? fromEmailMatch[1] : '').toLowerCase().trim();
+
+      let inferredRole = 'guest';
+      let inferredSenderName = conv.guestName || fromAddrRaw || 'Guest';
+      try {
+        const partnerList = await loadPartnerRecipients(conv.propertySlug || '', env);
+        if (fromEmail && partnerList.indexOf(fromEmail) !== -1) {
+          inferredRole = 'partner';
+          // Use property name as sender label so the conversation thread reads
+          // "Property Name replied" rather than the raw partner email.
+          inferredSenderName = conv.propertyName || fromAddrRaw || 'Property';
+          console.log('[Inbound] classified as partner reply: ' + fromEmail + ' is in partner_emails for ' + conv.propertySlug);
+        }
+      } catch (e) {
+        console.error('[Inbound] partner-email check failed:', e && e.message);
+      }
+
       const msg = {
         id: 'msg_' + Date.now(),
-        role: 'guest',
+        role: inferredRole,
         text,
-        senderName: conv.guestName || fromAddr || 'Guest',
+        senderName: inferredSenderName,
         sentAt: now,
         readAt: null,
         source: 'email'
@@ -2557,7 +2593,16 @@ View in admin: https://thebearing.io/admin-bookings.html
 
       conv.lastMessageAt = now;
       conv.lastMessagePreview = text.substring(0, 100);
-      conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+      // v73am: bump the right unread counter based on inferred role. Partner
+      // replies bump unreadGuest + unreadAdmin (both should know about it).
+      // Guest replies bump unreadAdmin + unreadPartner (existing behavior had
+      // only unreadAdmin, which v73al partner-portal badge logic also reads).
+      if (inferredRole === 'partner') {
+        conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+        conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+      } else {
+        conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+      }
 
       await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
       await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
@@ -2570,38 +2615,78 @@ View in admin: https://thebearing.io/admin-bookings.html
         await env.DOSSIERS.put('lastreply:guest:' + guestKey, String(nowMs), { expirationTtl: 2592000 });
       }
 
-      // Notify admin
-      if (env.RESEND_API_KEY && conv.notifyAdmin !== false) {
+      // Notify the right recipients based on who actually sent this email reply.
+      // v73am: branch on inferredRole. If partner replied via email, the
+      // *customer* needs to know (their conversation has a new partner message).
+      // If guest replied (existing path), admin + partner need to know.
+      if (env.RESEND_API_KEY) {
         try {
-          const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=admin`;
           const adminRecipients = await loadNotificationRecipients(env);
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: 'The Bearing <bookings@thebearing.io>',
-              to: adminRecipients,
-              subject: `Email reply from ${conv.guestName} — ${conv.propertyName}`,
-              text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
-            })
-          });
-          // v73al: notify partner too
-          if (conv.notifyPartner !== false && conv.propertySlug) {
-            const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
-            const partnerToSend = partnerRecipients.filter(function(e) {
-              return adminRecipients.indexOf(e) === -1;
-            });
-            if (partnerToSend.length) {
+          if (inferredRole === 'partner') {
+            // Partner replied via email → notify the guest as if it came
+            // through the portal. Mirrors the customer notification path
+            // (envoy.js around line 2068 in the conversation message handler).
+            if (conv.notifyGuest !== false && conv.guestEmail) {
+              const replyUrl = `https://thebearing.io/conversations.html?id=${convId}`;
+              const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=guest`;
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
+                  to: [conv.guestEmail],
+                  reply_to: `reply+${convId}@replies.thebearing.io`,
+                  subject: `New message about your ${conv.propertyName} enquiry`,
+                  text: `${inferredSenderName} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n\u2014 The Bearing\nhttps://thebearing.io\n\n\u2014\nMute email notifications for this conversation: ${unsubUrl}`
+                })
+              }).catch(function(e) { console.error('[Inbound] Guest notify err:', e.message); });
+            }
+            // Also CC admin so they have visibility into partner replies
+            if (conv.notifyAdmin !== false && adminRecipients.length) {
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   from: 'The Bearing <bookings@thebearing.io>',
-                  to: partnerToSend,
-                  subject: `[PARTNER] Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
-                  text: `${conv.guestName} replied via email:\n\n"${text}"\n\nReply via partner portal: https://thebearing.io/pp-conversations.html?id=${convId}\n\n\u2014 The Bearing`
+                  to: adminRecipients,
+                  subject: `[FYI] Partner reply via email \u2014 ${conv.propertyName}`,
+                  text: `${inferredSenderName} (partner) replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${convId}\n\n\u2014 The Bearing`
                 })
-              }).catch(function(e) { console.error('[Inbound] Partner notify err:', e.message); });
+              }).catch(function(e) { console.error('[Inbound] Admin FYI err:', e.message); });
+            }
+          } else if (conv.notifyAdmin !== false) {
+            // Guest replied via email \u2014 original flow: notify admin + partner
+            const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=admin`;
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: 'The Bearing <bookings@thebearing.io>',
+                to: adminRecipients,
+                subject: `Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
+                text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${convId}\n\n\u2014\nMute email notifications for this conversation: ${unsubUrl}`
+              })
+            });
+            // v73al: notify partner too
+            if (conv.notifyPartner !== false && conv.propertySlug) {
+              const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
+              const partnerToSend = partnerRecipients.filter(function(e) {
+                return adminRecipients.indexOf(e) === -1;
+              });
+              if (partnerToSend.length) {
+                const ppUrl = `https://thebearing.io/pp-conversations.html?id=${convId}&as=${encodeURIComponent(conv.propertySlug)}`;
+                await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    from: 'The Bearing <bookings@thebearing.io>',
+                    to: partnerToSend,
+                    reply_to: `reply+${convId}@replies.thebearing.io`,
+                    subject: `[PARTNER] Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
+                    text: `${conv.guestName} replied via email:\n\n"${text}"\n\nReply directly to this email, or open the conversation: ${ppUrl}\n\n\u2014 The Bearing`
+                  })
+                }).catch(function(e) { console.error('[Inbound] Partner notify err:', e.message); });
+              }
             }
           }
         } catch(e) { console.error('[Inbound] Notify error:', e.message); }
@@ -3562,22 +3647,33 @@ View in admin: https://thebearing.io/admin-bookings.html
                   return adminRecipients.indexOf(e) === -1;
                 });
                 if (partnerToSend.length) {
+                  // v73am: reply_to so partner replies route to inbound webhook,
+                  // plus a partner-portal link with ?as= so they can review the
+                  // booking. Only attached if we have a conversationId.
+                  const ppEmailHeaders = { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' };
+                  const ppEmailBody = {
+                    from: 'The Bearing <bookings@thebearing.io>',
+                    to: partnerToSend,
+                    subject: '[PARTNER] Offer declined \u00b7 ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
+                    html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                      + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined by guest</h2>'
+                      + '<p>Your offer for <strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong> was declined.</p>'
+                      + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
+                      + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
+                      + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
+                      + '<p>The booking is back to <code>enquiry</code>. Build a revised offer in the partner portal.</p>'
+                      + (bookingDecline.conversationId
+                          ? '<p style="margin-top:16px;"><a href="https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(bookingDecline.conversationId) + '&as=' + encodeURIComponent(slug) + '">Open the conversation \u2192</a></p>'
+                          : '')
+                      + '</div>'
+                  };
+                  if (bookingDecline.conversationId) {
+                    ppEmailBody.reply_to = 'reply+' + bookingDecline.conversationId + '@replies.thebearing.io';
+                  }
                   await fetch('https://api.resend.com/emails', {
                     method: 'POST',
-                    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'The Bearing <bookings@thebearing.io>',
-                      to: partnerToSend,
-                      subject: '[PARTNER] Offer declined \u00b7 ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
-                      html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                        + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined by guest</h2>'
-                        + '<p>Your offer for <strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong> was declined.</p>'
-                        + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
-                        + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
-                        + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
-                        + '<p>The booking is back to <code>enquiry</code>. Build a revised offer in the partner portal.</p>'
-                        + '</div>',
-                    }),
+                    headers: ppEmailHeaders,
+                    body: JSON.stringify(ppEmailBody),
                   }).catch(function(e) { console.error('[Offer decline] partner email failed:', e); });
                 }
               }
@@ -4503,26 +4599,37 @@ View in admin: https://thebearing.io/admin-bookings.html
               return adminRecipients.indexOf(e) === -1;
             });
             if (partnerToSend.length) {
+              // v73am: reply_to + ppUrl with ?as=slug so partner can reply via
+              // email or open the conversation in their portal.
+              const convIdForPartner = booking.conversationId || null;
+              const propSlug = booking.slug || booking.propertySlug || '';
+              const ppEmailBody = {
+                from: 'The Bearing Bookings <bookings@thebearing.io>',
+                to: partnerToSend,
+                subject: '[PARTNER] New confirmed booking \u00b7 ' + propName + ' \u00b7 ' + bookingRef,
+                html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                  + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">New confirmed booking</h2>'
+                  + '<p>You have a confirmed booking at <strong>' + propName + '</strong>.</p>'
+                  + (stayLine ? '<p>' + stayLine + '</p>' : '')
+                  + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
+                  + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '</p>'
+                  + '<p>Reference: <code>' + bookingRef + '</code></p>'
+                  + '<p style="margin-top:24px;">The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.</p>'
+                  + (convIdForPartner && propSlug
+                      ? '<p style="margin-top:16px;"><a href="https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(convIdForPartner) + '&as=' + encodeURIComponent(propSlug) + '">Open the conversation \u2192</a></p>'
+                      : '')
+                  + '</div>',
+              };
+              if (convIdForPartner) {
+                ppEmailBody.reply_to = 'reply+' + convIdForPartner + '@replies.thebearing.io';
+              }
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
                   'Authorization': 'Bearer ' + env.RESEND_API_KEY,
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                  from: 'The Bearing Bookings <bookings@thebearing.io>',
-                  to: partnerToSend,
-                  subject: '[PARTNER] New confirmed booking \u00b7 ' + propName + ' \u00b7 ' + bookingRef,
-                  html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                    + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">New confirmed booking</h2>'
-                    + '<p>You have a confirmed booking at <strong>' + propName + '</strong>.</p>'
-                    + (stayLine ? '<p>' + stayLine + '</p>' : '')
-                    + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
-                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '</p>'
-                    + '<p>Reference: <code>' + bookingRef + '</code></p>'
-                    + '<p style="margin-top:24px;">The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.</p>'
-                    + '</div>',
-                }),
+                body: JSON.stringify(ppEmailBody),
               }).catch(function(e) { console.error('[Stripe webhook] partner email failed:', e); });
             }
           } else {
@@ -4629,7 +4736,10 @@ async function runStaleConvReminders(env) {
       const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
 
       const replyUrl = 'https://thebearing.io/admin-conversations.html?id=' + encodeURIComponent(id);
-      const ppUrl = 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(id);
+      // v73am: ppUrl includes ?as=slug so the partner-portal page knows
+      // which property's conversations to scope to.
+      const ppUrl = 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(id)
+                  + '&as=' + encodeURIComponent(conv.propertySlug || '');
       const preview = (conv.lastMessagePreview || '').substring(0, 200);
       const guestLabel = conv.guestName || conv.guestEmail || 'A guest';
 
@@ -4644,7 +4754,7 @@ async function runStaleConvReminders(env) {
         72: 'This guest has been waiting more than 3 days. The enquiry risks being lost — please reply or escalate.'
       };
 
-      const partnerBody = `${tones[level]}\n\nGuest: ${guestLabel}\nProperty: ${partnerName}\nLast message:\n"${preview}"\n\nReply directly via the partner portal: ${ppUrl}\n\n— The Bearing`;
+      const partnerBody = `${tones[level]}\n\nGuest: ${guestLabel}\nProperty: ${partnerName}\nLast message:\n"${preview}"\n\nReply directly to this email, or open the conversation: ${ppUrl}\n\n— The Bearing`;
       const adminBody = `Stale conversation (${level}h+ wait).\n\nGuest: ${guestLabel}\nProperty: ${partnerName}\nLast message:\n"${preview}"\n\nView conversation: ${replyUrl}\n\n— The Bearing reminder system`;
 
       // 24h: notify partner only. 48h+: notify partner AND admin.
@@ -4665,6 +4775,7 @@ async function runStaleConvReminders(env) {
           body: JSON.stringify({
             from: 'The Bearing <bookings@thebearing.io>',
             to: partnerToSend,
+            reply_to: `reply+${id}@replies.thebearing.io`,
             subject: subjects[level],
             text: partnerBody
           })

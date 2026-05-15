@@ -773,6 +773,23 @@ function loadConvs() {
       }
       renderConvList();
       ppUpdateUnreadIndicator();
+      // v73am: auto-open the conversation specified in ?id= URL param after
+      // the list loads. Used when partner clicks a link from a notification
+      // email. Only fires once per page load (window._ppAutoOpened guard).
+      // If the requested id isn't in the visible list (e.g. wrong ?as= slug),
+      // log a warning so it's debuggable.
+      if (!window._ppAutoOpened) {
+        var urlId = new URLSearchParams(location.search).get('id');
+        if (urlId) {
+          window._ppAutoOpened = true;
+          var match = ppConvs.find(function(c) { return c.id === urlId; });
+          if (match) {
+            openConv(urlId);
+          } else {
+            console.warn('[pp-conversations] requested conv ' + urlId + ' not in this partner\'s list (slug=' + PP_SLUG + '). Check that ?as=X matches the conversation\'s property.');
+          }
+        }
+      }
     })
     .catch(function(e) {
       document.getElementById('pp-conv-list').innerHTML = '<div class="conv-loading" style="color:var(--red);">Error: ' + escHtml(e.message) + '</div>';
