@@ -503,6 +503,46 @@ tbody tr:hover{background:var(--bg);}
   color:#4a6a48;text-decoration:none;cursor:pointer;
 }
 .bc-cta:hover{text-decoration:underline;}
+
+/* v73at: offer_declined system message — muted/somber card. Parity with
+   customer + partner. Stone/bark palette, no celebratory icon, no red.
+   Uses !important to override admin role-* gradients. */
+.msg-bubble.offer-declined-card{
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%) !important;
+  border:1px solid rgba(122,106,88,.28) !important;
+  color:#3a3128 !important;
+  white-space:normal;
+  max-width:380px;
+  padding:16px 18px !important;
+  display:flex !important;align-items:flex-start;gap:12px;
+  box-shadow:0 2px 10px rgba(80,60,30,.06) !important;
+}
+.msg.role-guest .msg-bubble.offer-declined-card,
+.msg.role-partner .msg-bubble.offer-declined-card,
+.msg.role-admin .msg-bubble.offer-declined-card{
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%) !important;
+  color:#3a3128 !important;
+  border:1px solid rgba(122,106,88,.28) !important;
+}
+.od-icon{
+  flex-shrink:0;width:32px;height:32px;border-radius:50%;
+  background:rgba(122,106,88,.18);color:#5a4a38;
+  display:flex;align-items:center;justify-content:center;
+}
+.od-body{flex:1;min-width:0;}
+.od-title{
+  font-family:'Geist',sans-serif;font-size:.68rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;color:#5a4a38;
+  margin-bottom:5px;
+}
+.od-text{font-size:.85rem;line-height:1.55;color:#3a3128;}
+.od-reason{
+  margin-top:8px;padding:8px 10px;
+  background:rgba(255,255,255,.5);border-radius:7px;
+  font-size:.78rem;color:#5a4a38;font-style:italic;
+  border-left:2px solid rgba(122,106,88,.35);
+}
+
 .msg-time{
   font-size:.62rem;color:var(--text3);margin:4px 12px 0;
   font-variant-numeric:tabular-nums;
@@ -2116,6 +2156,27 @@ function renderMessagesInto(wrap, conv, messages) {
           '<div class="bc-text">' + escH2(m.text || '').replace(/\n/g, '<br>') + '</div>' +
           (m.bookingRef ? '<a href="admin-bookings.html" class="bc-cta">View in bookings \u2192</a>' : '') +
         '</div>';
+    } else if (m.type === 'offer_declined') {
+      // v73at: muted/somber card for guest-declined offers. Parity with
+      // customer + partner. Worker text format: "Guest declined the offer.
+      // Reason: ..." — split on " Reason: " to quote the reason separately.
+      bubble.className = 'msg-bubble offer-declined-card';
+      function escH3(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      var odFullTextA = m.text || '';
+      var odMainTextA = odFullTextA;
+      var odReasonA = '';
+      var odReasonIdxA = odFullTextA.indexOf(' Reason: ');
+      if (odReasonIdxA >= 0) {
+        odMainTextA = odFullTextA.slice(0, odReasonIdxA);
+        odReasonA = odFullTextA.slice(odReasonIdxA + ' Reason: '.length);
+      }
+      bubble.innerHTML =
+        '<div class="od-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></div>' +
+        '<div class="od-body">' +
+          '<div class="od-title">Offer declined</div>' +
+          '<div class="od-text">' + escH3(odMainTextA) + '</div>' +
+          (odReasonA ? '<div class="od-reason">\u201C' + escH3(odReasonA) + '\u201D</div>' : '') +
+        '</div>';
     } else {
       bubble.className = 'msg-bubble';
       bubble.textContent = m.text;
@@ -2129,7 +2190,7 @@ function renderMessagesInto(wrap, conv, messages) {
 
     // v73ad: hover actions skipped for offer_card + booking_confirmed (parity
     // with customer side). These are system cards, not regular messages.
-    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed') {
+    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed' && m.type !== 'offer_declined') {
     // Hover action overlay
     var actions = document.createElement('div');
     actions.className = 'msg-actions';

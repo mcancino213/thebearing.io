@@ -1444,26 +1444,69 @@ View in admin: https://thebearing.io/admin-bookings.html
 
             const adminRecipients = await loadNotificationRecipients(env);
 
+            // v73at: branded email shell used for all three sends.
+            const ePropLabel = escapeEmailHtml(property);
+            const eGuestFull = escapeEmailHtml((firstname || '') + ' ' + (lastname || ''));
+            const eRef = escapeEmailHtml(ref);
+            const detailsRowsGuest =
+              '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:120px;">Property</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + ePropLabel + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Dates</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(arrival) + ' &rarr; ' + escapeEmailHtml(departure) + ' (' + escapeEmailHtml(nights) + ' nights)</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Guests</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(guests) + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Room</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(room) + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Deposit due</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;font-weight:600;">$' + escapeEmailHtml(depositAmount) + '</td></tr>';
+            const guestBodyHtml =
+              '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+              + '<table cellpadding="0" cellspacing="0" border="0" width="100%">' + detailsRowsGuest + '</table>'
+              + '</div>'
+              + '<p style="font-size:.9rem;line-height:1.55;color:#3a3128;margin:0 0 6px;">The property will contact you at <strong>' + escapeEmailHtml(email) + '</strong> within 24 hours to confirm your stay.</p>';
+
+            const detailsRowsAdmin =
+              '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:120px;">Guest</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eGuestFull + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Email</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(email) + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Phone</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(phone || 'not provided') + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Property</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + ePropLabel + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Dates</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(arrival) + ' &rarr; ' + escapeEmailHtml(departure) + ' (' + escapeEmailHtml(nights) + ' nights)</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Guests</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(guests) + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Room</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(room) + '</td></tr>'
+              + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Total / Deposit</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;font-weight:600;">$' + escapeEmailHtml(totalAmount) + ' / $' + escapeEmailHtml(depositAmount) + '</td></tr>'
+              + (notes ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;vertical-align:top;">Notes</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;white-space:pre-wrap;">' + escapeEmailHtml(notes) + '</td></tr>' : '');
+            const adminBodyHtml =
+              '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+              + '<table cellpadding="0" cellspacing="0" border="0" width="100%">' + detailsRowsAdmin + '</table>'
+              + '</div>';
+
             await Promise.all([
-              fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  from: 'The Bearing <bookings@thebearing.io>',
-                  to: [email],
-                  subject: `Booking request received — ${ref} · ${property}`,
-                  text: guestEmailBody
-                })
+              sendBrandedEmail({
+                env, logTag: 'Booking',
+                to: [email],
+                subject: 'Booking request received \u2014 ' + ref + ' \u00b7 ' + property,
+                text: guestEmailBody,
+                shell: {
+                  preheader: 'Your booking request for ' + property + ' has been received.',
+                  kicker: 'The Bearing',
+                  heading: 'Hi ' + escapeEmailHtml(firstname) + ', your booking is in',
+                  intro: 'We\u2019ve received your booking request. The property will confirm shortly.',
+                  bodyHtml: guestBodyHtml,
+                  refLabel: ref,
+                  footerNote: 'Questions in the meantime? Reply to this email and we\u2019ll route it to the right team.'
+                }
               }),
-              fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  from: 'The Bearing Bookings <bookings@thebearing.io>',
-                  to: adminRecipients,
-                  subject: `New booking — ${ref} · ${firstname} ${lastname} · ${property}`,
-                  text: adminEmailBody
-                })
+              sendBrandedEmail({
+                env, logTag: 'Booking',
+                from: 'The Bearing Bookings <bookings@thebearing.io>',
+                to: adminRecipients,
+                subject: 'New booking \u2014 ' + ref + ' \u00b7 ' + firstname + ' ' + lastname + ' \u00b7 ' + property,
+                text: adminEmailBody,
+                shell: {
+                  preheader: 'New booking from ' + firstname + ' ' + lastname + ' at ' + property,
+                  kicker: 'The Bearing \u00b7 Admin',
+                  heading: 'New booking request',
+                  intro: '<strong>' + eGuestFull + '</strong> just submitted a booking at ' + ePropLabel + '.',
+                  bodyHtml: adminBodyHtml,
+                  ctaUrl: 'https://thebearing.io/admin-bookings.html',
+                  ctaLabel: 'Open in admin',
+                  refLabel: ref
+                }
               })
             ]);
 
@@ -1477,15 +1520,22 @@ View in admin: https://thebearing.io/admin-bookings.html
                   return adminRecipients.indexOf(e) === -1;
                 });
                 if (partnerToSend.length) {
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'The Bearing Bookings <bookings@thebearing.io>',
-                      to: partnerToSend,
-                      subject: `[PARTNER] New booking — ${ref} · ${firstname} ${lastname} · ${property}`,
-                      text: adminEmailBody.replace('admin-bookings.html', 'pp-bookings.html')
-                    })
+                  await sendBrandedEmail({
+                    env, logTag: 'Booking',
+                    from: 'The Bearing Bookings <bookings@thebearing.io>',
+                    to: partnerToSend,
+                    subject: '[PARTNER] New booking \u2014 ' + ref + ' \u00b7 ' + firstname + ' ' + lastname + ' \u00b7 ' + property,
+                    text: adminEmailBody.replace('admin-bookings.html', 'pp-bookings.html'),
+                    shell: {
+                      preheader: 'New booking from ' + firstname + ' ' + lastname + ' at ' + property,
+                      kicker: 'The Bearing \u00b7 Partner',
+                      heading: 'New booking request',
+                      intro: '<strong>' + eGuestFull + '</strong> just submitted a booking at ' + ePropLabel + '.',
+                      bodyHtml: adminBodyHtml,
+                      ctaUrl: 'https://thebearing.io/pp-bookings.html',
+                      ctaLabel: 'Open in partner portal',
+                      refLabel: ref
+                    }
                   });
                 }
               } catch (e) { console.error('[Booking] partner email error:', e.message); }
@@ -1867,29 +1917,109 @@ View in admin: https://thebearing.io/admin-bookings.html
           // Update aggregate counters
           await recomputeUnreadCounters(env);
 
-          // Email admin/partner notification
-          if (env.RESEND_API_KEY && firstMessage && conv.notifyAdmin !== false) {
+          // v73at: Three emails fire here:
+          //   (1) NEW \u2014 guest enquiry confirmation. Fires regardless of
+          //       conv.notifyAdmin/notifyGuest since this is a transactional
+          //       receipt the guest expects.
+          //   (2) Admin alert (gated by conv.notifyAdmin).
+          //   (3) Partner alert (gated by shouldSendPartnerEmail).
+          if (env.RESEND_API_KEY && firstMessage) {
             try {
-              const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=admin`;
-              const adminRecipients = await loadNotificationRecipients(env);
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  from: 'The Bearing <bookings@thebearing.io>',
-                  to: adminRecipients,
-                  subject: `New enquiry — ${propertyName} from ${guestName || guestEmail}`,
-                  text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
-                })
+              const eGuestName = escapeEmailHtml(guestName || '');
+              const eGuestEmail = escapeEmailHtml(guestEmail || '');
+              const ePropName = escapeEmailHtml(propertyName || '');
+              const eFirstMsg = escapeEmailHtml(firstMessage || '');
+              const eGuestLabel = eGuestName || eGuestEmail;
+              const replyToken = 'reply+' + id + '@replies.thebearing.io';
+
+              // Build "what you sent" summary rows for the guest confirmation.
+              // `enq` was set above in the conv-create flow.
+              const _enq = (typeof enquiry === 'object' && enquiry) ? enquiry : {};
+              const enqRows = [];
+              if (_enq.arrival || _enq.departure) {
+                enqRows.push({ k: 'Dates', v: (_enq.arrival || '?') + (_enq.departure ? ' \u2192 ' + _enq.departure : '') });
+              }
+              if (_enq.guests) enqRows.push({ k: 'Party size', v: String(_enq.guests) });
+              if (_enq.cabin)  enqRows.push({ k: 'Room / cabin', v: String(_enq.cabin) });
+              const enqRowsHtml = enqRows.map(function(r) {
+                return '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:120px;">' + escapeEmailHtml(r.k) + '</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + escapeEmailHtml(r.v) + '</td></tr>';
+              }).join('');
+
+              // (1) GUEST CONFIRMATION \u2014 always sends.
+              const guestSummaryHtml =
+                (enqRowsHtml
+                  ? '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">What you sent</div>'
+                    + '<table cellpadding="0" cellspacing="0" border="0" width="100%">' + enqRowsHtml + '</table>'
+                    + '</div>'
+                  : '')
+                + '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Your message</div>'
+                + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eFirstMsg + '</div>'
+                + '</div>';
+
+              const guestText =
+                'Thanks for reaching out about ' + propertyName + '.\n\n'
+                + 'We\'ve passed your enquiry on to the property team \u2014 they will be in touch shortly.\n\n'
+                + (enqRows.length ? 'Your enquiry:\n' + enqRows.map(function(r){return '  ' + r.k + ': ' + r.v;}).join('\n') + '\n\n' : '')
+                + 'Your message:\n"' + firstMessage + '"\n\n'
+                + 'You can reply directly to this email and it will route into your conversation with the property.\n\n'
+                + 'View the conversation: https://thebearing.io/conversations.html?id=' + id + '\n\n'
+                + '\u2014 The Bearing\nhttps://thebearing.io';
+
+              await sendBrandedEmail({
+                env, logTag: 'Conv-Guest',
+                to: [guestEmail],
+                replyTo: replyToken,
+                subject: 'Your Enquiry for ' + propertyName + ' Was Received',
+                text: guestText,
+                shell: {
+                  preheader: 'We\u2019ve passed your enquiry to the ' + propertyName + ' team.',
+                  kicker: 'The Bearing',
+                  heading: 'Your enquiry was received',
+                  intro: 'Thanks ' + (eGuestName || 'for reaching out') + '. We\u2019ve passed your enquiry to <strong>' + ePropName + '</strong> \u2014 the property team will be in touch shortly.',
+                  bodyHtml: guestSummaryHtml,
+                  ctaUrl: 'https://thebearing.io/conversations.html?id=' + id,
+                  ctaLabel: 'View the conversation',
+                  footerNote: 'You can reply directly to this email \u2014 your response will land back in your conversation with the property.',
+                  refLabel: ref
+                }
               });
-              // v73al: also notify partner emails for this property (deduped
-              // against adminRecipients so a partner sharing the admin inbox
-              // doesn't get two copies).
-              // v73as: gate by shouldSendPartnerEmail (master/per-event/universal precedence)
+
+              // (2) ADMIN ALERT \u2014 gated by conv.notifyAdmin.
+              if (conv.notifyAdmin !== false) {
+                const unsubUrl = 'https://thebearing.io/api/notify-toggle?id=' + id + '&role=admin';
+                const adminRecipients = await loadNotificationRecipients(env);
+                const adminMsgBlock =
+                  '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                  + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Their message</div>'
+                  + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eFirstMsg + '</div>'
+                  + '</div>';
+                await sendBrandedEmail({
+                  env, logTag: 'Conv-Admin',
+                  to: adminRecipients,
+                  subject: 'New enquiry \u2014 ' + propertyName + ' from ' + (guestName || guestEmail),
+                  text: 'New enquiry received.\n\nGuest: ' + (guestName || guestEmail) + ' (' + guestEmail + ')\nProperty: ' + propertyName + '\n\nMessage:\n' + firstMessage + '\n\nReply at: https://thebearing.io/admin-conversations.html?id=' + id + '\n\n\u2014\nMute email notifications for this conversation: ' + unsubUrl,
+                  shell: {
+                    preheader: 'New enquiry at ' + propertyName + ' from ' + (guestName || guestEmail),
+                    kicker: 'The Bearing \u00b7 Admin',
+                    heading: 'New enquiry at ' + ePropName,
+                    intro: 'from <strong>' + eGuestLabel + '</strong> &middot; ' + eGuestEmail,
+                    bodyHtml: adminMsgBlock,
+                    ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + id,
+                    ctaLabel: 'Open in admin',
+                    refLabel: ref,
+                    unsubUrl: unsubUrl
+                  }
+                });
+              }
+
+              // (3) PARTNER ALERT \u2014 gated by shouldSendPartnerEmail.
               if (await shouldSendPartnerEmail('new_enquiry', conv, propertySlug, env)) {
+                const adminRecipients2 = await loadNotificationRecipients(env);
                 const partnerRecipients = await loadPartnerRecipients(propertySlug, env);
                 const partnerToSend = partnerRecipients.filter(function(e) {
-                  return adminRecipients.indexOf(e) === -1;
+                  return adminRecipients2.indexOf(e) === -1;
                 });
                 if (partnerToSend.length) {
                   // v73am: include ?as=slug so partner-portal page knows which
@@ -1897,44 +2027,37 @@ View in admin: https://thebearing.io/admin-bookings.html
                   // v73an: primary CTA is now "Build offer" deep-linking to
                   // pp-bookings with ?newOffer={ref} which auto-opens the
                   // offer-builder modal for that booking. Secondary CTA opens
-                  // the conversation. The booking-builder is the partner's
-                  // real action item on a new enquiry, not "read the message".
-                  const bookingsUrl = `https://thebearing.io/pp-bookings.html?as=${encodeURIComponent(propertySlug)}&newOffer=${encodeURIComponent(ref)}`;
-                  const convUrl = `https://thebearing.io/pp-conversations.html?id=${id}&as=${encodeURIComponent(propertySlug)}`;
-                  const guestLabel = (guestName || guestEmail).replace(/[<>"']/g, '');
-                  const propLabel = String(propertyName || '').replace(/[<>"']/g, '');
-                  const msgLabel = String(firstMessage || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                  const html = `
-<div style="font-family:Geist,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#faf7f1;color:#1e1810;">
-  <div style="font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">The Bearing &middot; Partner</div>
-  <h1 style="font-family:'Instrument Serif',Georgia,serif;font-size:1.7rem;line-height:1.2;margin:8px 0 4px;font-weight:400;">New enquiry at ${propLabel}</h1>
-  <p style="color:#7a6a58;margin:0 0 20px;font-size:.92rem;">from ${guestLabel} &middot; ${guestEmail}</p>
-  <div style="background:#fff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px;margin:0 0 22px;">
-    <div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Their message</div>
-    <div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;">${msgLabel}</div>
-  </div>
-  <div style="margin:0 0 22px;">
-    <a href="${bookingsUrl}" style="display:inline-block;background:#b05830;color:#fff;padding:13px 22px;border-radius:9px;text-decoration:none;font-weight:600;font-size:.92rem;letter-spacing:.01em;box-shadow:0 2px 8px rgba(176,88,48,.25);">Build offer &rarr;</a>
-    <a href="${convUrl}" style="display:inline-block;margin-left:10px;color:#7a6a58;padding:13px 14px;text-decoration:underline;font-size:.88rem;">Open conversation</a>
-  </div>
-  <p style="color:#7a6a58;font-size:.82rem;line-height:1.55;margin:0;">Or reply directly to this email \u2014 your response will be sent to the guest as a partner message in the conversation.</p>
-  <p style="color:#9a8e80;font-size:.78rem;margin:24px 0 0;border-top:1px solid rgba(80,55,25,.08);padding-top:14px;">Reference: <code style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">${ref}</code></p>
-</div>`.trim();
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'The Bearing <bookings@thebearing.io>',
-                      to: partnerToSend,
-                      reply_to: `reply+${id}@replies.thebearing.io`,
-                      subject: `[PARTNER] New enquiry \u2014 ${propertyName} from ${guestName || guestEmail}`,
-                      html: html,
-                      text: `New enquiry at ${propertyName} from ${guestName || guestEmail} (${guestEmail}).\n\nMessage:\n${firstMessage}\n\nBuild offer: ${bookingsUrl}\nOpen conversation: ${convUrl}\n\nOr reply directly to this email \u2014 your response will be sent to the guest.\n\nReference: ${ref}\n\n\u2014 The Bearing`
-                    })
-                  }).catch(function(e) { console.error('[Conv] Partner email error:', e.message); });
+                  // the conversation.
+                  const bookingsUrl = 'https://thebearing.io/pp-bookings.html?as=' + encodeURIComponent(propertySlug) + '&newOffer=' + encodeURIComponent(ref);
+                  const convUrl = 'https://thebearing.io/pp-conversations.html?id=' + id + '&as=' + encodeURIComponent(propertySlug);
+                  const partnerMsgBlock =
+                    '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Their message</div>'
+                    + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eFirstMsg + '</div>'
+                    + '</div>';
+                  await sendBrandedEmail({
+                    env, logTag: 'Conv-Partner',
+                    to: partnerToSend,
+                    replyTo: replyToken,
+                    subject: '[PARTNER] New enquiry \u2014 ' + propertyName + ' from ' + (guestName || guestEmail),
+                    text: 'New enquiry at ' + propertyName + ' from ' + (guestName || guestEmail) + ' (' + guestEmail + ').\n\nMessage:\n' + firstMessage + '\n\nBuild offer: ' + bookingsUrl + '\nOpen conversation: ' + convUrl + '\n\nOr reply directly to this email \u2014 your response will be sent to the guest.\n\nReference: ' + ref + '\n\n\u2014 The Bearing',
+                    shell: {
+                      preheader: 'New enquiry at ' + propertyName + ' from ' + (guestName || guestEmail),
+                      kicker: 'The Bearing \u00b7 Partner',
+                      heading: 'New enquiry at ' + ePropName,
+                      intro: 'from <strong>' + eGuestLabel + '</strong> &middot; ' + eGuestEmail,
+                      bodyHtml: partnerMsgBlock,
+                      ctaUrl: bookingsUrl,
+                      ctaLabel: 'Build offer',
+                      ctaSecondaryUrl: convUrl,
+                      ctaSecondaryLabel: 'Open conversation',
+                      footerNote: 'Or reply directly to this email \u2014 your response will be sent to the guest as a partner message in the conversation.',
+                      refLabel: ref
+                    }
+                  });
                 }
               }
-            } catch(e) { console.error('[Conv] Admin email error:', e.message); }
+            } catch(e) { console.error('[Conv] enquiry email block error:', e.message); }
           }
 
           return jsonResponse({ ok: true, id, conversation: conv, messages });
@@ -2131,16 +2254,32 @@ View in admin: https://thebearing.io/admin-bookings.html
                   const replyUrl = `https://thebearing.io/conversations.html?id=${id}`;
                   const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${id}&role=guest`;
                   const displaySender = senderName || conv.propertyName;
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
-                      to: [conv.guestEmail],
-                      reply_to: `reply+${id}@replies.thebearing.io`,
-                      subject: `New message about your ${conv.propertyName} enquiry`,
-                      text: `${displaySender} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n— The Bearing\nhttps://thebearing.io\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
-                    })
+                  const eText = escapeEmailHtml(text);
+                  const eSender = escapeEmailHtml(displaySender);
+                  const ePropName = escapeEmailHtml(conv.propertyName || '');
+                  const msgBlock =
+                    '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">From ' + eSender + '</div>'
+                    + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eText + '</div>'
+                    + '</div>';
+                  await sendBrandedEmail({
+                    env, logTag: 'Conv-Reply-Guest',
+                    from: conv.propertyName + ' via The Bearing <bookings@thebearing.io>',
+                    to: [conv.guestEmail],
+                    replyTo: 'reply+' + id + '@replies.thebearing.io',
+                    subject: 'New message about your ' + conv.propertyName + ' enquiry',
+                    text: displaySender + ' sent you a message on The Bearing:\n\n"' + text + '"\n\nYou can reply to this email or view the conversation here:\n' + replyUrl + '\n\n\u2014 The Bearing\nhttps://thebearing.io\n\n\u2014\nMute email notifications for this conversation: ' + unsubUrl,
+                    shell: {
+                      preheader: eSender + ' sent you a message about ' + ePropName,
+                      kicker: 'The Bearing',
+                      heading: 'A message from ' + eSender,
+                      intro: 'About your enquiry at <strong>' + ePropName + '</strong>',
+                      bodyHtml: msgBlock,
+                      ctaUrl: replyUrl,
+                      ctaLabel: 'Open conversation',
+                      footerNote: 'You can also reply directly to this email \u2014 your response will land in the conversation thread.',
+                      unsubUrl: unsubUrl
+                    }
                   });
                 }
               } else {
@@ -2154,42 +2293,64 @@ View in admin: https://thebearing.io/admin-bookings.html
                   // booking that already has an active offer). Helps admin/
                   // partner triage their inbox: "Change request" is
                   // categorically more urgent than a chatty reply.
-                  let subject, bodyText;
+                  let subject, bodyText, headingHtml, introHtml, changeLinesHtml = '';
                   if (storedChangeRequest && changeRequestSummary) {
                     const fmt = function(s){ try { return new Date(s.length===10?s+'T00:00':s).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(_){ return s; } };
                     const cr = changeRequestSummary;
                     const prev = cr.previousValues || {};
                     const changeLines = [];
                     if (cr.arrival && cr.departure && (cr.arrival !== prev.arrival || cr.departure !== prev.departure)) {
-                      changeLines.push('Dates: ' + (prev.arrival && prev.departure ? (fmt(prev.arrival) + ' → ' + fmt(prev.departure) + '   →   ') : '') + fmt(cr.arrival) + ' → ' + fmt(cr.departure));
+                      changeLines.push('Dates: ' + (prev.arrival && prev.departure ? (fmt(prev.arrival) + ' \u2192 ' + fmt(prev.departure) + '   \u2192   ') : '') + fmt(cr.arrival) + ' \u2192 ' + fmt(cr.departure));
                     }
                     if (cr.guests && cr.guests !== prev.guests) {
-                      changeLines.push('Guests: ' + (prev.guests || '(unset)') + '   →   ' + cr.guests);
+                      changeLines.push('Guests: ' + (prev.guests || '(unset)') + '   \u2192   ' + cr.guests);
                     }
                     if (cr.cabin && cr.cabin !== prev.room) {
-                      changeLines.push('Room: ' + (prev.room || '(unset)') + '   →   ' + cr.cabin);
+                      changeLines.push('Room: ' + (prev.room || '(unset)') + '   \u2192   ' + cr.cabin);
                     }
-                    subject = `Change request from ${conv.guestName} — ${conv.propertyName}`;
-                    bodyText = `${conv.guestName} requested a change to the active offer on ${conv.propertyName}.\n\n` +
+                    subject = 'Change request from ' + conv.guestName + ' \u2014 ' + conv.propertyName;
+                    bodyText = conv.guestName + ' requested a change to the active offer on ' + conv.propertyName + '.\n\n' +
                                (changeLines.length ? changeLines.join('\n') + '\n\n' : '') +
-                               `Their message:\n\n"${text}"\n\n` +
-                               `Action: open the booking in the partner portal, click "Revise offer" — the form will pre-fill with the requested values.\n\n` +
-                               `View conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n` +
-                               `—\nMute email notifications for this conversation: ${unsubUrl}`;
+                               'Their message:\n\n"' + text + '"\n\n' +
+                               'Action: open the booking in the partner portal, click "Revise offer" \u2014 the form will pre-fill with the requested values.\n\n' +
+                               'View conversation: https://thebearing.io/admin-conversations.html?id=' + id + '\n\n' +
+                               '\u2014\nMute email notifications for this conversation: ' + unsubUrl;
+                    headingHtml = 'Change request from ' + escapeEmailHtml(conv.guestName);
+                    introHtml = 'Requested change to the active offer on <strong>' + escapeEmailHtml(conv.propertyName) + '</strong>.';
+                    if (changeLines.length) {
+                      changeLinesHtml = '<div style="background:#fdf3e7;border:1px solid rgba(176,88,48,.3);border-radius:12px;padding:14px 18px;margin:0 0 14px;">'
+                        + '<div style="font-size:.7rem;color:#b05830;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;font-weight:700;">Requested changes</div>'
+                        + changeLines.map(function(l){return '<div style="font-size:.92rem;line-height:1.5;color:#1e1810;">' + escapeEmailHtml(l) + '</div>';}).join('')
+                        + '</div>';
+                    }
                   } else {
-                    subject = `Reply from ${conv.guestName} — ${conv.propertyName}`;
-                    bodyText = `${conv.guestName} replied:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`;
+                    subject = 'Reply from ' + conv.guestName + ' \u2014 ' + conv.propertyName;
+                    bodyText = conv.guestName + ' replied:\n\n"' + text + '"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=' + id + '\n\n\u2014\nMute email notifications for this conversation: ' + unsubUrl;
+                    headingHtml = 'Reply from ' + escapeEmailHtml(conv.guestName);
+                    introHtml = 'About <strong>' + escapeEmailHtml(conv.propertyName) + '</strong>';
                   }
+                  const eGuestText = escapeEmailHtml(text);
+                  const adminMsgBlock = changeLinesHtml
+                    + '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Their message</div>'
+                    + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eGuestText + '</div>'
+                    + '</div>';
 
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'The Bearing <bookings@thebearing.io>',
-                      to: adminRecipients,
-                      subject: subject,
-                      text: bodyText,
-                    })
+                  await sendBrandedEmail({
+                    env, logTag: 'Conv-Reply-Admin',
+                    to: adminRecipients,
+                    subject: subject,
+                    text: bodyText,
+                    shell: {
+                      preheader: subject,
+                      kicker: 'The Bearing \u00b7 Admin',
+                      heading: headingHtml,
+                      intro: introHtml,
+                      bodyHtml: adminMsgBlock,
+                      ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + id,
+                      ctaLabel: 'Open in admin',
+                      unsubUrl: unsubUrl
+                    }
                   });
 
                   // v73al: also notify partner for the same event (deduped
@@ -2215,17 +2376,24 @@ View in admin: https://thebearing.io/admin-bookings.html
                       const partnerBodyText = bodyText
                         .replace(/admin-conversations\.html\?id=([^\s\n]+)/g, 'pp-conversations.html?id=$1' + asParam)
                         .replace(/View conversation: /g, 'Reply directly to this email, or open the conversation: ');
-                      await fetch('https://api.resend.com/emails', {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          from: 'The Bearing <bookings@thebearing.io>',
-                          to: partnerToSend,
-                          reply_to: `reply+${id}@replies.thebearing.io`,
-                          subject: '[PARTNER] ' + subject,
-                          text: partnerBodyText,
-                        })
-                      }).catch(function(e) { console.error('[Conv] Partner reply email error:', e.message); });
+                      const partnerConvUrl = 'https://thebearing.io/pp-conversations.html?id=' + id + asParam;
+                      await sendBrandedEmail({
+                        env, logTag: 'Conv-Reply-Partner',
+                        to: partnerToSend,
+                        replyTo: 'reply+' + id + '@replies.thebearing.io',
+                        subject: '[PARTNER] ' + subject,
+                        text: partnerBodyText,
+                        shell: {
+                          preheader: subject,
+                          kicker: 'The Bearing \u00b7 Partner',
+                          heading: headingHtml,
+                          intro: introHtml,
+                          bodyHtml: adminMsgBlock,
+                          ctaUrl: partnerConvUrl,
+                          ctaLabel: 'Open conversation',
+                          footerNote: 'Or reply directly to this email \u2014 your response will be sent to the guest as a partner message.'
+                        }
+                      });
                     }
                   }
                 }
@@ -2781,50 +2949,88 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (env.RESEND_API_KEY) {
         try {
           const adminRecipients = await loadNotificationRecipients(env);
+          const ePropName = escapeEmailHtml(conv.propertyName || '');
+          const eText = escapeEmailHtml(text);
           if (inferredRole === 'partner') {
             // Partner replied via email → notify the guest as if it came
             // through the portal. Mirrors the customer notification path
             // (envoy.js around line 2068 in the conversation message handler).
             if (conv.notifyGuest !== false && conv.guestEmail) {
-              const replyUrl = `https://thebearing.io/conversations.html?id=${convId}`;
-              const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=guest`;
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  from: `${conv.propertyName} via The Bearing <bookings@thebearing.io>`,
-                  to: [conv.guestEmail],
-                  reply_to: `reply+${convId}@replies.thebearing.io`,
-                  subject: `New message about your ${conv.propertyName} enquiry`,
-                  text: `${inferredSenderName} sent you a message on The Bearing:\n\n"${text}"\n\nYou can reply to this email or view the conversation here:\n${replyUrl}\n\n\u2014 The Bearing\nhttps://thebearing.io\n\n\u2014\nMute email notifications for this conversation: ${unsubUrl}`
-                })
-              }).catch(function(e) { console.error('[Inbound] Guest notify err:', e.message); });
+              const replyUrl = 'https://thebearing.io/conversations.html?id=' + convId;
+              const unsubUrl = 'https://thebearing.io/api/notify-toggle?id=' + convId + '&role=guest';
+              const eSender = escapeEmailHtml(inferredSenderName);
+              const msgBlock =
+                '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">From ' + eSender + '</div>'
+                + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eText + '</div>'
+                + '</div>';
+              await sendBrandedEmail({
+                env, logTag: 'Inbound-Guest',
+                from: conv.propertyName + ' via The Bearing <bookings@thebearing.io>',
+                to: [conv.guestEmail],
+                replyTo: 'reply+' + convId + '@replies.thebearing.io',
+                subject: 'New message about your ' + conv.propertyName + ' enquiry',
+                text: inferredSenderName + ' sent you a message on The Bearing:\n\n"' + text + '"\n\nYou can reply to this email or view the conversation here:\n' + replyUrl + '\n\n\u2014 The Bearing\nhttps://thebearing.io\n\n\u2014\nMute email notifications for this conversation: ' + unsubUrl,
+                shell: {
+                  preheader: eSender + ' sent you a message about ' + ePropName,
+                  kicker: 'The Bearing',
+                  heading: 'A message from ' + eSender,
+                  intro: 'About your enquiry at <strong>' + ePropName + '</strong>',
+                  bodyHtml: msgBlock,
+                  ctaUrl: replyUrl,
+                  ctaLabel: 'Open conversation',
+                  footerNote: 'You can also reply directly to this email \u2014 your response will land in the conversation thread.',
+                  unsubUrl: unsubUrl
+                }
+              });
             }
             // Also CC admin so they have visibility into partner replies
             if (conv.notifyAdmin !== false && adminRecipients.length) {
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  from: 'The Bearing <bookings@thebearing.io>',
-                  to: adminRecipients,
-                  subject: `[FYI] Partner reply via email \u2014 ${conv.propertyName}`,
-                  text: `${inferredSenderName} (partner) replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${convId}\n\n\u2014 The Bearing`
-                })
-              }).catch(function(e) { console.error('[Inbound] Admin FYI err:', e.message); });
+              const adminMsgBlock =
+                '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">From ' + escapeEmailHtml(inferredSenderName) + ' (partner)</div>'
+                + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eText + '</div>'
+                + '</div>';
+              await sendBrandedEmail({
+                env, logTag: 'Inbound-Admin-FYI',
+                to: adminRecipients,
+                subject: '[FYI] Partner reply via email \u2014 ' + conv.propertyName,
+                text: inferredSenderName + ' (partner) replied via email:\n\n"' + text + '"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=' + convId + '\n\n\u2014 The Bearing',
+                shell: {
+                  preheader: 'Partner replied via email \u2014 ' + ePropName,
+                  kicker: 'The Bearing \u00b7 Admin',
+                  heading: 'Partner replied via email',
+                  intro: 'At <strong>' + ePropName + '</strong>',
+                  bodyHtml: adminMsgBlock,
+                  ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + convId,
+                  ctaLabel: 'Open in admin'
+                }
+              });
             }
           } else if (conv.notifyAdmin !== false) {
             // Guest replied via email \u2014 original flow: notify admin + partner
-            const unsubUrl = `https://thebearing.io/api/notify-toggle?id=${convId}&role=admin`;
-            await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                from: 'The Bearing <bookings@thebearing.io>',
-                to: adminRecipients,
-                subject: `Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
-                text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=${convId}\n\n\u2014\nMute email notifications for this conversation: ${unsubUrl}`
-              })
+            const unsubUrl = 'https://thebearing.io/api/notify-toggle?id=' + convId + '&role=admin';
+            const eGuestName = escapeEmailHtml(conv.guestName || '');
+            const guestMsgBlock =
+              '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+              + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">From ' + eGuestName + '</div>'
+              + '<div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.95rem;">' + eText + '</div>'
+              + '</div>';
+            await sendBrandedEmail({
+              env, logTag: 'Inbound-Admin',
+              to: adminRecipients,
+              subject: 'Email reply from ' + conv.guestName + ' \u2014 ' + conv.propertyName,
+              text: conv.guestName + ' replied via email:\n\n"' + text + '"\n\nView conversation: https://thebearing.io/admin-conversations.html?id=' + convId + '\n\n\u2014\nMute email notifications for this conversation: ' + unsubUrl,
+              shell: {
+                preheader: 'Email reply from ' + eGuestName + ' on ' + ePropName,
+                kicker: 'The Bearing \u00b7 Admin',
+                heading: 'Email reply from ' + eGuestName,
+                intro: 'About <strong>' + ePropName + '</strong>',
+                bodyHtml: guestMsgBlock,
+                ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + convId,
+                ctaLabel: 'Open in admin',
+                unsubUrl: unsubUrl
+              }
             });
             // v73al: notify partner too
             // v73as: gate by shouldSendPartnerEmail('guest_reply')
@@ -2834,18 +3040,24 @@ View in admin: https://thebearing.io/admin-bookings.html
                 return adminRecipients.indexOf(e) === -1;
               });
               if (partnerToSend.length) {
-                const ppUrl = `https://thebearing.io/pp-conversations.html?id=${convId}&as=${encodeURIComponent(conv.propertySlug)}`;
-                await fetch('https://api.resend.com/emails', {
-                  method: 'POST',
-                  headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    from: 'The Bearing <bookings@thebearing.io>',
-                    to: partnerToSend,
-                    reply_to: `reply+${convId}@replies.thebearing.io`,
-                    subject: `[PARTNER] Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
-                    text: `${conv.guestName} replied via email:\n\n"${text}"\n\nReply directly to this email, or open the conversation: ${ppUrl}\n\n\u2014 The Bearing`
-                  })
-                }).catch(function(e) { console.error('[Inbound] Partner notify err:', e.message); });
+                const ppUrl = 'https://thebearing.io/pp-conversations.html?id=' + convId + '&as=' + encodeURIComponent(conv.propertySlug);
+                await sendBrandedEmail({
+                  env, logTag: 'Inbound-Partner',
+                  to: partnerToSend,
+                  replyTo: 'reply+' + convId + '@replies.thebearing.io',
+                  subject: '[PARTNER] Email reply from ' + conv.guestName + ' \u2014 ' + conv.propertyName,
+                  text: conv.guestName + ' replied via email:\n\n"' + text + '"\n\nReply directly to this email, or open the conversation: ' + ppUrl + '\n\n\u2014 The Bearing',
+                  shell: {
+                    preheader: 'Email reply from ' + eGuestName + ' on ' + ePropName,
+                    kicker: 'The Bearing \u00b7 Partner',
+                    heading: 'Email reply from ' + eGuestName,
+                    intro: 'About <strong>' + ePropName + '</strong>',
+                    bodyHtml: guestMsgBlock,
+                    ctaUrl: ppUrl,
+                    ctaLabel: 'Open conversation',
+                    footerNote: 'Or reply directly to this email \u2014 your response will be sent to the guest as a partner message.'
+                  }
+                });
               }
             }
           }
@@ -3065,6 +3277,20 @@ View in admin: https://thebearing.io/admin-bookings.html
       const now = new Date().toISOString();
 
       try {
+        // v73at: test email still uses raw fetch because the admin-settings UI
+        // surfaces resp.status + resendId for diagnostics. Body gets the branded
+        // shell treatment but we don't go through sendBrandedEmail here.
+        const testHtml = renderEmailShell({
+          preheader: 'Test email from The Bearing admin.',
+          kicker: 'The Bearing \u00b7 Admin',
+          heading: 'Test email',
+          intro: 'This is a diagnostic test email triggered from admin-settings.',
+          bodyHtml: '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+            + '<div style="font-size:.85rem;color:#3a3128;line-height:1.6;">If you can read this, your Resend integration is delivering successfully to the configured recipients.</div>'
+            + '<div style="font-size:.78rem;color:#7a6a58;margin-top:14px;">Timestamp: ' + escapeEmailHtml(now) + '</div>'
+            + '<div style="font-size:.78rem;color:#7a6a58;margin-top:4px;">Recipients: ' + escapeEmailHtml(recipients.join(', ')) + '</div>'
+            + '</div>'
+        });
         const resp = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
@@ -3076,6 +3302,7 @@ View in admin: https://thebearing.io/admin-bookings.html
             to: recipients,
             subject: 'Test email from The Bearing admin · ' + now.slice(0,16),
             text: 'This is a diagnostic test email triggered from admin-settings.\n\nIf you can read this, your Resend integration is delivering successfully to the configured recipients.\n\nTimestamp: ' + now + '\nRecipients: ' + recipients.join(', '),
+            html: testHtml,
           }),
         });
         let body = null;
@@ -3780,24 +4007,33 @@ View in admin: https://thebearing.io/admin-bookings.html
           if (env.RESEND_API_KEY) {
             try {
               const adminRecipients = await loadNotificationRecipients(env);
+              const ePropName = escapeEmailHtml(bookingDecline.property || bookingDecline.slug);
+              const eGuestEmail = escapeEmailHtml(bookingDecline.email || 'unknown');
+              const eRef = escapeEmailHtml(bookingDecline.ref);
+              const declineDetailsHtml =
+                '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:120px;">Property</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + ePropName + '</td></tr>'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Guest</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eGuestEmail + '</td></tr>'
+                + (offer.declined_reason ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;vertical-align:top;">Reason</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;white-space:pre-wrap;">' + escapeEmailHtml(offer.declined_reason) + '</td></tr>' : '')
+                + '</table></div>';
               if (adminRecipients.length) {
-                await fetch('https://api.resend.com/emails', {
-                  method: 'POST',
-                  headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    from: 'The Bearing <bookings@thebearing.io>',
-                    to: adminRecipients,
-                    subject: '[DECLINED] ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
-                    html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                      + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined</h2>'
-                      + '<p><strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong></p>'
-                      + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
-                      + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
-                      + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
-                      + '<p>The booking is now back to <code>enquiry</code> \u2014 partner can build a fresh offer.</p>'
-                      + '</div>',
-                  }),
-                }).catch(function(e) { console.error('[Offer decline] admin email failed:', e); });
+                await sendBrandedEmail({
+                  env, logTag: 'Offer-Decline-Admin',
+                  to: adminRecipients,
+                  subject: '[DECLINED] ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
+                  text: 'Offer declined for ' + (bookingDecline.property || bookingDecline.slug) + ' (' + bookingDecline.ref + ').\n\nGuest: ' + (bookingDecline.email || 'unknown') + (offer.declined_reason ? '\nReason: ' + offer.declined_reason : '') + '\n\nThe booking is now back to "enquiry" \u2014 partner can build a fresh offer.\n\nView: https://thebearing.io/admin-bookings.html',
+                  shell: {
+                    preheader: 'Guest declined the offer for ' + (bookingDecline.property || bookingDecline.slug),
+                    kicker: 'The Bearing \u00b7 Admin',
+                    heading: 'Offer declined',
+                    intro: 'The booking is back to <code style="background:rgba(80,55,25,.08);padding:2px 6px;border-radius:4px;font-size:.85em;">enquiry</code> \u2014 partner can build a fresh offer.',
+                    bodyHtml: declineDetailsHtml,
+                    ctaUrl: 'https://thebearing.io/admin-bookings.html',
+                    ctaLabel: 'Open in admin',
+                    refLabel: bookingDecline.ref
+                  }
+                });
               }
               // v73al: notify partner too
               // v73as: gate by shouldSendPartnerEmail('offer_declined'). Need
@@ -3820,31 +4056,26 @@ View in admin: https://thebearing.io/admin-bookings.html
                   // v73am: reply_to so partner replies route to inbound webhook,
                   // plus a partner-portal link with ?as= so they can review the
                   // booking. Only attached if we have a conversationId.
-                  const ppEmailHeaders = { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' };
-                  const ppEmailBody = {
-                    from: 'The Bearing <bookings@thebearing.io>',
+                  const ppConvUrl = bookingDecline.conversationId
+                    ? 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(bookingDecline.conversationId) + '&as=' + encodeURIComponent(slug)
+                    : '';
+                  await sendBrandedEmail({
+                    env, logTag: 'Offer-Decline-Partner',
                     to: partnerToSend,
+                    replyTo: bookingDecline.conversationId ? 'reply+' + bookingDecline.conversationId + '@replies.thebearing.io' : undefined,
                     subject: '[PARTNER] Offer declined \u00b7 ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
-                    html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                      + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined by guest</h2>'
-                      + '<p>Your offer for <strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong> was declined.</p>'
-                      + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
-                      + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
-                      + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
-                      + '<p>The booking is back to <code>enquiry</code>. Build a revised offer in the partner portal.</p>'
-                      + (bookingDecline.conversationId
-                          ? '<p style="margin-top:16px;"><a href="https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(bookingDecline.conversationId) + '&as=' + encodeURIComponent(slug) + '">Open the conversation \u2192</a></p>'
-                          : '')
-                      + '</div>'
-                  };
-                  if (bookingDecline.conversationId) {
-                    ppEmailBody.reply_to = 'reply+' + bookingDecline.conversationId + '@replies.thebearing.io';
-                  }
-                  await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: ppEmailHeaders,
-                    body: JSON.stringify(ppEmailBody),
-                  }).catch(function(e) { console.error('[Offer decline] partner email failed:', e); });
+                    text: 'Your offer for ' + (bookingDecline.property || bookingDecline.slug) + ' was declined.\n\nGuest: ' + (bookingDecline.email || 'unknown') + (offer.declined_reason ? '\nReason: ' + offer.declined_reason : '') + '\n\nThe booking is back to "enquiry". Build a revised offer in the partner portal.\n\n' + (ppConvUrl ? 'Open the conversation: ' + ppConvUrl + '\n\n' : '') + '\u2014 The Bearing',
+                    shell: {
+                      preheader: 'Your offer for ' + (bookingDecline.property || bookingDecline.slug) + ' was declined',
+                      kicker: 'The Bearing \u00b7 Partner',
+                      heading: 'Offer declined by guest',
+                      intro: 'Your offer for <strong>' + ePropName + '</strong> was declined. The booking is back to <code style="background:rgba(80,55,25,.08);padding:2px 6px;border-radius:4px;font-size:.85em;">enquiry</code> \u2014 build a revised offer.',
+                      bodyHtml: declineDetailsHtml,
+                      ctaUrl: ppConvUrl,
+                      ctaLabel: ppConvUrl ? 'Open conversation' : '',
+                      refLabel: bookingDecline.ref
+                    }
+                  });
                 }
               }
             } catch (e) { console.error('[Offer decline] email block failed:', e); }
@@ -4699,67 +4930,82 @@ View in admin: https://thebearing.io/admin-bookings.html
             const partnerRecipients = await loadPartnerRecipients(booking.slug || booking.propertySlug, env);
             const propName = booking.property || booking.slug || 'Property';
             const stayLine = (booking.arrival && booking.departure)
-              ? booking.arrival + ' → ' + booking.departure + (booking.nights ? ' · ' + booking.nights + ' nights' : '')
+              ? booking.arrival + ' \u2192 ' + booking.departure + (booking.nights ? ' \u00b7 ' + booking.nights + ' nights' : '')
               : '';
             const roomLine = booking.room || '';
             const guestName = (booking.firstname || '') + (booking.lastname ? ' ' + booking.lastname : '');
+            const ePropName = escapeEmailHtml(propName);
+            const eStayLine = escapeEmailHtml(stayLine);
+            const eRoomLine = escapeEmailHtml(roomLine);
+            const eGuestName = escapeEmailHtml(guestName);
+            const eCustomerEmail = escapeEmailHtml(customerEmail || 'no email');
+            const eDepositPaid = escapeEmailHtml(depositPaid.toLocaleString());
+
+            const guestBookingDetails =
+              '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:20px;margin:0 0 22px;">'
+              + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Booking</div>'
+              + '<div style="font-family:\'Instrument Serif\',\'Cormorant Garamond\',Georgia,serif;font-size:1.2rem;margin-bottom:6px;color:#1e1810;">' + ePropName + '</div>'
+              + (stayLine ? '<div style="color:#5a4a38;margin-bottom:4px;font-size:.92rem;">' + eStayLine + '</div>' : '')
+              + (roomLine ? '<div style="color:#5a4a38;margin-bottom:4px;font-size:.92rem;">' + eRoomLine + '</div>' : '')
+              + '<div style="color:#7a6a58;font-size:.85rem;margin-top:10px;">Reference: <strong>' + escapeEmailHtml(bookingRef) + '</strong></div>'
+              + '</div>';
 
             // Customer confirmation
             if (customerEmail) {
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  from: 'The Bearing <bookings@thebearing.io>',
-                  to: [customerEmail],
-                  subject: 'Booking confirmed · ' + propName + ' · ' + bookingRef,
-                  html: '<div style="font-family:Geist,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#faf7f1;color:#1e1810;">'
-                    + '<div style="font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">The Bearing</div>'
-                    + '<h1 style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.8rem;line-height:1.2;margin:8px 0 18px;font-weight:400;">Your booking is confirmed.</h1>'
-                    + '<p style="line-height:1.55;margin:0 0 18px;">Hi ' + (guestName || 'there') + ', your deposit of <strong>$' + depositPaid.toLocaleString() + '</strong> has been received and your stay at <strong>' + propName + '</strong> is confirmed.</p>'
-                    + '<div style="background:#fff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px;margin:18px 0;">'
-                    + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Booking</div>'
-                    + '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.2rem;margin-bottom:6px;">' + propName + '</div>'
-                    + (stayLine ? '<div style="color:#5a4a38;margin-bottom:4px;">' + stayLine + '</div>' : '')
-                    + (roomLine ? '<div style="color:#5a4a38;margin-bottom:4px;">' + roomLine + '</div>' : '')
-                    + '<div style="color:#7a6a58;font-size:.85rem;margin-top:10px;">Reference: <strong>' + bookingRef + '</strong></div>'
-                    + '</div>'
-                    + '<p style="line-height:1.55;margin:0 0 12px;">The property has been notified and will be in touch directly with check-in details and any remaining balance.</p>'
-                    + '<p style="line-height:1.55;margin:0 0 12px;">You can view this booking anytime at <a href="https://thebearing.io/bookings" style="color:#b05830;">thebearing.io/bookings</a>.</p>'
-                    + '<p style="margin:32px 0 0;color:#7a6a58;font-size:.85rem;">Bon voyage,<br>The Bearing</p>'
-                    + '</div>',
-                }),
-              }).catch(function(e) { console.error('[Stripe webhook] customer email failed:', e); });
+              // v73at: route guest replies into the conversation thread (same
+              // pattern as Booking-Confirm-Partner below). Without this, a
+              // guest hitting "reply" on the confirmation lands at the
+              // bookings@thebearing.io alias instead of the property conv.
+              const _bcGuestConvId = booking.conversationId || null;
+              await sendBrandedEmail({
+                env, logTag: 'Booking-Confirm-Guest',
+                to: [customerEmail],
+                replyTo: _bcGuestConvId ? 'reply+' + _bcGuestConvId + '@replies.thebearing.io' : undefined,
+                subject: 'Booking confirmed \u00b7 ' + propName + ' \u00b7 ' + bookingRef,
+                text: 'Hi ' + (guestName || 'there') + ',\n\nYour deposit of $' + depositPaid.toLocaleString() + ' has been received and your stay at ' + propName + ' is confirmed.\n\n' + (stayLine ? stayLine + '\n' : '') + (roomLine ? roomLine + '\n' : '') + 'Reference: ' + bookingRef + '\n\nThe property has been notified and will be in touch directly with check-in details and any remaining balance.\n\nView this booking: https://thebearing.io/bookings\n\nBon voyage,\nThe Bearing',
+                shell: {
+                  preheader: 'Your stay at ' + propName + ' is confirmed.',
+                  kicker: 'The Bearing',
+                  heading: 'Your booking is confirmed',
+                  intro: 'Hi ' + (eGuestName || 'there') + ', your deposit of <strong>$' + eDepositPaid + '</strong> has been received and your stay at <strong>' + ePropName + '</strong> is confirmed.',
+                  bodyHtml: guestBookingDetails,
+                  ctaUrl: 'https://thebearing.io/bookings',
+                  ctaLabel: 'View booking',
+                  footerNote: 'The property has been notified and will be in touch directly with check-in details and any remaining balance.',
+                  refLabel: bookingRef
+                }
+              });
             }
 
             // Admin notification
             if (adminRecipients.length) {
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  from: 'The Bearing Bookings <bookings@thebearing.io>',
-                  to: adminRecipients,
-                  subject: '[CONFIRMED] ' + propName + ' · ' + bookingRef + ' · $' + depositPaid.toLocaleString(),
-                  html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                    + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Booking confirmed</h2>'
-                    + '<p><strong>' + propName + '</strong></p>'
-                    + (stayLine ? '<p>' + stayLine + '</p>' : '')
-                    + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
-                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' · ' + (customerEmail || 'no email') + '</p>'
-                    + '<p>Deposit paid: <strong>$' + depositPaid.toLocaleString() + '</strong></p>'
-                    + '<p>Reference: <code>' + bookingRef + '</code></p>'
-                    + '<p>Stripe session: <code>' + session.id + '</code></p>'
-                    + '<p style="margin-top:24px;"><a href="https://thebearing.io/admin-bookings">View in admin</a></p>'
-                    + '</div>',
-                }),
-              }).catch(function(e) { console.error('[Stripe webhook] admin email failed:', e); });
+              const adminDetailsHtml =
+                '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:130px;">Property</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + ePropName + '</td></tr>'
+                + (stayLine ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Dates</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eStayLine + '</td></tr>' : '')
+                + (roomLine ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Room</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eRoomLine + '</td></tr>' : '')
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Guest</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + (eGuestName || eCustomerEmail) + ' \u00b7 ' + eCustomerEmail + '</td></tr>'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Deposit paid</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;font-weight:600;">$' + eDepositPaid + '</td></tr>'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Stripe session</td><td style="padding:8px 0;color:#1e1810;font-size:.82rem;"><code style="font-family:\'JetBrains Mono\',Consolas,monospace;background:rgba(80,55,25,.06);padding:1px 6px;border-radius:4px;">' + escapeEmailHtml(session.id) + '</code></td></tr>'
+                + '</table></div>';
+              await sendBrandedEmail({
+                env, logTag: 'Booking-Confirm-Admin',
+                from: 'The Bearing Bookings <bookings@thebearing.io>',
+                to: adminRecipients,
+                subject: '[CONFIRMED] ' + propName + ' \u00b7 ' + bookingRef + ' \u00b7 $' + depositPaid.toLocaleString(),
+                text: 'Booking confirmed: ' + propName + ' (' + bookingRef + ')\n\nGuest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '\nDeposit paid: $' + depositPaid.toLocaleString() + '\nStripe session: ' + session.id + '\n\nView in admin: https://thebearing.io/admin-bookings',
+                shell: {
+                  preheader: 'Booking confirmed at ' + propName,
+                  kicker: 'The Bearing \u00b7 Admin',
+                  heading: 'Booking confirmed',
+                  intro: 'Deposit received and the booking is locked in.',
+                  bodyHtml: adminDetailsHtml,
+                  ctaUrl: 'https://thebearing.io/admin-bookings',
+                  ctaLabel: 'Open in admin',
+                  refLabel: bookingRef
+                }
+              });
             }
 
             // Partner notification \u2014 per-property emails (v73al). Filter
@@ -4784,34 +5030,36 @@ View in admin: https://thebearing.io/admin-bookings.html
               // email or open the conversation in their portal.
               const convIdForPartner = booking.conversationId || null;
               const propSlug = booking.slug || booking.propertySlug || '';
-              const ppEmailBody = {
+              const ppUrl = (convIdForPartner && propSlug)
+                ? 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(convIdForPartner) + '&as=' + encodeURIComponent(propSlug)
+                : '';
+              const partnerDetailsHtml =
+                '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+                + '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;width:130px;">Property</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + ePropName + '</td></tr>'
+                + (stayLine ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Dates</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eStayLine + '</td></tr>' : '')
+                + (roomLine ? '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Room</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + eRoomLine + '</td></tr>' : '')
+                + '<tr><td style="padding:8px 0;color:#7a6a58;font-size:.85rem;">Guest</td><td style="padding:8px 0;color:#1e1810;font-size:.92rem;">' + (eGuestName || eCustomerEmail) + ' \u00b7 ' + eCustomerEmail + '</td></tr>'
+                + '</table></div>';
+              await sendBrandedEmail({
+                env, logTag: 'Booking-Confirm-Partner',
                 from: 'The Bearing Bookings <bookings@thebearing.io>',
                 to: partnerToSend,
+                replyTo: convIdForPartner ? 'reply+' + convIdForPartner + '@replies.thebearing.io' : undefined,
                 subject: '[PARTNER] New confirmed booking \u00b7 ' + propName + ' \u00b7 ' + bookingRef,
-                html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
-                  + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">New confirmed booking</h2>'
-                  + '<p>You have a confirmed booking at <strong>' + propName + '</strong>.</p>'
-                  + (stayLine ? '<p>' + stayLine + '</p>' : '')
-                  + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
-                  + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '</p>'
-                  + '<p>Reference: <code>' + bookingRef + '</code></p>'
-                  + '<p style="margin-top:24px;">The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.</p>'
-                  + (convIdForPartner && propSlug
-                      ? '<p style="margin-top:16px;"><a href="https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(convIdForPartner) + '&as=' + encodeURIComponent(propSlug) + '">Open the conversation \u2192</a></p>'
-                      : '')
-                  + '</div>',
-              };
-              if (convIdForPartner) {
-                ppEmailBody.reply_to = 'reply+' + convIdForPartner + '@replies.thebearing.io';
-              }
-              await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                  'Authorization': 'Bearer ' + env.RESEND_API_KEY,
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(ppEmailBody),
-              }).catch(function(e) { console.error('[Stripe webhook] partner email failed:', e); });
+                text: 'New confirmed booking at ' + propName + ' (' + bookingRef + ').\n\n' + (stayLine ? stayLine + '\n' : '') + (roomLine ? 'Room: ' + roomLine + '\n' : '') + 'Guest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '\n\nThe guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.\n\n' + (ppUrl ? 'Open the conversation: ' + ppUrl + '\n\n' : '') + '\u2014 The Bearing',
+                shell: {
+                  preheader: 'New confirmed booking at ' + propName,
+                  kicker: 'The Bearing \u00b7 Partner',
+                  heading: 'New confirmed booking',
+                  intro: 'You have a confirmed booking at <strong>' + ePropName + '</strong>.',
+                  bodyHtml: partnerDetailsHtml,
+                  ctaUrl: ppUrl,
+                  ctaLabel: ppUrl ? 'Open conversation' : '',
+                  footerNote: 'The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.',
+                  refLabel: bookingRef
+                }
+              });
             }
           } else {
             console.warn('[Stripe webhook] RESEND_API_KEY not set — skipping notifications for ' + bookingRef);
@@ -4954,30 +5202,69 @@ async function runStaleConvReminders(env) {
       const notifyAdmin = conv.notifyAdmin !== false;
 
       if (notifyPartner) {
-        sendPromises.push(fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'The Bearing <bookings@thebearing.io>',
-            to: partnerToSend,
-            reply_to: `reply+${id}@replies.thebearing.io`,
-            subject: subjects[level],
-            text: partnerBody
-          })
-        }).catch(function(e) { console.log('[Cron] partner mail err:', e.message); }));
+        const ePartnerName = escapeEmailHtml(partnerName);
+        const eGuestLabel = escapeEmailHtml(guestLabel);
+        const ePreview = escapeEmailHtml(preview);
+        const levelBadge = level >= 72 ? 'Urgent \u00b7 72h+' : (level >= 48 ? 'Escalating \u00b7 48h+' : 'Reminder \u00b7 24h+');
+        const accentColor = level >= 72 ? '#c0392b' : (level >= 48 ? '#d97706' : '#b05830');
+        const partnerStaleBlock =
+          '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+          + '<div style="font-size:.7rem;color:' + accentColor + ';letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;font-weight:700;">' + levelBadge + '</div>'
+          + '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+          + '<tr><td style="padding:6px 0;color:#7a6a58;font-size:.85rem;width:90px;">Guest</td><td style="padding:6px 0;color:#1e1810;font-size:.92rem;">' + eGuestLabel + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#7a6a58;font-size:.85rem;">Property</td><td style="padding:6px 0;color:#1e1810;font-size:.92rem;">' + ePartnerName + '</td></tr>'
+          + '</table>'
+          + (preview ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(80,55,25,.08);"><div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Last message</div><div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.92rem;">"' + ePreview + '"</div></div>' : '')
+          + '</div>';
+        sendPromises.push(sendBrandedEmail({
+          env, logTag: 'Cron-Stale-Partner',
+          to: partnerToSend,
+          replyTo: 'reply+' + id + '@replies.thebearing.io',
+          subject: subjects[level],
+          text: partnerBody,
+          shell: {
+            preheader: tones[level],
+            kicker: 'The Bearing \u00b7 Partner',
+            heading: subjects[level],
+            intro: tones[level],
+            bodyHtml: partnerStaleBlock,
+            ctaUrl: ppUrl,
+            ctaLabel: 'Open conversation',
+            footerNote: 'Or reply directly to this email \u2014 your response will be sent to the guest.'
+          }
+        }));
       }
 
       if (level >= 48 && notifyAdmin) {
-        sendPromises.push(fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'The Bearing <bookings@thebearing.io>',
-            to: adminRecipients,
-            subject: subjects[level],
-            text: adminBody
-          })
-        }).catch(function(e) { console.log('[Cron] admin mail err:', e.message); }));
+        const ePartnerName = escapeEmailHtml(partnerName);
+        const eGuestLabel = escapeEmailHtml(guestLabel);
+        const ePreview = escapeEmailHtml(preview);
+        const adminLevelBadge = level >= 72 ? 'Urgent \u00b7 72h+' : 'Escalating \u00b7 48h+';
+        const adminAccent = level >= 72 ? '#c0392b' : '#d97706';
+        const adminStaleBlock =
+          '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px 20px;margin:0 0 22px;">'
+          + '<div style="font-size:.7rem;color:' + adminAccent + ';letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;font-weight:700;">' + adminLevelBadge + '</div>'
+          + '<table cellpadding="0" cellspacing="0" border="0" width="100%">'
+          + '<tr><td style="padding:6px 0;color:#7a6a58;font-size:.85rem;width:90px;">Guest</td><td style="padding:6px 0;color:#1e1810;font-size:.92rem;">' + eGuestLabel + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#7a6a58;font-size:.85rem;">Property</td><td style="padding:6px 0;color:#1e1810;font-size:.92rem;">' + ePartnerName + '</td></tr>'
+          + '</table>'
+          + (preview ? '<div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(80,55,25,.08);"><div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Last message</div><div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;font-size:.92rem;">"' + ePreview + '"</div></div>' : '')
+          + '</div>';
+        sendPromises.push(sendBrandedEmail({
+          env, logTag: 'Cron-Stale-Admin',
+          to: adminRecipients,
+          subject: subjects[level],
+          text: adminBody,
+          shell: {
+            preheader: 'Stale conversation \u2014 ' + level + 'h+ wait at ' + partnerName,
+            kicker: 'The Bearing \u00b7 Admin',
+            heading: 'Stale conversation reminder',
+            intro: 'A conversation has been awaiting a reply for <strong>' + level + 'h+</strong>.',
+            bodyHtml: adminStaleBlock,
+            ctaUrl: replyUrl,
+            ctaLabel: 'Open in admin'
+          }
+        }));
       }
 
       try { await Promise.all(sendPromises); } catch(e) {}
@@ -5037,6 +5324,175 @@ function jsonResponse(obj, status = 200) {
 // edited via admin-settings.html without redeploying. The baseline address
 // `admin@thebearing.io` (also the admin login) is always merged in as a failsafe
 // so notifications never silently break and admin access can never be lost.
+
+// v73at: Branded transactional email template.
+//
+// Every Resend send goes through sendBrandedEmail() so all emails share the
+// same cream/ink/terracotta TheBearing styling and a Cormorant Garamond
+// wordmark header. The function builds both an HTML body (via renderEmailShell)
+// and preserves the plain-text version as a fallback for clients that don't
+// render HTML.
+//
+// Design constraints learned the hard way for email rendering:
+// - Gmail strips <style> tags, so every CSS property is inline.
+// - Cormorant Garamond Google Font WILL load in Apple Mail / Outlook desktop /
+//   most webmail; Gmail falls back to Georgia. The fallback chain is set so
+//   it degrades gracefully \u2014 'Cormorant Garamond', Georgia, 'Times New
+//   Roman', serif.
+// - Max-width 560px is the sweet spot for desktop + mobile single-column.
+// - Background colors don't render in dark mode in many clients, so the
+//   shell is tested against both light and dark mode (colors chosen to still
+//   read OK on dark).
+//
+// renderEmailShell({preheader, kicker, heading, intro, bodyHtml, ctaUrl,
+//   ctaLabel, ctaSecondaryUrl, ctaSecondaryLabel, refLabel, unsubUrl, footerNote})
+//   - preheader: small grey text shown in inbox preview before the email opens
+//   - kicker: tiny terracotta uppercase tag above heading ("The Bearing" or
+//     "The Bearing \u00b7 Partner" or "The Bearing \u00b7 Admin")
+//   - heading: large Cormorant Garamond serif title
+//   - intro: paragraph below heading
+//   - bodyHtml: HTML string for the main content (already escaped)
+//   - ctaUrl/ctaLabel: primary terracotta button
+//   - ctaSecondaryUrl/ctaSecondaryLabel: optional secondary text link
+//   - refLabel: optional small reference at the bottom (e.g. "TB-2026-1234")
+//   - unsubUrl: optional unsubscribe / mute link in footer
+//   - footerNote: optional short paragraph above the footer
+function escapeEmailHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderEmailShell(opts) {
+  opts = opts || {};
+  const preheader = opts.preheader || '';
+  const kicker = opts.kicker || 'The Bearing';
+  const heading = opts.heading || '';
+  const intro = opts.intro || '';
+  const bodyHtml = opts.bodyHtml || '';
+  const ctaUrl = opts.ctaUrl || '';
+  const ctaLabel = opts.ctaLabel || '';
+  const ctaSecondaryUrl = opts.ctaSecondaryUrl || '';
+  const ctaSecondaryLabel = opts.ctaSecondaryLabel || '';
+  const refLabel = opts.refLabel || '';
+  const unsubUrl = opts.unsubUrl || '';
+  const footerNote = opts.footerNote || '';
+
+  // Hidden preheader sits before the visible content so inbox preview shows it.
+  const preheaderBlock = preheader
+    ? '<div style="display:none;font-size:1px;color:#faf7f1;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">' + escapeEmailHtml(preheader) + '</div>'
+    : '';
+
+  const introBlock = intro
+    ? '<p style="font-size:.96rem;line-height:1.6;color:#3a3128;margin:0 0 22px;">' + intro + '</p>'
+    : '';
+
+  const ctaBlock = ctaUrl && ctaLabel
+    ? '<div style="margin:6px 0 22px;">'
+        + '<a href="' + escapeEmailHtml(ctaUrl) + '" style="display:inline-block;background:#b05830;color:#ffffff;padding:13px 22px;border-radius:9px;text-decoration:none;font-weight:600;font-size:.92rem;letter-spacing:.01em;box-shadow:0 2px 8px rgba(176,88,48,.25);">' + escapeEmailHtml(ctaLabel) + ' &rarr;</a>'
+        + (ctaSecondaryUrl && ctaSecondaryLabel
+            ? '<a href="' + escapeEmailHtml(ctaSecondaryUrl) + '" style="display:inline-block;margin-left:10px;color:#7a6a58;padding:13px 14px;text-decoration:underline;font-size:.88rem;">' + escapeEmailHtml(ctaSecondaryLabel) + '</a>'
+            : '')
+      + '</div>'
+    : '';
+
+  const footerNoteBlock = footerNote
+    ? '<p style="color:#7a6a58;font-size:.82rem;line-height:1.55;margin:18px 0 0;">' + footerNote + '</p>'
+    : '';
+
+  const refBlock = refLabel
+    ? '<p style="color:#9a8e80;font-size:.78rem;margin:24px 0 0;border-top:1px solid rgba(80,55,25,.08);padding-top:14px;">Reference: <code style="font-family:\'JetBrains Mono\',Consolas,monospace;font-size:.78rem;">' + escapeEmailHtml(refLabel) + '</code></p>'
+    : '';
+
+  const unsubBlock = unsubUrl
+    ? '<p style="color:#9a8e80;font-size:.74rem;margin:18px 0 0;line-height:1.5;"><a href="' + escapeEmailHtml(unsubUrl) + '" style="color:#9a8e80;text-decoration:underline;">Mute email notifications for this conversation</a></p>'
+    : '';
+
+  return '<!doctype html><html><head>'
+    + '<meta charset="utf-8">'
+    + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+    + '<title>The Bearing</title>'
+    + '</head>'
+    + '<body style="margin:0;padding:0;background:#f3eee3;font-family:Geist,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#1e1810;">'
+    + preheaderBlock
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f3eee3;padding:32px 16px;">'
+    + '<tr><td align="center">'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="560" style="max-width:560px;width:100%;background:#faf7f1;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(30,24,16,.04);">'
+    + '<tr><td style="padding:36px 32px 8px;text-align:center;border-bottom:1px solid rgba(80,55,25,.08);">'
+    + '<div style="font-family:\'Cormorant Garamond\',Georgia,\'Times New Roman\',serif;font-size:1.7rem;font-weight:500;letter-spacing:.32em;color:#1e1810;text-transform:uppercase;">The Bearing</div>'
+    + '<div style="font-family:Geist,system-ui,sans-serif;font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#9a7230;margin-top:6px;">Curated travel</div>'
+    + '</td></tr>'
+    + '<tr><td style="padding:32px 32px 36px;">'
+    + (kicker ? '<div style="font-family:Geist,system-ui,sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;margin-bottom:10px;">' + escapeEmailHtml(kicker) + '</div>' : '')
+    + (heading ? '<h1 style="font-family:\'Instrument Serif\',\'Cormorant Garamond\',Georgia,serif;font-size:1.7rem;line-height:1.2;margin:0 0 14px;font-weight:400;color:#1e1810;">' + heading + '</h1>' : '')
+    + introBlock
+    + bodyHtml
+    + ctaBlock
+    + footerNoteBlock
+    + refBlock
+    + unsubBlock
+    + '</td></tr>'
+    + '<tr><td style="padding:18px 32px 28px;text-align:center;background:#f3eee3;border-top:1px solid rgba(80,55,25,.08);">'
+    + '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:.92rem;color:#5a4a38;letter-spacing:.04em;">thebearing.io</div>'
+    + '<div style="font-family:Geist,system-ui,sans-serif;font-size:.72rem;color:#9a8e80;margin-top:6px;">Questions? <a href="mailto:admin@thebearing.io" style="color:#9a8e80;text-decoration:underline;">admin@thebearing.io</a></div>'
+    + '</td></tr>'
+    + '</table>'
+    + '</td></tr>'
+    + '</table>'
+    + '</body></html>';
+}
+
+// sendBrandedEmail \u2014 thin wrapper around the Resend /emails endpoint that
+// guarantees branded HTML + plain-text are both included. Every email send in
+// this worker should go through this function so the template stays uniform.
+//
+// opts: {
+//   env,                  // worker env (for RESEND_API_KEY)
+//   to,                   // string | string[]  recipient(s)
+//   subject,              // string
+//   replyTo,              // optional string \u2014 commonly reply+{convId}@replies.thebearing.io
+//   text,                 // plain-text fallback (REQUIRED)
+//   shell,                // renderEmailShell opts (without bodyHtml/heading already in opts)
+//   from,                 // optional override; defaults to 'The Bearing <bookings@thebearing.io>'
+//   logTag,               // optional string for the error log line
+// }
+//
+// Returns: the fetch response, or null if RESEND_API_KEY is missing.
+async function sendBrandedEmail(opts) {
+  const env = opts && opts.env;
+  if (!env || !env.RESEND_API_KEY) return null;
+  const tag = opts.logTag || 'Email';
+  try {
+    const html = renderEmailShell(opts.shell || {});
+    const payload = {
+      from: opts.from || 'The Bearing <bookings@thebearing.io>',
+      to: opts.to,
+      subject: opts.subject,
+      text: opts.text || '',
+      html: html,
+    };
+    if (opts.replyTo) payload.reply_to = opts.replyTo;
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      let bodyText = ''; try { bodyText = await resp.text(); } catch(_) {}
+      console.error('[' + tag + '] Resend ' + resp.status + ': ' + bodyText.slice(0, 240));
+    }
+    return resp;
+  } catch (e) {
+    console.error('[' + tag + '] send error: ' + (e && e.message));
+    return null;
+  }
+}
 
 const BASELINE_NOTIFICATION_RECIPIENT = 'admin@thebearing.io';
 
