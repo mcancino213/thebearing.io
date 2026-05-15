@@ -65,6 +65,7 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 .sb-item svg{opacity:.65;flex-shrink:0;}
 .sb-item.active svg{opacity:1;}
 .sb-badge{margin-left:auto;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;background:var(--accent);color:#fff;flex-shrink:0;}
+.sb-badge.sb-badge-has-loop{background:#b05830;box-shadow:0 0 0 2px rgba(176,88,48,.18);}
 .sb-badge.gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);}
 .sb-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--sidebar-border);}
 .sb-footer-user{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;cursor:pointer;}
@@ -1703,14 +1704,23 @@ function renderContextPanel(conv) {
   var ctx = document.getElementById('context-panel');
   if (!ctx) return;
 
+  // v74b: guest name in tab label (truncated).
+  var guestTabLabel = (conv.guestName || '').trim();
+  if (guestTabLabel) {
+    if (guestTabLabel.length > 14) guestTabLabel = guestTabLabel.substring(0, 14).replace(/\s+$/, '') + '…';
+  } else {
+    guestTabLabel = 'Guest details';
+  }
+
   ctx.innerHTML =
     '<div class="ctx-tabs">' +
       '<button class="ctx-tab active" data-tab="guest" type="button" onclick="switchCtxTab(\'guest\')">' +
-        '<span class="ctx-tab-icon">👤</span><span>Guest details</span>' +
+        '<span class="ctx-tab-icon">👤</span><span>' + escHtml(guestTabLabel) + '</span>' +
+        '<span class="ctx-tab-badge" id="ctx-guest-badge" style="display:none;">1</span>' +
       '</button>' +
       '<button class="ctx-tab tab-loop-inactive" data-tab="loop" type="button" onclick="switchCtxTab(\'loop\')">' +
         '<span class="ctx-tab-icon">🔒</span><span>The Bearing</span>' +
-        '<span class="ctx-tab-badge" id="ctx-loop-badge" style="display:none;">!</span>' +
+        '<span class="ctx-tab-badge" id="ctx-loop-badge" style="display:none;">1</span>' +
       '</button>' +
     '</div>' +
     '<div class="ctx-pane ctx-pane-guest" id="ctx-pane-guest"></div>' +
@@ -1731,11 +1741,21 @@ function switchCtxTab(which) {
   if (which === 'guest') {
     if (paneGuest) paneGuest.classList.remove('hidden');
     if (paneLoop) paneLoop.classList.add('hidden');
+    var gBadge = document.getElementById('ctx-guest-badge');
+    if (gBadge) gBadge.style.display = 'none';
   } else {
     if (paneGuest) paneGuest.classList.add('hidden');
     if (paneLoop) paneLoop.classList.remove('hidden');
-    var badge = document.getElementById('ctx-loop-badge');
-    if (badge) badge.style.display = 'none';
+    var lBadge = document.getElementById('ctx-loop-badge');
+    if (lBadge) lBadge.style.display = 'none';
+    // v74b: mark loop-read on the server so the badge stays cleared.
+    if (activeConvId) {
+      fetch('/api/loop', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ convId: activeConvId, action: 'mark_read' })
+      }).catch(function(){});
+    }
   }
 }
 
@@ -1895,8 +1915,25 @@ function pollAdminLoop(conv) {
         var onLoopTab = activeTab && activeTab.getAttribute('data-tab') === 'loop';
         paintAdminLoopPane(conv);
         if (!onLoopTab) {
+          // Use server's unreadAdmin counter (survives reloads) instead of delta.
+          var unread = (d.loop && d.loop.unreadAdmin) || (newCount - oldCount);
           var badge = document.getElementById('ctx-loop-badge');
-          if (badge) { badge.style.display = 'flex'; badge.textContent = (newCount - oldCount); }
+          if (badge) { badge.style.display = 'flex'; badge.textContent = unread; }
+        } else {
+          // Admin is on the loop tab — mark read on the server so sidebar updates.
+          fetch('/api/loop', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ convId: conv.id, action: 'mark_read' })
+          }).catch(function(){});
+        }
+      } else if (d.loop && d.loop.unreadAdmin > 0) {
+        // Initial state: server reports unread but no new messages this tick.
+        var activeTab2 = document.querySelector('.ctx-tab.active');
+        var onLoopTab2 = activeTab2 && activeTab2.getAttribute('data-tab') === 'loop';
+        if (!onLoopTab2) {
+          var badge2 = document.getElementById('ctx-loop-badge');
+          if (badge2) { badge2.style.display = 'flex'; badge2.textContent = d.loop.unreadAdmin; }
         }
       }
       updateAdminLoopTabBadge();
@@ -1917,18 +1954,25 @@ function updateAdminLoopTabBadge() {
 }
 
 function flagSidebarLoopActive(convId, isActive) {
-  // Find the conv item in the sidebar list and add/remove the "Partner needs help" pill.
-  // The conv list items have data-id (not data-conv-id).
+  // v74b: surface loop activity in the conv list as a clean "🔒 N" badge
+  // showing the unread loop-message count for admin (or just "🔒" when
+  // the loop is active but admin has nothing new). Replaces the v74a
+  // handshake pill — that was redundant with the "🔒 The Bearing" tab.
   var items = document.querySelectorAll('.conv-item[data-id]');
+  var loop = adminLoopState.loop;
+  var unreadCount = (loop && loop.unreadAdmin) || 0;
   items.forEach(function(it) {
     if (it.getAttribute('data-id') !== convId) return;
     var existing = it.querySelector('.loop-active-pill');
     if (isActive) {
+      var label = unreadCount > 0 ? '🔒 ' + unreadCount : '🔒';
       if (!existing) {
         var pill = document.createElement('div');
         pill.className = 'loop-active-pill';
-        pill.textContent = '🤝 Partner needs help';
+        pill.textContent = label;
         it.appendChild(pill);
+      } else {
+        existing.textContent = label;
       }
     } else {
       if (existing) existing.remove();
@@ -2713,6 +2757,19 @@ function refreshMessages(conv, messages) {
       if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
     playNotificationSound();
+    // v74b: surface guest-tab badge with the count of new main-thread messages
+    // if admin is currently viewing the loop tab.
+    var activeTab = document.querySelector('.ctx-tab.active');
+    var onLoopTab = activeTab && activeTab.getAttribute('data-tab') === 'loop';
+    if (onLoopTab) {
+      var gBadge = document.getElementById('ctx-guest-badge');
+      if (gBadge) {
+        var prev = parseInt(gBadge.textContent, 10) || 0;
+        if (gBadge.style.display === 'none' || !gBadge.style.display) prev = 0;
+        gBadge.textContent = prev + (newCount - prevCount);
+        gBadge.style.display = 'flex';
+      }
+    }
   }
 
   // New messages arrived via polling — pin to bottom without ResizeObserver

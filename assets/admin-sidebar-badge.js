@@ -19,12 +19,21 @@
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
         var unread = d.unread || 0;
+        var hasLoop = !!d.hasLoop; // v74b: terracotta border hint when loop-unread is rolled in
         // Target the Conversations sb-badge specifically \u2014 the Bookings badge
         // we added in v73ah also matches .sb-badge so we need to exclude it.
         var badges = document.querySelectorAll('.sb-badge:not(.sb-badge-bookings)');
         badges.forEach(function(badge) {
-          if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
-          else badge.style.display = 'none';
+          if (unread > 0) {
+            badge.textContent = unread;
+            badge.style.display = '';
+            // v74b: terracotta border when ANY of the unread are private/loop
+            if (hasLoop) badge.classList.add('sb-badge-has-loop');
+            else badge.classList.remove('sb-badge-has-loop');
+          } else {
+            badge.style.display = 'none';
+            badge.classList.remove('sb-badge-has-loop');
+          }
         });
         if (unread !== lastConvTotal) {
           if (unread > 0) {

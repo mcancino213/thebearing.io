@@ -62,6 +62,7 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 .sb-item svg{opacity:.65;flex-shrink:0;}
 .sb-item.active svg{opacity:1;}
 .sb-badge{margin-left:auto;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;background:var(--accent);color:#fff;flex-shrink:0;}
+.sb-badge.sb-badge-has-loop{background:#b05830;box-shadow:0 0 0 2px rgba(176,88,48,.18);}
 .sb-badge.gray{background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);}
 .sb-footer{margin-top:auto;padding:16px 12px;border-top:1px solid var(--sidebar-border);}
 .sb-footer-user{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;cursor:pointer;}
@@ -1616,22 +1617,32 @@ function renderMessagesInto(wrap, conv, messages) {
 }
 
 // ── Context panel (Partner-scoped: guest profile, no internal notes, no commercial data) ──
-// v74a: now houses two tabs — "Guest details" (existing) + "🔒 The Bearing"
-// (private loop-in chat with admin). The second tab's content lives in a
-// separate KV thread the customer never sees.
+// v74a: houses two tabs — "Guest details" + "🔒 The Bearing" private loop chat
+// v74b: tab labels show guest's actual name; both tabs get unread badges so
+// you can see at a glance which side has new activity. Badge clears when you
+// click the corresponding tab.
 function renderContextPanel(conv) {
   var ctx = document.getElementById('context-panel');
   if (!ctx) return;
 
-  // Build outer tab shell
+  // v74b: guest name in tab label (truncated). Falls back to "Guest details"
+  // when no name available (anonymous email-only enquiries).
+  var guestTabLabel = (conv.guestName || '').trim();
+  if (guestTabLabel) {
+    if (guestTabLabel.length > 14) guestTabLabel = guestTabLabel.substring(0, 14).replace(/\s+$/, '') + '…';
+  } else {
+    guestTabLabel = 'Guest details';
+  }
+
   ctx.innerHTML =
     '<div class="ctx-tabs">' +
       '<button class="ctx-tab active" data-tab="guest" type="button" onclick="switchCtxTab(\'guest\')">' +
-        '<span class="ctx-tab-icon">👤</span><span>Guest details</span>' +
+        '<span class="ctx-tab-icon">👤</span><span>' + escHtml(guestTabLabel) + '</span>' +
+        '<span class="ctx-tab-badge" id="ctx-guest-badge" style="display:none;">1</span>' +
       '</button>' +
       '<button class="ctx-tab tab-loop-inactive" data-tab="loop" type="button" onclick="switchCtxTab(\'loop\')">' +
         '<span class="ctx-tab-icon">🔒</span><span>The Bearing</span>' +
-        '<span class="ctx-tab-badge" id="ctx-loop-badge" style="display:none;">!</span>' +
+        '<span class="ctx-tab-badge" id="ctx-loop-badge" style="display:none;">1</span>' +
       '</button>' +
     '</div>' +
     '<div class="ctx-pane ctx-pane-guest" id="ctx-pane-guest"></div>' +
@@ -1642,6 +1653,8 @@ function renderContextPanel(conv) {
 }
 
 // Switch the visible context-panel tab.
+// v74b: clicking a tab clears that tab's badge AND calls the appropriate
+// mark-read endpoint so the unread counter on the server resets.
 function switchCtxTab(which) {
   var tabs = document.querySelectorAll('.ctx-tab');
   tabs.forEach(function(t) {
@@ -1653,16 +1666,24 @@ function switchCtxTab(which) {
   if (which === 'guest') {
     if (paneGuest) paneGuest.classList.remove('hidden');
     if (paneLoop) paneLoop.classList.add('hidden');
+    // Clear the guest tab's badge
+    var gBadge = document.getElementById('ctx-guest-badge');
+    if (gBadge) gBadge.style.display = 'none';
+    // No mark-read needed for guest tab — the existing message poll handles
+    // markReadFor:'admin' on the main conv when the partner is actively viewing.
   } else {
     if (paneGuest) paneGuest.classList.add('hidden');
     if (paneLoop) paneLoop.classList.remove('hidden');
-    // Mark partner-unread as 0 by triggering a re-fetch (which the worker
-    // will treat as a partner-side read since the partner just opened it).
-    // We do this implicitly by sending an empty seen-marker — actually
-    // simpler: clear the badge immediately, real read-state syncs on next
-    // poll naturally because the unread counter resets when partner posts.
-    var badge = document.getElementById('ctx-loop-badge');
-    if (badge) badge.style.display = 'none';
+    var lBadge = document.getElementById('ctx-loop-badge');
+    if (lBadge) lBadge.style.display = 'none';
+    // v74b: mark loop-read on the server so the badge stays cleared on next poll.
+    if (ppActiveId) {
+      fetch('/api/loop', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ convId: ppActiveId, action: 'mark_read', slug: PP_SLUG })
+      }).catch(function(){});
+    }
   }
 }
 
@@ -1800,14 +1821,33 @@ function pollLoop(conv) {
       var oldCount = (ppLoopState.messages || []).length;
       ppLoopState.loop = d.loop || null;
       ppLoopState.messages = d.messages || [];
-      // If admin sent something new, repaint and surface a badge
+      // If admin sent something new, repaint and surface a badge with the
+      // server's unreadPartner counter (source of truth — survives reloads).
       if (newCount > oldCount) {
         var activeTab = document.querySelector('.ctx-tab.active');
         var onLoopTab = activeTab && activeTab.getAttribute('data-tab') === 'loop';
         paintLoopPane(conv);
         if (!onLoopTab) {
+          var unread = (d.loop && d.loop.unreadPartner) || (newCount - oldCount);
           var badge = document.getElementById('ctx-loop-badge');
-          if (badge) { badge.style.display = 'flex'; badge.textContent = (newCount - oldCount); }
+          if (badge) { badge.style.display = 'flex'; badge.textContent = unread; }
+        } else {
+          // Partner is actively viewing — mark read on the server so the
+          // sidebar count drops on its next refresh.
+          fetch('/api/loop', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ convId: conv.id, action: 'mark_read', slug: PP_SLUG })
+          }).catch(function(){});
+        }
+      } else if (d.loop && d.loop.unreadPartner > 0) {
+        // No new messages this tick but the server still reports unread
+        // (e.g. badge state on initial conv-switch reload). Show the count.
+        var activeTab2 = document.querySelector('.ctx-tab.active');
+        var onLoopTab2 = activeTab2 && activeTab2.getAttribute('data-tab') === 'loop';
+        if (!onLoopTab2) {
+          var badge2 = document.getElementById('ctx-loop-badge');
+          if (badge2) { badge2.style.display = 'flex'; badge2.textContent = d.loop.unreadPartner; }
         }
       }
       updateLoopTabBadge();
@@ -2103,6 +2143,20 @@ function refreshMessages(conv, messages) {
       if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
     playNotificationSound();
+    // v74b: if partner is currently on the loop tab, surface a guest-tab
+    // badge with the count of new main-thread messages so they don't miss
+    // the guest while focused on the private chat.
+    var activeTab = document.querySelector('.ctx-tab.active');
+    var onLoopTab = activeTab && activeTab.getAttribute('data-tab') === 'loop';
+    if (onLoopTab) {
+      var gBadge = document.getElementById('ctx-guest-badge');
+      if (gBadge) {
+        var prev = parseInt(gBadge.textContent, 10) || 0;
+        if (gBadge.style.display === 'none' || !gBadge.style.display) prev = 0;
+        gBadge.textContent = prev + (newCount - prevCount);
+        gBadge.style.display = 'flex';
+      }
+    }
   }
   window.pinToBottom(wrap, { observe: false });
 }

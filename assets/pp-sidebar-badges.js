@@ -11,6 +11,7 @@
       .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
       .then(function(d) {
         var unread = d.unread || 0;
+        var hasLoop = !!d.hasLoop; // v74b: terracotta border hint when loop-unread is rolled in
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
           // v73aj: match by pathname only, ignoring ?as=X query string that
@@ -22,8 +23,15 @@
           if (hrefPath === 'pp-conversations') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
-              if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
-              else badge.style.display = 'none';
+              if (unread > 0) {
+                badge.textContent = unread;
+                badge.style.display = '';
+                if (hasLoop) badge.classList.add('sb-badge-has-loop');
+                else badge.classList.remove('sb-badge-has-loop');
+              } else {
+                badge.style.display = 'none';
+                badge.classList.remove('sb-badge-has-loop');
+              }
             }
           }
         });

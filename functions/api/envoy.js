@@ -1656,19 +1656,27 @@ View in admin: https://thebearing.io/admin-bookings.html
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
       const role = url.searchParams.get('role') || 'admin';
       const counterRaw = await env.DOSSIERS.get('__unread_counters');
-      const counter = counterRaw ? JSON.parse(counterRaw) : { admin: 0, guests: {}, props: {} };
+      const counter = counterRaw ? JSON.parse(counterRaw) : { admin: 0, guests: {}, props: {}, adminLoop: 0, propsLoop: {} };
 
       let unread = 0;
+      let loopUnread = 0; // v74b: separate count of conversations with active-loop unread for THIS role
       if (role === 'admin') {
         unread = counter.admin || 0;
+        loopUnread = counter.adminLoop || 0;
       } else if (role === 'guest') {
         const guestId = url.searchParams.get('guestId');
         unread = (guestId && counter.guests && counter.guests[guestId]) || 0;
+        // Guests never participate in loops, so loopUnread stays 0
       } else if (role === 'partner') {
         const slug = url.searchParams.get('slug');
         unread = (slug && counter.props && counter.props[slug]) || 0;
+        loopUnread = (slug && counter.propsLoop && counter.propsLoop[slug]) || 0;
       }
-      return jsonResponse({ unread });
+      // v74b: total = main-thread unread + loop unread, rolled into one number
+      // for the sidebar. hasLoop is the styling hint — when true, badge gets a
+      // terracotta border treatment to signal "private activity is in there."
+      const total = unread + loopUnread;
+      return jsonResponse({ unread: total, mainUnread: unread, loopUnread, hasLoop: loopUnread > 0 });
     }
 
     // v73ao: /api/unread-debug — admin-gated diagnostic for the unread badge
@@ -2644,23 +2652,53 @@ View in admin: https://thebearing.io/admin-bookings.html
           } catch (e) { console.error('[Loop-In] email block error:', e && e.message); }
         }
 
+        // v74b: refresh sidebar counters so admin/partner nav badges reflect
+        // the new loop message immediately.
+        try { await recomputeUnreadCounters(env); } catch(_) {}
+
         return jsonResponse({ ok: true, loop, message: msg });
       }
 
       if (request.method === 'PATCH') {
-        // Admin marks resolved — clears active flag, urgency pill goes away.
-        if (!(await isAdmin())) return adminDenied();
         const b = await request.json().catch(() => ({}));
         const convId = b.convId;
         if (!convId) return jsonResponse({ error: 'convId required' }, 400);
+        const action = b.action || 'resolve'; // default preserves v74a behavior
+
         const loopKey = 'conversation:' + convId + ':loop';
         const loopRaw = await env.DOSSIERS.get(loopKey);
         if (!loopRaw) return jsonResponse({ error: 'no loop on this conversation' }, 404);
         const loop = JSON.parse(loopRaw);
-        loop.active = false;
-        loop.resolvedAt = new Date().toISOString();
-        await env.DOSSIERS.put(loopKey, JSON.stringify(loop));
-        return jsonResponse({ ok: true, loop });
+
+        if (action === 'resolve') {
+          // Admin-only — clears active flag, urgency pill goes away.
+          if (!(await isAdmin())) return adminDenied();
+          loop.active = false;
+          loop.resolvedAt = new Date().toISOString();
+          await env.DOSSIERS.put(loopKey, JSON.stringify(loop));
+          // Recompute counters so sidebar drops the loop-attention indicator.
+          try { await recomputeUnreadCounters(env); } catch(_) {}
+          return jsonResponse({ ok: true, loop });
+        }
+
+        if (action === 'mark_read') {
+          // v74b: reset the caller's unread counter. Either side can call this.
+          // Caller identity comes from auth (admin via isAdmin, partner via
+          // slug claim matching conv.propertySlug).
+          const slugClaim = (b.slug || '').toString();
+          const auth = await authLoopAccess(convId, slugClaim);
+          if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
+          if (auth.isAdminCaller) {
+            loop.unreadAdmin = 0;
+          } else {
+            loop.unreadPartner = 0;
+          }
+          await env.DOSSIERS.put(loopKey, JSON.stringify(loop));
+          try { await recomputeUnreadCounters(env); } catch(_) {}
+          return jsonResponse({ ok: true, loop });
+        }
+
+        return jsonResponse({ error: 'unknown action: ' + action }, 400);
       }
 
       return jsonResponse({ error: 'method not allowed' }, 405);
@@ -5858,8 +5896,10 @@ async function recomputeUnreadCounters(env) {
     const idxRaw = await env.DOSSIERS.get('__conversations_index');
     const ids = idxRaw ? JSON.parse(idxRaw) : [];
     let admin = 0;
+    let adminLoop = 0; // v74b: count of conversations with active-loop admin-unread
     const guests = {};
     const props = {};
+    const propsLoop = {}; // v74b: per-property partner-loop-unread (mirrors props)
     for (const id of ids) {
       const cRaw = await env.DOSSIERS.get('conversation:' + id);
       if (!cRaw) continue;
@@ -5873,8 +5913,28 @@ async function recomputeUnreadCounters(env) {
       if ((c.unreadAdmin || 0) > 0 && c.propertySlug) {
         props[c.propertySlug] = (props[c.propertySlug] || 0) + 1;
       }
+      // v74b: roll loop-unread into the sidebar count. Loop messages count
+      // as conversations-needing-attention so the partner/admin notice from
+      // anywhere in the app. We track these in separate fields so the client
+      // can style the badge differently (terracotta hint) when loop activity
+      // is included.
+      try {
+        const loopRaw = await env.DOSSIERS.get('conversation:' + id + ':loop');
+        if (loopRaw) {
+          const loop = JSON.parse(loopRaw);
+          if (loop.active) {
+            if ((loop.unreadAdmin || 0) > 0) adminLoop++;
+            if ((loop.unreadPartner || 0) > 0 && c.propertySlug) {
+              propsLoop[c.propertySlug] = (propsLoop[c.propertySlug] || 0) + 1;
+            }
+          }
+        }
+      } catch(_) { /* loop key missing or malformed — ignore */ }
     }
-    await env.DOSSIERS.put('__unread_counters', JSON.stringify({ admin, guests, props }), { expirationTtl: 86400 });
+    await env.DOSSIERS.put('__unread_counters', JSON.stringify({
+      admin, guests, props,
+      adminLoop, propsLoop, // v74b
+    }), { expirationTtl: 86400 });
   } catch(e) { console.error('[Counters] recompute error:', e.message); }
 }
 
