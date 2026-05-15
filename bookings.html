@@ -6,9 +6,9 @@
      my-account.html. The script at the bottom of <body> sets
      visibility:visible once Clerk's load+user-check completes. There's
      also a failsafe timeout in case Clerk never loads. */
-  body { opacity: 0; transition: opacity .15s ease-in; }
+  .account-wrap { opacity: 0; transition: opacity .15s ease-in; }
 </style>
-<noscript><style>body{opacity:1 !important;}</style></noscript>
+<noscript><style>.account-wrap{opacity:1 !important;}</style></noscript>
 <script>
 // Apply cached user data immediately (before render) to prevent flash
 (function(){try{
@@ -1186,7 +1186,7 @@ function submitHelp() {
 // 8s failsafe in case Clerk never loads.
 window.__bearingAuthTimeout = setTimeout(function(){
   if (document.body.style.visibility !== 'visible') {
-    document.body.style.opacity = '1';
+    var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
     document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
       + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
       +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
@@ -1204,11 +1204,11 @@ window.addEventListener('load', async function() {
     clearTimeout(window.__bearingAuthTimeout);
     var user = window.Clerk.user;
     if (user) {
-      document.body.style.opacity = '1';
+      var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
       loadCustomerBookings(user);
     } else {
       // Not signed in — show same overlay pattern as my-account
-      document.body.style.opacity = '1';
+      var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
       var overlay = document.createElement('div');
       overlay.style.cssText = 'position:fixed;inset:0;background:#faf7f1;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:32px 16px;overflow-y:auto;';
       overlay.innerHTML =
@@ -1233,7 +1233,7 @@ window.addEventListener('load', async function() {
   } catch(err) {
     console.error('Clerk load failed:', err);
     clearTimeout(window.__bearingAuthTimeout);
-    document.body.style.opacity = '1';
+    var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
     document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
       + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
       +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'

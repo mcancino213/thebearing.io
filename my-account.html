@@ -2,22 +2,24 @@
 <html lang="en">
 <head>
 <style>
-  /* v73g: hide body until Clerk has confirmed auth state. Prevents the
-     1-2s flash of account content after sign-out before the sign-in
-     overlay mounts. The script at line ~380 sets opacity:1 once
-     Clerk's load+user-check completes. There's also an 8s failsafe
-     in case Clerk never loads.
-     v73aq: switched from `visibility:hidden` to `opacity:0` because
-     cross-document view transitions are silently skipped when the
-     navigation target has visibility:hidden on body — conversations.html
-     never had this rule and was the only customer page where the
-     sidebar transitioned smoothly. opacity:0 has identical flash-
-     prevention semantics but doesn't kill the transition snapshot.
-     The noscript fallback below makes sure JS-disabled users still see
-     the page (since the opacity:1 script won't run). */
-  body { opacity: 0; transition: opacity .15s ease-in; }
+  /* v73g: hide the account content area until Clerk has confirmed auth
+     state. Prevents the 1-2s flash of account content after sign-out
+     before the sign-in overlay mounts. The script at line ~380 sets
+     .account-wrap opacity to 1 once Clerk's load+user-check completes.
+     There's also an 8s failsafe in case Clerk never loads.
+     v73aq: switched from `visibility:hidden` to `opacity:0` to try to
+     unbreak view transitions \u2014 didn't help, opacity:0 on body still
+     kills cross-document transitions.
+     v73ar: moved the rule from `body` to `.account-wrap`. Body must be
+     transition-able (the sidebar lives inside body and has
+     view-transition-name: portal-sidebar). Hiding the inner wrapper
+     keeps flash prevention working while letting view transitions
+     capture body+sidebar snapshots correctly. Conversations.html never
+     had this rule at all, which is why it was the only customer page
+     where the sidebar transitioned smoothly. */
+  .account-wrap { opacity: 0; transition: opacity .15s ease-in; }
 </style>
-<noscript><style>body{opacity:1 !important;}</style></noscript>
+<noscript><style>.account-wrap{opacity:1 !important;}</style></noscript>
 <script>
 // Apply cached user data immediately (before render) to prevent flash
 (function(){try{
@@ -392,14 +394,14 @@
 
 
 <body>
-<noscript><style>body{opacity:1 !important;}</style></noscript>
+<noscript><style>.account-wrap{opacity:1 !important;}</style></noscript>
 <script>
   // Failsafe: if Clerk hasn't revealed the page within 8s (network error,
   // invalid key, blocked CDN), show a minimal sign-in-required screen
   // instead of leaking the mock dashboard.
   window.__bearingAuthTimeout = setTimeout(function(){
-    if (document.body.style.opacity === '0' || document.body.style.opacity === '') {
-      document.body.style.opacity = '1';
+    if ((function(){var w=document.querySelector('.account-wrap');return w && (w.style.opacity === '0' || w.style.opacity === '');})()) {
+      var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
       document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
         + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
         +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
@@ -971,7 +973,7 @@ window.addEventListener('load', async function() {
 
   if (user) {
     // Reveal the dashboard only once we have a real signed-in user
-    document.body.style.opacity = '1';
+    var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
     // Populate profile area with real user data
     var name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.primaryEmailAddress.emailAddress.split('@')[0];
     var email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
@@ -999,7 +1001,7 @@ window.addEventListener('load', async function() {
 
   } else {
     // Not signed in — reveal body but cover dashboard with fully-opaque overlay
-    document.body.style.opacity = '1';
+    var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
     var overlay = document.createElement('div');
     // v73h: padding-bottom + overflow-y for short viewports so the Back-link
     // doesn't get pushed off-screen on small laptops.
@@ -1032,7 +1034,7 @@ window.addEventListener('load', async function() {
     console.error('Clerk load failed:', err);
     // Trigger the failsafe screen immediately
     clearTimeout(window.__bearingAuthTimeout);
-    document.body.style.opacity = '1';
+    var __aw = document.querySelector('.account-wrap'); if (__aw) __aw.style.opacity = '1';
     document.body.innerHTML = '<div style="position:fixed;inset:0;background:#faf7f1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;font-family:Geist,sans-serif;">'
       + '<a href="/" style="text-decoration:none;color:inherit;display:block;text-align:center;">'
       +   '<div style="font-size:.58rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">The Bearing</div>'
