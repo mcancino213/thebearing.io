@@ -1852,11 +1852,33 @@ View in admin: https://thebearing.io/admin-bookings.html
                 });
                 if (partnerToSend.length) {
                   // v73am: include ?as=slug so partner-portal page knows which
-                  // property's conversations to scope to. Without this, the
-                  // page defaults to nour-el-nil and the conv won't show.
-                  // Also include reply_to so partner can reply directly from
-                  // their email client and the reply routes to /api/inbound-email.
-                  const ppUrl = `https://thebearing.io/pp-conversations.html?id=${id}&as=${encodeURIComponent(propertySlug)}`;
+                  // property's conversations to scope to.
+                  // v73an: primary CTA is now "Build offer" deep-linking to
+                  // pp-bookings with ?newOffer={ref} which auto-opens the
+                  // offer-builder modal for that booking. Secondary CTA opens
+                  // the conversation. The booking-builder is the partner's
+                  // real action item on a new enquiry, not "read the message".
+                  const bookingsUrl = `https://thebearing.io/pp-bookings.html?as=${encodeURIComponent(propertySlug)}&newOffer=${encodeURIComponent(ref)}`;
+                  const convUrl = `https://thebearing.io/pp-conversations.html?id=${id}&as=${encodeURIComponent(propertySlug)}`;
+                  const guestLabel = (guestName || guestEmail).replace(/[<>"']/g, '');
+                  const propLabel = String(propertyName || '').replace(/[<>"']/g, '');
+                  const msgLabel = String(firstMessage || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                  const html = `
+<div style="font-family:Geist,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;background:#faf7f1;color:#1e1810;">
+  <div style="font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#b05830;">The Bearing &middot; Partner</div>
+  <h1 style="font-family:'Instrument Serif',Georgia,serif;font-size:1.7rem;line-height:1.2;margin:8px 0 4px;font-weight:400;">New enquiry at ${propLabel}</h1>
+  <p style="color:#7a6a58;margin:0 0 20px;font-size:.92rem;">from ${guestLabel} &middot; ${guestEmail}</p>
+  <div style="background:#fff;border:1px solid rgba(80,55,25,.12);border-radius:12px;padding:18px;margin:0 0 22px;">
+    <div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Their message</div>
+    <div style="white-space:pre-wrap;line-height:1.55;color:#1e1810;">${msgLabel}</div>
+  </div>
+  <div style="margin:0 0 22px;">
+    <a href="${bookingsUrl}" style="display:inline-block;background:#b05830;color:#fff;padding:13px 22px;border-radius:9px;text-decoration:none;font-weight:600;font-size:.92rem;letter-spacing:.01em;box-shadow:0 2px 8px rgba(176,88,48,.25);">Build offer &rarr;</a>
+    <a href="${convUrl}" style="display:inline-block;margin-left:10px;color:#7a6a58;padding:13px 14px;text-decoration:underline;font-size:.88rem;">Open conversation</a>
+  </div>
+  <p style="color:#7a6a58;font-size:.82rem;line-height:1.55;margin:0;">Or reply directly to this email \u2014 your response will be sent to the guest as a partner message in the conversation.</p>
+  <p style="color:#9a8e80;font-size:.78rem;margin:24px 0 0;border-top:1px solid rgba(80,55,25,.08);padding-top:14px;">Reference: <code style="font-family:'JetBrains Mono',monospace;font-size:.78rem;">${ref}</code></p>
+</div>`.trim();
                   await fetch('https://api.resend.com/emails', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -1864,8 +1886,9 @@ View in admin: https://thebearing.io/admin-bookings.html
                       from: 'The Bearing <bookings@thebearing.io>',
                       to: partnerToSend,
                       reply_to: `reply+${id}@replies.thebearing.io`,
-                      subject: `[PARTNER] New enquiry — ${propertyName} from ${guestName || guestEmail}`,
-                      text: `You have a new enquiry at ${propertyName}.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\n\nMessage:\n${firstMessage}\n\nReply by replying directly to this email, or via the partner portal: ${ppUrl}\n\n— The Bearing`
+                      subject: `[PARTNER] New enquiry \u2014 ${propertyName} from ${guestName || guestEmail}`,
+                      html: html,
+                      text: `New enquiry at ${propertyName} from ${guestName || guestEmail} (${guestEmail}).\n\nMessage:\n${firstMessage}\n\nBuild offer: ${bookingsUrl}\nOpen conversation: ${convUrl}\n\nOr reply directly to this email \u2014 your response will be sent to the guest.\n\nReference: ${ref}\n\n\u2014 The Bearing`
                     })
                   }).catch(function(e) { console.error('[Conv] Partner email error:', e.message); });
                 }
@@ -2568,13 +2591,22 @@ View in admin: https://thebearing.io/admin-bookings.html
       let inferredRole = 'guest';
       let inferredSenderName = conv.guestName || fromAddrRaw || 'Guest';
       try {
-        const partnerList = await loadPartnerRecipients(conv.propertySlug || '', env);
+        const partnerListRaw = await loadPartnerRecipients(conv.propertySlug || '', env);
+        // v73an: defensive lowercase on both sides. loadPartnerRecipients already
+        // lowercases the property's stored emails, but the transition default
+        // was capitalized pre-v73an. Lowercase here ensures the indexOf check
+        // works regardless of casing in the stored data.
+        const partnerList = partnerListRaw.map(function(e) { return String(e || '').toLowerCase().trim(); });
         if (fromEmail && partnerList.indexOf(fromEmail) !== -1) {
           inferredRole = 'partner';
           // Use property name as sender label so the conversation thread reads
           // "Property Name replied" rather than the raw partner email.
           inferredSenderName = conv.propertyName || fromAddrRaw || 'Property';
           console.log('[Inbound] classified as partner reply: ' + fromEmail + ' is in partner_emails for ' + conv.propertySlug);
+        } else {
+          // Log misses so misconfigured partner_emails are findable in CF logs.
+          // Format makes it obvious whether the from-email or the list was empty.
+          console.log('[Inbound] classified as guest reply. fromEmail=' + (fromEmail || '(empty)') + ' partnerList=[' + partnerList.join(',') + '] slug=' + (conv.propertySlug || '(none)'));
         }
       } catch (e) {
         console.error('[Inbound] partner-email check failed:', e && e.message);
@@ -4861,7 +4893,12 @@ const BASELINE_NOTIFICATION_RECIPIENT = 'admin@thebearing.io';
 // (1) set partner_emails on every property record in admin-property-editor,
 // (2) delete this constant and the fallback branch in loadPartnerRecipients.
 // Until then, missing partner_emails routes here so we don't lose notifications.
-const PARTNER_EMAIL_TRANSITION_DEFAULT = 'NourElNilTest213@gmail.com';
+// v73an: lowercased to match the lowercased fromEmail used in inbound role
+// inference. Was 'NourElNilTest213@gmail.com' \u2014 inbound check did
+// partnerList.indexOf(fromEmail.toLowerCase()) which never matched, so partner
+// replies were misclassified as guest messages. Resend ignores case on the
+// To: header so outbound still delivers to the inbox.
+const PARTNER_EMAIL_TRANSITION_DEFAULT = 'nourelniltest213@gmail.com';
 
 async function loadNotificationRecipients(env) {
   if (!env.DOSSIERS) return [BASELINE_NOTIFICATION_RECIPIENT];

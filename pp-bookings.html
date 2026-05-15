@@ -1075,6 +1075,27 @@ function loadBookings() {
       ALL_BOOKINGS = (data && data.bookings) || [];
       renderBookings();
       renderKPIs();
+      // v73an: auto-open the offer modal when the URL has ?newOffer={ref}.
+      // Used when partner clicks the "Build offer" CTA in the new-enquiry
+      // notification email. One-shot guarded by window._ppOfferAutoOpened.
+      if (!window._ppOfferAutoOpened) {
+        var newOfferRef = new URLSearchParams(location.search).get('newOffer');
+        if (newOfferRef) {
+          window._ppOfferAutoOpened = true;
+          var match = ALL_BOOKINGS.find(function(b) { return b.ref === newOfferRef; });
+          if (match) {
+            // Open the build-offer modal directly. mode is null for fresh
+            // build (vs 'revise' for an existing offer).
+            try {
+              openOfferModal(newOfferRef, match.active_offer_id ? 'revise' : null);
+            } catch(e) {
+              console.error('[pp-bookings] auto-open offer modal failed:', e);
+            }
+          } else {
+            console.warn('[pp-bookings] newOffer=' + newOfferRef + ' not in this partner\'s list (slug=' + PP_SLUG + '). Check that ?as=X matches the booking\'s property.');
+          }
+        }
+      }
     })
     .catch(function(err) {
       console.error('[pp-bookings] load failed:', err);
