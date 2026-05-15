@@ -1468,7 +1468,9 @@ View in admin: https://thebearing.io/admin-bookings.html
             ]);
 
             // v73al: notify partner emails for this property (deduped against admin)
-            if (slug) {
+            // v73as: gate by shouldSendPartnerEmail('new_enquiry'). No conv
+            // object in this path; gate uses per-property settings only.
+            if (slug && await shouldSendPartnerEmail('new_enquiry', {}, slug, env)) {
               try {
                 const partnerRecipients = await loadPartnerRecipients(slug, env);
                 const partnerToSend = partnerRecipients.filter(function(e) {
@@ -1883,7 +1885,8 @@ View in admin: https://thebearing.io/admin-bookings.html
               // v73al: also notify partner emails for this property (deduped
               // against adminRecipients so a partner sharing the admin inbox
               // doesn't get two copies).
-              if (conv.notifyPartner !== false) {
+              // v73as: gate by shouldSendPartnerEmail (master/per-event/universal precedence)
+              if (await shouldSendPartnerEmail('new_enquiry', conv, propertySlug, env)) {
                 const partnerRecipients = await loadPartnerRecipients(propertySlug, env);
                 const partnerToSend = partnerRecipients.filter(function(e) {
                   return adminRecipients.indexOf(e) === -1;
@@ -2191,10 +2194,14 @@ View in admin: https://thebearing.io/admin-bookings.html
 
                   // v73al: also notify partner for the same event (deduped
                   // against adminRecipients). Same subject + body so partner
-                  // sees identical context. Skipped if conv.notifyPartner is
-                  // false (per-conversation mute) \u2014 future v73am will add
-                  // per-thread partner toggle.
-                  if (conv.notifyPartner !== false && conv.propertySlug) {
+                  // sees identical context.
+                  // v73as: gate by shouldSendPartnerEmail. Event type branches:
+                  // if guest sent a change request (storedChangeRequest), event
+                  // is 'change_request'; otherwise plain 'guest_reply'. This lets
+                  // partners mute reply chatter while still hearing about
+                  // material change requests.
+                  const _partnerEvent = storedChangeRequest ? 'change_request' : 'guest_reply';
+                  if (conv.propertySlug && await shouldSendPartnerEmail(_partnerEvent, conv, conv.propertySlug, env)) {
                     const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
                     const partnerToSend = partnerRecipients.filter(function(e) {
                       return adminRecipients.indexOf(e) === -1;
@@ -2467,10 +2474,70 @@ View in admin: https://thebearing.io/admin-bookings.html
     }
 
 
-    // Resend inbound webhook — parses email replies and saves to conversation
-    // Setup: Resend dashboard → Domains → thebearing.io → enable Receiving
-    // Then add webhook endpoint: https://thebearing.io/api/inbound-email
-    if (url.pathname === '/api/inbound-email') {
+    // v73as: partner notification preferences endpoint
+    // GET  /api/partner-notif?slug=X  \u2014 returns { universalMute, mutedEvents, perConv? }
+    // POST /api/partner-notif         \u2014 body: { slug, universalMute, mutedEvents }
+    // POST /api/partner-notif         \u2014 body: { slug, convId, eventMute: {new_enquiry:false} } for per-conv per-event
+    // Trust model matches the rest of pp-* (slug-based, since real partner
+    // auth isn't built yet \u2014 future Clerk-org work will tighten this).
+    if (url.pathname === '/api/partner-notif') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        const settings = await loadPartnerNotifSettings(slug, env);
+        return jsonResponse({ slug, ...settings, events: PARTNER_NOTIF_EVENTS });
+      }
+
+      if (request.method === 'POST') {
+        const b = await request.json().catch(() => ({}));
+        const slug = b.slug;
+        if (!slug || typeof slug !== 'string') {
+          return jsonResponse({ error: 'slug required' }, 400);
+        }
+        if (slug.startsWith('__') || slug.indexOf(':') !== -1) {
+          return jsonResponse({ error: 'invalid slug' }, 400);
+        }
+
+        // Branch A: per-conv per-event mute
+        // body: { slug, convId, eventMute: { new_enquiry: false, guest_reply: true, ... } }
+        if (b.convId && b.eventMute && typeof b.eventMute === 'object') {
+          const convRaw = await env.DOSSIERS.get('conversation:' + b.convId);
+          if (!convRaw) return jsonResponse({ error: 'conversation not found' }, 404);
+          const conv = JSON.parse(convRaw);
+          if (conv.propertySlug !== slug) {
+            return jsonResponse({ error: 'conversation does not belong to this property' }, 403);
+          }
+          conv.notifyPartnerEvents = conv.notifyPartnerEvents || {};
+          // Whitelist event keys
+          for (const k of Object.keys(b.eventMute)) {
+            if (PARTNER_NOTIF_EVENTS.indexOf(k) !== -1) {
+              conv.notifyPartnerEvents[k] = (b.eventMute[k] === false) ? false : true;
+            }
+          }
+          await env.DOSSIERS.put('conversation:' + b.convId, JSON.stringify(conv));
+          return jsonResponse({ ok: true, convId: b.convId, notifyPartnerEvents: conv.notifyPartnerEvents });
+        }
+
+        // Branch B: per-property universal settings
+        // body: { slug, universalMute, mutedEvents }
+        const universalMute = !!b.universalMute;
+        const mutedEventsRaw = Array.isArray(b.mutedEvents) ? b.mutedEvents : [];
+        const mutedEvents = mutedEventsRaw.filter(function(e) {
+          return PARTNER_NOTIF_EVENTS.indexOf(e) !== -1;
+        });
+        await env.DOSSIERS.put('partner-notif:' + slug, JSON.stringify({
+          universalMute, mutedEvents,
+          updatedAt: new Date().toISOString()
+        }));
+        return jsonResponse({ ok: true, slug, universalMute, mutedEvents });
+      }
+
+      return jsonResponse({ error: 'GET or POST only' }, 405);
+    }
+
+
       if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
       let body;
       try { body = await request.json(); }
@@ -2760,7 +2827,8 @@ View in admin: https://thebearing.io/admin-bookings.html
               })
             });
             // v73al: notify partner too
-            if (conv.notifyPartner !== false && conv.propertySlug) {
+            // v73as: gate by shouldSendPartnerEmail('guest_reply')
+            if (conv.propertySlug && await shouldSendPartnerEmail('guest_reply', conv, conv.propertySlug, env)) {
               const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
               const partnerToSend = partnerRecipients.filter(function(e) {
                 return adminRecipients.indexOf(e) === -1;
@@ -3732,8 +3800,18 @@ View in admin: https://thebearing.io/admin-bookings.html
                 }).catch(function(e) { console.error('[Offer decline] admin email failed:', e); });
               }
               // v73al: notify partner too
+              // v73as: gate by shouldSendPartnerEmail('offer_declined'). Need
+              // to load conv to honor per-thread mute settings; fall through
+              // to settings-only check if no conversationId.
               const slug = bookingDecline.slug || bookingDecline.propertySlug;
-              if (slug) {
+              let _declineConv = null;
+              if (bookingDecline.conversationId) {
+                try {
+                  const _cr = await env.DOSSIERS.get('conversation:' + bookingDecline.conversationId);
+                  if (_cr) _declineConv = JSON.parse(_cr);
+                } catch(_) {}
+              }
+              if (slug && await shouldSendPartnerEmail('offer_declined', _declineConv || {}, slug, env)) {
                 const partnerRecipients = await loadPartnerRecipients(slug, env);
                 const partnerToSend = partnerRecipients.filter(function(e) {
                   return adminRecipients.indexOf(e) === -1;
@@ -4687,10 +4765,21 @@ View in admin: https://thebearing.io/admin-bookings.html
             // Partner notification \u2014 per-property emails (v73al). Filter
             // out any address already in adminRecipients to avoid duplicate
             // emails when admin and partner share an inbox.
+            // v73as: gate by shouldSendPartnerEmail('deposit_paid'). Load conv
+            // for per-thread mute, fall through to settings-only otherwise.
             const partnerToSend = partnerRecipients.filter(function(e) {
               return adminRecipients.indexOf(e) === -1;
             });
-            if (partnerToSend.length) {
+            const _depositSlug = booking.slug || booking.propertySlug || '';
+            let _depositConv = null;
+            if (booking.conversationId) {
+              try {
+                const _dcr = await env.DOSSIERS.get('conversation:' + booking.conversationId);
+                if (_dcr) _depositConv = JSON.parse(_dcr);
+              } catch(_) {}
+            }
+            const _depositGate = await shouldSendPartnerEmail('deposit_paid', _depositConv || {}, _depositSlug, env);
+            if (partnerToSend.length && _depositGate) {
               // v73am: reply_to + ppUrl with ?as=slug so partner can reply via
               // email or open the conversation in their portal.
               const convIdForPartner = booking.conversationId || null;
@@ -4857,7 +4946,11 @@ async function runStaleConvReminders(env) {
       const partnerToSend = (level >= 48)
         ? partnerRecipients.filter(function(e) { return adminRecipients.indexOf(e) === -1; })
         : partnerRecipients.slice();
-      const notifyPartner = partnerToSend.length > 0 && conv.notifyPartner !== false;
+      // v73as: replaced bare `conv.notifyPartner !== false` with the full
+      // shouldSendPartnerEmail gate so universal/per-event/per-property
+      // settings all apply to stale reminders too.
+      const _staleGate = await shouldSendPartnerEmail('stale_reminder', conv, conv.propertySlug || '', env);
+      const notifyPartner = partnerToSend.length > 0 && _staleGate;
       const notifyAdmin = conv.notifyAdmin !== false;
 
       if (notifyPartner) {
@@ -5012,6 +5105,62 @@ async function loadPartnerRecipients(slug, env) {
     console.error('[Partner email] load error for slug "' + slug + '":', e.message);
     return [PARTNER_EMAIL_TRANSITION_DEFAULT];
   }
+}
+
+// v73as: partner notification preferences \u2014 Part B of partner emails.
+// Three precedence layers (most specific wins):
+//   1. Per-conversation event mute  \u2014 conv.notifyPartnerEvents[event] === false
+//      ALSO honors the existing master mute: conv.notifyPartner === false suppresses all
+//   2. Per-property universal       \u2014 partner-notif:{slug} KV record
+//      { universalMute: bool, mutedEvents: ['new_enquiry', ...] }
+//   3. Default                       \u2014 send
+//
+// Event types (6 total):
+//   new_enquiry, guest_reply, deposit_paid, offer_declined, change_request, stale_reminder
+//
+// Edited from pp-notifications.html (per-property universal) and from the
+// pp-conversations thread header (per-conv master) or future per-event UI.
+
+const PARTNER_NOTIF_EVENTS = [
+  'new_enquiry',
+  'guest_reply',
+  'deposit_paid',
+  'offer_declined',
+  'change_request',
+  'stale_reminder'
+];
+
+async function loadPartnerNotifSettings(slug, env) {
+  // Returns { universalMute, mutedEvents } with defaults if not set.
+  // Never throws; falls back to { universalMute:false, mutedEvents:[] } on error.
+  if (!env.DOSSIERS || !slug) return { universalMute: false, mutedEvents: [] };
+  try {
+    const raw = await env.DOSSIERS.get('partner-notif:' + slug);
+    if (!raw) return { universalMute: false, mutedEvents: [] };
+    const obj = JSON.parse(raw);
+    return {
+      universalMute: !!(obj && obj.universalMute),
+      mutedEvents: Array.isArray(obj && obj.mutedEvents) ? obj.mutedEvents : []
+    };
+  } catch(e) {
+    console.error('[Partner notif] load error for slug "' + slug + '":', e.message);
+    return { universalMute: false, mutedEvents: [] };
+  }
+}
+
+async function shouldSendPartnerEmail(eventType, conv, slug, env) {
+  // Layer 1a: existing master mute on the conversation (notifyPartner === false)
+  if (conv && conv.notifyPartner === false) return false;
+  // Layer 1b: per-event mute on the conversation
+  if (conv && conv.notifyPartnerEvents && conv.notifyPartnerEvents[eventType] === false) {
+    return false;
+  }
+  // Layer 2: per-property universal
+  const settings = await loadPartnerNotifSettings(slug, env);
+  if (settings.universalMute) return false;
+  if (settings.mutedEvents.indexOf(eventType) !== -1) return false;
+  // Layer 3: default = send
+  return true;
 }
 
 async function loadAllowlistExtras(env) {

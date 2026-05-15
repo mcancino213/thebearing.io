@@ -199,7 +199,6 @@ tbody tr:hover{background:var(--bg);}
 <div class="main-area">
 <div class="topbar">
   <div><div class="topbar-title">Notifications</div><div class=topbar-sub>Alert preferences.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
 </div>
 <div class="page-body">
 
@@ -208,18 +207,251 @@ tbody tr:hover{background:var(--bg);}
   <div class="page-title">Notifications</div>
   <div class="page-subtitle">Choose how and when you're notified about new enquiries and bookings.</div>
 </div>
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Notifications</div>
-  <div class="empty-desc" style="margin-top:8px;">Choose how and when you're notified about new enquiries and bookings.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
+<div class="page-header">
+  <div class="page-eyebrow">Alert preferences.</div>
+  <div class="page-title">Notifications</div>
+  <div class="page-subtitle">Choose which emails you receive about this property. Settings apply across all conversations and bookings; you can fine-tune individual threads inside each conversation.</div>
+</div>
+
+<!-- v73as: per-property notification preferences (Part B of partner emails).
+     Reads/writes /api/partner-notif?slug=X. Per-conversation per-event mute
+     UI lives in pp-conversations.html thread header (TODO add). -->
+
+<div class="card" style="margin-bottom:18px;">
+  <div class="card-header">
+    <div class="card-header-icon">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1.5a5 5 0 0 1 5 5v3l1.5 2h-13L3 9.5v-3a5 5 0 0 1 5-5z"/><path d="M6.5 13a1.5 1.5 0 0 0 3 0"/></svg>
+    </div>
+    <div>
+      <div class="card-title">Master pause</div>
+      <div class="card-subtitle">Stops all partner notifications for this property. Admin and customer still receive their copies as configured.</div>
+    </div>
+    <div class="card-header-right">
+      <label style="display:inline-flex;align-items:center;cursor:pointer;gap:0;position:relative;">
+        <input type="checkbox" id="pp-universal-mute" style="position:absolute;opacity:0;pointer-events:none;">
+        <span id="pp-universal-mute-track" style="display:inline-block;width:42px;height:24px;background:#d1d5db;border-radius:100px;position:relative;transition:background .15s;">
+          <span id="pp-universal-mute-thumb" style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .15s,background .15s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+        </span>
+      </label>
+    </div>
   </div>
-</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-icon">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
+    </div>
+    <div>
+      <div class="card-title">Per-event preferences</div>
+      <div class="card-subtitle">Granular control. Disable individual event types. Inactive while master pause is on.</div>
+    </div>
+  </div>
+  <div class="card-body" id="pp-events-list" style="padding:0;">
+    <!-- rows injected by JS -->
+  </div>
+</div>
+
+<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;">
+  <button class="btn btn-ghost" id="pp-notif-revert" type="button">Revert</button>
+  <button class="btn btn-primary" id="pp-notif-save" type="button">Save changes</button>
+</div>
+
+<div id="pp-notif-status" style="margin-top:14px;text-align:right;font-size:13px;color:var(--text2);min-height:1.4em;"></div>
+
 </div>
 </div>
 </div>
+
+<script>
+// v73as: pp-notifications page logic.
+// PP_SLUG matches the rest of the partner portal (?as= URL param).
+var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+
+var EVENTS = [
+  { key: 'new_enquiry',    label: 'New enquiry',
+    desc: 'A guest submits a fresh enquiry through The Bearing.' },
+  { key: 'guest_reply',    label: 'Guest reply',
+    desc: 'A guest replies inside an existing conversation.' },
+  { key: 'deposit_paid',   label: 'Deposit paid (booking confirmed)',
+    desc: 'A guest accepts an offer and pays the deposit via Stripe.' },
+  { key: 'offer_declined', label: 'Offer declined',
+    desc: 'A guest declines an offer you sent.' },
+  { key: 'change_request', label: 'Change request',
+    desc: 'A guest requests changes to an active offer (dates, guests, cabin).' },
+  { key: 'stale_reminder', label: 'Stale-conversation reminders',
+    desc: 'Automated 24h / 48h / 72h reminders when a guest is waiting on a reply.' }
+];
+
+// In-memory snapshot of last-saved state so Revert works
+var savedState = { universalMute: false, mutedEvents: [] };
+// Working copy edited by the UI; saved on Save click
+var workingState = { universalMute: false, mutedEvents: [] };
+
+function fetchPpName() {
+  // Best-effort: update the sidebar context with the real property name
+  fetch('/api/property?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.data) return;
+      var p = d.data;
+      var nameEl = document.querySelector('.sb-context-name');
+      if (nameEl && p.name) nameEl.textContent = p.name;
+    }).catch(function(){});
+}
+
+function fetchSettings() {
+  return fetch('/api/partner-notif?slug=' + encodeURIComponent(PP_SLUG), { cache: 'no-store' })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d) return;
+      savedState = {
+        universalMute: !!d.universalMute,
+        mutedEvents: Array.isArray(d.mutedEvents) ? d.mutedEvents.slice() : []
+      };
+      workingState = {
+        universalMute: savedState.universalMute,
+        mutedEvents: savedState.mutedEvents.slice()
+      };
+      render();
+    });
+}
+
+function render() {
+  // Master toggle
+  var cb = document.getElementById('pp-universal-mute');
+  var track = document.getElementById('pp-universal-mute-track');
+  var thumb = document.getElementById('pp-universal-mute-thumb');
+  cb.checked = workingState.universalMute;
+  if (workingState.universalMute) {
+    track.style.background = '#c17f3e';
+    thumb.style.left = '20px';
+  } else {
+    track.style.background = '#d1d5db';
+    thumb.style.left = '2px';
+  }
+
+  // Event rows
+  var list = document.getElementById('pp-events-list');
+  list.innerHTML = '';
+  EVENTS.forEach(function(ev, idx) {
+    var isMuted = workingState.mutedEvents.indexOf(ev.key) !== -1;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:16px;padding:18px 24px;'
+      + (idx < EVENTS.length-1 ? 'border-bottom:1px solid var(--border);' : '')
+      + (workingState.universalMute ? 'opacity:.45;' : '');
+    row.innerHTML =
+      '<div style="flex:1;">'
+        + '<div style="font-size:14px;font-weight:500;color:var(--text);">' + ev.label + '</div>'
+        + '<div style="font-size:12px;color:var(--text2);margin-top:3px;">' + ev.desc + '</div>'
+      + '</div>'
+      + '<label style="display:inline-flex;align-items:center;cursor:' + (workingState.universalMute ? 'not-allowed' : 'pointer') + ';position:relative;">'
+        + '<input type="checkbox" data-event="' + ev.key + '" '
+          + (isMuted ? '' : 'checked ')
+          + (workingState.universalMute ? 'disabled ' : '')
+          + 'style="position:absolute;opacity:0;pointer-events:none;">'
+        + '<span class="ev-track" style="display:inline-block;width:38px;height:22px;background:' + (isMuted ? '#d1d5db' : '#c17f3e') + ';border-radius:100px;position:relative;transition:background .15s;">'
+          + '<span class="ev-thumb" style="position:absolute;top:2px;left:' + (isMuted ? '2px' : '18px') + ';width:18px;height:18px;background:#fff;border-radius:50%;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>'
+        + '</span>'
+      + '</label>';
+    list.appendChild(row);
+  });
+
+  // Wire row toggles
+  list.querySelectorAll('input[data-event]').forEach(function(input) {
+    input.addEventListener('change', function() {
+      var key = input.getAttribute('data-event');
+      var isEnabled = input.checked; // checked = NOT muted
+      if (isEnabled) {
+        // Remove from mutedEvents
+        workingState.mutedEvents = workingState.mutedEvents.filter(function(k){ return k !== key; });
+      } else {
+        if (workingState.mutedEvents.indexOf(key) === -1) workingState.mutedEvents.push(key);
+      }
+      render();
+      updateStatusDirty();
+    });
+  });
+}
+
+function updateStatusDirty() {
+  var dirty = (savedState.universalMute !== workingState.universalMute)
+           || (savedState.mutedEvents.slice().sort().join(',') !== workingState.mutedEvents.slice().sort().join(','));
+  var s = document.getElementById('pp-notif-status');
+  if (dirty) {
+    s.textContent = 'Unsaved changes.';
+    s.style.color = 'var(--amber)';
+  } else {
+    s.textContent = '';
+  }
+}
+
+// Master toggle wiring
+document.getElementById('pp-universal-mute').addEventListener('change', function(e) {
+  workingState.universalMute = e.target.checked;
+  render();
+  updateStatusDirty();
+});
+// Also handle clicks on the track (since the input itself is hidden)
+document.getElementById('pp-universal-mute-track').addEventListener('click', function(e) {
+  var cb = document.getElementById('pp-universal-mute');
+  cb.checked = !cb.checked;
+  cb.dispatchEvent(new Event('change'));
+});
+
+// Save
+document.getElementById('pp-notif-save').addEventListener('click', function() {
+  var btn = this;
+  btn.disabled = true;
+  var s = document.getElementById('pp-notif-status');
+  s.textContent = 'Saving…';
+  s.style.color = 'var(--text2)';
+  fetch('/api/partner-notif', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      slug: PP_SLUG,
+      universalMute: workingState.universalMute,
+      mutedEvents: workingState.mutedEvents
+    })
+  })
+  .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+  .then(function(d) {
+    if (!d.ok) throw new Error(d.error || 'save failed');
+    savedState = {
+      universalMute: workingState.universalMute,
+      mutedEvents: workingState.mutedEvents.slice()
+    };
+    s.textContent = '✓ Saved';
+    s.style.color = 'var(--emerald)';
+    btn.disabled = false;
+    setTimeout(function(){ s.textContent = ''; }, 2400);
+  })
+  .catch(function(err) {
+    s.textContent = 'Save failed: ' + (err.message || err);
+    s.style.color = 'var(--red)';
+    btn.disabled = false;
+  });
+});
+
+// Revert
+document.getElementById('pp-notif-revert').addEventListener('click', function() {
+  workingState = {
+    universalMute: savedState.universalMute,
+    mutedEvents: savedState.mutedEvents.slice()
+  };
+  render();
+  updateStatusDirty();
+});
+
+// Boot
+fetchPpName();
+fetchSettings().catch(function(e){
+  var s = document.getElementById('pp-notif-status');
+  s.textContent = 'Failed to load: ' + (e.message || e);
+  s.style.color = 'var(--red)';
+});
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
