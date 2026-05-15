@@ -13,7 +13,13 @@
         var unread = d.unread || 0;
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === 'pp-conversations' || link.getAttribute('href') === 'pp-conversations.html') {
+          // v73aj: match by pathname only, ignoring ?as=X query string that
+          // v73f appends across all sidebar links when admin is in partner
+          // preview mode. Before this fix, badges silently never rendered
+          // for ?as=X sessions because the equality check failed against
+          // 'pp-conversations?as=gypsy-by-mekong-kingdoms' etc.
+          var hrefPath = (link.getAttribute('href') || '').split('?')[0].replace(/\.html$/, '');
+          if (hrefPath === 'pp-conversations') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
               if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
@@ -56,7 +62,9 @@
         });
         var links = document.querySelectorAll('.sb-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === 'pp-bookings' || link.getAttribute('href') === 'pp-bookings.html') {
+          // v73aj: match by pathname only — see updateConvBadge for context.
+          var hrefPath = (link.getAttribute('href') || '').split('?')[0].replace(/\.html$/, '');
+          if (hrefPath === 'pp-bookings') {
             var badge = link.querySelector('.sb-badge');
             if (badge) {
               if (needsAction.length > 0) { badge.textContent = needsAction.length; badge.style.display = ''; }

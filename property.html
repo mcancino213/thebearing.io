@@ -1679,6 +1679,41 @@ function renderProperty(p,slug){
     document.getElementById('bar-price').innerHTML='$'+parseInt(r0.price).toLocaleString()+' <small>/ '+(r0.per||'night')+'</small>';
     setText('bar-perks-txt',r.duration_tagline||'Best rate guaranteed');
     show('book-bar');
+  } else {
+    // v73aj: always show the sticky book-bar even when no first-room price
+    // is set. Properties priced via custom offers (luxury/experiential)
+    // should still surface the "Enquire to book" CTA at the top of the
+    // viewport. Use price_indicator if available; otherwise show 'On request'.
+    // Mirrors the desktop booking card fallback below.
+    var indicator = p.price_indicator || '';
+    var priceEl = document.getElementById('bar-price');
+    if (priceEl) {
+      if (indicator) {
+        priceEl.innerHTML = indicator;
+        priceEl.style.fontSize = '.95rem';
+        priceEl.style.fontFamily = "'Geist', sans-serif";
+        priceEl.style.fontWeight = '500';
+      } else {
+        priceEl.innerHTML = 'On request';
+        priceEl.style.fontSize = '1rem';
+        priceEl.style.fontFamily = "'Geist', sans-serif";
+        priceEl.style.fontWeight = '500';
+      }
+    }
+    // Hide the "FROM" label since there's no specific price
+    var fromLbl = document.querySelector('.book-bar-from');
+    if (fromLbl) fromLbl.textContent = indicator ? 'Starting' : 'Pricing';
+    // Hide the perks tagline since "Best rate guaranteed" doesn't fit
+    // here; if duration_tagline exists, use that instead.
+    var perksWrap = document.getElementById('bar-perks');
+    if (perksWrap) {
+      if (r.duration_tagline) {
+        setText('bar-perks-txt', r.duration_tagline);
+      } else {
+        perksWrap.style.display = 'none';
+      }
+    }
+    show('book-bar');
   }
 
   // Overview — hook as title

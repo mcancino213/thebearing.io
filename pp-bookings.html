@@ -649,12 +649,20 @@ function wireRoomDropdown(rooms) {
       if (val === '__custom') {
         // Switch to custom-input mode
         _roomDropdownState.customMode = true;
-        document.getElementById('om-room-label').textContent = 'Custom\u2026';
-        document.getElementById('om-room-label').classList.remove('placeholder');
-        document.getElementById('om-room').value = '';
         var customInput = document.getElementById('om-room-custom');
+        // v73aj: if there's already a custom value (from a non-matching
+        // prefill), preserve it as the starting text. Was: blanked the
+        // input on every Other click, which would have silently wiped a
+        // partner's prior custom value.
+        var currentRoom = document.getElementById('om-room').value || '';
+        var matchesKnown = _roomDropdownState.rooms.some(function(r) {
+          return r && r.name && r.name.toLowerCase() === currentRoom.toLowerCase();
+        });
+        customInput.value = matchesKnown ? '' : currentRoom;
+        document.getElementById('om-room').value = customInput.value;
+        document.getElementById('om-room-label').textContent = customInput.value || 'Custom\u2026';
+        document.getElementById('om-room-label').classList.remove('placeholder');
         customInput.style.display = 'block';
-        customInput.value = '';
         customInput.focus();
         markSelectedOption('__custom');
       } else {
@@ -679,9 +687,19 @@ function wireRoomDropdown(rooms) {
         trigger.setAttribute('aria-expanded', 'false');
       }
     });
-    // Custom text input syncs into hidden #om-room
+    // v73aj: custom text input syncs into hidden #om-room AND the dropdown
+    // label so partner sees what value they're entering reflected in the
+    // dropdown trigger.
     document.getElementById('om-room-custom').addEventListener('input', function() {
       document.getElementById('om-room').value = this.value;
+      var lbl = document.getElementById('om-room-label');
+      if (this.value) {
+        lbl.textContent = this.value.length > 32 ? this.value.substring(0, 30) + '\u2026' : this.value;
+        lbl.classList.remove('placeholder');
+      } else {
+        lbl.textContent = 'Custom\u2026';
+        lbl.classList.remove('placeholder');
+      }
     });
     _roomDropdownState.bound = true;
   }
@@ -712,13 +730,19 @@ function setRoomDropdownValue(val) {
     _roomDropdownState.customMode = false;
     markSelectedOption(matched.name);
   } else {
-    // Value doesn't match a known room \u2014 treat as custom
-    labelEl.textContent = val.length > 32 ? val.substring(0, 30) + '\u2026' : val;
+    // v73aj: value doesn't match a known room. Was: opened the inline custom
+    // text input automatically, which duplicated the visible field. Now: show
+    // the value as the dropdown label only (truncated if long), leave the
+    // custom text input hidden. If partner wants to edit, they click the
+    // dropdown and select "Other / custom\u2026" which opens the input pre-filled.
+    // Append a small "(custom)" hint to clarify why this value isn't a
+    // standard room.
+    labelEl.textContent = (val.length > 32 ? val.substring(0, 30) + '\u2026' : val) + '  (custom)';
     labelEl.classList.remove('placeholder');
-    customInput.style.display = 'block';
+    customInput.style.display = 'none';
     customInput.value = val;
-    _roomDropdownState.customMode = true;
-    markSelectedOption('__custom');
+    _roomDropdownState.customMode = false;
+    markSelectedOption(null);
   }
 }
 
