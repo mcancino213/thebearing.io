@@ -13,7 +13,7 @@
         var unread = d.unread || 0;
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === '/conversations' || link.getAttribute('href') === '/conversations.html' || link.textContent.indexOf('Conversations') >= 0) {
+          if (link.getAttribute('href') === '/conversations' || link.getAttribute('href') === '/conversations.html' || link.getAttribute('href') === 'conversations' || link.textContent.indexOf('Conversations') >= 0) {
             var badge = link.querySelector('.sidebar-badge');
             if (badge) {
               if (unread > 0) { badge.textContent = unread; badge.style.display = ''; }
@@ -60,7 +60,7 @@
         var count = needsAction.length;
         var links = document.querySelectorAll('.sidebar-item');
         links.forEach(function(link) {
-          if (link.getAttribute('href') === '/bookings' || link.getAttribute('href') === '/bookings.html' || link.textContent.indexOf('Bookings') >= 0) {
+          if (link.getAttribute('href') === '/bookings' || link.getAttribute('href') === '/bookings.html' || link.getAttribute('href') === 'bookings' || link.textContent.indexOf('Bookings') >= 0) {
             var badge = link.querySelector('.sidebar-badge');
             if (badge) {
               if (count > 0) { badge.textContent = count; badge.style.display = ''; }
