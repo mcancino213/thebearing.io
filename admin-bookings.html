@@ -193,6 +193,8 @@ tbody tr:hover{background:var(--bg2);}
 .action-btn:hover{opacity:.8;}
 .action-confirm{background:#dcfce7;color:#166534;}
 .action-cancel{background:#fee2e2;color:#991b1b;}
+/* v73ah: view action for confirmed-booking detail */
+.action-view{background:#f3f4f6;color:#374151;border:1px solid #e5e7eb;}
 .booking-ref{font-family:monospace;font-size:.76rem;color:var(--text3);}
 .empty-state{text-align:center;padding:60px 20px;color:var(--text3);}
 .empty-state svg{margin-bottom:16px;opacity:.3;}
@@ -368,6 +370,15 @@ function renderTable() {
       '<td>' + valueCell + '</td>' +
       '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
       '<td style="white-space:nowrap;">' +
+        // v73ah: View button for confirmed bookings opens a read-only detail
+        // modal (showing total, deposit paid, balance, inclusions, exclusions,
+        // cancellation, partner notes) and marks the booking as seen by admin,
+        // which clears the sidebar Bookings badge for this booking.
+        (b.status === 'confirmed'
+          ? '<button class="action-btn action-view" data-ref="' + b.ref + '" data-action="view">'
+            + (b.seenByAdmin !== true ? '<span style="display:inline-block;width:6px;height:6px;background:#c17f3e;border-radius:50%;margin-right:6px;vertical-align:middle;"></span>' : '')
+            + 'View</button> '
+          : '') +
         (b.status !== 'confirmed' ? '<button class="action-btn action-confirm" data-ref="' + b.ref + '" data-status="confirmed">Confirm</button> ' : '') +
         (b.status !== 'cancelled' ? '<button class="action-btn action-cancel" data-ref="' + b.ref + '" data-status="cancelled">Cancel</button>' : '') +
       '</td>' +
@@ -383,7 +394,15 @@ function renderTable() {
   // Wire action buttons via delegation (avoids quote escaping issues)
   wrap.querySelectorAll('[data-ref]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      updateStatus(this.getAttribute('data-ref'), this.getAttribute('data-status'));
+      var action = this.getAttribute('data-action');
+      var ref = this.getAttribute('data-ref');
+      // v73ah: View action opens the confirmed-booking detail modal +
+      // marks seen. Other actions (confirm/cancel) use updateStatus.
+      if (action === 'view') {
+        openConfirmedDetailModalAdmin(ref);
+      } else {
+        updateStatus(ref, this.getAttribute('data-status'));
+      }
     });
   });
 }
@@ -436,6 +455,140 @@ async function loadBookings() {
   } catch(e) {
     document.getElementById('bookings-wrap').innerHTML =
       '<div style="padding:20px;color:#dc2626;font-size:.84rem;">Failed to load: ' + e.message + '</div>';
+  }
+}
+
+// ── v73ah: confirmed booking detail modal (admin view) ───────────────
+// Read-only modal mirroring the partner-side equivalent. Shows guest +
+// stay header, financials (total / deposit paid / balance due),
+// inclusions/exclusions/cancellation, partner notes. Also fires
+// /api/booking/mark-seen with role='admin' so the sidebar Bookings
+// badge clears.
+function openConfirmedDetailModalAdmin(bookingRef) {
+  var b = allBookings.find(function(x) { return x.ref === bookingRef; });
+  if (!b) { alert('Booking not found. Refresh and try again.'); return; }
+
+  // Cleanup any prior
+  var existing = document.getElementById('adm-cd-modal');
+  if (existing) existing.remove();
+
+  function fmtDate(d) {
+    if (!d) return '\u2014';
+    try { return new Date(d.length === 10 ? (d + 'T00:00') : d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }); }
+    catch(_) { return d; }
+  }
+  function money(n) {
+    if (typeof n !== 'number' || isNaN(n) || n === 0) return '\u2014';
+    return '$' + Number(n).toLocaleString();
+  }
+
+  var hasSnapshot = (typeof b.confirmed_total_amount === 'number' && b.confirmed_total_amount > 0);
+  var total = b.confirmed_total_amount || 0;
+  var deposit = b.depositPaidAmount || b.confirmed_deposit_amount || 0;
+  var balance = Math.max(0, total - deposit);
+
+  var inclHtml = '';
+  if (Array.isArray(b.confirmed_inclusions) && b.confirmed_inclusions.length) {
+    inclHtml = '<ul style="list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:6px;">' +
+      b.confirmed_inclusions.map(function(i){
+        return '<li style="display:flex;align-items:flex-start;gap:8px;font-size:.85rem;color:#1e1810;line-height:1.5;">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3a7055" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:3px;"><polyline points="20 6 9 17 4 12"/></svg>' +
+          '<span>' + escapeHtml(i) + '</span>' +
+        '</li>';
+      }).join('') + '</ul>';
+  }
+
+  var modal = document.createElement('div');
+  modal.id = 'adm-cd-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:grid;place-items:start center;backdrop-filter:blur(6px);overflow-y:auto;padding:5vh 16px;font-family:Geist,system-ui,sans-serif;';
+
+  modal.innerHTML =
+    '<div style="background:#faf7f1;border-radius:20px;width:100%;max-width:620px;margin:0 auto;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;color:#1e1810;">' +
+      '<div style="padding:18px 22px;border-bottom:1px solid rgba(80,60,30,.1);display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+        '<div>' +
+          '<div style="font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#3a7055;">Booking confirmed</div>' +
+          '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.4rem;line-height:1.15;margin-top:2px;">' + escapeHtml(b.property || b.slug || 'Property') + '</div>' +
+          '<div style="font-size:.75rem;color:#9a8e80;margin-top:4px;font-family:\'JetBrains Mono\',monospace;">' + escapeHtml(b.ref) + '</div>' +
+        '</div>' +
+        '<button id="adm-cd-close" aria-label="Close" style="width:32px;height:32px;border-radius:50%;border:1px solid #e5e0d8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+          '<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#1e1810" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>' +
+        '</button>' +
+      '</div>' +
+      '<div style="padding:20px 22px;">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid rgba(80,60,30,.1);">' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Guest</div>' +
+            '<div style="font-size:.95rem;color:#1e1810;font-weight:500;">' + escapeHtml([b.firstname, b.lastname].filter(Boolean).join(' ') || '\u2014') + '</div>' +
+            '<div style="font-size:.78rem;color:#9a8e80;margin-top:2px;">' + escapeHtml(b.email || '') + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Stay</div>' +
+            '<div style="font-size:.95rem;color:#1e1810;">' + escapeHtml(fmtDate(b.arrival)) + ' \u2192 ' + escapeHtml(fmtDate(b.departure)) + '</div>' +
+            '<div style="font-size:.78rem;color:#9a8e80;margin-top:2px;">' + escapeHtml(b.room || '') + (b.guests ? ' \u00b7 ' + b.guests + ' guests' : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        (!hasSnapshot ? '<div style="font-size:.78rem;color:#6b5320;background:#f5ecd9;border:1px solid rgba(154,114,48,.35);border-radius:8px;padding:10px 12px;margin-bottom:14px;">Some financial details are unavailable. This booking was confirmed before the detail snapshot was added.</div>' : '') +
+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:14px;background:#fff;border-radius:10px;margin-bottom:14px;">' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Total</div>' +
+            '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.25rem;">' + money(total) + '</div>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#3a7055;margin-bottom:4px;">Deposit received</div>' +
+            '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.25rem;color:#3a7055;">' + money(deposit) + '</div>' +
+            (b.depositPaidAt ? '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">' + escapeHtml(fmtDate(b.depositPaidAt)) + '</div>' : '') +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b05830;margin-bottom:4px;">Balance owing</div>' +
+            '<div style="font-family:\'Instrument Serif\',Georgia,serif;font-size:1.25rem;color:#b05830;">' + money(balance) + '</div>' +
+            (b.confirmed_balance_due_date ? '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">due ' + escapeHtml(fmtDate(b.confirmed_balance_due_date)) + '</div>' : '<div style="font-size:.7rem;color:#9a8e80;margin-top:2px;">collected by property</div>') +
+          '</div>' +
+        '</div>' +
+
+        (inclHtml ? '<div style="margin-bottom:14px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Included</div>' + inclHtml + '</div>' : '') +
+        (b.confirmed_exclusions ? '<div style="margin-bottom:14px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Not included</div><div style="font-size:.83rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + escapeHtml(b.confirmed_exclusions) + '</div></div>' : '') +
+        (b.confirmed_cancellation_terms ? '<div style="margin-bottom:14px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div><div style="font-size:.83rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + escapeHtml(b.confirmed_cancellation_terms) + '</div></div>' : '') +
+        (b.confirmed_partner_notes ? '<div style="margin-bottom:14px;padding:12px;background:rgba(176,88,48,.06);border-radius:8px;border-left:3px solid #b05830;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Property\u2019s note to guest</div><div style="font-size:.84rem;color:#1e1810;line-height:1.55;white-space:pre-line;font-style:italic;">' + escapeHtml(b.confirmed_partner_notes) + '</div></div>' : '') +
+        (b.notes ? '<div style="margin-bottom:14px;padding:12px;background:#fef9ec;border-radius:8px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Guest enquiry notes</div><div style="font-size:.84rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + escapeHtml(b.notes) + '</div></div>' : '') +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+
+  function closeModal() {
+    modal.remove();
+    document.body.style.overflow = '';
+  }
+  document.getElementById('adm-cd-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener('keydown', function esc(e) {
+    if (e.key === 'Escape' && document.getElementById('adm-cd-modal')) {
+      closeModal();
+      document.removeEventListener('keydown', esc);
+    }
+  });
+
+  // Mark seen (admin-gated; admin-fetch.js wrapper attaches auth headers)
+  if (b.seenByAdmin !== true) {
+    fetch('/api/booking/mark-seen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: bookingRef, role: 'admin' })
+    })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.ok) {
+          b.seenByAdmin = true;
+          renderTable(); // re-render so the indicator dot disappears
+          if (window.refreshAdminBookingsBadge) window.refreshAdminBookingsBadge();
+        }
+      })
+      .catch(function() { /* non-fatal */ });
   }
 }
 

@@ -2629,12 +2629,34 @@ function showActiveOfferInterstitial(booking, propName, user, opts) {
   });
 
   document.getElementById('aoi-decline').addEventListener('click', function() {
-    var ok = window.confirm('Decline this offer from ' + propName + '?\n\nYour enquiry will stay open so the property can send you a different offer. This can\u2019t be undone.');
+    // v73ag: detect whether the user filled in a fresh enquiry form. If so,
+    // declining the existing offer should ALSO submit their new request as
+    // a follow-up message — otherwise the user types dates/room/etc into
+    // the form, hits Decline, and watches all that work get silently dropped.
+    var hasFreshEnquiry = !!(
+      opts.requestedArrival || opts.requestedDeparture ||
+      opts.requestedGuests || opts.requestedCabin || opts.requestedNotes
+    );
+
+    // Confirm copy depends on whether we'll chain a new request.
+    var confirmMsg = hasFreshEnquiry
+      ? 'Decline this offer and send a new request with the dates and details you just entered?\n\nThe property will see the decline followed by your new request. This can\u2019t be undone.'
+      : 'Decline this offer from ' + propName + '?\n\nYour enquiry will stay open so the property can send you a different offer. This can\u2019t be undone.';
+    var ok = window.confirm(confirmMsg);
     if (!ok) return;
+
     var btn = this;
     btn.disabled = true;
     btn.style.opacity = '.6';
+    var origHtml = btn.innerHTML;
+    btn.innerHTML = '<div style="font-size:.92rem;font-weight:600;color:#1e1810;text-align:center;padding:6px 0;">' + (hasFreshEnquiry ? 'Declining and sending new request\u2026' : 'Declining\u2026') + '</div>';
     var email = (user.primaryEmailAddress && user.primaryEmailAddress.emailAddress) || '';
+
+    // Step 1: decline the existing offer. This flips offer status to
+    // 'declined' and reopens the booking to 'enquiry' state, which means
+    // the worker's updateEnquiry guard (v73z fresh-enquiry bucket) will
+    // accept the follow-up message's payload and mutate the booking dates
+    // cleanly.
     fetch('/api/offer', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -2650,19 +2672,69 @@ function showActiveOfferInterstitial(booking, propName, user, opts) {
           alert('Could not decline the offer: ' + (res.body && res.body.error || 'unknown error'));
           btn.disabled = false;
           btn.style.opacity = '1';
-          return;
+          btn.innerHTML = origHtml;
+          return Promise.reject('decline failed');
         }
-        closeModal();
-        if (convId) {
-          window.location = '/conversations.html?id=' + encodeURIComponent(convId);
-        } else {
-          window.location = '/bookings.html';
+        // Step 2: if user filled in new dates/room/etc, send those as a
+        // follow-up message that also updates conv.enquiry + the booking.
+        if (!hasFreshEnquiry) {
+          // Plain decline, no follow-up.
+          closeModal();
+          if (convId) window.location = '/conversations.html?id=' + encodeURIComponent(convId);
+          else        window.location = '/bookings.html';
+          return null;
         }
+        // Build the follow-up message text.
+        var msgLines = ['I\u2019d like to request a different stay:'];
+        if (opts.requestedArrival && opts.requestedDeparture) {
+          var fmt = function(d){ return new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); };
+          msgLines.push('\nDates: ' + fmt(opts.requestedArrival) + ' \u2192 ' + fmt(opts.requestedDeparture));
+        }
+        if (opts.requestedGuests) msgLines.push('Guests: ' + opts.requestedGuests);
+        if (opts.requestedCabin)  msgLines.push('Room: ' + opts.requestedCabin);
+        if (opts.requestedNotes)  msgLines.push('\n' + opts.requestedNotes);
+        msgLines.push('\nCould you send a fresh offer? Thanks.');
+        var msg = msgLines.join('\n');
+
+        return fetch('/api/conversation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'message',
+            id: convId,
+            role: 'guest',
+            text: msg,
+            senderName: [user.firstName, user.lastName].filter(Boolean).join(' ') || email || 'Guest',
+            updateEnquiry: {
+              arrival:   opts.requestedArrival,
+              departure: opts.requestedDeparture,
+              guests:    opts.requestedGuests,
+              cabin:     opts.requestedCabin,
+              notes:     opts.requestedNotes
+            }
+          })
+        });
       })
-      .catch(function() {
+      .then(function(r) {
+        if (r === null) return; // already navigated
+        return r.json().then(function(d) {
+          if (d && d.ok === false) {
+            // Offer declined OK but the follow-up message failed. Still
+            // navigate so the user sees the decline; surface a non-blocking
+            // notice via the URL hash that conversations.html could read,
+            // but for now just alert.
+            alert('Offer declined, but your new request could not be sent: ' + (d.error || 'unknown error') + '. Please send it again from your conversation.');
+          }
+          closeModal();
+          window.location = '/conversations.html?id=' + encodeURIComponent(convId);
+        });
+      })
+      .catch(function(err) {
+        if (err === 'decline failed') return; // already handled
         alert('Network error \u2014 please try again.');
         btn.disabled = false;
         btn.style.opacity = '1';
+        btn.innerHTML = origHtml;
       });
   });
 }

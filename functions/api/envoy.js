@@ -1252,6 +1252,41 @@ export default {
       });
     }
 
+    // ── /api/booking/mark-seen ────────────────────────────────────
+    // v73ah: clear seenByPartner / seenByAdmin flag on a confirmed booking.
+    // Called when the partner or admin opens the booking detail view. Used
+    // by the Bookings sidebar badge to count "newly confirmed, unseen" items.
+    //
+    // POST body: { ref, role: 'partner' | 'admin' }
+    // - Partner role requires no auth beyond knowing the booking ref (the
+    //   partner already sees these bookings on pp-bookings; this is just
+    //   a UI bookkeeping signal, not a security boundary). Real partner
+    //   auth is on the deferred-items list.
+    // - Admin role requires admin auth (isAdmin check).
+    if (url.pathname === '/api/booking/mark-seen') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { ref, role } = body;
+      if (!ref) return jsonResponse({ error: 'ref required' }, 400);
+      if (role !== 'partner' && role !== 'admin') {
+        return jsonResponse({ error: 'role must be partner or admin' }, 400);
+      }
+      if (role === 'admin' && !(await isAdmin())) return adminDenied();
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + ref);
+      if (!bookingRaw) return jsonResponse({ error: 'booking not found' }, 404);
+      const booking = JSON.parse(bookingRaw);
+
+      if (role === 'partner') booking.seenByPartner = true;
+      if (role === 'admin')   booking.seenByAdmin = true;
+      booking.updatedAt = new Date().toISOString();
+
+      await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+      return jsonResponse({ ok: true, ref: ref, role: role });
+    }
+
     // ── /api/booking ──────────────────────────────────────────────
     if (url.pathname === '/api/booking') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
@@ -3591,6 +3626,11 @@ View in admin: https://thebearing.io/admin-bookings.html
       booking.depositPaidAmount = depositPaid;
       booking.depositPaidAt = now;
       booking.updatedAt = now;
+      // v73ah: mark unseen by partner + admin (admin already "sees" it by
+      // running the rescue, but we set the flag for consistency \u2014 admin can
+      // mark seen by opening the row).
+      booking.seenByPartner = false;
+      booking.seenByAdmin = false;
       if (acceptedOffer) {
         booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
         booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
@@ -3756,6 +3796,9 @@ View in admin: https://thebearing.io/admin-bookings.html
       booking.depositPaidAmount = depositPaid;
       booking.depositPaidAt = now;
       booking.updatedAt = now;
+      // v73ah: mark unseen by partner + admin
+      booking.seenByPartner = false;
+      booking.seenByAdmin = false;
       if (acceptedOffer) {
         booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
         booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
@@ -4097,6 +4140,10 @@ View in admin: https://thebearing.io/admin-bookings.html
           booking.depositPaidAmount = depositPaid;
           booking.depositPaidAt = now;
           booking.updatedAt = now;
+          // v73ah: mark unseen by partner + admin so their Bookings sidebar
+          // badges fire until each views the booking detail.
+          booking.seenByPartner = false;
+          booking.seenByAdmin = false;
           // v73aa: snapshot key offer fields for customer detail view.
           // Booking already has arrival/departure/room/guests (mutated on
           // offer-send), but we add the monetary + contract fields here.
