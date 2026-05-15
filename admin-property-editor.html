@@ -603,15 +603,32 @@ window.addEventListener('load', async function() {
             </div>
           </div>
 
-          <!-- v73e: price_indicator — free-text seasonal price guidance.
-               Shown to members on the property page booking sidebar so they
-               don't enquire flying blind. Optional — leave blank to show
-               "On request · Personalised quote in your offer" fallback. -->
+          <!-- v73e: price_indicator — free-text seasonal price guidance. -->
           <div class="pe-field" style="margin-top:14px;">
             <label class="pe-label">Price indicator <span style="font-size:10px;font-weight:500;color:#6a6660;margin-left:6px;">customer-visible</span></label>
             <input class="pe-input" id="f-price-indicator" type="text" placeholder="e.g. $500–1,200 / night · varies by season" oninput="updateAll()">
             <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
               Free-text price range shown to members on the property page so they have a sense of expected pricing before enquiring. Use whatever phrasing fits your seasonality (per-night range, per-voyage, "from $X for 7-night charter," etc). The exact amount is always set in the offer — this is just an honest "starting from" hint to set expectations.
+            </div>
+          </div>
+
+          <!-- v73al: PARTNER CONTACT EMAILS — required for the property to
+               receive operational notifications (new enquiry, guest reply,
+               offer accepted/declined, change request, stale escalation).
+               Until set, notifications fall back to the worker's
+               PARTNER_EMAIL_TRANSITION_DEFAULT. -->
+          <div class="pe-field" style="margin-top:14px;">
+            <label class="pe-label">Partner contact emails<span class="pe-label-req">*</span> <span style="font-size:10px;font-weight:500;color:#6a6660;margin-left:6px;">admin only</span></label>
+            <div id="f-partner-emails-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+              <input class="pe-input" id="f-partner-email-input" type="email" placeholder="ops@property.com" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPartnerEmail();}">
+              <button type="button" class="pe-btn-secondary" onclick="addPartnerEmail()" style="padding:9px 16px;background:#1e2530;color:#fff;border:1px solid #2a3340;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">Add</button>
+            </div>
+            <div id="f-partner-emails-warning" style="display:none;font-family:'DM Sans',sans-serif;font-size:11px;color:#c17f3e;margin-top:6px;line-height:1.5;">
+              <strong>⚠ No partner email set.</strong> Notifications for this property will route to the transition default (NourElNilTest213@gmail.com) until you add at least one real partner email here.
+            </div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
+              One or more email addresses to receive operational notifications: new enquiry, guest reply, offer accepted (deposit paid), offer declined, change request, and stale-conversation reminders (24h / 48h / 72h). Multiple emails get the same copy. Press Enter or click Add after each address.
             </div>
           </div>
         </div>
@@ -2024,6 +2041,64 @@ function validateCommission() {
   help.innerHTML = '✓ Valid. On a $5,000 booking, member would pay a $' + Math.round(5000 * n / 100).toLocaleString() + ' deposit on TheBearing.';
 }
 
+// ── v73al: partner contact emails chip-list management ──────────────
+// State held on window.__partnerEmails (array of lowercase emails).
+// renderPartnerEmailChips redraws the visible chips from state.
+// addPartnerEmail reads the input, validates, appends to state, redraws.
+// removePartnerEmail removes by index.
+window.__partnerEmails = window.__partnerEmails || [];
+
+function renderPartnerEmailChips() {
+  var wrap = document.getElementById('f-partner-emails-chips');
+  var warning = document.getElementById('f-partner-emails-warning');
+  if (!wrap) return;
+  var emails = window.__partnerEmails || [];
+  wrap.innerHTML = emails.map(function(e, i) {
+    return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;background:#1e2530;border:1px solid #2a3340;border-radius:14px;font-size:12px;color:#e4dfd6;">'
+      + escAttr(e)
+      + '<button type="button" onclick="removePartnerEmail(' + i + ')" style="display:flex;align-items:center;justify-content:center;width:18px;height:18px;border:none;background:transparent;color:#8a8580;cursor:pointer;border-radius:50%;padding:0;" title="Remove">'
+      + '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>'
+      + '</button>'
+      + '</span>';
+  }).join('');
+  if (warning) warning.style.display = emails.length === 0 ? 'block' : 'none';
+  if (typeof updateAll === 'function') updateAll();
+}
+
+function addPartnerEmail() {
+  var input = document.getElementById('f-partner-email-input');
+  if (!input) return;
+  var raw = (input.value || '').toLowerCase().trim();
+  if (!raw) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
+    showToast('Invalid email: ' + raw, 'error');
+    return;
+  }
+  window.__partnerEmails = window.__partnerEmails || [];
+  if (window.__partnerEmails.indexOf(raw) !== -1) {
+    showToast('Already added: ' + raw, 'warning');
+    input.value = '';
+    return;
+  }
+  window.__partnerEmails.push(raw);
+  input.value = '';
+  renderPartnerEmailChips();
+}
+
+function removePartnerEmail(index) {
+  if (!Array.isArray(window.__partnerEmails)) return;
+  if (index < 0 || index >= window.__partnerEmails.length) return;
+  window.__partnerEmails.splice(index, 1);
+  renderPartnerEmailChips();
+}
+
+// Helper: HTML attribute escape (chips render user-supplied emails)
+function escAttr(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+  });
+}
+
 function syncPublishTab() {
   // updateCompleteness writes directly to ci2- elements in Settings panel
   // Just sync the percentage display
@@ -2394,6 +2469,9 @@ function updateJSON() {
     // v73e: price_indicator — free-text seasonal pricing guidance shown to
     // members on property page booking sidebar.
     price_indicator: getFieldVal('f-price-indicator') || '',
+    // v73al: partner contact emails — array of addresses to receive
+    // operational notifications. Managed by chip list UI in section 0.
+    partner_emails: (window.__partnerEmails || []).slice(),
 
     // Core identity
     name: getFieldVal('f-name'),
@@ -3427,6 +3505,10 @@ setTimeout(function() {
 // Init
 addRoom();
 updateAll();
+// v73al: render partner-email chips so the empty-state warning appears
+// for new properties (the hydrate path calls this when loading a saved
+// property, but a fresh editor session needs this initial call too).
+if (typeof renderPartnerEmailChips === 'function') renderPartnerEmailChips();
 setTimeout(initPhotoUpload, 300);
 </script>
 
@@ -3725,6 +3807,9 @@ async function propLoad() {
     if (priceIndInput && saved.price_indicator && !priceIndInput.value) {
       priceIndInput.value = saved.price_indicator;
     }
+    // v73al: sync partner_emails into the chip list
+    window.__partnerEmails = Array.isArray(saved.partner_emails) ? saved.partner_emails.slice() : [];
+    if (typeof renderPartnerEmailChips === 'function') renderPartnerEmailChips();
     // Refresh the inline help text after load
     if (typeof validateCommission === 'function') validateCommission();
 

@@ -710,6 +710,30 @@ export default {
           }
         }
 
+        // v73al: validate partner_emails field if provided. Must be an array
+        // of valid email strings. Empty array is allowed (will fall back to
+        // PARTNER_EMAIL_TRANSITION_DEFAULT for notifications). Log a warning
+        // so we can see in Cloudflare logs which properties are saving without
+        // partner_emails set.
+        if (body.property.partner_emails !== undefined) {
+          if (!Array.isArray(body.property.partner_emails)) {
+            return jsonResponse({ error: 'partner_emails must be an array of email addresses' }, 400);
+          }
+          const cleaned = [];
+          for (const raw of body.property.partner_emails) {
+            const lc = String(raw || '').toLowerCase().trim();
+            if (!lc) continue;
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lc)) {
+              return jsonResponse({ error: 'invalid email in partner_emails: ' + lc }, 400);
+            }
+            if (cleaned.indexOf(lc) === -1) cleaned.push(lc);
+          }
+          body.property.partner_emails = cleaned;
+        }
+        if (!body.property.partner_emails || body.property.partner_emails.length === 0) {
+          console.warn('[Property POST] slug "' + slugVal + '" has no partner_emails \u2014 notifications will fall back to transition default. Set partner_emails in admin-property-editor.');
+        }
+
         const serialized = JSON.stringify(body.property);
         await env.DOSSIERS.put(slugVal + ':property', serialized);
 
@@ -1442,6 +1466,28 @@ View in admin: https://thebearing.io/admin-bookings.html
                 })
               })
             ]);
+
+            // v73al: notify partner emails for this property (deduped against admin)
+            if (slug) {
+              try {
+                const partnerRecipients = await loadPartnerRecipients(slug, env);
+                const partnerToSend = partnerRecipients.filter(function(e) {
+                  return adminRecipients.indexOf(e) === -1;
+                });
+                if (partnerToSend.length) {
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: 'The Bearing Bookings <bookings@thebearing.io>',
+                      to: partnerToSend,
+                      subject: `[PARTNER] New booking — ${ref} · ${firstname} ${lastname} · ${property}`,
+                      text: adminEmailBody.replace('admin-bookings.html', 'pp-bookings.html')
+                    })
+                  });
+                }
+              } catch (e) { console.error('[Booking] partner email error:', e.message); }
+            }
           } catch (emailErr) {
             console.error('[Booking] Email error:', emailErr.message);
             // Non-fatal — booking is still saved
@@ -1796,6 +1842,28 @@ View in admin: https://thebearing.io/admin-bookings.html
                   text: `New enquiry received.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\nProperty: ${propertyName}\n\nMessage:\n${firstMessage}\n\nReply at: https://thebearing.io/admin-conversations.html?id=${id}\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
                 })
               });
+              // v73al: also notify partner emails for this property (deduped
+              // against adminRecipients so a partner sharing the admin inbox
+              // doesn't get two copies).
+              if (conv.notifyPartner !== false) {
+                const partnerRecipients = await loadPartnerRecipients(propertySlug, env);
+                const partnerToSend = partnerRecipients.filter(function(e) {
+                  return adminRecipients.indexOf(e) === -1;
+                });
+                if (partnerToSend.length) {
+                  const ppUrl = `https://thebearing.io/pp-conversations.html?id=${id}`;
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: 'The Bearing <bookings@thebearing.io>',
+                      to: partnerToSend,
+                      subject: `[PARTNER] New enquiry — ${propertyName} from ${guestName || guestEmail}`,
+                      text: `You have a new enquiry at ${propertyName}.\n\nGuest: ${guestName || guestEmail} (${guestEmail})\n\nMessage:\n${firstMessage}\n\nReply via the partner portal: ${ppUrl}\n\n— The Bearing`
+                    })
+                  }).catch(function(e) { console.error('[Conv] Partner email error:', e.message); });
+                }
+              }
             } catch(e) { console.error('[Conv] Admin email error:', e.message); }
           }
 
@@ -2053,6 +2121,34 @@ View in admin: https://thebearing.io/admin-bookings.html
                       text: bodyText,
                     })
                   });
+
+                  // v73al: also notify partner for the same event (deduped
+                  // against adminRecipients). Same subject + body so partner
+                  // sees identical context. Skipped if conv.notifyPartner is
+                  // false (per-conversation mute) \u2014 future v73am will add
+                  // per-thread partner toggle.
+                  if (conv.notifyPartner !== false && conv.propertySlug) {
+                    const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
+                    const partnerToSend = partnerRecipients.filter(function(e) {
+                      return adminRecipients.indexOf(e) === -1;
+                    });
+                    if (partnerToSend.length) {
+                      // Swap the admin-portal link in the body for the partner-portal one
+                      const partnerBodyText = bodyText
+                        .replace(/admin-conversations\.html/g, 'pp-conversations.html')
+                        .replace(/View conversation: /g, 'Reply via the partner portal: ');
+                      await fetch('https://api.resend.com/emails', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          from: 'The Bearing <bookings@thebearing.io>',
+                          to: partnerToSend,
+                          subject: '[PARTNER] ' + subject,
+                          text: partnerBodyText,
+                        })
+                      }).catch(function(e) { console.error('[Conv] Partner reply email error:', e.message); });
+                    }
+                  }
                 }
               }
             } catch(e) { console.error('[Conv] Notify email error:', e.message); }
@@ -2489,6 +2585,25 @@ View in admin: https://thebearing.io/admin-bookings.html
               text: `${conv.guestName} replied via email:\n\n"${text}"\n\nView conversation: https://thebearing.io/admin-conversations.html\n\n—\nMute email notifications for this conversation: ${unsubUrl}`
             })
           });
+          // v73al: notify partner too
+          if (conv.notifyPartner !== false && conv.propertySlug) {
+            const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
+            const partnerToSend = partnerRecipients.filter(function(e) {
+              return adminRecipients.indexOf(e) === -1;
+            });
+            if (partnerToSend.length) {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  from: 'The Bearing <bookings@thebearing.io>',
+                  to: partnerToSend,
+                  subject: `[PARTNER] Email reply from ${conv.guestName} \u2014 ${conv.propertyName}`,
+                  text: `${conv.guestName} replied via email:\n\n"${text}"\n\nReply via partner portal: https://thebearing.io/pp-conversations.html?id=${convId}\n\n\u2014 The Bearing`
+                })
+              }).catch(function(e) { console.error('[Inbound] Partner notify err:', e.message); });
+            }
+          }
         } catch(e) { console.error('[Inbound] Notify error:', e.message); }
       }
 
@@ -3427,17 +3542,44 @@ View in admin: https://thebearing.io/admin-bookings.html
                   body: JSON.stringify({
                     from: 'The Bearing <bookings@thebearing.io>',
                     to: adminRecipients,
-                    subject: '[DECLINED] ' + (bookingDecline.property || bookingDecline.slug) + ' · ' + bookingDecline.ref,
+                    subject: '[DECLINED] ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
                     html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
                       + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined</h2>'
                       + '<p><strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong></p>'
                       + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
                       + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
                       + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
-                      + '<p>The booking is now back to <code>enquiry</code> — partner can build a fresh offer.</p>'
+                      + '<p>The booking is now back to <code>enquiry</code> \u2014 partner can build a fresh offer.</p>'
                       + '</div>',
                   }),
                 }).catch(function(e) { console.error('[Offer decline] admin email failed:', e); });
+              }
+              // v73al: notify partner too
+              const slug = bookingDecline.slug || bookingDecline.propertySlug;
+              if (slug) {
+                const partnerRecipients = await loadPartnerRecipients(slug, env);
+                const partnerToSend = partnerRecipients.filter(function(e) {
+                  return adminRecipients.indexOf(e) === -1;
+                });
+                if (partnerToSend.length) {
+                  await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      from: 'The Bearing <bookings@thebearing.io>',
+                      to: partnerToSend,
+                      subject: '[PARTNER] Offer declined \u00b7 ' + (bookingDecline.property || bookingDecline.slug) + ' \u00b7 ' + bookingDecline.ref,
+                      html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
+                        + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">Offer declined by guest</h2>'
+                        + '<p>Your offer for <strong>' + (bookingDecline.property || bookingDecline.slug) + '</strong> was declined.</p>'
+                        + '<p>Guest: ' + (bookingDecline.email || 'unknown') + '</p>'
+                        + '<p>Reference: <code>' + bookingDecline.ref + '</code></p>'
+                        + (offer.declined_reason ? '<p>Reason: ' + offer.declined_reason + '</p>' : '')
+                        + '<p>The booking is back to <code>enquiry</code>. Build a revised offer in the partner portal.</p>'
+                        + '</div>',
+                    }),
+                  }).catch(function(e) { console.error('[Offer decline] partner email failed:', e); });
+                }
               }
             } catch (e) { console.error('[Offer decline] email block failed:', e); }
           }
@@ -4282,12 +4424,13 @@ View in admin: https://thebearing.io/admin-bookings.html
           // Email recipient strategy:
           //   - Customer: booking.email
           //   - Admin: loadNotificationRecipients() — configurable in admin-settings
-          //   - Partner: admin@thebearing.io (placeholder until partner auth has
-          //     real contact emails per property — flagged in handoff)
+          //   - Partner: loadPartnerRecipients(slug) — per-property partner_emails
+          //     field (v73al). Falls back to PARTNER_EMAIL_TRANSITION_DEFAULT
+          //     until each property has its real partner_emails configured.
           if (env.RESEND_API_KEY) {
             const customerEmail = booking.email;
             const adminRecipients = await loadNotificationRecipients(env);
-            const partnerEmail = 'admin@thebearing.io'; // placeholder, see note above
+            const partnerRecipients = await loadPartnerRecipients(booking.slug || booking.propertySlug, env);
             const propName = booking.property || booking.slug || 'Property';
             const stayLine = (booking.arrival && booking.departure)
               ? booking.arrival + ' → ' + booking.departure + (booking.nights ? ' · ' + booking.nights + ' nights' : '')
@@ -4353,8 +4496,13 @@ View in admin: https://thebearing.io/admin-bookings.html
               }).catch(function(e) { console.error('[Stripe webhook] admin email failed:', e); });
             }
 
-            // Partner notification (currently same as admin baseline)
-            if (partnerEmail && adminRecipients.indexOf(partnerEmail) === -1) {
+            // Partner notification \u2014 per-property emails (v73al). Filter
+            // out any address already in adminRecipients to avoid duplicate
+            // emails when admin and partner share an inbox.
+            const partnerToSend = partnerRecipients.filter(function(e) {
+              return adminRecipients.indexOf(e) === -1;
+            });
+            if (partnerToSend.length) {
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
@@ -4363,14 +4511,14 @@ View in admin: https://thebearing.io/admin-bookings.html
                 },
                 body: JSON.stringify({
                   from: 'The Bearing Bookings <bookings@thebearing.io>',
-                  to: [partnerEmail],
-                  subject: '[PARTNER] New confirmed booking · ' + propName + ' · ' + bookingRef,
+                  to: partnerToSend,
+                  subject: '[PARTNER] New confirmed booking \u00b7 ' + propName + ' \u00b7 ' + bookingRef,
                   html: '<div style="font-family:Geist,system-ui,sans-serif;padding:24px;">'
                     + '<h2 style="font-family:\'Instrument Serif\',Georgia,serif;font-weight:400;margin:0 0 12px;">New confirmed booking</h2>'
                     + '<p>You have a confirmed booking at <strong>' + propName + '</strong>.</p>'
                     + (stayLine ? '<p>' + stayLine + '</p>' : '')
                     + (roomLine ? '<p>Room: ' + roomLine + '</p>' : '')
-                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' · ' + (customerEmail || 'no email') + '</p>'
+                    + '<p>Guest: ' + (guestName || customerEmail || 'unknown') + ' \u00b7 ' + (customerEmail || 'no email') + '</p>'
                     + '<p>Reference: <code>' + bookingRef + '</code></p>'
                     + '<p style="margin-top:24px;">The guest will receive their own confirmation. Please reach out directly to coordinate check-in and remaining balance.</p>'
                     + '</div>',
@@ -4464,21 +4612,21 @@ async function runStaleConvReminders(env) {
 
       if (!level) continue;
 
-      // Look up property contact email
-      let partnerEmail = null;
+      // v73al: resolve partner recipients via loadPartnerRecipients helper
+      // (reads property.partner_emails, falls back to transition default).
+      // partnerName still comes from property.name for the email body, so
+      // we read the property record separately for that.
       let partnerName = conv.propertyName || conv.propertySlug;
       if (conv.propertySlug) {
         try {
           const propRaw = await env.DOSSIERS.get(conv.propertySlug + ':property');
           if (propRaw) {
             const prop = JSON.parse(propRaw);
-            if (prop && prop.contact && prop.contact.email) {
-              partnerEmail = prop.contact.email;
-            }
             if (prop && prop.name) partnerName = prop.name;
           }
         } catch(e) {}
       }
+      const partnerRecipients = await loadPartnerRecipients(conv.propertySlug, env);
 
       const replyUrl = 'https://thebearing.io/admin-conversations.html?id=' + encodeURIComponent(id);
       const ppUrl = 'https://thebearing.io/pp-conversations.html?id=' + encodeURIComponent(id);
@@ -4501,7 +4649,13 @@ async function runStaleConvReminders(env) {
 
       // 24h: notify partner only. 48h+: notify partner AND admin.
       const sendPromises = [];
-      const notifyPartner = partnerEmail && conv.notifyPartner !== false;
+      // v73al: filter out partner emails already in adminRecipients for the
+      // 48h+ case so no duplicates. For 24h-only-to-partner case, send the
+      // full partner list as-is.
+      const partnerToSend = (level >= 48)
+        ? partnerRecipients.filter(function(e) { return adminRecipients.indexOf(e) === -1; })
+        : partnerRecipients.slice();
+      const notifyPartner = partnerToSend.length > 0 && conv.notifyPartner !== false;
       const notifyAdmin = conv.notifyAdmin !== false;
 
       if (notifyPartner) {
@@ -4510,7 +4664,7 @@ async function runStaleConvReminders(env) {
           headers: { 'Authorization': `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             from: 'The Bearing <bookings@thebearing.io>',
-            to: [partnerEmail],
+            to: partnerToSend,
             subject: subjects[level],
             text: partnerBody
           })
@@ -4590,6 +4744,14 @@ function jsonResponse(obj, status = 200) {
 
 const BASELINE_NOTIFICATION_RECIPIENT = 'admin@thebearing.io';
 
+// v73al: transition default for partner notifications until each property
+// has real per-property partner_emails set on its record. Used as a fallback
+// only when property.partner_emails is missing/empty. To remove this fallback:
+// (1) set partner_emails on every property record in admin-property-editor,
+// (2) delete this constant and the fallback branch in loadPartnerRecipients.
+// Until then, missing partner_emails routes here so we don't lose notifications.
+const PARTNER_EMAIL_TRANSITION_DEFAULT = 'NourElNilTest213@gmail.com';
+
 async function loadNotificationRecipients(env) {
   if (!env.DOSSIERS) return [BASELINE_NOTIFICATION_RECIPIENT];
   try {
@@ -4607,6 +4769,40 @@ async function loadNotificationRecipients(env) {
   } catch(e) {
     console.error('[Settings] notif load error:', e.message);
     return [BASELINE_NOTIFICATION_RECIPIENT];
+  }
+}
+
+// v73al: Resolve the partner notification recipients for a given property slug.
+// Reads `partner_emails` array from the property record (set in admin-property-
+// editor). Falls back to the transition default if the field is missing/empty
+// so we don't silently lose notifications during the migration.
+//
+// Returns: array of lowercased emails, deduped. Never empty.
+// Side effects: logs a console.warn when the fallback is used, so we can find
+// properties that still need their partner_emails set.
+async function loadPartnerRecipients(slug, env) {
+  if (!env.DOSSIERS || !slug) return [PARTNER_EMAIL_TRANSITION_DEFAULT];
+  try {
+    const raw = await env.DOSSIERS.get(slug + ':property');
+    if (!raw) {
+      console.warn('[Partner email] property record not found for slug "' + slug + '" \u2014 using transition default');
+      return [PARTNER_EMAIL_TRANSITION_DEFAULT];
+    }
+    const prop = JSON.parse(raw);
+    const list = Array.isArray(prop && prop.partner_emails) ? prop.partner_emails : [];
+    const seen = {}; const out = [];
+    list.forEach(function(e) {
+      const lc = String(e || '').toLowerCase().trim();
+      if (lc && !seen[lc]) { seen[lc] = 1; out.push(lc); }
+    });
+    if (out.length === 0) {
+      console.warn('[Partner email] partner_emails empty for slug "' + slug + '" \u2014 using transition default. Set partner_emails in admin-property-editor.');
+      return [PARTNER_EMAIL_TRANSITION_DEFAULT];
+    }
+    return out;
+  } catch(e) {
+    console.error('[Partner email] load error for slug "' + slug + '":', e.message);
+    return [PARTNER_EMAIL_TRANSITION_DEFAULT];
   }
 }
 
