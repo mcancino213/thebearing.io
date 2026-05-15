@@ -2450,6 +2450,222 @@ View in admin: https://thebearing.io/admin-bookings.html
       }
     }
 
+    // ── /api/loop ─────────────────────────────────────────────────
+    // v74a: partner-to-admin private side-thread on a conversation.
+    //
+    // Why this exists: partners need a way to ask The Bearing for help
+    // on a specific guest conversation (e.g. "guest wants to upgrade,
+    // can you process the delta?") without that exchange being visible
+    // to the guest. The guest's main thread stays clean; the private
+    // thread lives in a separate KV key the customer renderer never
+    // queries.
+    //
+    // KV keys:
+    //   conversation:{id}:loop         — { active, requestedAt, resolvedAt?, partnerSlug }
+    //   conversation:{id}:loop:messages — JSON array of { id, role, senderName, text, sentAt }
+    //
+    // Auth model:
+    //   GET    — admin (isAdmin) OR partner-trust-by-slug (?slug= matches conv.propertySlug)
+    //   POST   — same (partner sends from pp side, admin sends from admin side; body.role indicates which)
+    //   PATCH  — admin only (resolve flag)
+    //
+    // First POST creates the loop record + fires [LOOP-IN] alert email to admin.
+    // Subsequent POSTs append messages. Email fires only on the FIRST partner message
+    // of an unresolved loop, not on every message — admin is already in the loop after that.
+    //
+    // The customer-facing /api/conversation GET never returns loop data. Loop data
+    // is read exclusively via /api/loop.
+    if (url.pathname === '/api/loop') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // Helper: verify caller is either admin or the property partner for this conv.
+      // Returns { ok: true, isAdminCaller: bool } on success, or sends 403.
+      async function authLoopAccess(convId, slugClaim) {
+        const conv = await (async () => {
+          const raw = await env.DOSSIERS.get('conversation:' + convId);
+          return raw ? JSON.parse(raw) : null;
+        })();
+        if (!conv) return { error: 'conversation not found', status: 404 };
+        const adminCheck = await isAdmin();
+        if (adminCheck) return { ok: true, isAdminCaller: true, conv };
+        // Partner check — slug claim must match the conv's property
+        if (slugClaim && slugClaim === conv.propertySlug) {
+          return { ok: true, isAdminCaller: false, conv };
+        }
+        return { error: 'not authorized', status: 403 };
+      }
+
+      if (request.method === 'GET') {
+        const convId = url.searchParams.get('convId');
+        const slugClaim = url.searchParams.get('slug') || '';
+        if (!convId) return jsonResponse({ error: 'convId required' }, 400);
+        const auth = await authLoopAccess(convId, slugClaim);
+        if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
+
+        const loopRaw = await env.DOSSIERS.get('conversation:' + convId + ':loop');
+        const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':loop:messages');
+        return jsonResponse({
+          loop: loopRaw ? JSON.parse(loopRaw) : null,
+          messages: msgsRaw ? JSON.parse(msgsRaw) : []
+        });
+      }
+
+      if (request.method === 'POST') {
+        const b = await request.json().catch(() => ({}));
+        const convId = b.convId;
+        const text = (b.text || '').toString().trim();
+        const slugClaim = (b.slug || '').toString();
+        if (!convId || !text) return jsonResponse({ error: 'convId and text required' }, 400);
+        if (text.length > 6000) return jsonResponse({ error: 'message too long' }, 400);
+
+        const auth = await authLoopAccess(convId, slugClaim);
+        if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
+        const conv = auth.conv;
+        const role = auth.isAdminCaller ? 'admin' : 'partner';
+
+        // Load existing loop record (if any)
+        const loopKey = 'conversation:' + convId + ':loop';
+        const msgsKey = 'conversation:' + convId + ':loop:messages';
+        const loopRaw = await env.DOSSIERS.get(loopKey);
+        let loop = loopRaw ? JSON.parse(loopRaw) : null;
+        const isFirstMessage = !loop;
+
+        const now = new Date().toISOString();
+        if (isFirstMessage) {
+          // Only partners can initiate. Admin posting into a loop that doesn't
+          // exist would be confusing — admin should reply, not initiate.
+          if (role !== 'partner') {
+            return jsonResponse({ error: 'only partner can initiate a loop' }, 400);
+          }
+          loop = {
+            active: true,
+            requestedAt: now,
+            resolvedAt: null,
+            partnerSlug: conv.propertySlug || '',
+            lastMessageAt: now,
+            unreadAdmin: 1,
+            unreadPartner: 0,
+          };
+        } else {
+          // If loop was resolved, reactivate it on a new message
+          if (!loop.active) {
+            loop.active = true;
+            loop.resolvedAt = null;
+            loop.reactivatedAt = now;
+          }
+          loop.lastMessageAt = now;
+          if (role === 'partner') {
+            loop.unreadAdmin = (loop.unreadAdmin || 0) + 1;
+          } else {
+            loop.unreadPartner = (loop.unreadPartner || 0) + 1;
+          }
+        }
+
+        // Reset the receiving side's unread counter — caller has obviously
+        // seen their own composer, so any prior unread for them is now read.
+        if (role === 'partner') loop.unreadPartner = 0;
+        else loop.unreadAdmin = 0;
+
+        const msgsArrRaw = await env.DOSSIERS.get(msgsKey);
+        const messages = msgsArrRaw ? JSON.parse(msgsArrRaw) : [];
+        const msg = {
+          id: 'loopmsg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+          role,
+          senderName: role === 'admin' ? 'The Bearing' : (conv.propertyName || 'Partner'),
+          text,
+          sentAt: now,
+        };
+        messages.push(msg);
+
+        await env.DOSSIERS.put(loopKey, JSON.stringify(loop));
+        await env.DOSSIERS.put(msgsKey, JSON.stringify(messages));
+
+        // Fire [LOOP-IN] email to admin on FIRST partner message of an unresolved
+        // loop. Bypasses all notification mute settings — this is urgent and
+        // partner-initiated. We don't fire on subsequent partner messages (admin
+        // is already in the thread by then) or on admin messages.
+        if (isFirstMessage && env.RESEND_API_KEY) {
+          try {
+            const adminRecipients = await loadNotificationRecipients(env);
+            const propName = conv.propertyName || conv.propertySlug || 'a property';
+            const guestLabel = conv.guestName || conv.guestEmail || 'the guest';
+            const convAdminUrl = 'https://thebearing.io/admin-conversations.html?id=' + convId + '&loop=1';
+
+            // Pull last 3 PUBLIC messages from main thread for context
+            const mainMsgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+            const mainMsgs = mainMsgsRaw ? JSON.parse(mainMsgsRaw) : [];
+            const lastFew = mainMsgs.slice(-3).map(function(m) {
+              return {
+                who: (m.role === 'guest' ? (conv.guestName || 'Guest') :
+                      (m.role === 'partner' ? (conv.propertyName || 'Partner') :
+                      (m.role === 'admin' ? 'The Bearing' : 'System'))),
+                when: m.sentAt || '',
+                text: (m.text || '').slice(0, 240),
+              };
+            });
+            const eGuestLabel = escapeEmailHtml(guestLabel);
+            const ePropName = escapeEmailHtml(propName);
+            const eText = escapeEmailHtml(text);
+            const lastFewHtml = lastFew.length
+              ? '<div style="margin:0 0 22px;">'
+                + '<div style="font-size:.7rem;color:#7a6a58;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;">Recent conversation context</div>'
+                + lastFew.map(function(m) {
+                    return '<div style="background:#ffffff;border:1px solid rgba(80,55,25,.10);border-radius:8px;padding:10px 12px;margin-bottom:6px;">'
+                      + '<div style="font-size:.72rem;color:#7a6a58;margin-bottom:3px;">' + escapeEmailHtml(m.who) + '</div>'
+                      + '<div style="font-size:.86rem;color:#1e1810;white-space:pre-wrap;line-height:1.5;">' + escapeEmailHtml(m.text) + '</div>'
+                      + '</div>';
+                  }).join('')
+                + '</div>'
+              : '';
+            const bodyHtml =
+              // Urgency stripe at the top of the body card
+              '<div style="background:linear-gradient(180deg,#fff8f4 0%,#fdf2ea 100%);border:1px solid rgba(176,88,48,.28);border-left:3px solid #b05830;border-radius:12px;padding:16px 18px;margin:0 0 22px;">'
+              + '<div style="font-size:.7rem;color:#b05830;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;font-weight:700;">Partner needs help</div>'
+              + '<div style="font-size:.95rem;color:#1e1810;line-height:1.55;white-space:pre-wrap;">' + eText + '</div>'
+              + '</div>'
+              + lastFewHtml;
+
+            await sendBrandedEmail({
+              env, logTag: 'Loop-In',
+              to: adminRecipients,
+              subject: '[LOOP-IN] ' + propName + ' \u00b7 ' + guestLabel,
+              text: 'Partner at ' + propName + ' has requested help on the conversation with ' + guestLabel + '.\n\nPartner\'s note:\n"' + text + '"\n\n' + (lastFew.length ? 'Recent context:\n' + lastFew.map(function(m){return '  [' + m.who + '] ' + m.text;}).join('\n') + '\n\n' : '') + 'Open the conversation: ' + convAdminUrl + '\n\nReply privately to the partner here.\n\n\u2014 The Bearing',
+              shell: {
+                preheader: 'Partner at ' + propName + ' has requested help.',
+                kicker: 'The Bearing \u00b7 Action needed',
+                heading: 'Partner needs help',
+                intro: '<strong>' + ePropName + '</strong> has requested help on their conversation with <strong>' + eGuestLabel + '</strong>.',
+                bodyHtml: bodyHtml,
+                ctaUrl: convAdminUrl,
+                ctaLabel: 'Open private thread',
+                footerNote: 'This loop is private — the guest cannot see anything in this thread.',
+              }
+            });
+          } catch (e) { console.error('[Loop-In] email block error:', e && e.message); }
+        }
+
+        return jsonResponse({ ok: true, loop, message: msg });
+      }
+
+      if (request.method === 'PATCH') {
+        // Admin marks resolved — clears active flag, urgency pill goes away.
+        if (!(await isAdmin())) return adminDenied();
+        const b = await request.json().catch(() => ({}));
+        const convId = b.convId;
+        if (!convId) return jsonResponse({ error: 'convId required' }, 400);
+        const loopKey = 'conversation:' + convId + ':loop';
+        const loopRaw = await env.DOSSIERS.get(loopKey);
+        if (!loopRaw) return jsonResponse({ error: 'no loop on this conversation' }, 404);
+        const loop = JSON.parse(loopRaw);
+        loop.active = false;
+        loop.resolvedAt = new Date().toISOString();
+        await env.DOSSIERS.put(loopKey, JSON.stringify(loop));
+        return jsonResponse({ ok: true, loop });
+      }
+
+      return jsonResponse({ error: 'method not allowed' }, 405);
+    }
+
     // ── /api/saved-replies ────────────────────────────────────────
     // Admin's saved reply templates, stored globally in KV.
     // GET    → returns { replies: [{id, label, text}] }

@@ -754,6 +754,137 @@ tbody tr:hover{background:var(--bg);}
   display:flex;align-items:center;gap:6px;min-height:14px;
 }
 
+/* ── v74a: Loop-in private chat panel (admin side) ── */
+.ctx-tabs{
+  display:flex;border-bottom:1px solid var(--border);background:#fafafa;
+  flex-shrink:0;
+}
+.ctx-tab{
+  flex:1;padding:12px 10px;font-size:.74rem;font-weight:600;
+  color:var(--text2);background:transparent;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .12s, border-color .12s, background .12s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  letter-spacing:.01em;position:relative;
+}
+.ctx-tab:hover{color:var(--text);background:#f4f4f4;}
+.ctx-tab.active{
+  color:var(--text);border-bottom-color:#b05830;background:#fff;
+}
+.ctx-tab .ctx-tab-icon{font-size:.85rem;line-height:1;}
+.ctx-tab .ctx-tab-badge{
+  position:absolute;top:8px;right:14px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+  background:#b05830;color:#fff;font-size:.62rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.ctx-tab.tab-loop-inactive{color:var(--text3);}
+.ctx-pane{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+.ctx-pane.hidden{display:none;}
+.ctx-pane-guest{overflow-y:auto;}
+
+.loop-header{
+  padding:14px 18px;background:linear-gradient(180deg,#fff8f4 0%,#fdf2ea 100%);
+  border-bottom:1px solid rgba(176,88,48,.18);flex-shrink:0;
+  position:relative;
+}
+.loop-header-title{
+  font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:#b05830;margin-bottom:4px;display:flex;align-items:center;gap:6px;
+}
+.loop-header-sub{font-size:.74rem;color:#5a4a38;line-height:1.45;}
+.loop-header-status{
+  display:inline-block;margin-top:8px;font-size:.66rem;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;color:#7a6a58;
+}
+.loop-header-status.resolved{color:#4a6a48;}
+.loop-resolve-btn{
+  position:absolute;top:14px;right:14px;
+  padding:5px 10px;font-size:.66rem;font-weight:600;
+  background:#fff;border:1px solid rgba(80,55,25,.18);border-radius:7px;
+  color:var(--text2);cursor:pointer;letter-spacing:.04em;text-transform:uppercase;
+  transition:all .15s ease;
+}
+.loop-resolve-btn:hover{background:#f4f4f4;color:var(--text);}
+.loop-empty{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;text-align:center;gap:14px;
+}
+.loop-empty-icon{
+  width:48px;height:48px;border-radius:50%;background:rgba(176,88,48,.10);
+  color:#b05830;display:flex;align-items:center;justify-content:center;
+}
+.loop-empty-title{font-size:.92rem;font-weight:600;color:var(--text);}
+.loop-empty-body{font-size:.78rem;color:var(--text2);line-height:1.5;max-width:280px;}
+
+.loop-messages{
+  flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:8px;
+  background:repeating-linear-gradient(135deg,#fffaf5 0px,#fffaf5 12px,#fff8f2 12px,#fff8f2 24px);
+}
+.loop-msg{display:flex;flex-direction:column;max-width:88%;}
+/* Admin sees their own messages on the right, partner on the left */
+.loop-msg.role-admin{align-self:flex-end;align-items:flex-end;}
+.loop-msg.role-partner{align-self:flex-start;align-items:flex-start;}
+.loop-msg-sender{
+  font-size:.62rem;color:var(--text3);margin-bottom:3px;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.loop-msg-bubble{
+  padding:9px 13px;border-radius:14px;font-size:.84rem;line-height:1.5;
+  word-break:break-word;white-space:pre-wrap;
+}
+.loop-msg.role-admin .loop-msg-bubble{
+  background:linear-gradient(135deg,#1a1a1a,#2d2d2d);color:#fff;
+  border-bottom-right-radius:4px;
+}
+.loop-msg.role-partner .loop-msg-bubble{
+  background:#fff;border:1px solid rgba(80,55,25,.16);color:var(--text);
+  border-bottom-left-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.04);
+}
+.loop-msg-time{
+  font-size:.6rem;color:var(--text3);margin-top:3px;
+  font-variant-numeric:tabular-nums;
+}
+
+.loop-composer{
+  border-top:1px solid var(--border);background:#fff;flex-shrink:0;
+  padding:10px 14px 14px;
+}
+.loop-composer-label{
+  font-size:.62rem;color:#b05830;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px;
+}
+.loop-composer-row{display:flex;gap:8px;align-items:flex-end;}
+.loop-composer textarea{
+  flex:1;min-height:36px;max-height:140px;resize:none;
+  padding:9px 12px;border:1px solid var(--border);border-radius:10px;
+  font-family:inherit;font-size:.84rem;line-height:1.5;color:var(--text);
+  background:#fff;outline:none;transition:border-color .15s;
+}
+.loop-composer textarea:focus{border-color:#b05830;}
+.loop-composer button.loop-send{
+  padding:9px 16px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#1a1a1a,#2d2d2d);color:#fff;
+  font-size:.78rem;font-weight:600;
+  cursor:pointer;letter-spacing:.01em;
+  transition:transform .1s, box-shadow .1s;
+}
+.loop-composer button.loop-send:hover{
+  transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+.loop-composer button.loop-send:disabled{
+  opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;
+}
+
+/* "Partner needs help" pill in sidebar conversation list */
+.conv-item .loop-active-pill{
+  display:inline-block;margin-top:4px;
+  padding:1px 7px;border-radius:6px;
+  background:rgba(176,88,48,.12);color:#b05830;
+  font-size:.6rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+}
+.conv-item.active .loop-active-pill{background:rgba(176,88,48,.18);}
+
 /* ─────────────────────────────────────────────────────────────
    MESSAGE HOVER ACTIONS
    ───────────────────────────────────────────────────────────── */
@@ -1229,6 +1360,9 @@ function buildConvItem(c) {
 }
 function openConv(id) {
   activeConvId = id;
+  // v74a: stop any previous loop polling — will restart inside renderLoopPane
+  if (adminLoopPoll) { clearInterval(adminLoopPoll); adminLoopPoll = null; }
+  adminLoopState = { loop: null, messages: [] };
   renderList();
 
   // Mark read
@@ -1560,13 +1694,55 @@ function renderEmptyState() {
 
 // ─────────────────────────────────────────────────────────────
 // Context panel — Intercom-style guest details
+// v74a: now houses two tabs — guest details (existing) + 🔒 The Bearing
+// (private loop-in chat, server-side data in conversation:{id}:loop)
 // ─────────────────────────────────────────────────────────────
 var notesSaveTimer = null;
 
 function renderContextPanel(conv) {
   var ctx = document.getElementById('context-panel');
   if (!ctx) return;
-  ctx.innerHTML = '<div class="conv-loading">Loading guest details…</div>';
+
+  ctx.innerHTML =
+    '<div class="ctx-tabs">' +
+      '<button class="ctx-tab active" data-tab="guest" type="button" onclick="switchCtxTab(\'guest\')">' +
+        '<span class="ctx-tab-icon">👤</span><span>Guest details</span>' +
+      '</button>' +
+      '<button class="ctx-tab tab-loop-inactive" data-tab="loop" type="button" onclick="switchCtxTab(\'loop\')">' +
+        '<span class="ctx-tab-icon">🔒</span><span>The Bearing</span>' +
+        '<span class="ctx-tab-badge" id="ctx-loop-badge" style="display:none;">!</span>' +
+      '</button>' +
+    '</div>' +
+    '<div class="ctx-pane ctx-pane-guest" id="ctx-pane-guest"></div>' +
+    '<div class="ctx-pane hidden" id="ctx-pane-loop"></div>';
+
+  renderGuestPane(conv);
+  renderLoopPane(conv);
+}
+
+function switchCtxTab(which) {
+  var tabs = document.querySelectorAll('.ctx-tab');
+  tabs.forEach(function(t) {
+    if (t.getAttribute('data-tab') === which) t.classList.add('active');
+    else t.classList.remove('active');
+  });
+  var paneGuest = document.getElementById('ctx-pane-guest');
+  var paneLoop = document.getElementById('ctx-pane-loop');
+  if (which === 'guest') {
+    if (paneGuest) paneGuest.classList.remove('hidden');
+    if (paneLoop) paneLoop.classList.add('hidden');
+  } else {
+    if (paneGuest) paneGuest.classList.add('hidden');
+    if (paneLoop) paneLoop.classList.remove('hidden');
+    var badge = document.getElementById('ctx-loop-badge');
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+function renderGuestPane(conv) {
+  var pane = document.getElementById('ctx-pane-guest');
+  if (!pane) return;
+  pane.innerHTML = '<div class="conv-loading">Loading guest details…</div>';
 
   var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
 
@@ -1616,7 +1792,7 @@ function renderContextPanel(conv) {
   html += '<a href="admin-guest-detail?id=' + encodeURIComponent(conv.guestId || '') + '" style="display:inline-block;margin-top:10px;font-size:.72rem;color:var(--accent);font-weight:500;">View full member profile →</a>';
   html += '</div>';
 
-  ctx.innerHTML = html;
+  pane.innerHTML = html;
 
   // Populate presence
   if (window.ConvPresence && conv.guestId) {
@@ -1676,6 +1852,228 @@ function renderContextPanel(conv) {
       })
       .catch(function(){});
   }
+}
+
+// ── v74a: admin loop-in pane ──
+var adminLoopState = { loop: null, messages: [] };
+var adminLoopPoll = null;
+
+function renderLoopPane(conv) {
+  var pane = document.getElementById('ctx-pane-loop');
+  if (!pane) return;
+  pane.innerHTML = '<div class="conv-loading">Loading…</div>';
+
+  fetch('/api/loop?convId=' + encodeURIComponent(conv.id), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      adminLoopState.loop = d.loop || null;
+      adminLoopState.messages = d.messages || [];
+      paintAdminLoopPane(conv);
+      updateAdminLoopTabBadge();
+      // Also reflect "loop active" in the sidebar conv-list item
+      flagSidebarLoopActive(conv.id, adminLoopState.loop && adminLoopState.loop.active);
+    })
+    .catch(function(e) {
+      pane.innerHTML = '<div class="loop-empty"><div class="loop-empty-body" style="color:#b05830;">Could not load. Please reload.</div></div>';
+    });
+
+  if (adminLoopPoll) { clearInterval(adminLoopPoll); adminLoopPoll = null; }
+  adminLoopPoll = setInterval(function() { pollAdminLoop(conv); }, 12000);
+}
+
+function pollAdminLoop(conv) {
+  if (!conv || !conv.id || conv.id !== activeConvId) return;
+  fetch('/api/loop?convId=' + encodeURIComponent(conv.id), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var newCount = (d.messages || []).length;
+      var oldCount = (adminLoopState.messages || []).length;
+      adminLoopState.loop = d.loop || null;
+      adminLoopState.messages = d.messages || [];
+      if (newCount > oldCount) {
+        var activeTab = document.querySelector('.ctx-tab.active');
+        var onLoopTab = activeTab && activeTab.getAttribute('data-tab') === 'loop';
+        paintAdminLoopPane(conv);
+        if (!onLoopTab) {
+          var badge = document.getElementById('ctx-loop-badge');
+          if (badge) { badge.style.display = 'flex'; badge.textContent = (newCount - oldCount); }
+        }
+      }
+      updateAdminLoopTabBadge();
+      flagSidebarLoopActive(conv.id, adminLoopState.loop && adminLoopState.loop.active);
+    })
+    .catch(function(){});
+}
+
+function updateAdminLoopTabBadge() {
+  var tab = document.querySelector('.ctx-tab[data-tab="loop"]');
+  if (!tab) return;
+  if (adminLoopState.loop && adminLoopState.loop.active) {
+    tab.classList.remove('tab-loop-inactive');
+  } else {
+    if (!adminLoopState.loop) tab.classList.add('tab-loop-inactive');
+    else tab.classList.remove('tab-loop-inactive');
+  }
+}
+
+function flagSidebarLoopActive(convId, isActive) {
+  // Find the conv item in the sidebar list and add/remove the "Partner needs help" pill.
+  // The conv list items have data-id (not data-conv-id).
+  var items = document.querySelectorAll('.conv-item[data-id]');
+  items.forEach(function(it) {
+    if (it.getAttribute('data-id') !== convId) return;
+    var existing = it.querySelector('.loop-active-pill');
+    if (isActive) {
+      if (!existing) {
+        var pill = document.createElement('div');
+        pill.className = 'loop-active-pill';
+        pill.textContent = '🤝 Partner needs help';
+        it.appendChild(pill);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+function paintAdminLoopPane(conv) {
+  var pane = document.getElementById('ctx-pane-loop');
+  if (!pane) return;
+  var hasLoop = !!adminLoopState.loop;
+  var isResolved = hasLoop && !adminLoopState.loop.active;
+
+  var headerHtml = '';
+  if (!hasLoop) {
+    headerHtml =
+      '<div class="loop-header">' +
+        '<div class="loop-header-title"><span>🔒</span><span>Private — partner & admin</span></div>' +
+        '<div class="loop-header-sub">No private thread on this conversation yet. The partner can initiate from their side.</div>' +
+      '</div>';
+  } else {
+    var statusLabel = isResolved
+      ? 'Resolved — new messages will reopen'
+      : 'Active — partner needs help';
+    var resolveBtn = !isResolved
+      ? '<button class="loop-resolve-btn" type="button" onclick="resolveAdminLoop()">Mark resolved</button>'
+      : '';
+    headerHtml =
+      '<div class="loop-header">' +
+        '<div class="loop-header-title"><span>🔒</span><span>Private — partner & admin</span></div>' +
+        '<div class="loop-header-sub">The guest cannot see this thread. Visible only to ' + escHtml(conv.propertyName || conv.propertySlug || 'the partner') + ' and admin.</div>' +
+        '<span class="loop-header-status' + (isResolved ? ' resolved' : '') + '">' + escHtml(statusLabel) + '</span>' +
+        resolveBtn +
+      '</div>';
+  }
+
+  var messagesHtml = '';
+  if (!hasLoop || (adminLoopState.messages || []).length === 0) {
+    messagesHtml =
+      '<div class="loop-empty">' +
+        '<div class="loop-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>' +
+        '<div class="loop-empty-title">No private messages yet</div>' +
+        '<div class="loop-empty-body">If the partner needs your help, they\'ll initiate from their side and you\'ll be notified.</div>' +
+      '</div>';
+  } else {
+    messagesHtml = '<div class="loop-messages" id="loop-messages-wrap">' +
+      adminLoopState.messages.map(function(m) {
+        var role = m.role === 'admin' ? 'admin' : 'partner';
+        var when = '';
+        try { when = fmt(m.sentAt); } catch(_) { when = ''; }
+        return '<div class="loop-msg role-' + role + '">' +
+          '<div class="loop-msg-sender">' + escHtml(m.senderName || (role === 'admin' ? 'You' : 'Partner')) + '</div>' +
+          '<div class="loop-msg-bubble">' + escHtml(m.text || '') + '</div>' +
+          '<div class="loop-msg-time">' + escHtml(when) + '</div>' +
+        '</div>';
+      }).join('') +
+      '</div>';
+  }
+
+  // Admin can compose only if loop exists (partner initiates)
+  var composerHtml = hasLoop
+    ? '<div class="loop-composer">' +
+        '<div class="loop-composer-label"><span>🔒</span><span>Private — to partner only</span></div>' +
+        '<div class="loop-composer-row">' +
+          '<textarea id="loop-composer-input" placeholder="Reply to partner privately…" rows="1"></textarea>' +
+          '<button class="loop-send" id="loop-send-btn" type="button" onclick="sendAdminLoopMessage()">Send</button>' +
+        '</div>' +
+      '</div>'
+    : '';
+
+  pane.innerHTML = headerHtml + messagesHtml + composerHtml;
+
+  var ta = document.getElementById('loop-composer-input');
+  if (ta) {
+    ta.addEventListener('input', function() {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(140, ta.scrollHeight) + 'px';
+    });
+    ta.addEventListener('keydown', function(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+        sendAdminLoopMessage();
+      }
+    });
+  }
+
+  var wrap = document.getElementById('loop-messages-wrap');
+  if (wrap && window.pinToBottom) window.pinToBottom(wrap);
+}
+
+function sendAdminLoopMessage() {
+  if (!activeConvId) return;
+  var ta = document.getElementById('loop-composer-input');
+  var btn = document.getElementById('loop-send-btn');
+  if (!ta || !btn) return;
+  var text = (ta.value || '').trim();
+  if (!text) return;
+  btn.disabled = true;
+  fetch('/api/loop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ convId: activeConvId, text: text })
+  })
+    .then(function(r) {
+      if (!r.ok) throw new Error('send failed (' + r.status + ')');
+      return r.json();
+    })
+    .then(function(d) {
+      adminLoopState.loop = d.loop || adminLoopState.loop;
+      if (d.message) adminLoopState.messages.push(d.message);
+      ta.value = '';
+      ta.style.height = 'auto';
+      var conv = (conversations || []).filter(function(c){return c.id === activeConvId;})[0];
+      if (conv) paintAdminLoopPane(conv);
+      updateAdminLoopTabBadge();
+    })
+    .catch(function(e) {
+      console.error('[admin loop send]', e);
+      alert('Could not send. Please try again.');
+    })
+    .finally(function() { btn.disabled = false; });
+}
+
+function resolveAdminLoop() {
+  if (!activeConvId) return;
+  if (!confirm('Mark this loop as resolved? The partner can still send new messages — that will reopen it.')) return;
+  fetch('/api/loop', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ convId: activeConvId })
+  })
+    .then(function(r) {
+      if (!r.ok) throw new Error('resolve failed (' + r.status + ')');
+      return r.json();
+    })
+    .then(function(d) {
+      adminLoopState.loop = d.loop || adminLoopState.loop;
+      var conv = (conversations || []).filter(function(c){return c.id === activeConvId;})[0];
+      if (conv) paintAdminLoopPane(conv);
+      flagSidebarLoopActive(activeConvId, false);
+    })
+    .catch(function(e) {
+      console.error('[admin loop resolve]', e);
+      alert('Could not mark resolved. Please try again.');
+    });
 }
 
 function scheduleNotesSave(memberId, value) {
