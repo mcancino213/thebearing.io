@@ -2960,6 +2960,15 @@ View in admin: https://thebearing.io/admin-bookings.html
     }
 
 
+    // ── /api/inbound-email ────────────────────────────────────────
+    // Resend inbound webhook. Routes guest+partner email replies back into
+    // the conversation thread via the reply+{convId}@replies.thebearing.io
+    // token. Bug-fix v74b: this route declaration was missing in v73as
+    // through v74a, causing every Cloudflare Pages build since v73at to
+    // fail silently at the esbuild step. The handler body was sitting in
+    // the source orphaned (esbuild rejected it; Node accepted it which is
+    // why local `node -c` checks all passed). Added back here.
+    if (url.pathname === '/api/inbound-email') {
       if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
       let body;
       try { body = await request.json(); }
