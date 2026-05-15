@@ -559,8 +559,18 @@ function fmtDateRange(arrival, departure, nights) {
     var a = new Date(arrival), d = new Date(departure);
     var aOpts = { month: 'short', day: 'numeric' };
     var dOpts = { month: 'short', day: 'numeric', year: 'numeric' };
+    // v73ak: if nights wasn't provided (legacy enquiries created before
+    // v73ai started syncing trip details from offer to booking), compute
+    // it from the dates we already have. Avoids the unhelpful "? nights"
+    // display when the dates themselves are perfectly known.
+    var computedNights = nights;
+    if (!computedNights) {
+      var diffMs = d.getTime() - a.getTime();
+      var n = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      if (n > 0) computedNights = n;
+    }
     return '<div style="font-weight:500;font-size:14px;">' + a.toLocaleDateString('en-US', aOpts) + ' – ' + d.toLocaleDateString('en-US', dOpts) + '</div>' +
-           '<div style="font-size:12px;color:var(--text2);">' + (nights || '?') + ' nights</div>';
+           '<div style="font-size:12px;color:var(--text2);">' + (computedNights || '?') + ' nights</div>';
   } catch(e) {
     return '<span style="color:var(--text3);">Invalid dates</span>';
   }
@@ -579,7 +589,13 @@ function fmtDateRangePlain(arrival, departure, nights) {
     var aOpts = { month: 'short', day: 'numeric' };
     var dOpts = { month: 'short', day: 'numeric', year: 'numeric' };
     var base = a.toLocaleDateString('en-US', aOpts) + ' \u2013 ' + d.toLocaleDateString('en-US', dOpts);
-    return nights ? (base + ' \u00b7 ' + nights + ' nights') : base;
+    // v73ak: compute nights from dates if not provided (see fmtDateRange).
+    var computedNights = nights;
+    if (!computedNights) {
+      var n = Math.round((d.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+      if (n > 0) computedNights = n;
+    }
+    return computedNights ? (base + ' \u00b7 ' + computedNights + ' nights') : base;
   } catch(e) {
     return 'Invalid dates';
   }

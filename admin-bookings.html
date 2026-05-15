@@ -359,13 +359,24 @@ function renderTable() {
         (deposit ? '<div style="font-size:.7rem;color:var(--text3);">$' + deposit.toLocaleString() + ' dep.</div>' : '')
       : '<span style="color:var(--text3);">—</span>';
 
+    // v73ak: compute nights from dates if record doesn't have it (some
+    // legacy enquiries pre-v73ai don't carry nights even when arrival +
+    // departure are set).
+    var displayNights = b.nights;
+    if (!displayNights && b.arrival && b.departure) {
+      try {
+        var n = Math.round((new Date(b.departure).getTime() - new Date(b.arrival).getTime()) / (1000 * 60 * 60 * 24));
+        if (n > 0) displayNights = n;
+      } catch(_) {}
+    }
+
     html += '<tr>' +
       '<td><span class="booking-ref">' + (b.ref || '—') + '</span></td>' +
       '<td><div style="font-weight:500;">' + escapeHtml((b.firstname || '') + ' ' + (b.lastname || '')) + '</div>' +
         '<div style="font-size:.72rem;color:var(--text3);">' + escapeHtml(b.email || '') + '</div></td>' +
       '<td><div style="font-weight:500;">' + escapeHtml(b.property || '—') + '</div>' +
         (b.room ? '<div style="font-size:.72rem;color:var(--text3);">' + escapeHtml(b.room) + '</div>' : '') + '</td>' +
-      '<td><div>' + fmt(b.arrival) + '</div><div style="font-size:.72rem;color:var(--text3);">→ ' + fmt(b.departure) + ' (' + (b.nights || '?') + 'n)</div></td>' +
+      '<td><div>' + fmt(b.arrival) + '</div><div style="font-size:.72rem;color:var(--text3);">→ ' + fmt(b.departure) + ' (' + (displayNights || '?') + 'n)</div></td>' +
       '<td>' + (b.guests || '—') + '</td>' +
       '<td>' + valueCell + '</td>' +
       '<td><span class="status-badge ' + statusClass + '">' + statusLabel + '</span></td>' +
