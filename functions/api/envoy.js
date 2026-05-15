@@ -1766,17 +1766,37 @@ View in admin: https://thebearing.io/admin-bookings.html
             const r = await env.DOSSIERS.get('conversation:' + i);
             return r ? JSON.parse(r) : null;
           }))).filter(Boolean).reverse();
+          // v74c: fold loop summary into each item so partner-side conv list
+          // can show 🔒 N indicators inline (same treatment as admin side).
+          await Promise.all(convs.map(async (c) => {
+            try {
+              const loopRaw = await env.DOSSIERS.get('conversation:' + c.id + ':loop');
+              if (loopRaw) {
+                const loop = JSON.parse(loopRaw);
+                c.loopSummary = {
+                  active: !!loop.active,
+                  unreadAdmin: loop.unreadAdmin || 0,
+                  unreadPartner: loop.unreadPartner || 0,
+                };
+              }
+            } catch(_) {}
+          }));
           return jsonResponse({ conversations: convs });
         }
 
-        // List all conversations (admin) — enriched with guest avatars
+        // List all conversations (admin) — enriched with guest avatars + loop summary
         const rawIndex = await env.DOSSIERS.get('__conversations_index');
         const ids = rawIndex ? JSON.parse(rawIndex) : [];
         const convs = (await Promise.all(ids.slice(-50).map(async i => {
           const r = await env.DOSSIERS.get('conversation:' + i);
           return r ? JSON.parse(r) : null;
         }))).filter(Boolean).reverse();
-        // Enrich each conv with guest avatar (lookup member record)
+        // Enrich each conv with guest avatar (lookup member record) + loop summary.
+        // v74c: loopSummary lets the conv-list UI render a 🔒 N indicator next to
+        // each conv up-front, so admin can see at a glance which threads have
+        // partner-loop activity without having to click into each one. Field is
+        // omitted when there's no loop record at all (keeps response lean for
+        // the common case).
         await Promise.all(convs.map(async (c) => {
           if (c.guestId && c.guestId.indexOf('user_') === 0 && !c.guestAvatar) {
             try {
@@ -1787,6 +1807,18 @@ View in admin: https://thebearing.io/admin-bookings.html
               }
             } catch(e) {}
           }
+          // v74c: fold loop record into the conv item if one exists
+          try {
+            const loopRaw = await env.DOSSIERS.get('conversation:' + c.id + ':loop');
+            if (loopRaw) {
+              const loop = JSON.parse(loopRaw);
+              c.loopSummary = {
+                active: !!loop.active,
+                unreadAdmin: loop.unreadAdmin || 0,
+                unreadPartner: loop.unreadPartner || 0,
+              };
+            }
+          } catch(_) {}
         }));
         return jsonResponse({ conversations: convs });
       }

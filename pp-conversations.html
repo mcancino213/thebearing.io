@@ -223,6 +223,8 @@ tbody tr:hover{background:var(--bg);}
 .conv-pills{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
 .conv-pill{font-size:.62rem;font-weight:600;padding:2px 7px;border-radius:100px;letter-spacing:.02em;}
 .conv-pill.unread{background:var(--accent);color:#fff;}
+/* v74c: loop-pill — terracotta, matches the locked tab visual language */
+.conv-pill.loop-pill{background:rgba(176,88,48,.14);color:#b05830;border:1px solid rgba(176,88,48,.22);}
 
 /* ── MIDDLE: Thread ── */
 .conv-thread-panel{display:flex;flex-direction:column;overflow:hidden;background:#fafafa;}
@@ -1034,13 +1036,25 @@ function buildConvItem(c) {
   if (sub.textContent) meta.appendChild(sub);
   meta.appendChild(preview);
 
-  if (hasUnread) {
+  if (hasUnread || (c.loopSummary && c.loopSummary.active)) {
     var pills = document.createElement('div');
     pills.className = 'conv-pills';
-    var unreadPill = document.createElement('span');
-    unreadPill.className = 'conv-pill unread';
-    unreadPill.textContent = c.unreadAdmin + ' unread';
-    pills.appendChild(unreadPill);
+    if (hasUnread) {
+      var unreadPill = document.createElement('span');
+      unreadPill.className = 'conv-pill unread';
+      unreadPill.textContent = c.unreadAdmin + ' unread';
+      pills.appendChild(unreadPill);
+    }
+    // v74c: partner-side loop indicator — uses unreadPartner (admin's reply
+    // is what partner cares about). 🔒 N when partner has admin-unread,
+    // 🔒 (no number) when loop is active but partner has nothing new from admin.
+    if (c.loopSummary && c.loopSummary.active) {
+      var loopPill = document.createElement('span');
+      loopPill.className = 'conv-pill loop-pill';
+      var n = c.loopSummary.unreadPartner || 0;
+      loopPill.textContent = n > 0 ? '\uD83D\uDD12 ' + n : '\uD83D\uDD12';
+      pills.appendChild(loopPill);
+    }
     meta.appendChild(pills);
   }
 

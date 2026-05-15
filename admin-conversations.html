@@ -276,6 +276,11 @@ tbody tr:hover{background:var(--bg);}
 .conv-pill.wait-24{background:#fef3c7;color:#854d0e;}
 .conv-pill.wait-48{background:#fed7aa;color:#9a3412;}
 .conv-pill.wait-72{background:#fecaca;color:#991b1b;}
+/* v74c: loop-pill — terracotta to match the locked-tab visual language */
+.conv-pill.loop-pill{
+  background:rgba(176,88,48,.14);color:#b05830;
+  border:1px solid rgba(176,88,48,.22);
+}
 
 /* ── RIGHT: Thread panel ── */
 .conv-thread-panel{
@@ -787,8 +792,15 @@ tbody tr:hover{background:var(--bg);}
 .loop-header{
   padding:14px 18px;background:linear-gradient(180deg,#fff8f4 0%,#fdf2ea 100%);
   border-bottom:1px solid rgba(176,88,48,.18);flex-shrink:0;
-  position:relative;
 }
+/* v74c: title-row holds the title + the Mark Resolved button side-by-side
+   so the button never overlaps the title text. Previously the button was
+   position:absolute which broke down once the title row had content. */
+.loop-header-top-row{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  margin-bottom:4px;
+}
+.loop-header-top-row .loop-header-title{margin-bottom:0;flex:1;min-width:0;}
 .loop-header-title{
   font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   color:#b05830;margin-bottom:4px;display:flex;align-items:center;gap:6px;
@@ -800,11 +812,11 @@ tbody tr:hover{background:var(--bg);}
 }
 .loop-header-status.resolved{color:#4a6a48;}
 .loop-resolve-btn{
-  position:absolute;top:14px;right:14px;
-  padding:5px 10px;font-size:.66rem;font-weight:600;
+  flex-shrink:0;
+  padding:5px 10px;font-size:.62rem;font-weight:600;
   background:#fff;border:1px solid rgba(80,55,25,.18);border-radius:7px;
   color:var(--text2);cursor:pointer;letter-spacing:.04em;text-transform:uppercase;
-  transition:all .15s ease;
+  transition:all .15s ease;white-space:nowrap;
 }
 .loop-resolve-btn:hover{background:#f4f4f4;color:var(--text);}
 .loop-empty{
@@ -877,14 +889,9 @@ tbody tr:hover{background:var(--bg);}
   opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;
 }
 
-/* "Partner needs help" pill in sidebar conversation list */
-.conv-item .loop-active-pill{
-  display:inline-block;margin-top:4px;
-  padding:1px 7px;border-radius:6px;
-  background:rgba(176,88,48,.12);color:#b05830;
-  font-size:.6rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-}
-.conv-item.active .loop-active-pill{background:rgba(176,88,48,.18);}
+/* v74c: removed dead .loop-active-pill rules — replaced by .conv-pill.loop-pill
+   which lives in the standard pills row, rendered by buildConvItem from
+   server-embedded loopSummary. */
 
 /* ─────────────────────────────────────────────────────────────
    MESSAGE HOVER ACTIONS
@@ -1352,6 +1359,16 @@ function buildConvItem(c) {
     statPill.className = 'conv-pill status-archived';
     statPill.textContent = 'Archived';
     pills.appendChild(statPill);
+  }
+  // v74c: loop indicator — server embeds loopSummary on each conv list item
+  // when an active loop exists. Pill shows 🔒 N when there's admin-unread,
+  // 🔒 (no number) when loop is active but admin has nothing new.
+  if (c.loopSummary && c.loopSummary.active) {
+    var loopPill = document.createElement('span');
+    loopPill.className = 'conv-pill loop-pill';
+    var n = c.loopSummary.unreadAdmin || 0;
+    loopPill.textContent = n > 0 ? '\uD83D\uDD12 ' + n : '\uD83D\uDD12';
+    pills.appendChild(loopPill);
   }
   if (pills.children.length) meta.appendChild(pills);
 
@@ -1954,30 +1971,28 @@ function updateAdminLoopTabBadge() {
 }
 
 function flagSidebarLoopActive(convId, isActive) {
-  // v74b: surface loop activity in the conv list as a clean "🔒 N" badge
-  // showing the unread loop-message count for admin (or just "🔒" when
-  // the loop is active but admin has nothing new). Replaces the v74a
-  // handshake pill — that was redundant with the "🔒 The Bearing" tab.
-  var items = document.querySelectorAll('.conv-item[data-id]');
+  // v74c: update the in-memory conv model and re-render the list, instead of
+  // the v74b DOM-injection. Now that loopSummary is server-embedded into the
+  // conv-list response, the canonical render path in buildConvItem() already
+  // produces the right pill. This function exists to apply an immediate
+  // optimistic update when admin resolves a loop (or sends a message that
+  // would reset their unread counter) — so the pill changes before the next
+  // 30s polling refresh from loadList().
+  var c = (conversations || []).filter(function(cc){ return cc.id === convId; })[0];
+  if (!c) return;
   var loop = adminLoopState.loop;
-  var unreadCount = (loop && loop.unreadAdmin) || 0;
-  items.forEach(function(it) {
-    if (it.getAttribute('data-id') !== convId) return;
-    var existing = it.querySelector('.loop-active-pill');
-    if (isActive) {
-      var label = unreadCount > 0 ? '🔒 ' + unreadCount : '🔒';
-      if (!existing) {
-        var pill = document.createElement('div');
-        pill.className = 'loop-active-pill';
-        pill.textContent = label;
-        it.appendChild(pill);
-      } else {
-        existing.textContent = label;
-      }
-    } else {
-      if (existing) existing.remove();
-    }
-  });
+  if (isActive && loop) {
+    c.loopSummary = {
+      active: true,
+      unreadAdmin: loop.unreadAdmin || 0,
+      unreadPartner: loop.unreadPartner || 0,
+    };
+  } else {
+    // Inactive — either resolved or never existed. Drop the summary so the
+    // pill stops rendering.
+    delete c.loopSummary;
+  }
+  renderList();
 }
 
 function paintAdminLoopPane(conv) {
@@ -2002,10 +2017,12 @@ function paintAdminLoopPane(conv) {
       : '';
     headerHtml =
       '<div class="loop-header">' +
-        '<div class="loop-header-title"><span>🔒</span><span>Private — partner & admin</span></div>' +
+        '<div class="loop-header-top-row">' +
+          '<div class="loop-header-title"><span>🔒</span><span>Private — partner & admin</span></div>' +
+          resolveBtn +
+        '</div>' +
         '<div class="loop-header-sub">The guest cannot see this thread. Visible only to ' + escHtml(conv.propertyName || conv.propertySlug || 'the partner') + ' and admin.</div>' +
         '<span class="loop-header-status' + (isResolved ? ' resolved' : '') + '">' + escHtml(statusLabel) + '</span>' +
-        resolveBtn +
       '</div>';
   }
 
