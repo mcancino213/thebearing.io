@@ -1619,6 +1619,44 @@ View in admin: https://thebearing.io/admin-bookings.html
       return jsonResponse({ unread });
     }
 
+    // v73ao: /api/unread-debug — admin-gated diagnostic for the unread badge
+    // pipeline. Returns the full aggregated counter + each conversation's
+    // contribution to it so you can see exactly which conv is producing
+    // (or failing to produce) the count for a given guestId.
+    // Use ?guestId=X to filter to that guest's convs; omit to see the full
+    // picture. Also exposes a ?force=recompute flag that recomputes from
+    // scratch before returning, useful to test if the counter is stale.
+    if (url.pathname === '/api/unread-debug') {
+      if (!(await isAdmin())) return adminDenied();
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      const filterGuestId = url.searchParams.get('guestId');
+      if (url.searchParams.get('force') === 'recompute') {
+        await recomputeUnreadCounters(env);
+      }
+      const counterRaw = await env.DOSSIERS.get('__unread_counters');
+      const counter = counterRaw ? JSON.parse(counterRaw) : null;
+      const idxRaw = await env.DOSSIERS.get('__conversations_index');
+      const ids = idxRaw ? JSON.parse(idxRaw) : [];
+      const convs = [];
+      for (const cid of ids) {
+        const cRaw = await env.DOSSIERS.get('conversation:' + cid);
+        if (!cRaw) continue;
+        const c = JSON.parse(cRaw);
+        if (filterGuestId && c.guestId !== filterGuestId) continue;
+        convs.push({
+          id: c.id, guestId: c.guestId, guestEmail: c.guestEmail,
+          propertySlug: c.propertySlug, status: c.status,
+          unreadAdmin: c.unreadAdmin || 0, unreadGuest: c.unreadGuest || 0,
+          lastMessageAt: c.lastMessageAt
+        });
+      }
+      return jsonResponse({
+        counter: counter,
+        convs: convs,
+        recomputed: url.searchParams.get('force') === 'recompute'
+      });
+    }
+
     // ── /api/conversation ─────────────────────────────────────────
     // Conversation data model:
     //   conversation:{id}          → { id, propertySlug, propertyName, guestId,
@@ -2636,9 +2674,31 @@ View in admin: https://thebearing.io/admin-bookings.html
         conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
       }
 
+      // v73ao: diagnostic log so we can trace why a partner email reply isn't
+      // triggering the customer's unread badge. Logs: convId, inferred role,
+      // guestId on conv (must match Clerk user.id for badge to find it), and
+      // both unread fields after the increment.
+      console.log('[Inbound] post-bump conv state: convId=' + convId
+        + ' inferredRole=' + inferredRole
+        + ' guestId=' + (conv.guestId || '(missing)')
+        + ' unreadGuest=' + (conv.unreadGuest || 0)
+        + ' unreadAdmin=' + (conv.unreadAdmin || 0)
+        + ' status=' + (conv.status || '(missing)'));
+
       await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
       await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
       await recomputeUnreadCounters(env);
+
+      // v73ao: log the resulting counter state for this guest so we can confirm
+      // recompute actually wrote the increment. If the counter for this guest
+      // shows 0 here but unreadGuest is 1 above, there's a KV consistency lag
+      // or recompute bug. If both show 1 here, the issue is on the client side.
+      try {
+        const debugCounterRaw = await env.DOSSIERS.get('__unread_counters');
+        const debugCounter = debugCounterRaw ? JSON.parse(debugCounterRaw) : null;
+        const guestCount = (debugCounter && debugCounter.guests && conv.guestId) ? (debugCounter.guests[conv.guestId] || 0) : 0;
+        console.log('[Inbound] post-recompute counter: guests[' + (conv.guestId || '(missing)') + ']=' + guestCount + ' admin=' + ((debugCounter && debugCounter.admin) || 0));
+      } catch(e) { console.error('[Inbound] counter readback failed:', e.message); }
 
       // Record guest's lastreply timestamp for presence
       const nowMs = Date.now();
