@@ -3235,6 +3235,20 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (sendImmediately) {
           booking.active_offer_id = offerId;
           booking.status = 'offer_sent';
+          // v73ai: sync the offer's trip details onto the booking. This is
+          // the canonical place to do it \u2014 once an offer is sent, those
+          // values supersede whatever was on the booking from the original
+          // enquiry. Critical when the customer enquired WITHOUT specifying
+          // dates: the booking record still had arrival='' until now.
+          // Without this sync, the booking would remain dateless forever
+          // even after payment, and partner-side views would show "Dates TBD".
+          // Only copy fields the offer has values for (don't blank out
+          // booking fields if offer omitted something).
+          if (offer.arrival)   booking.arrival   = offer.arrival;
+          if (offer.departure) booking.departure = offer.departure;
+          if (offer.nights)    booking.nights    = offer.nights;
+          if (offer.guests)    booking.guests    = offer.guests;
+          if (offer.room)      booking.room      = offer.room;
         } else if (!booking.active_offer_id && booking.status === 'pending') {
           // Stays pending — draft doesn't change booking-level state
         }
@@ -3284,6 +3298,15 @@ View in admin: https://thebearing.io/admin-bookings.html
             const booking = JSON.parse(brRaw);
             booking.active_offer_id = offer.id;
             booking.status = 'offer_sent';
+            // v73ai: sync offer trip details onto booking (see same logic in
+            // the POST send-immediately path). Critical for enquiries that
+            // were submitted without dates \u2014 the booking record needs to
+            // reflect the offer's dates once partner sends.
+            if (offer.arrival)   booking.arrival   = offer.arrival;
+            if (offer.departure) booking.departure = offer.departure;
+            if (offer.nights)    booking.nights    = offer.nights;
+            if (offer.guests)    booking.guests    = offer.guests;
+            if (offer.room)      booking.room      = offer.room;
             booking.updatedAt = now;
             await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
           }
@@ -3641,6 +3664,12 @@ View in admin: https://thebearing.io/admin-bookings.html
         booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
         booking.confirmed_offer_id = acceptedOffer.id;
         booking.confirmed_currency = acceptedOffer.currency || 'USD';
+        // v73ai: defensive trip-details backfill (legacy bookings)
+        if (!booking.arrival   && acceptedOffer.arrival)   booking.arrival   = acceptedOffer.arrival;
+        if (!booking.departure && acceptedOffer.departure) booking.departure = acceptedOffer.departure;
+        if (!booking.nights    && acceptedOffer.nights)    booking.nights    = acceptedOffer.nights;
+        if (!booking.guests    && acceptedOffer.guests)    booking.guests    = acceptedOffer.guests;
+        if (!booking.room      && acceptedOffer.room)      booking.room      = acceptedOffer.room;
       }
       await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
 
@@ -3809,6 +3838,12 @@ View in admin: https://thebearing.io/admin-bookings.html
         booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
         booking.confirmed_offer_id = acceptedOffer.id;
         booking.confirmed_currency = acceptedOffer.currency || 'USD';
+        // v73ai: defensive trip-details backfill (see admin sync for context)
+        if (!booking.arrival   && acceptedOffer.arrival)   booking.arrival   = acceptedOffer.arrival;
+        if (!booking.departure && acceptedOffer.departure) booking.departure = acceptedOffer.departure;
+        if (!booking.nights    && acceptedOffer.nights)    booking.nights    = acceptedOffer.nights;
+        if (!booking.guests    && acceptedOffer.guests)    booking.guests    = acceptedOffer.guests;
+        if (!booking.room      && acceptedOffer.room)      booking.room      = acceptedOffer.room;
       }
       await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
 
@@ -4145,8 +4180,10 @@ View in admin: https://thebearing.io/admin-bookings.html
           booking.seenByPartner = false;
           booking.seenByAdmin = false;
           // v73aa: snapshot key offer fields for customer detail view.
-          // Booking already has arrival/departure/room/guests (mutated on
-          // offer-send), but we add the monetary + contract fields here.
+          // v73ai: booking.arrival/departure/etc should already be set from
+          // the v73ai offer-send sync. The defensive backfill below covers
+          // legacy bookings that were sent pre-v73ai (still have empty trip
+          // fields on the booking).
           if (acceptedOffer) {
             booking.confirmed_total_amount = acceptedOffer.total_amount || 0;
             booking.confirmed_deposit_amount = acceptedOffer.deposit_amount || 0;
@@ -4157,6 +4194,12 @@ View in admin: https://thebearing.io/admin-bookings.html
             booking.confirmed_partner_notes = acceptedOffer.partner_notes || '';
             booking.confirmed_offer_id = acceptedOffer.id;
             booking.confirmed_currency = acceptedOffer.currency || 'USD';
+            // v73ai: backfill trip details if booking still lacks them
+            if (!booking.arrival   && acceptedOffer.arrival)   booking.arrival   = acceptedOffer.arrival;
+            if (!booking.departure && acceptedOffer.departure) booking.departure = acceptedOffer.departure;
+            if (!booking.nights    && acceptedOffer.nights)    booking.nights    = acceptedOffer.nights;
+            if (!booking.guests    && acceptedOffer.guests)    booking.guests    = acceptedOffer.guests;
+            if (!booking.room      && acceptedOffer.room)      booking.room      = acceptedOffer.room;
           }
           await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
 
