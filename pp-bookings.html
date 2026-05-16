@@ -1870,22 +1870,40 @@ function submitAmendment() {
     })
   })
   .then(function(r) {
-    return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; });
+    // v74i: handle non-JSON responses explicitly. If r.json() throws because
+    // the body is empty or HTML (rare, but happens if a 5xx slips through),
+    // we don't want it caught by the generic network-error catch below.
+    return r.text().then(function(txt) {
+      var data = null;
+      try { data = txt ? JSON.parse(txt) : null; } catch(_) { data = { error: 'Server returned an unparseable response.' }; }
+      return { ok: r.ok, status: r.status, data: data };
+    });
   })
   .then(function(res) {
     if (!res.ok) {
-      amShowError((res.data && res.data.error) || 'Could not send amendment.');
+      amShowError((res.data && res.data.error) || ('Could not send amendment (HTTP ' + res.status + ').'));
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.textContent = 'Send to guest \u2192';
       return;
     }
-    toast('Amendment sent to guest \u00b7 ' + amendmentState.bookingRef);
+    // v74i: success path. Was calling `toast()` which doesn't exist on this
+    // page — the function is `ppToast()`. The ReferenceError was caught by
+    // the .catch below and surfaced as "Network error — please try again."
+    // even though the POST succeeded and the email went out. That's the
+    // exact bug you reported.
+    try {
+      ppToast('Amendment sent to guest \u00b7 ' + amendmentState.bookingRef, 'success');
+    } catch(_) { /* toast failure is non-fatal */ }
     closeAmendmentModal();
-    loadBookings(); // refresh so row shows pending pill
+    try { loadBookings(); } catch(_) { /* refresh failure is non-fatal */ }
   })
-  .catch(function() {
-    amShowError('Network error \u2014 please try again.');
+  .catch(function(e) {
+    // v74i: actual network error path. Now genuinely only fires when the
+    // fetch itself failed (DNS, CORS, offline). Anything that throws in
+    // the .then handlers above is wrapped in try/catch and won't reach here.
+    console.error('[Amendment submit] network error:', e);
+    amShowError('Network error \u2014 please check your connection and try again.');
     btn.disabled = false;
     btn.style.opacity = '1';
     btn.textContent = 'Send to guest \u2192';

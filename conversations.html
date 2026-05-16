@@ -1640,11 +1640,15 @@ window.addEventListener('load', async function() {
       + '<a href="/" style="font-size:.8rem;color:#b05830;text-decoration:none;font-weight:500;margin-top:8px;">\u2190 Back to The Bearing</a>';
     document.body.appendChild(overlay);
 
+    // v74i: preserve the current URL (including query params like ?id=X)
+    // as the post-sign-in destination. Previously hardcoded to /my-account
+    // which dropped guests landing from amendment emails on the wrong page.
+    var returnUrl = window.location.href;
     window.Clerk.mountSignIn(document.getElementById('clerk-signin-overlay'), {
-      afterSignInUrl: '/my-account.html',
-      afterSignUpUrl: '/my-account.html',
+      afterSignInUrl: returnUrl,
+      afterSignUpUrl: returnUrl,
       socialProvider: ['google', 'apple'],
-      signInUrl: '/my-account.html',
+      signInUrl: returnUrl,
     });
   }
 
@@ -2454,17 +2458,37 @@ function chRenderMessagesInto(wrap, conv, messages) {
         amDeltaHtml +
         amNoteHtml +
         '<div class="ch-am-cta-row">' +
+          // v74i: honest button copy. The v74e label "Approve & pay $X"
+          // implied this button would charge the card immediately, but
+          // Build 1 stubs the payment step \u2014 actual Stripe delta-charge
+          // lives in Build 2. Now reads "Approve" with delta amount as
+          // a sublabel, and the note below makes the payment path explicit.
           '<button class="ch-am-cta-approve" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">' +
-            (amDelta > 0 ? 'Approve & pay ' + amMoney(amDeltaDeposit) : 'Approve change') +
+            (amDelta > 0 ? 'Approve change \u00b7 ' + amMoney(amDeltaDeposit) + ' to settle' : 'Approve change') +
           '</button>' +
           '<button class="ch-am-cta-decline" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">Decline</button>' +
         '</div>' +
-        '<div class="ch-am-stripe-note">Build 1 note: approving will record the change \u2014 the property will send a separate invoice for any additional deposit.</div>';
+        (amDelta > 0
+          ? '<div class="ch-am-stripe-note"><strong style="color:#b05830;">How payment works:</strong> Approving will record the change. The property will then email you a separate payment link for the additional ' + amMoney(amDeltaDeposit) + ' deposit \u2014 you don\u2019t pay directly through this page yet.</div>'
+          : '<div class="ch-am-stripe-note">No additional payment is required for this change.</div>'
+        );
       // Wire buttons
       var amApprove = bubble.querySelector('.ch-am-cta-approve');
       var amDecline = bubble.querySelector('.ch-am-cta-decline');
       if (amApprove) {
         amApprove.addEventListener('click', function() {
+          // v74i: confirm before submitting. The button no longer claims
+          // to take payment (it doesn't yet — Build 2), so this dialog
+          // makes the next step explicit: property will email a separate
+          // payment link for any additional deposit.
+          if (amDelta > 0) {
+            var msg = 'Approve this change to your booking?\n\n'
+              + 'The booking details (room, dates, guests, total) will update immediately.\n\n'
+              + amS.propertyName + ' will then send you a separate payment link for the additional ' + amMoney(amDeltaDeposit) + ' deposit. No charge will happen on this page.';
+            if (!confirm(msg)) return;
+          } else {
+            if (!confirm('Approve this change to your booking? Your booking details will update immediately. No additional payment is required.')) return;
+          }
           handleAmendmentDecision(m.amendmentId, 'approve', amApprove, amDecline);
         });
       }

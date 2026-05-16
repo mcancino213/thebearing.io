@@ -4628,7 +4628,12 @@ View in admin: https://thebearing.io/admin-bookings.html
           id: amendmentId,
           bookingId: bookingRef,
           propertySlug: booking.slug || booking.propertySlug || null,
-          propertyName: booking.propertyName || '',
+          // v74i: real bookings store the readable property name as
+          // `booking.property` (set at line 1915 in the booking-create flow).
+          // The v74e code was reading `booking.propertyName` which is
+          // never set on bookings — only on offers and conversations. Same
+          // class of field-name-mismatch bug as v74g's confirmed_total_amount.
+          propertyName: booking.property || booking.propertyName || '',
           status: 'sent',           // amendments skip 'draft' \u2014 partner sends directly
           createdAt: new Date().toISOString(),
           sentAt: new Date().toISOString(),
@@ -4676,7 +4681,7 @@ View in admin: https://thebearing.io/admin-bookings.html
 
         // Email the guest. Loads guest email from booking record.
         const guestEmail = booking.email;
-        const propertyName = booking.propertyName || booking.slug || booking.propertySlug || 'your property';
+        const propertyName = booking.property || booking.propertyName || booking.slug || booking.propertySlug || 'your property';
         if (guestEmail && typeof sendBrandedEmail === 'function') {
           try {
             const replyToken = booking.conversationId
@@ -4853,7 +4858,7 @@ View in admin: https://thebearing.io/admin-bookings.html
             if (partnerEmail && recipients.indexOf(partnerEmail) === -1) recipients.push(partnerEmail);
 
             const fmt = (n) => '$' + (n || 0).toLocaleString();
-            const propertyName = booking.propertyName || _bookingSlug || 'Property';
+            const propertyName = booking.property || booking.propertyName || _bookingSlug || 'Property';
             const before = amendment.previous_state;
             const deltaBlock = amendment.delta_total > 0
               ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.22);border-radius:10px;padding:18px 20px;margin:0 0 22px;">'
