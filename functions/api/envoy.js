@@ -4617,10 +4617,60 @@ View in admin: https://thebearing.io/admin-bookings.html
           }, 400);
         }
 
-        // Compute new deposit using same commission_pct from booking (or 30% fallback if missing)
-        const commission_pct = (booking.commission_pct != null) ? booking.commission_pct : 0.30;
-        const new_deposit = Math.round(total_amount * commission_pct);
-        const delta_deposit = new_deposit - previous_state.deposit_amount;
+        // v74j: compute the new deposit using the correct commission rate
+        // and formula. Two fixes from the v74e code:
+        //
+        // 1. SOURCE: bookings don't carry commission_pct directly. The
+        //    canonical source is the confirmed offer (snapshotted at offer
+        //    creation as `commission_pct_at_time`). Fall back to the
+        //    property's current `commission_pct` if the offer snapshot
+        //    isn't available (shouldn't happen on confirmed bookings, but
+        //    handle gracefully).
+        //
+        // 2. FORMULA: commission_pct is stored as a number 1-25 (representing
+        //    1%-25%). The offer code uses `total * pct / 100`. The v74e
+        //    fallback of 0.30 assumed a decimal fraction \u2014 wrong both in
+        //    magnitude AND units. For your $1000 uplift at 15% commission,
+        //    delta_deposit should be $150, which is what `1000 * 15 / 100`
+        //    produces.
+        let commission_pct_raw = null;
+        // Prefer the confirmed-offer snapshot
+        if (booking.confirmed_offer_id) {
+          try {
+            const cOfferRaw = await env.DOSSIERS.get('offer:' + booking.confirmed_offer_id);
+            if (cOfferRaw) {
+              const cOffer = JSON.parse(cOfferRaw);
+              if (typeof cOffer.commission_pct_at_time === 'number') {
+                commission_pct_raw = cOffer.commission_pct_at_time;
+              }
+            }
+          } catch (e) { /* fall through to property lookup */ }
+        }
+        // Fall back to the property's current commission rate
+        if (commission_pct_raw == null) {
+          const slugForCommish = booking.slug || booking.propertySlug;
+          if (slugForCommish) {
+            try {
+              const propRaw = await env.DOSSIERS.get(slugForCommish + ':property');
+              if (propRaw) {
+                const prop = JSON.parse(propRaw);
+                if (typeof prop.commission_pct === 'number') {
+                  commission_pct_raw = prop.commission_pct;
+                }
+              }
+            } catch (e) { /* fall through to error */ }
+          }
+        }
+        if (commission_pct_raw == null) {
+          return jsonResponse({
+            error: 'Cannot compute deposit: commission rate not found on offer or property record. This is a data integrity issue — contact admin.',
+            code: 'NO_COMMISSION_PCT',
+          }, 400);
+        }
+
+        const commission_pct = commission_pct_raw; // stored as 1-25 (1%-25%)
+        const new_deposit = Math.round(total_amount * commission_pct) / 100;
+        const delta_deposit = Math.round((new_deposit - previous_state.deposit_amount) * 100) / 100;
 
         // Create the amendment as a new offer record
         const amendmentId = 'offer_am_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -4804,8 +4854,19 @@ View in admin: https://thebearing.io/admin-bookings.html
         }
 
         // action === 'approve'
-        // Build 1 stub: no Stripe. Just flip state, update booking record,
-        // post system message, email admin+partner with manual-invoice line.
+        // v74j: PATCH approve is now ONLY for delta=0 amendments (no money
+        // to collect — e.g. same-priced room swap, party reshuffle, date
+        // change with no price impact). For delta>0 amendments, the client
+        // routes through POST /api/amendment/checkout → Stripe → webhook
+        // (see amendment-payment branch in the Stripe webhook handler).
+        // This rejection prevents bypassing payment by directly PATCHing
+        // approve on a delta>0 amendment.
+        if ((amendment.delta_total || 0) > 0) {
+          return jsonResponse({
+            error: 'This amendment requires payment of the commission delta. Please use the Approve button in your conversation, which will route you to secure payment.',
+            code: 'PAYMENT_REQUIRED',
+          }, 400);
+        }
 
         amendment.status = 'accepted';
         amendment.acceptedAt = now;
@@ -4848,7 +4909,11 @@ View in admin: https://thebearing.io/admin-bookings.html
         // Post amendment_accepted system card
         await postAmendmentCardToConversation(amendment, booking, 'amendment_accepted');
 
-        // Email admin + partner with manual-invoice stub line
+        // Email admin + partner.
+        // v74j: this PATCH path only runs for delta=0 amendments (the
+        // delta>0 guard above rejects them). So the deltaBlock simplifies
+        // to "no additional invoicing required" \u2014 the delta>0 confirmation
+        // email is sent from the Stripe webhook amendment-payment branch.
         if (typeof sendBrandedEmail === 'function') {
           try {
             const adminRecipients = await loadNotificationRecipients(env);
@@ -4860,13 +4925,8 @@ View in admin: https://thebearing.io/admin-bookings.html
             const fmt = (n) => '$' + (n || 0).toLocaleString();
             const propertyName = booking.property || booking.propertyName || _bookingSlug || 'Property';
             const before = amendment.previous_state;
-            const deltaBlock = amendment.delta_total > 0
-              ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.22);border-radius:10px;padding:18px 20px;margin:0 0 22px;">'
-                + '<div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#b05830;margin-bottom:8px;">Action required \u00b7 Build 1 stub</div>'
-                + '<div style="color:#1e1810;font-size:1rem;line-height:1.5;">Please manually invoice the guest for the deposit delta: <strong>' + fmt(amendment.delta_deposit) + '</strong>.</div>'
-                + '<div style="color:#5a4a38;font-size:.84rem;margin-top:8px;">Stripe delta-charge wiring is coming in Build 2 \u2014 until then, send a Stripe invoice or payment link by hand.</div>'
-                + '</div>'
-              : '<div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">No price change. No additional invoicing required.</div>';
+            const deltaBlock =
+              '<div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">No price change. No additional invoicing required.</div>';
             const beforeAfter =
               '<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin:0 0 22px;">'
               + '<tr><td style="padding:6px 0;color:#7a6a58;width:35%;">Room</td>'
@@ -5371,6 +5431,126 @@ View in admin: https://thebearing.io/admin-bookings.html
       });
     }
 
+    // ── /api/amendment/checkout ────────────────────────────────────
+    // v74j: Build 2 — Stripe delta-charge for booking amendments.
+    //
+    // POST body: { amendmentId, requesterEmail }
+    //
+    // Creates a Stripe Checkout Session for the COMMISSION delta only.
+    // For a $1000 uplift at 15% commission: guest pays $150 to The Bearing
+    // inline via Stripe; property collects the remaining $850 from the
+    // guest using its own settlement flow (same model as initial offers).
+    //
+    // On payment success the Stripe webhook handler (see above, amendment
+    // payment branch) flips the amendment to accepted, supersedes the
+    // original offer, and updates the booking record atomically. This
+    // endpoint just creates the session and returns the URL.
+    //
+    // Trust: ownership-by-email check against booking.email (same as the
+    // existing /api/checkout/create-session pattern). Admin bypass allowed.
+    if (url.pathname === '/api/amendment/checkout') {
+      if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
+      const stripe = getStripe(env);
+      if (!stripe) return jsonResponse({ error: 'Stripe not configured' }, 503);
+
+      let body;
+      try { body = await request.json(); }
+      catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+      const { amendmentId, requesterEmail } = body;
+      if (!amendmentId) return jsonResponse({ error: 'amendmentId required' }, 400);
+      if (!requesterEmail) return jsonResponse({ error: 'requesterEmail required' }, 400);
+
+      const amRaw = await env.DOSSIERS.get('offer:' + amendmentId);
+      if (!amRaw) return jsonResponse({ error: 'amendment not found' }, 404);
+      const amendment = JSON.parse(amRaw);
+
+      if (!amendment.amendment_of) {
+        return jsonResponse({ error: 'this offer is not an amendment' }, 400);
+      }
+      if (amendment.status !== 'sent') {
+        return jsonResponse({ error: 'amendment is no longer pending (status: ' + amendment.status + ')' }, 400);
+      }
+
+      const bookingRaw = await env.DOSSIERS.get('booking:' + amendment.bookingId);
+      if (!bookingRaw) return jsonResponse({ error: 'booking not found' }, 404);
+      const booking = JSON.parse(bookingRaw);
+
+      // Ownership check
+      const reqEmail = (requesterEmail || '').toLowerCase().trim();
+      const bookEmail = (booking.email || '').toLowerCase().trim();
+      const isAdminCaller = await isAdmin();
+      if (!isAdminCaller && (!reqEmail || reqEmail !== bookEmail)) {
+        return jsonResponse({ error: 'not authorized' }, 403);
+      }
+
+      // Compute the commission delta. Prefer the amendment's snapshotted
+      // delta_deposit (set at creation time), fall back to a fresh compute
+      // for older records. Reject if zero or negative.
+      const deltaDeposit = Number(amendment.delta_deposit) || 0;
+      if (deltaDeposit <= 0) {
+        return jsonResponse({ error: 'amendment has no positive deposit delta \u2014 no payment needed' }, 400);
+      }
+
+      const depositCents = Math.round(deltaDeposit * 100);
+      if (depositCents < 50) {
+        return jsonResponse({ error: 'delta below Stripe minimum charge (50 cents)' }, 400);
+      }
+
+      const origin = url.origin;
+      const propertyName = booking.property || booking.propertyName || amendment.propertyName || 'TheBearing booking';
+      const productName = propertyName + ' \u2014 deposit for booking change';
+      let productDescription = '';
+      if (amendment.arrival && amendment.departure) {
+        productDescription = amendment.arrival + ' \u2192 ' + amendment.departure;
+      }
+      if (amendment.room) {
+        productDescription = (productDescription ? productDescription + ' \u00b7 ' : '') + amendment.room;
+      }
+
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: 'payment',
+          payment_method_types: ['card'],
+          customer_email: booking.email || undefined,
+          line_items: [{
+            quantity: 1,
+            price_data: {
+              currency: (amendment.currency || 'usd').toLowerCase(),
+              unit_amount: depositCents,
+              product_data: {
+                name: productName,
+                description: productDescription || undefined,
+              },
+            },
+          }],
+          metadata: {
+            // CRITICAL: amendmentId is what the webhook keys on to route
+            // this payment to the amendment branch (not the offer branch).
+            amendmentId: amendment.id,
+            bookingRef: amendment.bookingId,
+            propertySlug: amendment.propertySlug || booking.slug || '',
+            conversationId: booking.conversationId || '',
+          },
+          payment_intent_data: {
+            metadata: {
+              amendmentId: amendment.id,
+              bookingRef: amendment.bookingId,
+              fromCheckoutSession: 'true',
+            },
+            statement_descriptor_suffix: 'BEARING',
+          },
+          success_url: origin + '/conversations.html?id=' + (booking.conversationId || '') + '&amendment=success',
+          cancel_url: origin + '/conversations.html?id=' + (booking.conversationId || '') + '&amendment=cancelled',
+          expires_at: Math.floor(Date.now() / 1000) + (30 * 60),
+        });
+        console.log('[Amendment checkout] created session ' + session.id + ' for amendment ' + amendment.id + ' (' + depositCents + ' cents)');
+        return jsonResponse({ url: session.url, sessionId: session.id });
+      } catch (err) {
+        console.error('[Amendment checkout] Stripe error:', err && err.message);
+        return jsonResponse({ error: 'checkout creation failed: ' + (err.message || 'unknown') }, 500);
+      }
+    }
+
     // ── /api/checkout/create-session ───────────────────────────────
     if (url.pathname === '/api/checkout/create-session') {
       if (request.method !== 'POST') return jsonResponse({ error: 'POST only' }, 405);
@@ -5596,6 +5776,227 @@ View in admin: https://thebearing.io/admin-bookings.html
         try {
           const session = event.data.object;
           const meta = session.metadata || {};
+
+          // ─────────────────────────────────────────────────────────────
+          // v74j: AMENDMENT PAYMENT BRANCH
+          // ─────────────────────────────────────────────────────────────
+          // If the session metadata includes `amendmentId`, this is a
+          // delta-deposit payment for a booking amendment (Build 2).
+          // Different shape from initial-offer payments:
+          //   - booking is already deposit_paid (don't flip status)
+          //   - we add to depositPaidAmount, don't replace it
+          //   - we flip the amendment offer to 'accepted' and mark the
+          //     original offer 'superseded_by_amendment'
+          //   - update booking's effective state (room/dates/etc) to the
+          //     amendment values
+          //   - post amendment_accepted system card
+          //   - send confirmation emails
+          if (meta.amendmentId) {
+            const amendmentId = meta.amendmentId;
+            const amBookingRef = meta.bookingRef;
+            if (!amBookingRef) {
+              console.error('[Stripe webhook][amendment] missing bookingRef on session ' + session.id);
+              return jsonResponse({ received: true, type: event.type, error: 'missing bookingRef' });
+            }
+
+            const bookingRaw = await env.DOSSIERS.get('booking:' + amBookingRef);
+            if (!bookingRaw) {
+              console.error('[Stripe webhook][amendment] booking ' + amBookingRef + ' not found');
+              return jsonResponse({ received: true, type: event.type, error: 'booking not found' });
+            }
+            const booking = JSON.parse(bookingRaw);
+
+            // Idempotency: amendment processed via stripeAmendmentSessions index
+            if (!Array.isArray(booking.stripeAmendmentSessions)) booking.stripeAmendmentSessions = [];
+            if (booking.stripeAmendmentSessions.indexOf(session.id) !== -1) {
+              console.log('[Stripe webhook][amendment] duplicate session ' + session.id + ' — already processed');
+              return jsonResponse({ received: true, type: event.type, status: 'already-processed' });
+            }
+
+            const amRaw = await env.DOSSIERS.get('offer:' + amendmentId);
+            if (!amRaw) {
+              console.error('[Stripe webhook][amendment] amendment ' + amendmentId + ' not found');
+              return jsonResponse({ received: true, type: event.type, error: 'amendment not found' });
+            }
+            const amendment = JSON.parse(amRaw);
+
+            if (amendment.status === 'accepted') {
+              console.log('[Stripe webhook][amendment] amendment ' + amendmentId + ' already accepted — recording session and exiting');
+              booking.stripeAmendmentSessions.push(session.id);
+              await env.DOSSIERS.put('booking:' + amBookingRef, JSON.stringify(booking));
+              return jsonResponse({ received: true, type: event.type, status: 'already-accepted' });
+            }
+
+            const now = new Date().toISOString();
+            const amountPaid = Number(session.amount_total || 0) / 100;
+
+            // Flip amendment offer to accepted
+            amendment.status = 'accepted';
+            amendment.acceptedAt = now;
+            amendment.stripeAmendmentSessionId = session.id;
+            amendment.stripeAmendmentPaymentIntent = session.payment_intent || null;
+            amendment.depositDeltaPaid = amountPaid;
+            await env.DOSSIERS.put('offer:' + amendmentId, JSON.stringify(amendment));
+
+            // Mark original offer superseded
+            if (amendment.amendment_of) {
+              const origRaw = await env.DOSSIERS.get('offer:' + amendment.amendment_of);
+              if (origRaw) {
+                const orig = JSON.parse(origRaw);
+                orig.status = 'superseded_by_amendment';
+                orig.superseded_by = amendmentId;
+                await env.DOSSIERS.put('offer:' + amendment.amendment_of, JSON.stringify(orig));
+              }
+            }
+
+            // Update booking with the amendment's effective state. Same
+            // pattern as the PATCH approve path (zero-delta case), with
+            // the deposit number reflecting actual amount paid + delta.
+            booking.room = amendment.room;
+            booking.arrival = amendment.arrival;
+            booking.departure = amendment.departure;
+            booking.guests = amendment.guests;
+            booking.total_amount = amendment.total_amount;
+            booking.deposit_amount = amendment.deposit_amount;
+            booking.confirmed_total_amount = amendment.total_amount;
+            booking.confirmed_deposit_amount = amendment.deposit_amount;
+            // depositPaidAmount = prior deposit + the delta the guest just paid
+            booking.depositPaidAmount = (Number(booking.depositPaidAmount) || 0) + amountPaid;
+            booking.active_offer_id = amendmentId;
+            if (!Array.isArray(booking.amendments)) booking.amendments = [];
+            booking.amendments.push(amendmentId);
+            booking.pending_amendment_id = null;
+            booking.lastAmendedAt = now;
+            booking.stripeAmendmentSessions.push(session.id);
+            booking.updatedAt = now;
+            await env.DOSSIERS.put('booking:' + amBookingRef, JSON.stringify(booking));
+
+            // Post system card via the same helper used by the PATCH path.
+            // Locate it — `postAmendmentCardToConversation` is defined
+            // inside the /api/amendment endpoint scope, not globally.
+            // We replicate inline here.
+            try {
+              const convId = booking.conversationId;
+              if (convId) {
+                const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+                if (convRaw) {
+                  const conv = JSON.parse(convRaw);
+                  const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+                  const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+                  const cardTs = new Date().toISOString();
+                  messages.push({
+                    id: 'msg_' + Date.now() + '_amok',
+                    role: 'system',
+                    type: 'amendment_accepted',
+                    amendmentId: amendmentId,
+                    bookingRef: amBookingRef,
+                    amendmentSummary: {
+                      propertyName: amendment.propertyName || '',
+                      room: amendment.room || '',
+                      arrival: amendment.arrival || '',
+                      departure: amendment.departure || '',
+                      guests: amendment.guests || 0,
+                      total_amount: amendment.total_amount || 0,
+                      deposit_amount: amendment.deposit_amount || 0,
+                      delta_total: amendment.delta_total || 0,
+                      delta_deposit: amendment.delta_deposit || 0,
+                      previous_state: amendment.previous_state || null,
+                    },
+                    text: 'Booking updated. Your additional deposit of $' + amountPaid.toLocaleString() + ' has been received \u2014 the property will collect the remaining balance from you directly.',
+                    timestamp: cardTs,
+                  });
+                  conv.lastMessageAt = cardTs;
+                  conv.lastMessagePreview = '\u2713 Booking updated \u00b7 ' + (amendment.propertyName || 'Property');
+                  conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+                  await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+                  await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+                  if (typeof recomputeUnreadCounters === 'function') {
+                    await recomputeUnreadCounters(env);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('[Stripe webhook][amendment] system card post failed:', e && e.message);
+            }
+
+            // Confirmation emails (mirrors the PATCH approve path)
+            if (typeof sendBrandedEmail === 'function') {
+              try {
+                const adminRecipients = await loadNotificationRecipients(env);
+                const propertyName = booking.property || booking.propertyName || booking.slug || 'Property';
+                const fmtMoney = function(n) { return '$' + (Number(n) || 0).toLocaleString(); };
+                const beforeS = amendment.previous_state || {};
+
+                // Property + admin email — note balance settlement responsibility
+                await sendBrandedEmail({
+                  env, logTag: 'Amendment-Stripe-Internal',
+                  to: adminRecipients,
+                  subject: '[CONFIRMED] Amendment + commission paid \u00b7 ' + propertyName + ' \u00b7 ' + amBookingRef,
+                  text: 'Amendment confirmed via Stripe.\n\nProperty: ' + propertyName + '\nBooking: ' + amBookingRef + '\nCommission delta paid to The Bearing: ' + fmtMoney(amountPaid) + '\nBalance remaining (property collects from guest): ' + fmtMoney((amendment.delta_total || 0) - amountPaid) + '\n\nReview: https://thebearing.io/admin-conversations.html?id=' + (booking.conversationId || ''),
+                  shell: {
+                    preheader: 'Amendment commission settled via Stripe.',
+                    kicker: 'The Bearing \u00b7 Internal',
+                    heading: 'Amendment confirmed \u00b7 commission received',
+                    intro: 'The guest has approved and paid the commission delta for the change to <strong>' + propertyName + '</strong> (' + amBookingRef + ').',
+                    bodyHtml:
+                      '<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin:0 0 22px;">' +
+                      '<tr><td style="padding:6px 0;color:#7a6a58;width:50%;">Commission paid to The Bearing</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">' + fmtMoney(amountPaid) + '</td></tr>' +
+                      '<tr><td style="padding:6px 0;color:#7a6a58;">Balance for property to collect from guest</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">' + fmtMoney((amendment.delta_total || 0) - amountPaid) + '</td></tr>' +
+                      '<tr><td style="padding:6px 0;color:#7a6a58;">New booking total</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">' + fmtMoney(amendment.total_amount) + '</td></tr>' +
+                      '</table>' +
+                      '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.18);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;font-size:.85rem;line-height:1.5;">' +
+                      '<strong style="color:#b05830;">Action for property:</strong> Collect the remaining ' + fmtMoney((amendment.delta_total || 0) - amountPaid) + ' from the guest using your normal settlement flow.' +
+                      '</div>',
+                    ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + (booking.conversationId || ''),
+                    ctaLabel: 'Open the conversation',
+                    footerNote: 'You\u2019re receiving this because you handle confirmed bookings.',
+                    refLabel: amBookingRef,
+                  },
+                });
+
+                // Guest confirmation
+                if (booking.email) {
+                  const replyToken = booking.conversationId
+                    ? ('reply+' + booking.conversationId + '@replies.thebearing.io')
+                    : undefined;
+                  await sendBrandedEmail({
+                    env, logTag: 'Amendment-Stripe-Guest',
+                    to: [booking.email],
+                    replyTo: replyToken,
+                    subject: 'Booking updated \u00b7 ' + propertyName + ' \u00b7 ' + amBookingRef,
+                    text: 'Your booking change has been confirmed and your additional deposit of ' + fmtMoney(amountPaid) + ' has been received.\n\nNew details:\nRoom: ' + amendment.room + '\nDates: ' + amendment.arrival + ' \u2192 ' + amendment.departure + '\nGuests: ' + amendment.guests + '\nNew total: ' + fmtMoney(amendment.total_amount) + '\n\nThe property will collect the remaining balance directly from you.',
+                    shell: {
+                      preheader: 'Your booking has been updated.',
+                      kicker: 'The Bearing',
+                      heading: 'Your booking has been updated',
+                      intro: 'Thank you. Your additional deposit of <strong>' + fmtMoney(amountPaid) + '</strong> has been received and the change to <strong>' + propertyName + '</strong> is confirmed.',
+                      bodyHtml:
+                        '<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin:0 0 22px;">' +
+                        '<tr><td style="padding:6px 0;color:#7a6a58;width:35%;">Room</td><td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + (beforeS.room || '\u2014') + '</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + (amendment.room || '\u2014') + '</td></tr>' +
+                        '<tr><td style="padding:6px 0;color:#7a6a58;">Dates</td><td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + beforeS.arrival + ' \u2192 ' + beforeS.departure + '</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + amendment.arrival + ' \u2192 ' + amendment.departure + '</td></tr>' +
+                        '<tr><td style="padding:6px 0;color:#7a6a58;">Guests</td><td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + beforeS.guests + '</td><td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + amendment.guests + '</td></tr>' +
+                        '<tr><td style="padding:6px 0;color:#7a6a58;">New total</td><td colspan="2" style="padding:6px 0;color:#1e1810;font-weight:600;">' + fmtMoney(amendment.total_amount) + '</td></tr>' +
+                        '</table>' +
+                        '<div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;font-size:.85rem;line-height:1.5;">' +
+                        'The property will collect the remaining balance for this change (' + fmtMoney((amendment.delta_total || 0) - amountPaid) + ') directly from you, using their normal settlement flow.' +
+                        '</div>',
+                      ctaUrl: 'https://thebearing.io/conversations.html?id=' + (booking.conversationId || ''),
+                      ctaLabel: 'View the conversation',
+                      footerNote: 'You can reply to this email \u2014 your response will land in your conversation.',
+                      refLabel: amBookingRef,
+                    },
+                  });
+                }
+              } catch (e) { console.error('[Amendment Stripe confirm email] failed:', e && e.message); }
+            }
+
+            console.log('[Stripe webhook][amendment] amendment ' + amendmentId + ' confirmed via session ' + session.id + ' (' + amountPaid + ' paid)');
+            return jsonResponse({ received: true, type: event.type, status: 'amendment-confirmed' });
+          }
+          // ─────────────────────────────────────────────────────────────
+          // END AMENDMENT PAYMENT BRANCH
+          // ─────────────────────────────────────────────────────────────
+
           const offerId = meta.offerId;
           const bookingRef = meta.bookingRef;
           if (!offerId || !bookingRef) {

@@ -1457,22 +1457,46 @@ var amendmentState = { bookingRef: null, originalBooking: null, propertyRooms: [
 function openAmendmentModal(bookingRef) {
   var b = ALL_BOOKINGS.filter(function(x){ return x.ref === bookingRef; })[0];
   if (!b) {
-    toast('Booking not found: ' + bookingRef);
+    ppToast('Booking not found: ' + bookingRef, 'error');
     return;
   }
   if (b.paymentStatus !== 'deposit_paid') {
-    toast('Amendments are only for deposit-paid bookings.');
+    ppToast('Amendments are only for deposit-paid bookings.', 'error');
     return;
   }
   if (b.pending_amendment_id) {
-    toast('An amendment is already in flight for this booking.');
+    ppToast('An amendment is already in flight for this booking.', 'error');
     return;
   }
 
-  amendmentState.bookingRef = bookingRef;
-  amendmentState.originalBooking = b;
-  amendmentState.propertyRooms = [];
-  amendmentState.customMode = false;
+  // v74j: AGGRESSIVE RESET. The doubled-room-fields bug has resurfaced
+  // 3-5 times because state from a previous open leaks across opens.
+  // The architectural fix: wipe ALL state every time, then rebuild.
+  // - Clear amendmentState entirely
+  // - Empty the dropdown menu HTML (was leaking previous property's rooms
+  //   when fetch failed for the new property — causing "Luxury Room" to
+  //   appear on properties that don't have it)
+  // - Force-hide the custom input
+  // - Clear all form values
+  amendmentState = {
+    bookingRef: bookingRef,
+    originalBooking: b,
+    propertyRooms: [],
+    customMode: false,
+    commissionPct: null, // v74j: populated by property fetch below
+  };
+  // Hard reset of room UI elements
+  var menuEl = document.getElementById('am-room-menu');
+  if (menuEl) menuEl.innerHTML = ''; // critical: wipe stale room options
+  var customEl = document.getElementById('am-room-custom');
+  if (customEl) { customEl.value = ''; customEl.style.display = 'none'; }
+  var roomHidden = document.getElementById('am-room');
+  if (roomHidden) roomHidden.value = '';
+  var labelEl = document.getElementById('am-room-label');
+  if (labelEl) { labelEl.textContent = 'Loading rooms\u2026'; labelEl.classList.add('placeholder'); }
+  // Close the dropdown if it was left open
+  var selectEl = document.getElementById('am-room-select');
+  if (selectEl) selectEl.classList.remove('open');
 
   var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || 'guest');
   document.getElementById('am-sub').textContent = 'Propose a change to ' + bookingRef + ' \u00b7 ' + guestName;
@@ -1491,37 +1515,53 @@ function openAmendmentModal(bookingRef) {
   // records — so every amendment modal showed $0.
   var oldTotal = b.confirmed_total_amount || b.totalAmount || b.total_amount || 0;
   var oldDeposit = b.depositPaidAmount || b.confirmed_deposit_amount || b.depositAmount || b.deposit_amount || 0;
+  // v74j: parseInt the guests field — bookings store it as a string in
+  // some legacy records (line 867 of envoy.js: `enq.guests || ''`). The
+  // previous `b.guests || 1` works for numbers but `parseInt` is safer.
+  var oldGuests = parseInt(b.guests, 10) || 0;
   document.getElementById('am-original-summary').innerHTML =
     '<strong>' + escHtml(b.room || '\u2014') + '</strong> \u00b7 ' +
     fmtDate(b.arrival) + ' \u2192 ' + fmtDate(b.departure) + ' \u00b7 ' +
-    escHtml(String(b.guests || '\u2014')) + ' guest' + (b.guests === 1 ? '' : 's');
+    escHtml(String(oldGuests || '\u2014')) + ' guest' + (oldGuests === 1 ? '' : 's');
   document.getElementById('am-original-total').textContent = '$' + oldTotal.toLocaleString();
   document.getElementById('am-original-deposit').textContent = '$' + oldDeposit.toLocaleString();
 
   // Pre-fill new-state inputs with current values
   document.getElementById('am-arrival').value = b.arrival || '';
   document.getElementById('am-departure').value = b.departure || '';
-  document.getElementById('am-guests').value = b.guests || 1;
+  document.getElementById('am-guests').value = oldGuests || 1; // v74j: always populate
   document.getElementById('am-total').value = oldTotal;
   document.getElementById('am-note').value = '';
-  document.getElementById('am-room').value = b.room || '';
-  document.getElementById('am-room-custom').value = '';
-  document.getElementById('am-room-custom').style.display = 'none';
 
-  // v74f: fetch property to populate the room dropdown. Use the BOOKING's
-  // slug (bookings store it as b.slug, not b.propertySlug), with the
-  // PP_SLUG portal context as the final fallback.
+  // v74j: fetch property to populate room dropdown. We DON'T pre-set
+  // am-room hidden input — wait for the fetch to resolve, then let
+  // amWireRoomDropdown handle the room selection. This avoids a race
+  // where the partner could see/edit a stale value during fetch.
   var slug = b.slug || b.propertySlug || PP_SLUG;
   fetch('/api/property?slug=' + encodeURIComponent(slug), { cache: 'no-store' })
     .then(function(r) { return r.json(); })
     .then(function(resp) {
+      // v74j: guard against stale fetch responses. If user opened
+      // another booking while this fetch was in flight, abort.
+      if (amendmentState.bookingRef !== bookingRef) {
+        console.log('[Amendment] stale property fetch ignored for ' + bookingRef);
+        return;
+      }
       var prop = resp && resp.data;
       var rooms = (prop && Array.isArray(prop.rooms)) ? prop.rooms : [];
       amendmentState.propertyRooms = rooms;
+      // v74j: snapshot the commission rate so amRecalc can compute the
+      // deposit delta. commission_pct is stored as 1-25 (representing %).
+      if (prop && typeof prop.commission_pct === 'number') {
+        amendmentState.commissionPct = prop.commission_pct;
+      }
       amWireRoomDropdown(rooms, b.room || '');
     })
-    .catch(function() {
-      // Fall back to custom-only mode
+    .catch(function(err) {
+      console.error('[Amendment] property fetch failed:', err);
+      if (amendmentState.bookingRef !== bookingRef) return;
+      // Fall back to custom-only mode. menuEl was already cleared above,
+      // so amWireRoomDropdown will render just the "Custom" option.
       amendmentState.propertyRooms = [];
       amWireRoomDropdown([], b.room || '');
     });
@@ -1540,22 +1580,41 @@ function closeAmendmentModal() {
 function amWireRoomDropdown(rooms, currentRoom) {
   var menu = document.getElementById('am-room-menu');
   if (!menu) return;
+
+  // v74j: if the booking's current room isn't in the property's room list,
+  // APPEND it as a regular option rather than entering "custom" mode.
+  // This prevents the doubled-room-fields bug: the booking's actual room
+  // (e.g. "Luxury Room" from when the offer was created, even if the
+  // property's current rooms list no longer includes that name) shows
+  // up exactly once, in the dropdown, and the custom input stays hidden.
+  // Custom-mode is only entered when the partner explicitly clicks the
+  // "Other / custom\u2026" option.
+  var normalizedCurrent = String(currentRoom || '').trim().toLowerCase();
+  var hasCurrentInList = !!normalizedCurrent && rooms.some(function(r) {
+    return r && r.name && r.name.trim().toLowerCase() === normalizedCurrent;
+  });
+  var effectiveRooms = rooms.slice();
+  if (currentRoom && !hasCurrentInList) {
+    // Prepend the current room so it's the first option
+    effectiveRooms.unshift({ name: String(currentRoom).trim(), capacity: null, _fromBooking: true });
+  }
+
+  // Build menu HTML fresh
   var html = '';
-  rooms.forEach(function(r) {
+  effectiveRooms.forEach(function(r) {
     if (!r || !r.name) return;
-    var meta = r.capacity ? (r.capacity + ' guest' + (r.capacity === 1 ? '' : 's')) : '';
+    var meta = r.capacity ? (r.capacity + ' guest' + (r.capacity === 1 ? '' : 's'))
+             : (r._fromBooking ? 'current booking' : '');
     html += '<button type="button" class="tb-select-option" role="option" data-value="' + escHtml(r.name) + '">'
       + '<span>' + escHtml(r.name) + '</span>'
       + (meta ? '<span class="tb-select-option-meta">' + escHtml(meta) + '</span>' : '')
       + '</button>';
   });
-  if (rooms.length) html += '<div class="tb-select-divider"></div>';
+  if (effectiveRooms.length) html += '<div class="tb-select-divider"></div>';
   html += '<button type="button" class="tb-select-option tb-select-option-custom" role="option" data-value="__custom">Other / custom\u2026</button>';
   menu.innerHTML = html;
 
-  // Wire option clicks (idempotent — handlers replaced each time modal opens
-  // is fine; old menu element is replaced wholesale via innerHTML above so
-  // delegated handler can re-bind safely)
+  // Wire option clicks (event listeners are idempotent via _amBound flag)
   var trigger = document.getElementById('am-room-trigger');
   var selectEl = document.getElementById('am-room-select');
   if (!trigger._amBound) {
@@ -1572,22 +1631,18 @@ function amWireRoomDropdown(rooms, currentRoom) {
       if (!btn) return;
       var val = btn.getAttribute('data-value');
       if (val === '__custom') {
+        // v74j: only enter custom mode when user explicitly chooses it.
         amendmentState.customMode = true;
         var customInput = document.getElementById('am-room-custom');
-        var existing = document.getElementById('am-room').value || '';
-        var matchesKnown = (amendmentState.propertyRooms || []).some(function(r) {
-          return r && r.name && r.name.toLowerCase() === existing.toLowerCase();
-        });
-        customInput.value = matchesKnown ? '' : existing;
-        document.getElementById('am-room').value = customInput.value;
-        document.getElementById('am-room-label').textContent = customInput.value || 'Custom\u2026';
-        document.getElementById('am-room-label').classList.remove('placeholder');
+        customInput.value = '';
         customInput.style.display = 'block';
         customInput.focus();
+        document.getElementById('am-room').value = '';
+        document.getElementById('am-room-label').textContent = 'Custom\u2026';
+        document.getElementById('am-room-label').classList.add('placeholder');
         amMarkSelectedOption('__custom');
       } else {
         amendmentState.customMode = false;
-        document.getElementById('am-room-custom').style.display = 'none';
         amSetRoomDropdownValue(val);
       }
       selectEl.classList.remove('open');
@@ -1608,36 +1663,15 @@ function amWireRoomDropdown(rooms, currentRoom) {
     document._amOutsideBound = true;
   }
 
-  // Set initial value.
-  // v74g: trim() both sides of the comparison — the v74e code did
-  // case-insensitive matching but didn't strip whitespace. Bookings
-  // sometimes have trailing spaces from the offer-builder dropdown
-  // and the doubled-room-field bug appeared because " Luxury Room "
-  // didn't match "Luxury Room" from the property.
+  // v74j: set initial value via the canonical helper, which guarantees the
+  // custom input is hidden. No more conditional code paths that can leave
+  // the custom field visible.
   if (currentRoom) {
-    var normCurrent = String(currentRoom).trim().toLowerCase();
-    var matchedRoom = rooms.find(function(r) {
-      return r && r.name && r.name.trim().toLowerCase() === normCurrent;
-    });
-    if (matchedRoom) {
-      // Use the property's canonical room name (preserves casing/spacing)
-      // and route through amSetRoomDropdownValue which hides the custom
-      // input. The v74f code was calling amSetRoomDropdownValue but the
-      // old version of that function didn't hide custom-input — fixed
-      // above in v74g.
-      amSetRoomDropdownValue(matchedRoom.name);
-    } else {
-      // No match (either no rooms list, or current room not in list) —
-      // enter custom mode. The custom input becomes the editable field.
-      amendmentState.customMode = true;
-      var customInput = document.getElementById('am-room-custom');
-      customInput.value = currentRoom;
-      customInput.style.display = 'block';
-      document.getElementById('am-room').value = currentRoom;
-      document.getElementById('am-room-label').textContent = currentRoom;
-      document.getElementById('am-room-label').classList.remove('placeholder');
-      amMarkSelectedOption('__custom');
-    }
+    amSetRoomDropdownValue(String(currentRoom).trim());
+  } else {
+    // No current room (shouldn't happen for confirmed bookings, but safe).
+    document.getElementById('am-room-label').textContent = 'Select a room\u2026';
+    document.getElementById('am-room-label').classList.add('placeholder');
   }
   amRecalc();
 }
@@ -1715,9 +1749,13 @@ function amRecalc() {
   var oldDeposit = b.depositPaidAmount || b.confirmed_deposit_amount || b.depositAmount || b.deposit_amount || 0;
   var deltaTotal = newTotal - oldTotal;
 
-  var commission = (b.commission_pct != null) ? b.commission_pct : 0.30;
-  var newDeposit = Math.round(newTotal * commission);
-  var deltaDeposit = newDeposit - oldDeposit;
+  // v74j: commission_pct is stored as 1-25 (representing 1%-25%). Formula
+  // is `total * pct / 100`. amendmentState.commissionPct is set when the
+  // modal opens via /api/property fetch; if still null (fetch in flight or
+  // failed), default to showing "calculating\u2026" rather than a wrong number.
+  var commission = amendmentState.commissionPct;
+  var newDeposit = (commission != null) ? Math.round(newTotal * commission) / 100 : null;
+  var deltaDeposit = (newDeposit != null) ? Math.round((newDeposit - oldDeposit) * 100) / 100 : null;
 
   var changes = [];
   if (newRoom !== (b.room || '')) changes.push('room');
@@ -1791,16 +1829,25 @@ function amRecalc() {
   }
 
   // Price-delta block (separate from the field changes above).
+  // v74j: reframe the message around how The Bearing actually handles
+  // the money. For the partner: the GUEST will be charged the commission
+  // delta inline (paid to The Bearing) and the property collects the
+  // remaining balance directly from the guest using its normal flow.
   if (deltaTotal > 0) {
     rows += '<div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#b05830;margin-bottom:8px;">Price impact</div>';
     rows += '<div style="display:flex;align-items:baseline;gap:6px;font-size:16px;color:#1e1810;margin-bottom:6px;">'
       + '<strong style="color:#b05830;">+ ' + fmt(deltaTotal) + '</strong>'
       + '<span style="font-size:13px;color:#5a4a38;">difference (' + fmt(oldTotal) + ' \u2192 ' + fmt(newTotal) + ')</span>'
       + '</div>';
-    rows += '<div style="font-size:13px;color:#5a4a38;line-height:1.5;">'
-      + 'Guest needs to pay an additional <strong style="color:#1e1810;">' + fmt(deltaDeposit) + '</strong> deposit '
-      + '<span style="color:#7a6a58;">(deposit goes from ' + fmt(oldDeposit) + ' \u2192 ' + fmt(newDeposit) + ')</span>.'
-      + '</div>';
+    if (deltaDeposit != null) {
+      var propertyBalance = Math.max(0, deltaTotal - deltaDeposit);
+      rows += '<div style="font-size:13px;color:#5a4a38;line-height:1.5;margin-bottom:6px;">'
+        + 'Guest pays <strong style="color:#1e1810;">' + fmt(deltaDeposit) + '</strong> to The Bearing inline (commission). '
+        + 'You collect the remaining <strong style="color:#1e1810;">' + fmt(propertyBalance) + '</strong> from the guest directly.'
+        + '</div>';
+    } else {
+      rows += '<div style="font-size:13px;color:#7a6a58;line-height:1.5;font-style:italic;">Calculating commission split\u2026 (waiting for property record)</div>';
+    }
   } else {
     // Only show price block if there's actually a field change but no price change
     if (changeRows.length) {

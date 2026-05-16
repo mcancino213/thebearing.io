@@ -2458,18 +2458,17 @@ function chRenderMessagesInto(wrap, conv, messages) {
         amDeltaHtml +
         amNoteHtml +
         '<div class="ch-am-cta-row">' +
-          // v74i: honest button copy. The v74e label "Approve & pay $X"
-          // implied this button would charge the card immediately, but
-          // Build 1 stubs the payment step \u2014 actual Stripe delta-charge
-          // lives in Build 2. Now reads "Approve" with delta amount as
-          // a sublabel, and the note below makes the payment path explicit.
+          // v74j: button label now reflects the real Stripe flow. Clicking
+          // takes the guest to a Stripe checkout for amDeltaDeposit (the
+          // commission delta paid to The Bearing). Property settles the
+          // remaining amDelta - amDeltaDeposit directly with the guest.
           '<button class="ch-am-cta-approve" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">' +
-            (amDelta > 0 ? 'Approve change \u00b7 ' + amMoney(amDeltaDeposit) + ' to settle' : 'Approve change') +
+            (amDelta > 0 ? 'Approve & pay ' + amMoney(amDeltaDeposit) : 'Approve change') +
           '</button>' +
           '<button class="ch-am-cta-decline" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">Decline</button>' +
         '</div>' +
         (amDelta > 0
-          ? '<div class="ch-am-stripe-note"><strong style="color:#b05830;">How payment works:</strong> Approving will record the change. The property will then email you a separate payment link for the additional ' + amMoney(amDeltaDeposit) + ' deposit \u2014 you don\u2019t pay directly through this page yet.</div>'
+          ? '<div class="ch-am-stripe-note"><strong style="color:#b05830;">How this works:</strong> ' + amMoney(amDeltaDeposit) + ' is paid to The Bearing now via Stripe (secured). ' + chEsc(amS.propertyName || 'The property') + ' will collect the remaining ' + amMoney(Math.max(0, amDelta - amDeltaDeposit)) + ' from you directly through their usual payment flow.</div>'
           : '<div class="ch-am-stripe-note">No additional payment is required for this change.</div>'
         );
       // Wire buttons
@@ -2477,25 +2476,45 @@ function chRenderMessagesInto(wrap, conv, messages) {
       var amDecline = bubble.querySelector('.ch-am-cta-decline');
       if (amApprove) {
         amApprove.addEventListener('click', function() {
-          // v74i: confirm before submitting. The button no longer claims
-          // to take payment (it doesn't yet — Build 2), so this dialog
-          // makes the next step explicit: property will email a separate
-          // payment link for any additional deposit.
+          // v74j: branded confirm modal, accurate copy about the actual
+          // payment flow. For delta > 0: guest pays The Bearing the
+          // commission inline via Stripe; property collects remaining
+          // balance directly. For delta = 0: instant approval.
+          var doApprove = function() {
+            handleAmendmentDecision(m.amendmentId, 'approve', amApprove, amDecline, amDeltaDeposit);
+          };
           if (amDelta > 0) {
-            var msg = 'Approve this change to your booking?\n\n'
-              + 'The booking details (room, dates, guests, total) will update immediately.\n\n'
-              + amS.propertyName + ' will then send you a separate payment link for the additional ' + amMoney(amDeltaDeposit) + ' deposit. No charge will happen on this page.';
-            if (!confirm(msg)) return;
+            var propBal = Math.max(0, amDelta - amDeltaDeposit);
+            tbConfirm({
+              title: 'Approve this change?',
+              body:
+                'You\u2019ll be taken to a secure Stripe checkout to pay ' + amMoney(amDeltaDeposit) + ' to The Bearing now.\n\n' +
+                amS.propertyName + ' will then collect the remaining ' + amMoney(propBal) + ' from you directly through their usual settlement flow.\n\n' +
+                'Your booking will update once payment is confirmed.',
+              primaryLabel: 'Continue to payment',
+              secondaryLabel: 'Cancel',
+            }).then(function(ok) { if (ok) doApprove(); });
           } else {
-            if (!confirm('Approve this change to your booking? Your booking details will update immediately. No additional payment is required.')) return;
+            tbConfirm({
+              title: 'Approve this change?',
+              body: 'Your booking details will update immediately. No additional payment is required for this change.',
+              primaryLabel: 'Approve change',
+              secondaryLabel: 'Cancel',
+            }).then(function(ok) { if (ok) doApprove(); });
           }
-          handleAmendmentDecision(m.amendmentId, 'approve', amApprove, amDecline);
         });
       }
       if (amDecline) {
         amDecline.addEventListener('click', function() {
-          if (!confirm('Decline this proposed change? Your original booking will stay exactly as it is.')) return;
-          handleAmendmentDecision(m.amendmentId, 'decline', amApprove, amDecline);
+          tbConfirm({
+            title: 'Decline this change?',
+            body: 'Your original booking will stay exactly as it is. This action can\u2019t be undone \u2014 the property would need to propose a new change if you change your mind.',
+            primaryLabel: 'Decline change',
+            primaryStyle: 'danger',
+            secondaryLabel: 'Keep reviewing',
+          }).then(function(ok) {
+            if (ok) handleAmendmentDecision(m.amendmentId, 'decline', amApprove, amDecline, amDeltaDeposit);
+          });
         });
       }
     } else if (m.type === 'amendment_accepted') {
@@ -3130,18 +3149,175 @@ function chStartPoll(id) {
   chPoll = setInterval(function(){ if(chActiveId===id) chRefresh(); }, 5000);
 }
 
-// v74e: handle Approve / Decline button click on an in-conversation
-// amendment_card. Sends PATCH /api/amendment with the appropriate action
-// and the Clerk-supplied email so the worker can verify ownership.
-function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn) {
+// ════════════════════════════════════════════════════════════════════
+// v74j: BRANDED MODAL HELPERS — replace native confirm() / alert()
+// ════════════════════════════════════════════════════════════════════
+// tbConfirm({ title, body, primaryLabel, primaryStyle, secondaryLabel })
+//   → Promise<boolean>  (true = primary clicked, false = secondary/dismissed)
+// tbAlert({ title, body, ctaLabel })
+//   → Promise<void>     (resolves when user dismisses)
+//
+// Native confirm() / alert() show a generic browser chrome dialog ("This
+// page says...") which is brand-cheap. These helpers render an inline
+// Bearing-branded modal in the cream/ink/terracotta palette, matching
+// the rest of the chat surface.
+//
+// Scope of this build: used for amendment approve / decline / errors.
+// Other call sites (alert/confirm for offer decline, payment errors,
+// sign-in checks) still use native — migrate in a follow-up sweep.
+
+function tbModalShow(opts) {
+  return new Promise(function(resolve) {
+    var existing = document.getElementById('tb-modal-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'tb-modal-overlay';
+    overlay.style.cssText =
+      'position:fixed;inset:0;background:rgba(15,12,8,.55);z-index:10000;' +
+      'display:flex;align-items:center;justify-content:center;padding:16px;' +
+      'backdrop-filter:blur(4px);' +
+      'animation:tb-modal-fade-in .15s ease-out;';
+
+    var card = document.createElement('div');
+    card.style.cssText =
+      'background:#faf7f1;border-radius:14px;max-width:440px;width:100%;' +
+      'box-shadow:0 20px 60px rgba(0,0,0,.25);' +
+      'overflow:hidden;' +
+      'animation:tb-modal-slide-in .2s cubic-bezier(.22,.61,.36,1);';
+
+    var bodyHtml =
+      '<div style="padding:24px 26px 18px;">' +
+        (opts.title ? '<div style="font-family:\'Instrument Serif\',serif;font-size:1.35rem;line-height:1.25;color:#1e1810;margin-bottom:10px;">' + chEsc(opts.title) + '</div>' : '') +
+        (opts.body ? '<div style="font-size:.9rem;line-height:1.55;color:#3a3128;white-space:pre-wrap;">' + chEsc(opts.body) + '</div>' : '') +
+      '</div>';
+
+    var footerHtml = '<div style="padding:14px 22px 18px;display:flex;justify-content:flex-end;gap:8px;background:#f5f1e8;border-top:1px solid rgba(80,60,30,.08);">';
+    if (opts.kind === 'confirm') {
+      footerHtml +=
+        '<button id="tb-modal-secondary" type="button" style="padding:9px 18px;border-radius:8px;border:1px solid rgba(80,60,30,.18);background:#fff;color:#1e1810;font-family:Geist,sans-serif;font-size:.82rem;font-weight:500;cursor:pointer;">' +
+          chEsc(opts.secondaryLabel || 'Cancel') +
+        '</button>';
+    }
+    var primaryStyle = opts.primaryStyle === 'danger'
+      ? 'background:#9b2c2c;color:#fff;'
+      : 'background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;';
+    footerHtml +=
+      '<button id="tb-modal-primary" type="button" style="padding:9px 18px;border-radius:8px;border:none;' + primaryStyle + 'font-family:Geist,sans-serif;font-size:.82rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(176,88,48,.20);">' +
+        chEsc(opts.primaryLabel || (opts.kind === 'confirm' ? 'Confirm' : 'OK')) +
+      '</button>';
+    footerHtml += '</div>';
+
+    card.innerHTML = bodyHtml + footerHtml;
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // Inject keyframes once
+    if (!document.getElementById('tb-modal-anim')) {
+      var st = document.createElement('style');
+      st.id = 'tb-modal-anim';
+      st.textContent = '@keyframes tb-modal-fade-in{from{opacity:0;}to{opacity:1;}}' +
+        '@keyframes tb-modal-slide-in{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}';
+      document.head.appendChild(st);
+    }
+
+    function close(result) {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity .12s';
+      setTimeout(function() { if (overlay.parentNode) overlay.remove(); resolve(result); }, 120);
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') close(false);
+      else if (e.key === 'Enter') close(true);
+    }
+    document.addEventListener('keydown', onKey);
+
+    document.getElementById('tb-modal-primary').addEventListener('click', function() { close(true); });
+    var sec = document.getElementById('tb-modal-secondary');
+    if (sec) sec.addEventListener('click', function() { close(false); });
+    // Backdrop click closes as cancel (confirm) or OK (alert)
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) close(opts.kind === 'confirm' ? false : true);
+    });
+  });
+}
+
+function tbConfirm(opts) {
+  return tbModalShow({
+    kind: 'confirm',
+    title: opts.title,
+    body: opts.body,
+    primaryLabel: opts.primaryLabel,
+    primaryStyle: opts.primaryStyle,
+    secondaryLabel: opts.secondaryLabel,
+  });
+}
+function tbAlert(opts) {
+  return tbModalShow({
+    kind: 'alert',
+    title: opts.title,
+    body: opts.body,
+    primaryLabel: opts.primaryLabel || 'OK',
+  });
+}
+
+// v74j: handle return from Stripe amendment-checkout. Stripe redirects
+// back to /conversations.html?id=X&amendment=success or &amendment=cancelled.
+// Show a branded modal explaining what happened, then strip the query
+// param so a refresh doesn't re-trigger the dialog.
+(function handleAmendmentReturn() {
+  try {
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get('amendment');
+    if (!status) return;
+    // Strip the amendment param from the URL (keep id, etc.)
+    params.delete('amendment');
+    var newSearch = params.toString();
+    var newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+    window.history.replaceState({}, '', newUrl);
+    // Show the appropriate modal after the page has loaded enough to render it
+    setTimeout(function() {
+      if (status === 'success') {
+        tbAlert({
+          title: 'Booking updated',
+          body: 'Your additional deposit has been received and the change is confirmed. The conversation will reflect the update shortly.\n\nThe property will collect any remaining balance from you directly through their usual flow.',
+          primaryLabel: 'Continue',
+        });
+      } else if (status === 'cancelled') {
+        tbAlert({
+          title: 'Payment cancelled',
+          body: 'No charge was made. The proposed change is still pending \u2014 you can approve it again any time from this conversation.',
+          primaryLabel: 'OK',
+        });
+      }
+    }, 600);
+  } catch (e) { console.error('[Amendment return] handler failed:', e); }
+})();
+
+// v74j: handle Approve / Decline button click on an in-conversation
+// amendment_card.
+//
+// DECLINE: unchanged — PATCH /api/amendment with action='decline'.
+//
+// APPROVE: branches on deltaDeposit.
+//   - delta_deposit > 0 → POST /api/amendment/checkout to get a Stripe
+//     URL, then redirect. Webhook handles the booking update on payment
+//     success. This is Build 2's real Stripe wiring (v74j).
+//   - delta_deposit === 0 (price-neutral change, e.g. same-priced room
+//     swap, party reshuffle) → PATCH /api/amendment with action='approve'
+//     for immediate confirmation, no payment step.
+function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn, deltaDeposit) {
   if (!amendmentId) return;
   var user = window.Clerk && Clerk.user;
   var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
   if (!email) {
-    alert('Sign-in expired. Please refresh and try again.');
+    tbAlert({
+      title: 'Sign-in expired',
+      body: 'Please refresh the page and sign in again to continue.',
+    });
     return;
   }
-  // Visually disable both buttons while in flight
   function setLoading(btn, label) {
     if (!btn) return;
     btn.disabled = true;
@@ -3155,13 +3331,44 @@ function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn) {
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';
   }
-  if (action === 'approve') {
-    setLoading(approveBtn, 'Approving\u2026');
+
+  // APPROVE + delta > 0: route through Stripe Checkout
+  if (action === 'approve' && deltaDeposit && deltaDeposit > 0) {
+    setLoading(approveBtn, 'Redirecting to payment\u2026');
     setLoading(declineBtn);
-  } else {
-    setLoading(declineBtn, 'Declining\u2026');
-    setLoading(approveBtn);
+    fetch('/api/amendment/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amendmentId: amendmentId, requesterEmail: email }),
+    })
+      .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+      .then(function(res) {
+        if (!res.ok || !res.body || !res.body.url) {
+          tbAlert({
+            title: 'Could not start payment',
+            body: (res.body && res.body.error) || 'Something went wrong starting the payment flow. Please try again, and contact the property if the issue persists.',
+          });
+          setNormal(approveBtn);
+          setNormal(declineBtn);
+          if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
+          return;
+        }
+        window.location.href = res.body.url;
+      })
+      .catch(function() {
+        tbAlert({
+          title: 'Network error',
+          body: 'Could not reach the server to start payment. Please check your connection and try again.',
+        });
+        setNormal(approveBtn);
+        setNormal(declineBtn);
+      });
+    return;
   }
+
+  // APPROVE + delta === 0, OR DECLINE: PATCH directly
+  setLoading(action === 'approve' ? approveBtn : declineBtn, action === 'approve' ? 'Approving\u2026' : 'Declining\u2026');
+  setLoading(action === 'approve' ? declineBtn : approveBtn);
   fetch('/api/amendment', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -3170,25 +3377,28 @@ function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn) {
     .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
     .then(function(res) {
       if (!res.ok) {
-        alert('Could not ' + action + ' the change: ' + ((res.body && res.body.error) || 'unknown error'));
+        tbAlert({
+          title: 'Could not ' + (action === 'approve' ? 'approve' : 'decline') + ' the change',
+          body: (res.body && res.body.error) || 'An unknown error occurred. Please try again.',
+        });
         setNormal(approveBtn);
         setNormal(declineBtn);
         if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
         if (declineBtn) declineBtn.textContent = 'Decline';
         return;
       }
-      // Refresh the conversation messages so the system card appears
-      // and the buttons collapse. The poller will pick it up within a
-      // few seconds anyway, but instant feedback is better.
+      // Refresh the conversation so the system card appears + buttons collapse
       if (typeof chLoadMessages === 'function' && typeof chActiveId !== 'undefined') {
         chLoadMessages(chActiveId);
       } else {
-        // Fallback: reload the page
         location.reload();
       }
     })
     .catch(function() {
-      alert('Network error \u2014 please try again.');
+      tbAlert({
+        title: 'Network error',
+        body: 'Could not reach the server. Please check your connection and try again.',
+      });
       setNormal(approveBtn);
       setNormal(declineBtn);
     });
