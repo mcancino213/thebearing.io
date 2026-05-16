@@ -1696,6 +1696,9 @@ function renderConfirmedList(list) {
         '<div class="bk-row-body">' +
           '<div class="bk-row-prop">' + prop + '</div>' +
           '<div class="bk-row-meta">' + dates + room + ref + '</div>' +
+          (b.pending_amendment_id
+            ? '<div style="margin-top:6px;"><span style="display:inline-flex;align-items:center;font-family:Geist,sans-serif;font-size:11px;font-weight:500;color:#b05830;background:rgba(176,88,48,.10);border:1px solid rgba(176,88,48,.22);padding:3px 9px;border-radius:100px;" title="A change to this booking is awaiting your response \u2014 open the conversation to approve or decline.">\u270e Change proposed \u2014 awaiting your response</span></div>'
+            : '') +
         '</div>' +
         '<span class="bk-row-status bk-row-status-green">Confirmed</span>' +
         '<svg class="bk-conf-chev" id="' + rowId + '-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a8e80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>' +

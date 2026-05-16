@@ -246,6 +246,14 @@ tr.row-was-declined:hover{background:#f5ecd9;}
   padding:3px 9px;border-radius:100px;
   cursor:help;
 }
+/* v74e: pending-amendment pill — terracotta to match locked-channel + loop visual language */
+.pending-amendment-pill{
+  display:inline-flex;align-items:center;margin-top:6px;
+  font-family:'Geist',sans-serif;font-size:11px;font-weight:500;
+  color:#b05830;background:rgba(176,88,48,.10);border:1px solid rgba(176,88,48,.22);
+  padding:3px 9px;border-radius:100px;
+  cursor:help;
+}
 .avatar-lg{width:48px;height:48px;font-size:16px;}
 
 /* ── PAGE HEADER ── */
@@ -477,6 +485,69 @@ tr.row-was-declined:hover{background:#f5ecd9;}
       <div style="flex:1;"></div>
       <button onclick="closeOfferModal()" class="btn btn-ghost btn-sm">Cancel</button>
       <button onclick="sendOffer()" class="btn btn-primary btn-sm">Send offer to guest →</button>
+    </div>
+  </div>
+</div>
+
+<!-- v74e ── AMENDMENT MODAL ── -->
+<div id="amendment-modal" style="position:fixed;inset:0;z-index:200;display:none;background:rgba(15,17,23,.5);backdrop-filter:blur(4px);">
+  <div style="position:absolute;right:0;top:0;bottom:0;width:min(680px,100vw);background:var(--surface);box-shadow:-12px 0 32px rgba(0,0,0,.16);display:flex;flex-direction:column;">
+    <!-- Header -->
+    <div style="padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0;">
+      <div style="width:38px;height:38px;border-radius:10px;background:rgba(176,88,48,.10);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-size:18px;">✎</span>
+      </div>
+      <div style="flex:1;">
+        <div id="am-title" style="font-size:16px;font-weight:600;color:var(--text);">Amend booking</div>
+        <div id="am-sub" style="font-size:13px;color:var(--text2);margin-top:2px;">Propose a change to TB-2026-XXXX · Guest Name</div>
+      </div>
+      <button onclick="closeAmendmentModal()" style="background:transparent;border:none;padding:8px;cursor:pointer;color:var(--text2);font-size:22px;line-height:1;">×</button>
+    </div>
+
+    <!-- Body -->
+    <div style="flex:1;overflow-y:auto;padding:24px 28px;">
+      <div id="am-error" style="display:none;padding:12px 14px;background:var(--red-bg);color:var(--red);border-radius:8px;font-size:13px;margin-bottom:20px;"></div>
+
+      <!-- Explainer -->
+      <div style="background:#fff8f4;border:1px solid rgba(176,88,48,.18);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#5a4a38;line-height:1.55;">
+        <strong style="color:#b05830;">Post-payment change.</strong>
+        Use this only for already-paid bookings. The guest will receive an email and an in-conversation card with the proposed change and must approve before it takes effect. Downgrades aren't supported yet — contact admin if the change is a price decrease.
+      </div>
+
+      <!-- Trip details — pre-filled with current state -->
+      <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;">Proposed new state</div>
+      <div class="form-row c2">
+        <div class="field"><label>Arrival</label><input type="date" id="am-arrival" onchange="amRecalc()"></div>
+        <div class="field"><label>Departure</label><input type="date" id="am-departure" onchange="amRecalc()"></div>
+      </div>
+      <div class="form-row c2" style="margin-top:14px;">
+        <div class="field"><label>Room / cabin</label><input type="text" id="am-room" placeholder="e.g. Panoramic Suite" oninput="amRecalc()"></div>
+        <div class="field"><label>Guests</label><input type="number" id="am-guests" min="1" oninput="amRecalc()"></div>
+      </div>
+      <div class="form-row c1" style="margin-top:14px;">
+        <div class="field">
+          <label>New total <span class="hint">USD, including taxes &amp; fees</span></label>
+          <input type="number" id="am-total" min="0" step="1" oninput="amRecalc()">
+        </div>
+      </div>
+
+      <!-- Delta preview -->
+      <div id="am-delta-block" style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin-top:20px;font-size:13px;color:#5a4a38;line-height:1.55;">
+        Enter values above to see the delta.
+      </div>
+
+      <!-- Partner note -->
+      <div style="margin-top:20px;">
+        <label style="display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;">Note to guest <span style="color:var(--text3);font-weight:400;">(shown in the email + conversation card)</span></label>
+        <textarea id="am-note" rows="3" placeholder="e.g. Upgraded to a suite at your request — same dates, same party size." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:18px 28px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;">
+      <div style="flex:1;font-size:12px;color:var(--text3);">Guest must approve before this takes effect.</div>
+      <button onclick="closeAmendmentModal()" class="btn btn-ghost btn-sm">Cancel</button>
+      <button onclick="submitAmendment()" id="am-submit-btn" class="btn btn-primary btn-sm">Send to guest →</button>
     </div>
   </div>
 </div>
@@ -963,7 +1034,16 @@ function renderBookings() {
       // not yet seen" \u2014 the unseen state is what drives the badge.
       var unseen = b.seenByPartner !== true;
       var unseenDot = unseen ? '<span style="display:inline-block;width:6px;height:6px;background:#b05830;border-radius:50%;margin-right:6px;vertical-align:middle;"></span>' : '';
-      actionBtn = '<button class="btn btn-sm" onclick="openConfirmedDetailModal(\'' + escHtml(b.ref) + '\')">' + unseenDot + 'View</button>';
+      // v74e: confirmed bookings get an "Amend" button alongside View.
+      // The button is hidden while a pending amendment is awaiting guest
+      // response (one amendment in flight at a time \u2014 keeps the UI sane).
+      // Also requires paymentStatus to be deposit_paid (spec answer Q1: no
+      // amending unpaid bookings).
+      var canAmend = b.paymentStatus === 'deposit_paid' && !b.pending_amendment_id && b.status !== 'cancelled';
+      var amendBtn = canAmend
+        ? '<button class="btn btn-sm" style="margin-left:4px;border:1px solid rgba(176,88,48,.3);color:#b05830;" onclick="openAmendmentModal(\'' + escHtml(b.ref) + '\')">Amend</button>'
+        : '';
+      actionBtn = '<button class="btn btn-sm" onclick="openConfirmedDetailModal(\'' + escHtml(b.ref) + '\')">' + unseenDot + 'View</button>' + amendBtn;
     } else {
       actionBtn = '<button class="btn btn-ghost btn-sm" disabled style="opacity:.5;cursor:not-allowed;">View</button>';
     }
@@ -1018,6 +1098,14 @@ function renderBookings() {
       // because the parent was inline-only with no line break.
       datesCol += '<div style="margin-top:6px;"><span class="declined-pill" title="Guest declined a previous offer for this booking. The dates above are what they currently want.">'
         + 'Previously declined offer'
+        + '</span></div>';
+    }
+
+    // v74e: pending-amendment pill — surfaces when an amendment is awaiting
+    // guest response. Sits in dates column alongside other status pills.
+    if (b.pending_amendment_id) {
+      datesCol += '<div style="margin-top:6px;"><span class="pending-amendment-pill" title="An amendment is awaiting guest response. Until resolved, no further amendments can be created for this booking.">'
+        + '\u270e Amendment pending'
         + '</span></div>';
     }
 
@@ -1309,6 +1397,191 @@ function openOfferModal(bookingRef, mode) {
 
 function closeOfferModal() {
   document.getElementById('offer-modal').style.display = 'none';
+}
+
+// ════════════════════════════════════════════════════════════════════
+// v74e: AMENDMENT MODAL
+// ════════════════════════════════════════════════════════════════════
+// Booking Amendments — Build 1. Partner opens this modal from the Amend
+// button on a confirmed (deposit_paid) booking row. Modal pre-fills with
+// the current booking state. As the partner edits, amRecalc() updates the
+// delta preview live. Submit creates the amendment via POST /api/amendment.
+// On success, refreshes the bookings list so the row picks up the
+// pending-amendment pill and the Amend button hides until guest responds.
+
+var amendmentState = { bookingRef: null, originalBooking: null };
+
+function openAmendmentModal(bookingRef) {
+  var b = ALL_BOOKINGS.filter(function(x){ return x.ref === bookingRef; })[0];
+  if (!b) {
+    toast('Booking not found: ' + bookingRef);
+    return;
+  }
+  if (b.paymentStatus !== 'deposit_paid') {
+    toast('Amendments are only for deposit-paid bookings.');
+    return;
+  }
+  if (b.pending_amendment_id) {
+    toast('An amendment is already in flight for this booking.');
+    return;
+  }
+  amendmentState.bookingRef = bookingRef;
+  amendmentState.originalBooking = b;
+
+  var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || 'guest');
+  document.getElementById('am-sub').textContent = 'Propose a change to ' + bookingRef + ' \u00b7 ' + guestName;
+  document.getElementById('am-error').style.display = 'none';
+
+  // Pre-fill with current booking state
+  document.getElementById('am-arrival').value = b.arrival || '';
+  document.getElementById('am-departure').value = b.departure || '';
+  document.getElementById('am-room').value = b.room || '';
+  document.getElementById('am-guests').value = b.guests || 1;
+  document.getElementById('am-total').value = b.totalAmount || b.total_amount || 0;
+  document.getElementById('am-note').value = '';
+  amRecalc();
+
+  document.getElementById('amendment-modal').style.display = 'block';
+}
+
+function closeAmendmentModal() {
+  document.getElementById('amendment-modal').style.display = 'none';
+  amendmentState = { bookingRef: null, originalBooking: null };
+}
+
+function amRecalc() {
+  var b = amendmentState.originalBooking;
+  if (!b) return;
+  var newArrival = document.getElementById('am-arrival').value;
+  var newDeparture = document.getElementById('am-departure').value;
+  var newRoom = document.getElementById('am-room').value.trim();
+  var newGuests = parseInt(document.getElementById('am-guests').value, 10) || 0;
+  var newTotal = parseFloat(document.getElementById('am-total').value) || 0;
+
+  var oldTotal = b.totalAmount || b.total_amount || 0;
+  var oldDeposit = b.depositAmount || b.deposit_amount || 0;
+  var deltaTotal = newTotal - oldTotal;
+
+  // Use same commission rate to derive new deposit (matches worker)
+  var commission = (b.commission_pct != null) ? b.commission_pct : 0.30;
+  var newDeposit = Math.round(newTotal * commission);
+  var deltaDeposit = newDeposit - oldDeposit;
+
+  var changes = [];
+  if (newRoom !== (b.room || '')) changes.push('room');
+  if (newArrival !== (b.arrival || '')) changes.push('arrival date');
+  if (newDeparture !== (b.departure || '')) changes.push('departure date');
+  if (newGuests !== (b.guests || 0)) changes.push('guest count');
+  if (deltaTotal !== 0) changes.push('price');
+
+  var fmt = function(n) { return '$' + (n || 0).toLocaleString(); };
+  var block = document.getElementById('am-delta-block');
+  var btn = document.getElementById('am-submit-btn');
+
+  if (!changes.length) {
+    block.style.background = '#f5f1e9';
+    block.style.borderColor = 'rgba(80,55,25,.10)';
+    block.innerHTML = '<span style="color:#7a6a58;">No changes detected. Edit any field to see the delta.</span>';
+    btn.disabled = true;
+    btn.style.opacity = '.5';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  if (deltaTotal < 0) {
+    block.style.background = '#fef2f2';
+    block.style.borderColor = 'rgba(220,38,38,.25)';
+    block.innerHTML = '<strong style="color:#dc2626;">Downgrades aren\u2019t supported in this build.</strong> Total must be greater than or equal to the original ' + fmt(oldTotal) + '. For price decreases, please loop in admin via the \uD83D\uDD12 The Bearing tab in the conversation.';
+    btn.disabled = true;
+    btn.style.opacity = '.5';
+    btn.style.cursor = 'not-allowed';
+    return;
+  }
+
+  // Build delta summary
+  var rows = '';
+  rows += '<div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#b05830;margin-bottom:10px;">Changing: ' + changes.join(', ') + '</div>';
+  if (deltaTotal > 0) {
+    rows += '<div style="font-size:14px;color:#1e1810;font-weight:600;margin-bottom:4px;">+ ' + fmt(deltaTotal) + ' total \u00b7 + ' + fmt(deltaDeposit) + ' additional deposit due</div>';
+    rows += '<div style="font-size:12px;color:#5a4a38;">New total: ' + fmt(newTotal) + ' \u00b7 New deposit total: ' + fmt(newDeposit) + '</div>';
+  } else {
+    rows += '<div style="font-size:14px;color:#1e1810;font-weight:600;">Price unchanged \u2014 no additional charge.</div>';
+    rows += '<div style="font-size:12px;color:#5a4a38;margin-top:4px;">Total stays at ' + fmt(newTotal) + '.</div>';
+  }
+
+  block.style.background = '#fff8f4';
+  block.style.borderColor = 'rgba(176,88,48,.18)';
+  block.innerHTML = rows;
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  btn.style.cursor = 'pointer';
+}
+
+function submitAmendment() {
+  var b = amendmentState.originalBooking;
+  if (!b) return;
+  var newArrival = document.getElementById('am-arrival').value;
+  var newDeparture = document.getElementById('am-departure').value;
+  var newRoom = document.getElementById('am-room').value.trim();
+  var newGuests = parseInt(document.getElementById('am-guests').value, 10) || 0;
+  var newTotal = parseFloat(document.getElementById('am-total').value) || 0;
+  var note = document.getElementById('am-note').value.trim();
+
+  var errEl = document.getElementById('am-error');
+  if (!newArrival || !newDeparture || !newRoom || !newGuests || !newTotal) {
+    errEl.textContent = 'All trip fields are required.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (new Date(newDeparture) <= new Date(newArrival)) {
+    errEl.textContent = 'Departure must be after arrival.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  var btn = document.getElementById('am-submit-btn');
+  btn.disabled = true;
+  btn.style.opacity = '.7';
+  btn.textContent = 'Sending\u2026';
+
+  fetch('/api/amendment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bookingRef: amendmentState.bookingRef,
+      slug: PP_SLUG,
+      arrival: newArrival,
+      departure: newDeparture,
+      room: newRoom,
+      guests: newGuests,
+      total_amount: newTotal,
+      partner_note: note,
+    })
+  })
+  .then(function(r) {
+    return r.json().then(function(d) { return { ok: r.ok, status: r.status, data: d }; });
+  })
+  .then(function(res) {
+    if (!res.ok) {
+      errEl.textContent = (res.data && res.data.error) || 'Could not send amendment.';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = 'Send to guest \u2192';
+      return;
+    }
+    toast('Amendment sent to guest \u00b7 ' + amendmentState.bookingRef);
+    closeAmendmentModal();
+    loadBookings(); // refresh so row shows pending pill
+  })
+  .catch(function() {
+    errEl.textContent = 'Network error \u2014 please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Send to guest \u2192';
+  });
 }
 
 function setPricingMode(mode) {

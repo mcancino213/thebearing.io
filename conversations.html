@@ -874,6 +874,151 @@ html, body { height: 100%; }
   border:1px solid rgba(122,106,88,.28);
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   v74e: AMENDMENT CARDS
+   ════════════════════════════════════════════════════════════════════ */
+
+/* The amendment_card — interactive proposal from partner. Terracotta
+   highlight to signal "this needs your attention" without screaming. */
+.ch-bubble.ch-amendment-card{
+  padding:18px 20px 16px;
+  background:linear-gradient(180deg,#fff 0%,#fff8f4 100%);
+  border:1px solid rgba(176,88,48,.28);
+  color:var(--ink);
+  white-space:normal;
+  max-width:420px;
+  box-shadow:0 4px 24px rgba(176,88,48,.10), 0 1px 3px rgba(0,0,0,.04);
+}
+.ch-msg.role-guest .ch-bubble.ch-amendment-card,
+.ch-msg.role-partner .ch-bubble.ch-amendment-card,
+.ch-msg.role-admin .ch-bubble.ch-amendment-card{
+  background:linear-gradient(180deg,#fff 0%,#fff8f4 100%);
+  color:var(--ink);
+  border:1px solid rgba(176,88,48,.28);
+}
+.ch-am-eyebrow{
+  font-family:'Geist',sans-serif;font-size:.62rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--terra);
+  margin-bottom:8px;
+}
+.ch-am-title{
+  font-family:'Instrument Serif',serif;font-size:1.2rem;line-height:1.2;
+  color:var(--ink);margin-bottom:12px;
+}
+.ch-am-diff{
+  background:rgba(176,88,48,.05);
+  border-radius:10px;
+  padding:10px 12px;
+  margin-bottom:12px;
+}
+.ch-am-row{
+  display:grid;
+  grid-template-columns:60px 1fr 16px 1fr;
+  gap:8px;align-items:center;
+  font-size:.78rem;
+  padding:4px 0;
+}
+.ch-am-row + .ch-am-row{border-top:1px dashed rgba(80,60,30,.10);}
+.ch-am-row-lbl{
+  font-size:.56rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--stone);
+}
+.ch-am-row-from{color:var(--stone);text-decoration:line-through;font-size:.74rem;}
+.ch-am-row-arrow{color:var(--terra);text-align:center;font-weight:600;}
+.ch-am-row-to{color:var(--ink);font-weight:600;}
+.ch-am-delta{
+  padding:10px 14px;background:rgba(176,88,48,.10);
+  border-radius:8px;font-size:.82rem;color:var(--ink);margin-bottom:12px;
+}
+.ch-am-delta-neutral{
+  background:rgba(80,60,30,.06);color:var(--bark);
+}
+.ch-am-note{
+  border-left:3px solid rgba(176,88,48,.3);
+  padding:4px 10px;margin-bottom:14px;
+  font-size:.8rem;color:var(--bark);font-style:italic;
+}
+.ch-am-cta-row{
+  display:flex;gap:8px;margin-top:4px;
+}
+.ch-am-cta-approve{
+  flex:1;padding:11px 14px;
+  border:none;border-radius:10px;
+  background:linear-gradient(135deg,var(--terra),#8c4422);color:#fff;
+  font-family:'Geist',sans-serif;font-size:.82rem;font-weight:600;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+  box-shadow:0 2px 12px rgba(176,88,48,.25);
+}
+.ch-am-cta-approve:hover{
+  transform:translateY(-1px);
+  box-shadow:0 4px 18px rgba(176,88,48,.35);
+}
+.ch-am-cta-decline{
+  padding:11px 14px;
+  border:1px solid rgba(80,60,30,.18);border-radius:10px;
+  background:#fff;color:var(--bark);
+  font-family:'Geist',sans-serif;font-size:.82rem;font-weight:500;
+  cursor:pointer;
+  transition:background .12s ease, color .12s ease;
+}
+.ch-am-cta-decline:hover{background:#f5f1e8;color:var(--ink);}
+.ch-am-stripe-note{
+  margin-top:10px;font-size:.66rem;color:var(--stone);
+  font-style:italic;line-height:1.4;
+}
+
+/* amendment_accepted — moss-green understated confirmation. Smaller and
+   quieter than booking_confirmed because the booking already existed. */
+.ch-bubble.ch-amendment-accepted-card{
+  padding:14px 18px;
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  border:1px solid rgba(74,106,72,.28);
+  color:#1f3a26;
+  display:flex;gap:12px;align-items:flex-start;
+  max-width:360px;
+}
+.ch-msg.role-guest .ch-bubble.ch-amendment-accepted-card,
+.ch-msg.role-partner .ch-bubble.ch-amendment-accepted-card,
+.ch-msg.role-admin .ch-bubble.ch-amendment-accepted-card,
+.ch-msg.role-system .ch-bubble.ch-amendment-accepted-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  color:#1f3a26;border:1px solid rgba(74,106,72,.28);
+}
+.ch-aa-icon{
+  flex-shrink:0;color:#4a6a48;margin-top:2px;
+}
+.ch-aa-body{flex:1;}
+.ch-aa-title{
+  font-family:'Geist',sans-serif;font-size:.78rem;font-weight:600;
+  color:#2f4a30;margin-bottom:3px;
+}
+.ch-aa-text{font-size:.82rem;color:#3a4e3a;line-height:1.45;}
+
+/* amendment_declined — muted stone card, mirrors offer_declined treatment */
+.ch-bubble.ch-amendment-declined-card{
+  padding:14px 18px;
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%);
+  border:1px solid rgba(122,106,88,.28);
+  color:#3a3128;
+  display:flex;gap:12px;align-items:flex-start;
+  max-width:360px;
+}
+.ch-msg.role-guest .ch-bubble.ch-amendment-declined-card,
+.ch-msg.role-partner .ch-bubble.ch-amendment-declined-card,
+.ch-msg.role-admin .ch-bubble.ch-amendment-declined-card,
+.ch-msg.role-system .ch-bubble.ch-amendment-declined-card{
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%);
+  color:#3a3128;border:1px solid rgba(122,106,88,.28);
+}
+.ch-ad-icon{flex-shrink:0;color:#7a6a58;margin-top:2px;}
+.ch-ad-body{flex:1;}
+.ch-ad-title{
+  font-family:'Geist',sans-serif;font-size:.74rem;font-weight:600;
+  color:#5a4e3a;margin-bottom:3px;
+}
+.ch-ad-text{font-size:.78rem;color:#5a4e3a;line-height:1.45;}
+
 
 .ch-msg.role-guest .ch-bubble{background:linear-gradient(135deg,var(--terra),#8c4422);color:#fff;}
 .ch-msg.role-partner .ch-bubble{background:#fff;border:1px solid var(--border-hi);color:var(--ink);}
@@ -2249,6 +2394,105 @@ function chRenderMessagesInto(wrap, conv, messages) {
           '<div class="ch-od-text">' + chEsc(odMainText) + '</div>' +
           (odReason ? '<div class="ch-od-reason">\u201C' + chEsc(odReason) + '\u201D</div>' : '') +
         '</div>';
+    } else if (m.type === 'amendment_card' && m.amendmentSummary) {
+      // v74e: interactive amendment proposal card. Renders before/after diff
+      // plus Approve/Decline buttons. On approve (Build 1 stub): calls
+      // PATCH /api/amendment with action:'approve' which updates the
+      // booking record server-side and posts an amendment_accepted system
+      // card. Stripe delta-charge wiring lands in Build 2 — until then,
+      // accept triggers an email to admin asking them to invoice the delta
+      // manually.
+      bubble.className = 'ch-bubble ch-amendment-card';
+      var amS = m.amendmentSummary;
+      var amPrev = amS.previous_state || {};
+      var amFmt = function(iso) {
+        try { return new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+        catch(_) { return iso; }
+      };
+      var amMoney = function(n) { return '$' + (Number(n) || 0).toLocaleString(); };
+      // Build diff rows — only show fields that actually changed
+      var amDiffRows = [];
+      if ((amPrev.room || '') !== (amS.room || '')) {
+        amDiffRows.push({ lbl: 'Room', from: amPrev.room || '\u2014', to: amS.room || '\u2014' });
+      }
+      if (amPrev.arrival !== amS.arrival || amPrev.departure !== amS.departure) {
+        amDiffRows.push({
+          lbl: 'Dates',
+          from: amPrev.arrival ? (amFmt(amPrev.arrival) + ' \u2192 ' + amFmt(amPrev.departure)) : '\u2014',
+          to: amFmt(amS.arrival) + ' \u2192 ' + amFmt(amS.departure)
+        });
+      }
+      if ((amPrev.guests || 0) !== (amS.guests || 0)) {
+        amDiffRows.push({ lbl: 'Guests', from: String(amPrev.guests || ''), to: String(amS.guests || '') });
+      }
+      if ((amPrev.total_amount || 0) !== (amS.total_amount || 0)) {
+        amDiffRows.push({ lbl: 'Total', from: amMoney(amPrev.total_amount), to: amMoney(amS.total_amount) });
+      }
+      var amDiffHtml = amDiffRows.map(function(r) {
+        return '<div class="ch-am-row">' +
+          '<div class="ch-am-row-lbl">' + chEsc(r.lbl) + '</div>' +
+          '<div class="ch-am-row-from">' + chEsc(r.from) + '</div>' +
+          '<div class="ch-am-row-arrow">\u2192</div>' +
+          '<div class="ch-am-row-to">' + chEsc(r.to) + '</div>' +
+        '</div>';
+      }).join('');
+      var amDelta = amS.delta_total || 0;
+      var amDeltaDeposit = amS.delta_deposit || 0;
+      var amDeltaHtml = amDelta > 0
+        ? '<div class="ch-am-delta">' +
+            '<strong>+' + amMoney(amDelta) + ' total</strong> \u00b7 ' +
+            'Additional deposit due: <strong>' + amMoney(amDeltaDeposit) + '</strong>' +
+          '</div>'
+        : '<div class="ch-am-delta ch-am-delta-neutral">No price change.</div>';
+      var amNoteHtml = m.partner_note
+        ? '<div class="ch-am-note">\u201C' + chEsc(m.partner_note) + '\u201D</div>'
+        : '';
+      bubble.innerHTML =
+        '<div class="ch-am-eyebrow">\u270e A change has been proposed</div>' +
+        '<div class="ch-am-title">' + chEsc(amS.propertyName || 'Property') + '</div>' +
+        '<div class="ch-am-diff">' + amDiffHtml + '</div>' +
+        amDeltaHtml +
+        amNoteHtml +
+        '<div class="ch-am-cta-row">' +
+          '<button class="ch-am-cta-approve" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">' +
+            (amDelta > 0 ? 'Approve & pay ' + amMoney(amDeltaDeposit) : 'Approve change') +
+          '</button>' +
+          '<button class="ch-am-cta-decline" type="button" data-am-id="' + chEsc(m.amendmentId || '') + '">Decline</button>' +
+        '</div>' +
+        '<div class="ch-am-stripe-note">Build 1 note: approving will record the change \u2014 the property will send a separate invoice for any additional deposit.</div>';
+      // Wire buttons
+      var amApprove = bubble.querySelector('.ch-am-cta-approve');
+      var amDecline = bubble.querySelector('.ch-am-cta-decline');
+      if (amApprove) {
+        amApprove.addEventListener('click', function() {
+          handleAmendmentDecision(m.amendmentId, 'approve', amApprove, amDecline);
+        });
+      }
+      if (amDecline) {
+        amDecline.addEventListener('click', function() {
+          if (!confirm('Decline this proposed change? Your original booking will stay exactly as it is.')) return;
+          handleAmendmentDecision(m.amendmentId, 'decline', amApprove, amDecline);
+        });
+      }
+    } else if (m.type === 'amendment_accepted') {
+      // v74e: system card after guest approval. Understated (booking already
+      // existed and is now updated — not "newly confirmed"). Moss-green.
+      bubble.className = 'ch-bubble ch-amendment-accepted-card';
+      bubble.innerHTML =
+        '<div class="ch-aa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+        '<div class="ch-aa-body">' +
+          '<div class="ch-aa-title">Booking updated</div>' +
+          '<div class="ch-aa-text">' + chEsc(m.text || 'The change has been confirmed.') + '</div>' +
+        '</div>';
+    } else if (m.type === 'amendment_declined') {
+      // v74e: muted card after decline. Parity with offer_declined treatment.
+      bubble.className = 'ch-bubble ch-amendment-declined-card';
+      bubble.innerHTML =
+        '<div class="ch-ad-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></div>' +
+        '<div class="ch-ad-body">' +
+          '<div class="ch-ad-title">Change declined</div>' +
+          '<div class="ch-ad-text">' + chEsc(m.text || 'The proposed change was declined. Your original booking stands.') + '</div>' +
+        '</div>';
     } else {
       bubble.className = 'ch-bubble';
       bubble.textContent = m.text;
@@ -2261,7 +2505,7 @@ function chRenderMessagesInto(wrap, conv, messages) {
     }
 
     // Hover actions — skipped for offer_card + booking_confirmed system messages
-    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed' && m.type !== 'offer_declined') {
+    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed' && m.type !== 'offer_declined' && m.type !== 'amendment_card' && m.type !== 'amendment_accepted' && m.type !== 'amendment_declined') {
     var mActions = document.createElement('div');
     mActions.className = 'ch-msg-actions';
     var capturedText = m.text;
@@ -2860,6 +3104,70 @@ function chRefreshMessages(conv, msgs) {
 function chStartPoll(id) {
   if (chPoll) clearInterval(chPoll);
   chPoll = setInterval(function(){ if(chActiveId===id) chRefresh(); }, 5000);
+}
+
+// v74e: handle Approve / Decline button click on an in-conversation
+// amendment_card. Sends PATCH /api/amendment with the appropriate action
+// and the Clerk-supplied email so the worker can verify ownership.
+function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn) {
+  if (!amendmentId) return;
+  var user = window.Clerk && Clerk.user;
+  var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+  if (!email) {
+    alert('Sign-in expired. Please refresh and try again.');
+    return;
+  }
+  // Visually disable both buttons while in flight
+  function setLoading(btn, label) {
+    if (!btn) return;
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+    btn.style.cursor = 'wait';
+    if (label) btn.textContent = label;
+  }
+  function setNormal(btn) {
+    if (!btn) return;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+  if (action === 'approve') {
+    setLoading(approveBtn, 'Approving\u2026');
+    setLoading(declineBtn);
+  } else {
+    setLoading(declineBtn, 'Declining\u2026');
+    setLoading(approveBtn);
+  }
+  fetch('/api/amendment', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ offerId: amendmentId, action: action, requesterEmail: email }),
+  })
+    .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
+    .then(function(res) {
+      if (!res.ok) {
+        alert('Could not ' + action + ' the change: ' + ((res.body && res.body.error) || 'unknown error'));
+        setNormal(approveBtn);
+        setNormal(declineBtn);
+        if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
+        if (declineBtn) declineBtn.textContent = 'Decline';
+        return;
+      }
+      // Refresh the conversation messages so the system card appears
+      // and the buttons collapse. The poller will pick it up within a
+      // few seconds anyway, but instant feedback is better.
+      if (typeof chLoadMessages === 'function' && typeof chActiveId !== 'undefined') {
+        chLoadMessages(chActiveId);
+      } else {
+        // Fallback: reload the page
+        location.reload();
+      }
+    })
+    .catch(function() {
+      alert('Network error \u2014 please try again.');
+      setNormal(approveBtn);
+      setNormal(declineBtn);
+    });
 }
 
 function chEsc(t) {

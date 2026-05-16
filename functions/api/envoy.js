@@ -1323,6 +1323,11 @@ export default {
         if (!b || typeof b !== 'object') return b;
         if (!Array.isArray(b.offers)) b.offers = [];
         if (typeof b.active_offer_id === 'undefined') b.active_offer_id = null;
+        // v74e: amendments fields. Default empty array + null pending pointer
+        // so the partner UI can render its Amend Booking button decision
+        // without first checking field existence.
+        if (!Array.isArray(b.amendments)) b.amendments = [];
+        if (typeof b.pending_amendment_id === 'undefined') b.pending_amendment_id = null;
         return b;
       }
       if (request.method === 'GET') {
@@ -4409,7 +4414,508 @@ View in admin: https://thebearing.io/admin-bookings.html
       return new Response('Method not allowed', { status: 405 });
     }
 
-    // ── /api/checkout/create-session ──────────────────────────────
+    // ── /api/amendment ────────────────────────────────────────────
+    // v74e: Booking Amendments — Build 1 (data model + UI, no Stripe yet).
+    //
+    // POST body: { bookingRef, partner_note, [new fields: room, arrival, departure,
+    //              guests, total_amount] } — creates an amendment offer for a
+    //              deposit-paid booking. Computes delta vs booking's current
+    //              state, auto-detects amendment_kind, posts amendment_card
+    //              system message in the linked conversation, emails guest.
+    //
+    // PATCH body: { offerId, action: 'approve' | 'decline', requesterEmail }
+    //              — guest accepts or declines the amendment. Approve (Build 1
+    //              stub): marks amendment accepted, original offer flips to
+    //              superseded_by_amendment, booking record updates atomically,
+    //              admin+partner notified by email with a manual-invoice line.
+    //              Real Stripe delta-charge wiring lands in Build 2.
+    //
+    // Trust model:
+    // - POST: partner-trust by slug (matches existing pp-* convention) OR admin
+    // - PATCH: ownership-by-email check against booking.email (matches the
+    //          /api/checkout/create-session and /api/offer guest-decline patterns)
+    if (url.pathname === '/api/amendment') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      // Shared: post amendment_card / amendment_accepted / amendment_declined
+      // into the conversation linked to the booking. Mirrors the v73j
+      // postOfferCardToConversation pattern.
+      async function postAmendmentCardToConversation(amendment, booking, kind) {
+        // kind: 'amendment_card' | 'amendment_accepted' | 'amendment_declined'
+        try {
+          const convId = booking && booking.conversationId;
+          if (!convId) return;
+          const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+          if (!convRaw) return;
+          const conv = JSON.parse(convRaw);
+          const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+          const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+          const cardTs = new Date().toISOString();
+
+          const baseSummary = {
+            propertyName: amendment.propertyName || '',
+            room: amendment.room || '',
+            arrival: amendment.arrival || '',
+            departure: amendment.departure || '',
+            guests: amendment.guests || 0,
+            total_amount: amendment.total_amount || 0,
+            deposit_amount: amendment.deposit_amount || 0,
+            delta_total: amendment.delta_total || 0,
+            delta_deposit: amendment.delta_deposit || 0,
+            amendment_kind: amendment.amendment_kind || 'mixed',
+            previous_state: amendment.previous_state || null,
+            currency: amendment.currency || 'USD',
+          };
+
+          let card;
+          let preview;
+          if (kind === 'amendment_card') {
+            card = {
+              id: 'msg_' + Date.now() + '_amcard',
+              role: 'partner',
+              type: 'amendment_card',
+              amendmentId: amendment.id,
+              bookingRef: booking.ref,
+              amendmentSummary: baseSummary,
+              partner_note: amendment.partner_note || '',
+              text: 'A change to your booking has been proposed \u2014 open your conversation to review.',
+              timestamp: cardTs,
+            };
+            preview = '\u270e Booking change proposed \u00b7 ' + (amendment.propertyName || 'Property');
+            // Guest needs to see this
+            conv.unreadGuest = (conv.unreadGuest || 0) + 1;
+          } else if (kind === 'amendment_accepted') {
+            card = {
+              id: 'msg_' + Date.now() + '_amok',
+              role: 'system',
+              type: 'amendment_accepted',
+              amendmentId: amendment.id,
+              bookingRef: booking.ref,
+              amendmentSummary: baseSummary,
+              text: 'Your booking has been updated.',
+              timestamp: cardTs,
+            };
+            preview = '\u2713 Booking updated \u00b7 ' + (amendment.propertyName || 'Property');
+            // Both partner and admin want to know
+            conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+          } else if (kind === 'amendment_declined') {
+            card = {
+              id: 'msg_' + Date.now() + '_amno',
+              role: 'system',
+              type: 'amendment_declined',
+              amendmentId: amendment.id,
+              bookingRef: booking.ref,
+              amendmentSummary: baseSummary,
+              text: 'The proposed change was declined. Your original booking stands.',
+              timestamp: cardTs,
+            };
+            preview = '\u00d7 Change declined \u00b7 ' + (amendment.propertyName || 'Property');
+            conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+          } else {
+            return;
+          }
+
+          messages.push(card);
+          conv.lastMessageAt = cardTs;
+          conv.lastMessagePreview = preview;
+          await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+          await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+          if (typeof recomputeUnreadCounters === 'function') {
+            await recomputeUnreadCounters(env);
+          }
+        } catch (e) {
+          console.error('[Amendment card] failed:', e && e.stack || e);
+        }
+      }
+
+      // ─ POST ─ Partner creates amendment
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch(_) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const { bookingRef, room, arrival, departure, guests, total_amount, partner_note } = body;
+        if (!bookingRef) return jsonResponse({ error: 'bookingRef required' }, 400);
+        if (typeof total_amount !== 'number' || total_amount <= 0) {
+          return jsonResponse({ error: 'total_amount must be a positive number' }, 400);
+        }
+
+        // Load booking
+        const bookingRaw = await env.DOSSIERS.get('booking:' + bookingRef);
+        if (!bookingRaw) return jsonResponse({ error: 'booking not found: ' + bookingRef }, 404);
+        const booking = JSON.parse(bookingRaw);
+
+        // Trust model: admin OR partner-by-slug matching booking.propertySlug
+        const slugClaim = (body.slug || '').toString();
+        const isAdminCaller = await isAdmin();
+        const slugMatches = slugClaim && booking.propertySlug && (slugClaim === booking.propertySlug);
+        if (!isAdminCaller && !slugMatches) {
+          return jsonResponse({ error: 'not authorized to amend this booking' }, 403);
+        }
+
+        // Spec answer Q1: deposit_paid required. No amending unpaid bookings.
+        if (booking.paymentStatus !== 'deposit_paid') {
+          return jsonResponse({ error: 'booking is not paid \u2014 amendments are only for deposit_paid bookings' }, 400);
+        }
+        if (booking.status === 'cancelled') {
+          return jsonResponse({ error: 'booking is cancelled' }, 400);
+        }
+
+        // Compute previous_state from current booking values
+        const previous_state = {
+          room: booking.room || '',
+          arrival: booking.arrival || '',
+          departure: booking.departure || '',
+          guests: booking.guests || 0,
+          total_amount: booking.total_amount || 0,
+          deposit_amount: booking.deposit_amount || 0,
+        };
+
+        // Auto-detect amendment_kind based on what changed
+        const changed = {
+          room: (room || '') !== previous_state.room,
+          arrival: (arrival || '') !== previous_state.arrival,
+          departure: (departure || '') !== previous_state.departure,
+          guests: (guests || 0) !== previous_state.guests,
+        };
+        const datesChanged = changed.arrival || changed.departure;
+        let amendment_kind;
+        if (datesChanged && !changed.room && !changed.guests) {
+          // Same room, different dates \u2014 could be date_change or duration_change
+          // Compute nights diff
+          const oldNights = (new Date(previous_state.departure) - new Date(previous_state.arrival)) / 86400000;
+          const newNights = (new Date(departure) - new Date(arrival)) / 86400000;
+          amendment_kind = (oldNights !== newNights) ? 'duration_change' : 'date_change';
+        } else if (!datesChanged && !changed.room && changed.guests) {
+          amendment_kind = 'party_change';
+        } else if (!datesChanged && changed.room && !changed.guests) {
+          amendment_kind = total_amount > previous_state.total_amount ? 'upgrade' : 'downgrade';
+        } else if (total_amount > previous_state.total_amount) {
+          amendment_kind = 'upgrade';
+        } else if (total_amount < previous_state.total_amount) {
+          amendment_kind = 'downgrade';
+        } else {
+          amendment_kind = 'mixed';
+        }
+
+        const delta_total = total_amount - previous_state.total_amount;
+
+        // Spec answer Q5: reject negative deltas in Build 1
+        if (delta_total < 0) {
+          return jsonResponse({
+            error: 'Downgrades aren\u2019t supported yet \u2014 please contact admin to handle this change manually.',
+            code: 'DOWNGRADE_NOT_SUPPORTED'
+          }, 400);
+        }
+
+        // Compute new deposit using same commission_pct from booking (or 30% fallback if missing)
+        const commission_pct = (booking.commission_pct != null) ? booking.commission_pct : 0.30;
+        const new_deposit = Math.round(total_amount * commission_pct);
+        const delta_deposit = new_deposit - previous_state.deposit_amount;
+
+        // Create the amendment as a new offer record
+        const amendmentId = 'offer_am_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+        const amendment = {
+          id: amendmentId,
+          bookingId: bookingRef,
+          propertySlug: booking.propertySlug || null,
+          propertyName: booking.propertyName || '',
+          status: 'sent',           // amendments skip 'draft' \u2014 partner sends directly
+          createdAt: new Date().toISOString(),
+          sentAt: new Date().toISOString(),
+          createdBy: isAdminCaller ? 'admin' : 'partner',
+
+          // Trip fields (the proposed new state)
+          room: room || previous_state.room,
+          arrival: arrival || previous_state.arrival,
+          departure: departure || previous_state.departure,
+          guests: guests || previous_state.guests,
+          total_amount: total_amount,
+          deposit_amount: new_deposit,
+          currency: booking.currency || 'USD',
+          commission_pct: commission_pct,
+
+          // Amendment-specific fields
+          amendment_of: booking.active_offer_id || null,
+          amendment_kind: amendment_kind,
+          delta_total: delta_total,
+          delta_deposit: delta_deposit,
+          previous_state: previous_state,
+          partner_note: partner_note || '',
+        };
+
+        // Write amendment offer
+        await env.DOSSIERS.put('offer:' + amendmentId, JSON.stringify(amendment));
+
+        // Append to per-booking offers index (treated as another offer for indexing)
+        const offerIdxKey = '__offers_by_booking:' + bookingRef;
+        const oidxRaw = await env.DOSSIERS.get(offerIdxKey);
+        const oidx = oidxRaw ? JSON.parse(oidxRaw) : [];
+        oidx.push(amendmentId);
+        await env.DOSSIERS.put(offerIdxKey, JSON.stringify(oidx));
+
+        // Update booking: track pending amendment, but DON'T touch effective state
+        // until guest approves. We add to booking.offers (legacy compat) and set a
+        // separate `pending_amendment_id` so the UI can show "amendment pending".
+        if (!Array.isArray(booking.offers)) booking.offers = [];
+        booking.offers.push(amendmentId);
+        booking.pending_amendment_id = amendmentId;
+        await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+        // Post amendment_card system message into the linked conversation
+        await postAmendmentCardToConversation(amendment, booking, 'amendment_card');
+
+        // Email the guest. Loads guest email from booking record.
+        const guestEmail = booking.email;
+        const propertyName = booking.propertyName || booking.propertySlug || 'your property';
+        if (guestEmail && typeof sendBrandedEmail === 'function') {
+          try {
+            const replyToken = booking.conversationId
+              ? ('reply+' + booking.conversationId + '@replies.thebearing.io')
+              : undefined;
+            const fmt = (n) => '$' + (n || 0).toLocaleString();
+            const before = previous_state;
+            const summaryRows = [];
+            if (before.room !== amendment.room) {
+              summaryRows.push({ label: 'Room', from: before.room, to: amendment.room });
+            }
+            if (before.arrival !== amendment.arrival || before.departure !== amendment.departure) {
+              summaryRows.push({ label: 'Dates', from: before.arrival + ' \u2192 ' + before.departure, to: amendment.arrival + ' \u2192 ' + amendment.departure });
+            }
+            if ((before.guests || 0) !== (amendment.guests || 0)) {
+              summaryRows.push({ label: 'Guests', from: String(before.guests), to: String(amendment.guests) });
+            }
+            if (before.total_amount !== amendment.total_amount) {
+              summaryRows.push({ label: 'Total', from: fmt(before.total_amount), to: fmt(amendment.total_amount) });
+            }
+            const tableHtml =
+              '<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin:0 0 22px;">'
+              + summaryRows.map(r =>
+                  '<tr><td style="padding:8px 0;color:#7a6a58;width:35%;">' + r.label + '</td>'
+                  + '<td style="padding:8px 0;color:#7a6a58;text-decoration:line-through;">' + r.from + '</td>'
+                  + '<td style="padding:8px 0;color:#1e1810;font-weight:600;">\u2192 ' + r.to + '</td></tr>'
+                ).join('')
+              + '</table>'
+              + (delta_total > 0
+                  ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.18);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">'
+                    + '<strong style="color:#b05830;">Additional deposit due: ' + fmt(delta_deposit) + '</strong>'
+                    + ' \u00b7 New total: ' + fmt(amendment.total_amount)
+                    + '</div>'
+                  : '<div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">'
+                    + 'No price change. New total: ' + fmt(amendment.total_amount)
+                    + '</div>'
+                )
+              + (partner_note
+                  ? '<div style="border-left:3px solid rgba(176,88,48,.3);padding:6px 14px;margin:0 0 22px;color:#5a4a38;font-style:italic;">'
+                    + '"' + partner_note.replace(/</g, '&lt;') + '"'
+                    + '<div style="font-size:.74rem;color:#7a6a58;margin-top:6px;font-style:normal;">\u2014 ' + propertyName + '</div>'
+                    + '</div>'
+                  : '');
+            await sendBrandedEmail({
+              env, logTag: 'Amendment-Guest',
+              to: [guestEmail],
+              replyTo: replyToken,
+              subject: 'Proposed change to your ' + propertyName + ' booking \u00b7 ' + bookingRef,
+              text: 'A change has been proposed to your booking at ' + propertyName + '. Open your conversation to review and approve or decline: https://thebearing.io/conversations.html?id=' + (booking.conversationId || ''),
+              shell: {
+                preheader: propertyName + ' has proposed a change to your booking.',
+                kicker: 'The Bearing',
+                heading: 'A proposed change to your booking',
+                intro: propertyName + ' has proposed the following change to your stay. Open your conversation to approve or decline.',
+                bodyHtml: tableHtml,
+                ctaUrl: 'https://thebearing.io/conversations.html?id=' + (booking.conversationId || ''),
+                ctaLabel: 'Review the change',
+                footerNote: 'You can reply directly to this email \u2014 your response will land back in your conversation with the property.',
+                refLabel: bookingRef
+              }
+            });
+          } catch(e) { console.error('[Amendment guest email] failed:', e.message); }
+        }
+
+        return jsonResponse({ ok: true, amendment });
+      }
+
+      // ─ PATCH ─ Guest approve or decline
+      if (request.method === 'PATCH') {
+        let body;
+        try { body = await request.json(); }
+        catch(_) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const { offerId, action, requesterEmail } = body;
+        if (!offerId) return jsonResponse({ error: 'offerId required' }, 400);
+        if (action !== 'approve' && action !== 'decline') {
+          return jsonResponse({ error: 'action must be approve or decline' }, 400);
+        }
+
+        // Load amendment
+        const amendmentRaw = await env.DOSSIERS.get('offer:' + offerId);
+        if (!amendmentRaw) return jsonResponse({ error: 'amendment not found' }, 404);
+        const amendment = JSON.parse(amendmentRaw);
+
+        if (!amendment.amendment_of) {
+          return jsonResponse({ error: 'this offer is not an amendment' }, 400);
+        }
+        if (amendment.status !== 'sent') {
+          return jsonResponse({ error: 'amendment is no longer pending (status: ' + amendment.status + ')' }, 400);
+        }
+
+        // Load booking
+        const bookingRaw = await env.DOSSIERS.get('booking:' + amendment.bookingId);
+        if (!bookingRaw) return jsonResponse({ error: 'booking not found' }, 404);
+        const booking = JSON.parse(bookingRaw);
+
+        // Ownership check (matches /api/checkout/create-session pattern)
+        const reqEmail = (requesterEmail || '').toLowerCase().trim();
+        const bookEmail = (booking.email || '').toLowerCase().trim();
+        const isAdminCaller = await isAdmin();
+        if (!isAdminCaller && (!reqEmail || reqEmail !== bookEmail)) {
+          return jsonResponse({ error: 'not authorized' }, 403);
+        }
+
+        const now = new Date().toISOString();
+
+        if (action === 'decline') {
+          amendment.status = 'declined';
+          amendment.declinedAt = now;
+          await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(amendment));
+
+          // Clear pending flag on booking
+          if (booking.pending_amendment_id === offerId) {
+            booking.pending_amendment_id = null;
+            await env.DOSSIERS.put('booking:' + booking.ref, JSON.stringify(booking));
+          }
+
+          await postAmendmentCardToConversation(amendment, booking, 'amendment_declined');
+          return jsonResponse({ ok: true, amendment, booking });
+        }
+
+        // action === 'approve'
+        // Build 1 stub: no Stripe. Just flip state, update booking record,
+        // post system message, email admin+partner with manual-invoice line.
+
+        amendment.status = 'accepted';
+        amendment.acceptedAt = now;
+        await env.DOSSIERS.put('offer:' + offerId, JSON.stringify(amendment));
+
+        // Original offer flips to superseded_by_amendment
+        if (amendment.amendment_of) {
+          const origRaw = await env.DOSSIERS.get('offer:' + amendment.amendment_of);
+          if (origRaw) {
+            const orig = JSON.parse(origRaw);
+            orig.status = 'superseded_by_amendment';
+            orig.superseded_by = offerId;
+            await env.DOSSIERS.put('offer:' + amendment.amendment_of, JSON.stringify(orig));
+          }
+        }
+
+        // Update booking record to reflect new effective state
+        booking.room = amendment.room;
+        booking.arrival = amendment.arrival;
+        booking.departure = amendment.departure;
+        booking.guests = amendment.guests;
+        booking.total_amount = amendment.total_amount;
+        booking.deposit_amount = amendment.deposit_amount;
+        booking.active_offer_id = offerId;
+        if (!Array.isArray(booking.amendments)) booking.amendments = [];
+        booking.amendments.push(offerId);
+        booking.pending_amendment_id = null;
+        booking.lastAmendedAt = now;
+        await env.DOSSIERS.put('booking:' + booking.ref, JSON.stringify(booking));
+
+        // Post amendment_accepted system card
+        await postAmendmentCardToConversation(amendment, booking, 'amendment_accepted');
+
+        // Email admin + partner with manual-invoice stub line
+        if (typeof sendBrandedEmail === 'function') {
+          try {
+            const adminRecipients = await loadNotificationRecipients(env);
+            const partnerEmail = booking.partnerEmail || (booking.propertySlug ? ('partners-' + booking.propertySlug + '@thebearing.io') : null);
+            const recipients = [...adminRecipients];
+            if (partnerEmail && recipients.indexOf(partnerEmail) === -1) recipients.push(partnerEmail);
+
+            const fmt = (n) => '$' + (n || 0).toLocaleString();
+            const propertyName = booking.propertyName || booking.propertySlug || 'Property';
+            const before = amendment.previous_state;
+            const deltaBlock = amendment.delta_total > 0
+              ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.22);border-radius:10px;padding:18px 20px;margin:0 0 22px;">'
+                + '<div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#b05830;margin-bottom:8px;">Action required \u00b7 Build 1 stub</div>'
+                + '<div style="color:#1e1810;font-size:1rem;line-height:1.5;">Please manually invoice the guest for the deposit delta: <strong>' + fmt(amendment.delta_deposit) + '</strong>.</div>'
+                + '<div style="color:#5a4a38;font-size:.84rem;margin-top:8px;">Stripe delta-charge wiring is coming in Build 2 \u2014 until then, send a Stripe invoice or payment link by hand.</div>'
+                + '</div>'
+              : '<div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">No price change. No additional invoicing required.</div>';
+            const beforeAfter =
+              '<table style="width:100%;border-collapse:collapse;font-size:.9rem;margin:0 0 22px;">'
+              + '<tr><td style="padding:6px 0;color:#7a6a58;width:35%;">Room</td>'
+              +   '<td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + (before.room || '\u2014') + '</td>'
+              +   '<td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + (amendment.room || '\u2014') + '</td></tr>'
+              + '<tr><td style="padding:6px 0;color:#7a6a58;">Dates</td>'
+              +   '<td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + before.arrival + ' \u2192 ' + before.departure + '</td>'
+              +   '<td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + amendment.arrival + ' \u2192 ' + amendment.departure + '</td></tr>'
+              + '<tr><td style="padding:6px 0;color:#7a6a58;">Guests</td>'
+              +   '<td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + before.guests + '</td>'
+              +   '<td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + amendment.guests + '</td></tr>'
+              + '<tr><td style="padding:6px 0;color:#7a6a58;">Total</td>'
+              +   '<td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + fmt(before.total_amount) + '</td>'
+              +   '<td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + fmt(amendment.total_amount) + '</td></tr>'
+              + '<tr><td style="padding:6px 0;color:#7a6a58;">Deposit</td>'
+              +   '<td style="padding:6px 0;color:#7a6a58;text-decoration:line-through;">' + fmt(before.deposit_amount) + '</td>'
+              +   '<td style="padding:6px 0;color:#1e1810;font-weight:600;">\u2192 ' + fmt(amendment.deposit_amount) + '</td></tr>'
+              + '</table>';
+            await sendBrandedEmail({
+              env, logTag: 'Amendment-Internal',
+              to: recipients,
+              subject: '[CONFIRMED] Amendment \u00b7 ' + propertyName + ' \u00b7 ' + booking.ref,
+              text: 'Amendment approved by guest.\n\nProperty: ' + propertyName + '\nBooking: ' + booking.ref + '\nKind: ' + amendment.amendment_kind + '\nDelta total: ' + fmt(amendment.delta_total) + '\nDelta deposit: ' + fmt(amendment.delta_deposit) + '\n\nACTION REQUIRED (Build 1 stub): Please manually invoice the guest for the deposit delta. Stripe wiring lands in Build 2.\n\nReview the conversation: https://thebearing.io/admin-conversations.html?id=' + (booking.conversationId || ''),
+              shell: {
+                preheader: 'Amendment approved \u2014 ' + fmt(amendment.delta_total) + ' delta to invoice.',
+                kicker: 'The Bearing \u00b7 Internal',
+                heading: 'Amendment approved & booking updated',
+                intro: 'The guest has approved the proposed change to <strong>' + propertyName + '</strong> (' + booking.ref + ').',
+                bodyHtml: beforeAfter + deltaBlock,
+                ctaUrl: 'https://thebearing.io/admin-conversations.html?id=' + (booking.conversationId || ''),
+                ctaLabel: 'Open the conversation',
+                footerNote: 'You\u2019re receiving this because you handle confirmed bookings.',
+                refLabel: booking.ref
+              }
+            });
+
+            // Also email the guest a confirmation
+            if (booking.email) {
+              const replyToken = booking.conversationId
+                ? ('reply+' + booking.conversationId + '@replies.thebearing.io')
+                : undefined;
+              await sendBrandedEmail({
+                env, logTag: 'Amendment-Guest-Confirm',
+                to: [booking.email],
+                replyTo: replyToken,
+                subject: 'Booking updated \u00b7 ' + propertyName + ' \u00b7 ' + booking.ref,
+                text: 'Your booking change has been confirmed.\n\nNew details:\nRoom: ' + amendment.room + '\nDates: ' + amendment.arrival + ' \u2192 ' + amendment.departure + '\nGuests: ' + amendment.guests + '\nNew total: ' + fmt(amendment.total_amount) + (amendment.delta_total > 0 ? '\n\nThe property will send a separate invoice for the additional ' + fmt(amendment.delta_deposit) + ' deposit shortly.' : ''),
+                shell: {
+                  preheader: 'Your booking at ' + propertyName + ' has been updated.',
+                  kicker: 'The Bearing',
+                  heading: 'Your booking has been updated',
+                  intro: 'Your change to <strong>' + propertyName + '</strong> has been confirmed. Here are the updated details.',
+                  bodyHtml: beforeAfter
+                    + (amendment.delta_total > 0
+                        ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.18);border-radius:10px;padding:14px 18px;margin:0 0 22px;color:#5a4a38;">The property will send you a separate invoice for the additional <strong style="color:#b05830;">' + fmt(amendment.delta_deposit) + '</strong> deposit shortly.</div>'
+                        : ''
+                      ),
+                  ctaUrl: 'https://thebearing.io/conversations.html?id=' + (booking.conversationId || ''),
+                  ctaLabel: 'View the conversation',
+                  footerNote: 'You can reply to this email \u2014 your response will land back in your conversation.',
+                  refLabel: booking.ref
+                }
+              });
+            }
+          } catch(e) { console.error('[Amendment confirm email] failed:', e.message); }
+        }
+
+        return jsonResponse({ ok: true, amendment, booking });
+      }
+
+      return new Response('Method not allowed', { status: 405 });
+    }
+
     // v73q: Customer-initiated Stripe Checkout for offer acceptance.
     // POST body: { offerId, requesterEmail }
     //   offerId — the offer the customer is accepting

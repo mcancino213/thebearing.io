@@ -549,6 +549,105 @@ tbody tr:hover{background:var(--bg);}
   border-left:2px solid rgba(122,106,88,.35);
 }
 
+/* v74e: AMENDMENT CARDS (admin) — read-only */
+.msg-bubble.amendment-card{
+  padding:16px 18px 14px;
+  background:linear-gradient(180deg,#fff 0%,#fff8f4 100%);
+  border:1px solid rgba(176,88,48,.28);color:#1e1810;
+  max-width:440px;
+  box-shadow:0 4px 18px rgba(176,88,48,.10);
+}
+.msg.role-guest .msg-bubble.amendment-card,
+.msg.role-partner .msg-bubble.amendment-card,
+.msg.role-admin .msg-bubble.amendment-card{
+  background:linear-gradient(180deg,#fff 0%,#fff8f4 100%);
+  color:#1e1810;border:1px solid rgba(176,88,48,.28);
+}
+.am-eyebrow{
+  font-family:'Geist',sans-serif;font-size:.6rem;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;color:#b05830;
+  margin-bottom:6px;
+}
+.am-title{
+  font-family:'Instrument Serif',serif;font-size:1.05rem;line-height:1.2;
+  color:#1e1810;margin-bottom:10px;
+}
+.am-diff{
+  background:rgba(176,88,48,.05);border-radius:8px;
+  padding:8px 10px;margin-bottom:10px;
+}
+.am-row{
+  display:grid;grid-template-columns:60px 1fr 16px 1fr;
+  gap:8px;align-items:center;font-size:.76rem;padding:3px 0;
+}
+.am-row + .am-row{border-top:1px dashed rgba(80,60,30,.10);}
+.am-row-lbl{
+  font-size:.54rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:#7a6a58;
+}
+.am-row-from{color:#7a6a58;text-decoration:line-through;font-size:.72rem;}
+.am-row-arrow{color:#b05830;text-align:center;font-weight:600;}
+.am-row-to{color:#1e1810;font-weight:600;}
+.am-delta{
+  padding:8px 12px;background:rgba(176,88,48,.10);
+  border-radius:7px;font-size:.78rem;color:#1e1810;margin-bottom:10px;
+}
+.am-delta-neutral{background:rgba(80,60,30,.06);color:#5a4a38;}
+.am-note{
+  border-left:3px solid rgba(176,88,48,.3);
+  padding:4px 10px;margin-bottom:10px;
+  font-size:.76rem;color:#5a4a38;font-style:italic;
+}
+.am-note-attr{font-style:normal;color:#7a6a58;font-size:.66rem;}
+.am-readonly-note{
+  margin-top:6px;font-size:.66rem;color:#7a6a58;font-style:italic;
+  line-height:1.4;
+}
+
+/* amendment_accepted (admin) */
+.msg-bubble.amendment-accepted-card{
+  padding:12px 16px;
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  border:1px solid rgba(74,106,72,.28);color:#1f3a26;
+  display:flex;gap:10px;align-items:flex-start;max-width:360px;
+}
+.msg.role-guest .msg-bubble.amendment-accepted-card,
+.msg.role-partner .msg-bubble.amendment-accepted-card,
+.msg.role-admin .msg-bubble.amendment-accepted-card,
+.msg.role-system .msg-bubble.amendment-accepted-card{
+  background:linear-gradient(180deg,#f0f6ec 0%,#e6efe2 100%);
+  color:#1f3a26;border:1px solid rgba(74,106,72,.28);
+}
+.aa-icon{flex-shrink:0;color:#4a6a48;margin-top:2px;}
+.aa-body{flex:1;}
+.aa-title{
+  font-family:'Geist',sans-serif;font-size:.74rem;font-weight:600;
+  color:#2f4a30;margin-bottom:3px;
+}
+.aa-text{font-size:.78rem;color:#3a4e3a;line-height:1.45;}
+
+/* amendment_declined (admin) */
+.msg-bubble.amendment-declined-card{
+  padding:12px 16px;
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%);
+  border:1px solid rgba(122,106,88,.28);color:#3a3128;
+  display:flex;gap:10px;align-items:flex-start;max-width:360px;
+}
+.msg.role-guest .msg-bubble.amendment-declined-card,
+.msg.role-partner .msg-bubble.amendment-declined-card,
+.msg.role-admin .msg-bubble.amendment-declined-card,
+.msg.role-system .msg-bubble.amendment-declined-card{
+  background:linear-gradient(180deg,#f5f1e8 0%,#ece5d8 100%);
+  color:#3a3128;border:1px solid rgba(122,106,88,.28);
+}
+.ad-icon{flex-shrink:0;color:#7a6a58;margin-top:2px;}
+.ad-body{flex:1;}
+.ad-title{
+  font-family:'Geist',sans-serif;font-size:.72rem;font-weight:600;
+  color:#5a4e3a;margin-bottom:3px;
+}
+.ad-text{font-size:.74rem;color:#5a4e3a;line-height:1.45;}
+
 .msg-time{
   font-size:.62rem;color:var(--text3);margin:4px 12px 0;
   font-variant-numeric:tabular-nums;
@@ -2636,6 +2735,77 @@ function renderMessagesInto(wrap, conv, messages) {
           '<div class="od-text">' + escH3(odMainTextA) + '</div>' +
           (odReasonA ? '<div class="od-reason">\u201C' + escH3(odReasonA) + '\u201D</div>' : '') +
         '</div>';
+    } else if (m.type === 'amendment_card' && m.amendmentSummary) {
+      // v74e: admin-side amendment_card — read-only view. No Approve/Decline
+      // buttons (those are guest-only). Shows the before/after diff and a
+      // status line ("Awaiting guest response" / status from m.amendmentId).
+      bubble.className = 'msg-bubble amendment-card';
+      function escHa(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      var amSa = m.amendmentSummary;
+      var amPrevA = amSa.previous_state || {};
+      var amFmtA = function(iso) {
+        try { return new Date(iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+        catch(_) { return iso; }
+      };
+      var amMoneyA = function(n) { return '$' + (Number(n) || 0).toLocaleString(); };
+      var amRowsA = [];
+      if ((amPrevA.room || '') !== (amSa.room || '')) {
+        amRowsA.push({ lbl: 'Room', from: amPrevA.room || '\u2014', to: amSa.room || '\u2014' });
+      }
+      if (amPrevA.arrival !== amSa.arrival || amPrevA.departure !== amSa.departure) {
+        amRowsA.push({
+          lbl: 'Dates',
+          from: amPrevA.arrival ? (amFmtA(amPrevA.arrival) + ' \u2192 ' + amFmtA(amPrevA.departure)) : '\u2014',
+          to: amFmtA(amSa.arrival) + ' \u2192 ' + amFmtA(amSa.departure)
+        });
+      }
+      if ((amPrevA.guests || 0) !== (amSa.guests || 0)) {
+        amRowsA.push({ lbl: 'Guests', from: String(amPrevA.guests || ''), to: String(amSa.guests || '') });
+      }
+      if ((amPrevA.total_amount || 0) !== (amSa.total_amount || 0)) {
+        amRowsA.push({ lbl: 'Total', from: amMoneyA(amPrevA.total_amount), to: amMoneyA(amSa.total_amount) });
+      }
+      var amDiffHtmlA = amRowsA.map(function(r) {
+        return '<div class="am-row">' +
+          '<div class="am-row-lbl">' + escHa(r.lbl) + '</div>' +
+          '<div class="am-row-from">' + escHa(r.from) + '</div>' +
+          '<div class="am-row-arrow">\u2192</div>' +
+          '<div class="am-row-to">' + escHa(r.to) + '</div>' +
+        '</div>';
+      }).join('');
+      var amDeltaA = amSa.delta_total || 0;
+      var amDeltaDepA = amSa.delta_deposit || 0;
+      var amDeltaHtmlA = amDeltaA > 0
+        ? '<div class="am-delta"><strong>+' + amMoneyA(amDeltaA) + ' total</strong> \u00b7 deposit delta: <strong>' + amMoneyA(amDeltaDepA) + '</strong></div>'
+        : '<div class="am-delta am-delta-neutral">No price change.</div>';
+      var amNoteHtmlA = m.partner_note
+        ? '<div class="am-note">\u201C' + escHa(m.partner_note) + '\u201D <span class="am-note-attr">\u2014 partner</span></div>'
+        : '';
+      bubble.innerHTML =
+        '<div class="am-eyebrow">\u270e Amendment proposed by partner</div>' +
+        '<div class="am-title">' + escHa(amSa.propertyName || 'Property') + '</div>' +
+        '<div class="am-diff">' + amDiffHtmlA + '</div>' +
+        amDeltaHtmlA +
+        amNoteHtmlA +
+        '<div class="am-readonly-note">Awaiting guest response. Approve/decline lives in the guest\u2019s conversation \u2014 you\u2019ll see the result here when they act.</div>';
+    } else if (m.type === 'amendment_accepted') {
+      bubble.className = 'msg-bubble amendment-accepted-card';
+      function escHaa(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      bubble.innerHTML =
+        '<div class="aa-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>' +
+        '<div class="aa-body">' +
+          '<div class="aa-title">Booking updated</div>' +
+          '<div class="aa-text">' + escHaa(m.text || 'Guest approved the amendment.') + '</div>' +
+        '</div>';
+    } else if (m.type === 'amendment_declined') {
+      bubble.className = 'msg-bubble amendment-declined-card';
+      function escHad(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      bubble.innerHTML =
+        '<div class="ad-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17l-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></div>' +
+        '<div class="ad-body">' +
+          '<div class="ad-title">Change declined</div>' +
+          '<div class="ad-text">' + escHad(m.text || 'Guest declined the proposed change. Original booking stands.') + '</div>' +
+        '</div>';
     } else {
       bubble.className = 'msg-bubble';
       bubble.textContent = m.text;
@@ -2649,7 +2819,7 @@ function renderMessagesInto(wrap, conv, messages) {
 
     // v73ad: hover actions skipped for offer_card + booking_confirmed (parity
     // with customer side). These are system cards, not regular messages.
-    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed' && m.type !== 'offer_declined') {
+    if (m.type !== 'offer_card' && m.type !== 'booking_confirmed' && m.type !== 'offer_declined' && m.type !== 'amendment_card' && m.type !== 'amendment_accepted' && m.type !== 'amendment_declined') {
     // Hover action overlay
     var actions = document.createElement('div');
     actions.className = 'msg-actions';
