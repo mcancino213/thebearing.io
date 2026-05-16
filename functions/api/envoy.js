@@ -4545,10 +4545,16 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (!bookingRaw) return jsonResponse({ error: 'booking not found: ' + bookingRef }, 404);
         const booking = JSON.parse(bookingRaw);
 
-        // Trust model: admin OR partner-by-slug matching booking.propertySlug
+        // Trust model: admin OR partner-by-slug matching booking.slug
+        // v74f: bookings store the property slug as `slug` (not `propertySlug`).
+        // The check was comparing against `propertySlug` which is undefined on
+        // every booking, so slugMatches was always false — every partner POST
+        // was 403'd. Also accept `propertySlug` as a fallback for any future
+        // records that might use that field instead.
         const slugClaim = (body.slug || '').toString();
         const isAdminCaller = await isAdmin();
-        const slugMatches = slugClaim && booking.propertySlug && (slugClaim === booking.propertySlug);
+        const bookingSlug = booking.slug || booking.propertySlug || '';
+        const slugMatches = slugClaim && bookingSlug && (slugClaim === bookingSlug);
         if (!isAdminCaller && !slugMatches) {
           return jsonResponse({ error: 'not authorized to amend this booking' }, 403);
         }
@@ -4618,7 +4624,7 @@ View in admin: https://thebearing.io/admin-bookings.html
         const amendment = {
           id: amendmentId,
           bookingId: bookingRef,
-          propertySlug: booking.propertySlug || null,
+          propertySlug: booking.slug || booking.propertySlug || null,
           propertyName: booking.propertyName || '',
           status: 'sent',           // amendments skip 'draft' \u2014 partner sends directly
           createdAt: new Date().toISOString(),
@@ -4667,7 +4673,7 @@ View in admin: https://thebearing.io/admin-bookings.html
 
         // Email the guest. Loads guest email from booking record.
         const guestEmail = booking.email;
-        const propertyName = booking.propertyName || booking.propertySlug || 'your property';
+        const propertyName = booking.propertyName || booking.slug || booking.propertySlug || 'your property';
         if (guestEmail && typeof sendBrandedEmail === 'function') {
           try {
             const replyToken = booking.conversationId
@@ -4829,12 +4835,13 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (typeof sendBrandedEmail === 'function') {
           try {
             const adminRecipients = await loadNotificationRecipients(env);
-            const partnerEmail = booking.partnerEmail || (booking.propertySlug ? ('partners-' + booking.propertySlug + '@thebearing.io') : null);
+            const _bookingSlug = booking.slug || booking.propertySlug || '';
+            const partnerEmail = booking.partnerEmail || (_bookingSlug ? ('partners-' + _bookingSlug + '@thebearing.io') : null);
             const recipients = [...adminRecipients];
             if (partnerEmail && recipients.indexOf(partnerEmail) === -1) recipients.push(partnerEmail);
 
             const fmt = (n) => '$' + (n || 0).toLocaleString();
-            const propertyName = booking.propertyName || booking.propertySlug || 'Property';
+            const propertyName = booking.propertyName || _bookingSlug || 'Property';
             const before = amendment.previous_state;
             const deltaBlock = amendment.delta_total > 0
               ? '<div style="background:#fff8f4;border:1px solid rgba(176,88,48,.22);border-radius:10px;padding:18px 20px;margin:0 0 22px;">'

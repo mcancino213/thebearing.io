@@ -506,7 +506,6 @@ tr.row-was-declined:hover{background:#f5ecd9;}
 
     <!-- Body -->
     <div style="flex:1;overflow-y:auto;padding:24px 28px;">
-      <div id="am-error" style="display:none;padding:12px 14px;background:var(--red-bg);color:var(--red);border-radius:8px;font-size:13px;margin-bottom:20px;"></div>
 
       <!-- Explainer -->
       <div style="background:#fff8f4;border:1px solid rgba(176,88,48,.18);border-radius:10px;padding:14px 18px;margin-bottom:24px;font-size:13px;color:#5a4a38;line-height:1.55;">
@@ -514,40 +513,76 @@ tr.row-was-declined:hover{background:#f5ecd9;}
         Use this only for already-paid bookings. The guest will receive an email and an in-conversation card with the proposed change and must approve before it takes effect. Downgrades aren't supported yet — contact admin if the change is a price decrease.
       </div>
 
-      <!-- Trip details — pre-filled with current state -->
+      <!-- Original booking state — read-only reference -->
+      <div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7a6a58;margin-bottom:8px;">Current booking</div>
+        <div id="am-original-summary" style="font-size:13px;color:#1e1810;line-height:1.6;">
+          Loading\u2026
+        </div>
+      </div>
+
+      <!-- Trip details — pre-filled with current state, edit to propose change -->
       <div style="font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.05em;text-transform:uppercase;margin-bottom:12px;">Proposed new state</div>
       <div class="form-row c2">
         <div class="field"><label>Arrival</label><input type="date" id="am-arrival" onchange="amRecalc()"></div>
         <div class="field"><label>Departure</label><input type="date" id="am-departure" onchange="amRecalc()"></div>
       </div>
       <div class="form-row c2" style="margin-top:14px;">
-        <div class="field"><label>Room / cabin</label><input type="text" id="am-room" placeholder="e.g. Panoramic Suite" oninput="amRecalc()"></div>
+        <!-- v74f: room is now a dropdown of the property's rooms, with a Custom\u2026 fallback. -->
+        <div class="field">
+          <label>Room / cabin</label>
+          <div class="tb-select" id="am-room-select">
+            <button type="button" class="tb-select-trigger" id="am-room-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <span class="tb-select-label placeholder" id="am-room-label">Select a room\u2026</span>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;opacity:.55;"><polyline points="3 5 6 8 9 5"/></svg>
+            </button>
+            <div class="tb-select-menu" id="am-room-menu" role="listbox" aria-label="Room"></div>
+            <input type="text" id="am-room-custom" placeholder="Custom room name\u2026" style="display:none;margin-top:8px;" oninput="amSetRoomCustomValue(this.value)">
+            <input type="hidden" id="am-room">
+          </div>
+        </div>
         <div class="field"><label>Guests</label><input type="number" id="am-guests" min="1" oninput="amRecalc()"></div>
       </div>
-      <div class="form-row c1" style="margin-top:14px;">
-        <div class="field">
-          <label>New total <span class="hint">USD, including taxes &amp; fees</span></label>
-          <input type="number" id="am-total" min="0" step="1" oninput="amRecalc()">
+
+      <!-- Total — original on left, new on right, equal weight so it's clear they're side-by-side -->
+      <div style="margin-top:18px;background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Original total</div>
+            <div id="am-original-total" style="font-family:'Fraunces',serif;font-size:22px;color:var(--text);">\u2014</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Already paid: <span id="am-original-deposit">\u2014</span> deposit</div>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">New total for whole booking</div>
+            <input type="number" id="am-total" min="0" step="1" style="font-family:'Fraunces',serif;font-size:22px;width:100%;padding:4px 8px;border:1px solid rgba(176,88,48,.3);border-radius:6px;background:#fff8f4;color:var(--text);" oninput="amRecalc()">
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Enter the full new total \u2014 not the additional amount.</div>
+          </div>
         </div>
       </div>
 
       <!-- Delta preview -->
-      <div id="am-delta-block" style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin-top:20px;font-size:13px;color:#5a4a38;line-height:1.55;">
-        Enter values above to see the delta.
+      <div id="am-delta-block" style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin-top:18px;font-size:13px;color:#5a4a38;line-height:1.55;">
+        Enter a new total to see the difference.
       </div>
 
       <!-- Partner note -->
       <div style="margin-top:20px;">
         <label style="display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;">Note to guest <span style="color:var(--text3);font-weight:400;">(shown in the email + conversation card)</span></label>
-        <textarea id="am-note" rows="3" placeholder="e.g. Upgraded to a suite at your request — same dates, same party size." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical;"></textarea>
+        <textarea id="am-note" rows="3" placeholder="e.g. Upgraded to a suite at your request \u2014 same dates, same party size." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical;"></textarea>
       </div>
     </div>
 
     <!-- Footer -->
-    <div style="padding:18px 28px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <div style="flex:1;font-size:12px;color:var(--text3);">Guest must approve before this takes effect.</div>
-      <button onclick="closeAmendmentModal()" class="btn btn-ghost btn-sm">Cancel</button>
-      <button onclick="submitAmendment()" id="am-submit-btn" class="btn btn-primary btn-sm">Send to guest →</button>
+    <div style="border-top:1px solid var(--border);flex-shrink:0;">
+      <!-- v74f: footer-anchored error block so validation messages are visible
+           right next to the submit button instead of scrolled away at the top. -->
+      <div id="am-error" style="display:none;padding:12px 18px;background:#fef2f2;color:#b91c1c;border-bottom:1px solid rgba(220,38,38,.25);font-size:13px;font-weight:500;line-height:1.45;">
+      </div>
+      <div style="padding:18px 28px;display:flex;align-items:center;gap:12px;">
+        <div style="flex:1;font-size:12px;color:var(--text3);">Guest must approve before this takes effect.</div>
+        <button onclick="closeAmendmentModal()" class="btn btn-ghost btn-sm">Cancel</button>
+        <button onclick="submitAmendment()" id="am-submit-btn" class="btn btn-primary btn-sm">Send to guest →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1400,16 +1435,15 @@ function closeOfferModal() {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// v74e: AMENDMENT MODAL
+// v74e: AMENDMENT MODAL  (v74f: room dropdown, clearer total labels,
+//                              footer-anchored errors, slug-claim fix)
 // ════════════════════════════════════════════════════════════════════
 // Booking Amendments — Build 1. Partner opens this modal from the Amend
 // button on a confirmed (deposit_paid) booking row. Modal pre-fills with
 // the current booking state. As the partner edits, amRecalc() updates the
 // delta preview live. Submit creates the amendment via POST /api/amendment.
-// On success, refreshes the bookings list so the row picks up the
-// pending-amendment pill and the Amend button hides until guest responds.
 
-var amendmentState = { bookingRef: null, originalBooking: null };
+var amendmentState = { bookingRef: null, originalBooking: null, propertyRooms: [], customMode: false };
 
 function openAmendmentModal(bookingRef) {
   var b = ALL_BOOKINGS.filter(function(x){ return x.ref === bookingRef; })[0];
@@ -1425,28 +1459,207 @@ function openAmendmentModal(bookingRef) {
     toast('An amendment is already in flight for this booking.');
     return;
   }
+
   amendmentState.bookingRef = bookingRef;
   amendmentState.originalBooking = b;
+  amendmentState.propertyRooms = [];
+  amendmentState.customMode = false;
 
   var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || 'guest');
   document.getElementById('am-sub').textContent = 'Propose a change to ' + bookingRef + ' \u00b7 ' + guestName;
-  document.getElementById('am-error').style.display = 'none';
+  amClearError();
 
-  // Pre-fill with current booking state
+  // v74f: original-summary card so partner has the "before" state visible
+  // at the top of the modal while editing.
+  var fmtDate = function(iso) {
+    if (!iso) return '\u2014';
+    try { return new Date(iso.length === 10 ? iso + 'T00:00' : iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
+    catch(_) { return iso; }
+  };
+  var oldTotal = b.totalAmount || b.total_amount || 0;
+  var oldDeposit = b.depositAmount || b.deposit_amount || 0;
+  document.getElementById('am-original-summary').innerHTML =
+    '<strong>' + escHtml(b.room || '\u2014') + '</strong> \u00b7 ' +
+    fmtDate(b.arrival) + ' \u2192 ' + fmtDate(b.departure) + ' \u00b7 ' +
+    escHtml(String(b.guests || '\u2014')) + ' guest' + (b.guests === 1 ? '' : 's');
+  document.getElementById('am-original-total').textContent = '$' + oldTotal.toLocaleString();
+  document.getElementById('am-original-deposit').textContent = '$' + oldDeposit.toLocaleString();
+
+  // Pre-fill new-state inputs with current values
   document.getElementById('am-arrival').value = b.arrival || '';
   document.getElementById('am-departure').value = b.departure || '';
-  document.getElementById('am-room').value = b.room || '';
   document.getElementById('am-guests').value = b.guests || 1;
-  document.getElementById('am-total').value = b.totalAmount || b.total_amount || 0;
+  document.getElementById('am-total').value = oldTotal;
   document.getElementById('am-note').value = '';
-  amRecalc();
+  document.getElementById('am-room').value = b.room || '';
+  document.getElementById('am-room-custom').value = '';
+  document.getElementById('am-room-custom').style.display = 'none';
+
+  // v74f: fetch property to populate the room dropdown. Use the BOOKING's
+  // slug (bookings store it as b.slug, not b.propertySlug), with the
+  // PP_SLUG portal context as the final fallback.
+  var slug = b.slug || b.propertySlug || PP_SLUG;
+  fetch('/api/property?slug=' + encodeURIComponent(slug), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+      var prop = resp && resp.data;
+      var rooms = (prop && Array.isArray(prop.rooms)) ? prop.rooms : [];
+      amendmentState.propertyRooms = rooms;
+      amWireRoomDropdown(rooms, b.room || '');
+    })
+    .catch(function() {
+      // Fall back to custom-only mode
+      amendmentState.propertyRooms = [];
+      amWireRoomDropdown([], b.room || '');
+    });
 
   document.getElementById('amendment-modal').style.display = 'block';
 }
 
 function closeAmendmentModal() {
   document.getElementById('amendment-modal').style.display = 'none';
-  amendmentState = { bookingRef: null, originalBooking: null };
+  amendmentState = { bookingRef: null, originalBooking: null, propertyRooms: [], customMode: false };
+}
+
+// v74f: build the room dropdown options + wire option clicks. Parallel to
+// the offer modal's wireRoomDropdown but scoped to am-* element IDs so the
+// two dropdowns don't fight each other.
+function amWireRoomDropdown(rooms, currentRoom) {
+  var menu = document.getElementById('am-room-menu');
+  if (!menu) return;
+  var html = '';
+  rooms.forEach(function(r) {
+    if (!r || !r.name) return;
+    var meta = r.capacity ? (r.capacity + ' guest' + (r.capacity === 1 ? '' : 's')) : '';
+    html += '<button type="button" class="tb-select-option" role="option" data-value="' + escHtml(r.name) + '">'
+      + '<span>' + escHtml(r.name) + '</span>'
+      + (meta ? '<span class="tb-select-option-meta">' + escHtml(meta) + '</span>' : '')
+      + '</button>';
+  });
+  if (rooms.length) html += '<div class="tb-select-divider"></div>';
+  html += '<button type="button" class="tb-select-option tb-select-option-custom" role="option" data-value="__custom">Other / custom\u2026</button>';
+  menu.innerHTML = html;
+
+  // Wire option clicks (idempotent — handlers replaced each time modal opens
+  // is fine; old menu element is replaced wholesale via innerHTML above so
+  // delegated handler can re-bind safely)
+  var trigger = document.getElementById('am-room-trigger');
+  var selectEl = document.getElementById('am-room-select');
+  if (!trigger._amBound) {
+    trigger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      selectEl.classList.toggle('open');
+      trigger.setAttribute('aria-expanded', selectEl.classList.contains('open') ? 'true' : 'false');
+    });
+    trigger._amBound = true;
+  }
+  if (!menu._amBound) {
+    menu.addEventListener('click', function(e) {
+      var btn = e.target.closest('.tb-select-option');
+      if (!btn) return;
+      var val = btn.getAttribute('data-value');
+      if (val === '__custom') {
+        amendmentState.customMode = true;
+        var customInput = document.getElementById('am-room-custom');
+        var existing = document.getElementById('am-room').value || '';
+        var matchesKnown = (amendmentState.propertyRooms || []).some(function(r) {
+          return r && r.name && r.name.toLowerCase() === existing.toLowerCase();
+        });
+        customInput.value = matchesKnown ? '' : existing;
+        document.getElementById('am-room').value = customInput.value;
+        document.getElementById('am-room-label').textContent = customInput.value || 'Custom\u2026';
+        document.getElementById('am-room-label').classList.remove('placeholder');
+        customInput.style.display = 'block';
+        customInput.focus();
+        amMarkSelectedOption('__custom');
+      } else {
+        amendmentState.customMode = false;
+        document.getElementById('am-room-custom').style.display = 'none';
+        amSetRoomDropdownValue(val);
+      }
+      selectEl.classList.remove('open');
+      trigger.setAttribute('aria-expanded', 'false');
+      amRecalc();
+    });
+    menu._amBound = true;
+  }
+  if (!document._amOutsideBound) {
+    document.addEventListener('click', function(e) {
+      var sel = document.getElementById('am-room-select');
+      if (sel && !sel.contains(e.target)) {
+        sel.classList.remove('open');
+        var trg = document.getElementById('am-room-trigger');
+        if (trg) trg.setAttribute('aria-expanded', 'false');
+      }
+    });
+    document._amOutsideBound = true;
+  }
+
+  // Set initial value
+  if (currentRoom) {
+    var matches = rooms.some(function(r) {
+      return r && r.name && r.name.toLowerCase() === currentRoom.toLowerCase();
+    });
+    if (matches) {
+      amSetRoomDropdownValue(currentRoom);
+    } else if (rooms.length) {
+      // Current room isn't in property list \u2014 treat as custom
+      amendmentState.customMode = true;
+      document.getElementById('am-room-custom').value = currentRoom;
+      document.getElementById('am-room-custom').style.display = 'block';
+      document.getElementById('am-room').value = currentRoom;
+      document.getElementById('am-room-label').textContent = currentRoom;
+      document.getElementById('am-room-label').classList.remove('placeholder');
+      amMarkSelectedOption('__custom');
+    } else {
+      // No room list at all \u2014 partner is in custom mode by default
+      amendmentState.customMode = true;
+      document.getElementById('am-room-custom').value = currentRoom;
+      document.getElementById('am-room-custom').style.display = 'block';
+      document.getElementById('am-room').value = currentRoom;
+      document.getElementById('am-room-label').textContent = currentRoom;
+      document.getElementById('am-room-label').classList.remove('placeholder');
+      amMarkSelectedOption('__custom');
+    }
+  }
+  amRecalc();
+}
+
+function amSetRoomDropdownValue(val) {
+  document.getElementById('am-room').value = val;
+  document.getElementById('am-room-label').textContent = val || 'Select a room\u2026';
+  if (val) document.getElementById('am-room-label').classList.remove('placeholder');
+  amMarkSelectedOption(val);
+}
+
+function amSetRoomCustomValue(val) {
+  document.getElementById('am-room').value = val;
+  document.getElementById('am-room-label').textContent = val || 'Custom\u2026';
+  if (val) document.getElementById('am-room-label').classList.remove('placeholder');
+  else document.getElementById('am-room-label').classList.add('placeholder');
+  amRecalc();
+}
+
+function amMarkSelectedOption(val) {
+  var menu = document.getElementById('am-room-menu');
+  if (!menu) return;
+  menu.querySelectorAll('.tb-select-option').forEach(function(opt) {
+    opt.classList.toggle('selected', opt.getAttribute('data-value') === val);
+  });
+}
+
+function amShowError(msg) {
+  var errEl = document.getElementById('am-error');
+  if (!errEl) return;
+  errEl.textContent = msg;
+  errEl.style.display = 'block';
+  // Scroll the error into view in case the modal body is scrolled far up
+  errEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function amClearError() {
+  var errEl = document.getElementById('am-error');
+  if (errEl) errEl.style.display = 'none';
 }
 
 function amRecalc() {
@@ -1454,7 +1667,7 @@ function amRecalc() {
   if (!b) return;
   var newArrival = document.getElementById('am-arrival').value;
   var newDeparture = document.getElementById('am-departure').value;
-  var newRoom = document.getElementById('am-room').value.trim();
+  var newRoom = (document.getElementById('am-room').value || '').trim();
   var newGuests = parseInt(document.getElementById('am-guests').value, 10) || 0;
   var newTotal = parseFloat(document.getElementById('am-total').value) || 0;
 
@@ -1462,7 +1675,6 @@ function amRecalc() {
   var oldDeposit = b.depositAmount || b.deposit_amount || 0;
   var deltaTotal = newTotal - oldTotal;
 
-  // Use same commission rate to derive new deposit (matches worker)
   var commission = (b.commission_pct != null) ? b.commission_pct : 0.30;
   var newDeposit = Math.round(newTotal * commission);
   var deltaDeposit = newDeposit - oldDeposit;
@@ -1481,7 +1693,7 @@ function amRecalc() {
   if (!changes.length) {
     block.style.background = '#f5f1e9';
     block.style.borderColor = 'rgba(80,55,25,.10)';
-    block.innerHTML = '<span style="color:#7a6a58;">No changes detected. Edit any field to see the delta.</span>';
+    block.innerHTML = '<span style="color:#7a6a58;">No changes detected. Edit any field to see the difference.</span>';
     btn.disabled = true;
     btn.style.opacity = '.5';
     btn.style.cursor = 'not-allowed';
@@ -1491,22 +1703,31 @@ function amRecalc() {
   if (deltaTotal < 0) {
     block.style.background = '#fef2f2';
     block.style.borderColor = 'rgba(220,38,38,.25)';
-    block.innerHTML = '<strong style="color:#dc2626;">Downgrades aren\u2019t supported in this build.</strong> Total must be greater than or equal to the original ' + fmt(oldTotal) + '. For price decreases, please loop in admin via the \uD83D\uDD12 The Bearing tab in the conversation.';
+    block.innerHTML = '<strong style="color:#dc2626;">Downgrades aren\u2019t supported in this build.</strong> The new total must be greater than or equal to the original ' + fmt(oldTotal) + '. For price decreases, please loop in admin via the \uD83D\uDD12 The Bearing tab in the conversation.';
     btn.disabled = true;
     btn.style.opacity = '.5';
     btn.style.cursor = 'not-allowed';
     return;
   }
 
-  // Build delta summary
+  // v74f: clearer phrasing \u2014 lead with the DIFFERENCE, not the additional
+  // deposit. Make it explicit that "new total" is the full new amount, not
+  // additional. Show 3 lines: difference, new totals (full + deposit),
+  // additional deposit due.
   var rows = '';
   rows += '<div style="font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:#b05830;margin-bottom:10px;">Changing: ' + changes.join(', ') + '</div>';
   if (deltaTotal > 0) {
-    rows += '<div style="font-size:14px;color:#1e1810;font-weight:600;margin-bottom:4px;">+ ' + fmt(deltaTotal) + ' total \u00b7 + ' + fmt(deltaDeposit) + ' additional deposit due</div>';
-    rows += '<div style="font-size:12px;color:#5a4a38;">New total: ' + fmt(newTotal) + ' \u00b7 New deposit total: ' + fmt(newDeposit) + '</div>';
+    rows += '<div style="display:flex;align-items:baseline;gap:6px;font-size:16px;color:#1e1810;margin-bottom:6px;">'
+      + '<strong style="color:#b05830;">+ ' + fmt(deltaTotal) + '</strong>'
+      + '<span style="font-size:13px;color:#5a4a38;">difference (' + fmt(oldTotal) + ' \u2192 ' + fmt(newTotal) + ')</span>'
+      + '</div>';
+    rows += '<div style="font-size:13px;color:#5a4a38;line-height:1.5;">'
+      + 'Guest needs to pay an additional <strong style="color:#1e1810;">' + fmt(deltaDeposit) + '</strong> deposit '
+      + '<span style="color:#7a6a58;">(deposit goes from ' + fmt(oldDeposit) + ' \u2192 ' + fmt(newDeposit) + ')</span>.'
+      + '</div>';
   } else {
     rows += '<div style="font-size:14px;color:#1e1810;font-weight:600;">Price unchanged \u2014 no additional charge.</div>';
-    rows += '<div style="font-size:12px;color:#5a4a38;margin-top:4px;">Total stays at ' + fmt(newTotal) + '.</div>';
+    rows += '<div style="font-size:12px;color:#5a4a38;margin-top:4px;">New total stays at ' + fmt(newTotal) + '.</div>';
   }
 
   block.style.background = '#fff8f4';
@@ -1522,23 +1743,28 @@ function submitAmendment() {
   if (!b) return;
   var newArrival = document.getElementById('am-arrival').value;
   var newDeparture = document.getElementById('am-departure').value;
-  var newRoom = document.getElementById('am-room').value.trim();
+  var newRoom = (document.getElementById('am-room').value || '').trim();
   var newGuests = parseInt(document.getElementById('am-guests').value, 10) || 0;
   var newTotal = parseFloat(document.getElementById('am-total').value) || 0;
   var note = document.getElementById('am-note').value.trim();
 
-  var errEl = document.getElementById('am-error');
-  if (!newArrival || !newDeparture || !newRoom || !newGuests || !newTotal) {
-    errEl.textContent = 'All trip fields are required.';
-    errEl.style.display = 'block';
+  // v74f: clearer per-field validation messages so partner knows exactly
+  // what to fix \u2014 not a generic "all fields required" toast.
+  var missing = [];
+  if (!newArrival) missing.push('arrival date');
+  if (!newDeparture) missing.push('departure date');
+  if (!newRoom) missing.push('room');
+  if (!newGuests) missing.push('guest count');
+  if (!newTotal) missing.push('new total');
+  if (missing.length) {
+    amShowError('Please fill in: ' + missing.join(', ') + '.');
     return;
   }
   if (new Date(newDeparture) <= new Date(newArrival)) {
-    errEl.textContent = 'Departure must be after arrival.';
-    errEl.style.display = 'block';
+    amShowError('Departure must be after arrival.');
     return;
   }
-  errEl.style.display = 'none';
+  amClearError();
 
   var btn = document.getElementById('am-submit-btn');
   btn.disabled = true;
@@ -1550,7 +1776,12 @@ function submitAmendment() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       bookingRef: amendmentState.bookingRef,
-      slug: PP_SLUG,
+      // v74f: send the booking's own slug field, not PP_SLUG. Bookings
+      // store the property slug as `b.slug` (not `b.propertySlug`).
+      // Was: PP_SLUG defaulted to 'nour-el-nil' AND the worker compared
+      // against booking.propertySlug (undefined), so every partner POST
+      // got "not authorized" 403. Fixed both sides.
+      slug: b.slug || b.propertySlug || PP_SLUG,
       arrival: newArrival,
       departure: newDeparture,
       room: newRoom,
@@ -1564,8 +1795,7 @@ function submitAmendment() {
   })
   .then(function(res) {
     if (!res.ok) {
-      errEl.textContent = (res.data && res.data.error) || 'Could not send amendment.';
-      errEl.style.display = 'block';
+      amShowError((res.data && res.data.error) || 'Could not send amendment.');
       btn.disabled = false;
       btn.style.opacity = '1';
       btn.textContent = 'Send to guest \u2192';
@@ -1576,8 +1806,7 @@ function submitAmendment() {
     loadBookings(); // refresh so row shows pending pill
   })
   .catch(function() {
-    errEl.textContent = 'Network error \u2014 please try again.';
-    errEl.style.display = 'block';
+    amShowError('Network error \u2014 please try again.');
     btn.disabled = false;
     btn.style.opacity = '1';
     btn.textContent = 'Send to guest \u2192';
