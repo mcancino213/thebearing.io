@@ -4567,14 +4567,17 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ error: 'booking is cancelled' }, 400);
         }
 
-        // Compute previous_state from current booking values
+        // Compute previous_state from current booking values.
+        // v74g: confirmed bookings store totals as `confirmed_total_amount`
+        // (Stripe webhook sets these). Fall through to `total_amount` for
+        // backward compat with any legacy records.
         const previous_state = {
           room: booking.room || '',
           arrival: booking.arrival || '',
           departure: booking.departure || '',
           guests: booking.guests || 0,
-          total_amount: booking.total_amount || 0,
-          deposit_amount: booking.deposit_amount || 0,
+          total_amount: booking.confirmed_total_amount || booking.total_amount || booking.totalAmount || 0,
+          deposit_amount: booking.depositPaidAmount || booking.confirmed_deposit_amount || booking.deposit_amount || booking.depositAmount || 0,
         };
 
         // Auto-detect amendment_kind based on what changed
@@ -4814,13 +4817,22 @@ View in admin: https://thebearing.io/admin-bookings.html
           }
         }
 
-        // Update booking record to reflect new effective state
+        // Update booking record to reflect new effective state.
+        // v74g: write both `confirmed_*` (canonical for confirmed bookings,
+        // set by Stripe webhook originally) AND `total_amount`/`deposit_amount`
+        // (legacy). Otherwise the bookings UI keeps showing the old total
+        // because it reads `confirmed_total_amount`.
         booking.room = amendment.room;
         booking.arrival = amendment.arrival;
         booking.departure = amendment.departure;
         booking.guests = amendment.guests;
         booking.total_amount = amendment.total_amount;
         booking.deposit_amount = amendment.deposit_amount;
+        booking.confirmed_total_amount = amendment.total_amount;
+        booking.confirmed_deposit_amount = amendment.deposit_amount;
+        // depositPaidAmount stays untouched — represents what was ACTUALLY
+        // paid through Stripe. The delta gets invoiced manually (Build 1
+        // stub) or via Stripe payment_intent (Build 2). Don't fake it here.
         booking.active_offer_id = offerId;
         if (!Array.isArray(booking.amendments)) booking.amendments = [];
         booking.amendments.push(offerId);

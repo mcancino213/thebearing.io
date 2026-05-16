@@ -402,7 +402,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
                datalist had no clickable arrow + opening was browser-dependent.
                This is a fully styled component populated at modal-open from
                property.rooms[]. The hidden #om-room input remains the source
-               of truth that all read/write/submit code touches \u2014 the dropdown
+               of truth that all read/write/submit code touches — the dropdown
                is purely a UI affordance that writes into it. -->
           <input type="hidden" id="om-room" value="">
           <div class="tb-select" id="om-room-select">
@@ -412,7 +412,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
             </button>
             <div class="tb-select-menu" id="om-room-menu" role="listbox"></div>
           </div>
-          <input type="text" id="om-room-custom" placeholder="Type custom room or package\u2026" style="display:none;margin-top:8px;" autocomplete="off">
+          <input type="text" id="om-room-custom" placeholder="Type custom room or package…" style="display:none;margin-top:8px;" autocomplete="off">
         </div>
       </div>
 
@@ -517,7 +517,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
       <div style="background:#f5f1e9;border:1px solid rgba(80,55,25,.10);border-radius:10px;padding:14px 18px;margin-bottom:20px;">
         <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#7a6a58;margin-bottom:8px;">Current booking</div>
         <div id="am-original-summary" style="font-size:13px;color:#1e1810;line-height:1.6;">
-          Loading\u2026
+          Loading…
         </div>
       </div>
 
@@ -533,11 +533,11 @@ tr.row-was-declined:hover{background:#f5ecd9;}
           <label>Room / cabin</label>
           <div class="tb-select" id="am-room-select">
             <button type="button" class="tb-select-trigger" id="am-room-trigger" aria-haspopup="listbox" aria-expanded="false">
-              <span class="tb-select-label placeholder" id="am-room-label">Select a room\u2026</span>
+              <span class="tb-select-label placeholder" id="am-room-label">Select a room…</span>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="flex-shrink:0;opacity:.55;"><polyline points="3 5 6 8 9 5"/></svg>
             </button>
             <div class="tb-select-menu" id="am-room-menu" role="listbox" aria-label="Room"></div>
-            <input type="text" id="am-room-custom" placeholder="Custom room name\u2026" style="display:none;margin-top:8px;" oninput="amSetRoomCustomValue(this.value)">
+            <input type="text" id="am-room-custom" placeholder="Custom room name…" style="display:none;margin-top:8px;" oninput="amSetRoomCustomValue(this.value)">
             <input type="hidden" id="am-room">
           </div>
         </div>
@@ -549,13 +549,13 @@ tr.row-was-declined:hover{background:#f5ecd9;}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div>
             <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Original total</div>
-            <div id="am-original-total" style="font-family:'Fraunces',serif;font-size:22px;color:var(--text);">\u2014</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Already paid: <span id="am-original-deposit">\u2014</span> deposit</div>
+            <div id="am-original-total" style="font-family:'Fraunces',serif;font-size:22px;color:var(--text);">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Already paid: <span id="am-original-deposit">—</span> deposit</div>
           </div>
           <div>
             <div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#b05830;margin-bottom:6px;">New total for whole booking</div>
             <input type="number" id="am-total" min="0" step="1" style="font-family:'Fraunces',serif;font-size:22px;width:100%;padding:4px 8px;border:1px solid rgba(176,88,48,.3);border-radius:6px;background:#fff8f4;color:var(--text);" oninput="amRecalc()">
-            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Enter the full new total \u2014 not the additional amount.</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Enter the full new total — not the additional amount.</div>
           </div>
         </div>
       </div>
@@ -568,7 +568,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
       <!-- Partner note -->
       <div style="margin-top:20px;">
         <label style="display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;">Note to guest <span style="color:var(--text3);font-weight:400;">(shown in the email + conversation card)</span></label>
-        <textarea id="am-note" rows="3" placeholder="e.g. Upgraded to a suite at your request \u2014 same dates, same party size." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical;"></textarea>
+        <textarea id="am-note" rows="3" placeholder="e.g. Upgraded to a suite at your request — same dates, same party size." style="width:100%;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface);resize:vertical;"></textarea>
       </div>
     </div>
 
@@ -1476,8 +1476,12 @@ function openAmendmentModal(bookingRef) {
     try { return new Date(iso.length === 10 ? iso + 'T00:00' : iso).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}); }
     catch(_) { return iso; }
   };
-  var oldTotal = b.totalAmount || b.total_amount || 0;
-  var oldDeposit = b.depositAmount || b.deposit_amount || 0;
+  // v74g: confirmed bookings store their canonical totals as
+  // `confirmed_total_amount` (set by the Stripe webhook). The v74e code
+  // read b.totalAmount || b.total_amount which don't exist on confirmed
+  // records — so every amendment modal showed $0.
+  var oldTotal = b.confirmed_total_amount || b.totalAmount || b.total_amount || 0;
+  var oldDeposit = b.depositPaidAmount || b.confirmed_deposit_amount || b.depositAmount || b.deposit_amount || 0;
   document.getElementById('am-original-summary').innerHTML =
     '<strong>' + escHtml(b.room || '\u2014') + '</strong> \u00b7 ' +
     fmtDate(b.arrival) + ' \u2192 ' + fmtDate(b.departure) + ' \u00b7 ' +
@@ -1595,27 +1599,31 @@ function amWireRoomDropdown(rooms, currentRoom) {
     document._amOutsideBound = true;
   }
 
-  // Set initial value
+  // Set initial value.
+  // v74g: trim() both sides of the comparison — the v74e code did
+  // case-insensitive matching but didn't strip whitespace. Bookings
+  // sometimes have trailing spaces from the offer-builder dropdown
+  // and the doubled-room-field bug appeared because " Luxury Room "
+  // didn't match "Luxury Room" from the property.
   if (currentRoom) {
-    var matches = rooms.some(function(r) {
-      return r && r.name && r.name.toLowerCase() === currentRoom.toLowerCase();
+    var normCurrent = String(currentRoom).trim().toLowerCase();
+    var matchedRoom = rooms.find(function(r) {
+      return r && r.name && r.name.trim().toLowerCase() === normCurrent;
     });
-    if (matches) {
-      amSetRoomDropdownValue(currentRoom);
-    } else if (rooms.length) {
-      // Current room isn't in property list \u2014 treat as custom
-      amendmentState.customMode = true;
-      document.getElementById('am-room-custom').value = currentRoom;
-      document.getElementById('am-room-custom').style.display = 'block';
-      document.getElementById('am-room').value = currentRoom;
-      document.getElementById('am-room-label').textContent = currentRoom;
-      document.getElementById('am-room-label').classList.remove('placeholder');
-      amMarkSelectedOption('__custom');
+    if (matchedRoom) {
+      // Use the property's canonical room name (preserves casing/spacing)
+      // and route through amSetRoomDropdownValue which hides the custom
+      // input. The v74f code was calling amSetRoomDropdownValue but the
+      // old version of that function didn't hide custom-input — fixed
+      // above in v74g.
+      amSetRoomDropdownValue(matchedRoom.name);
     } else {
-      // No room list at all \u2014 partner is in custom mode by default
+      // No match (either no rooms list, or current room not in list) —
+      // enter custom mode. The custom input becomes the editable field.
       amendmentState.customMode = true;
-      document.getElementById('am-room-custom').value = currentRoom;
-      document.getElementById('am-room-custom').style.display = 'block';
+      var customInput = document.getElementById('am-room-custom');
+      customInput.value = currentRoom;
+      customInput.style.display = 'block';
       document.getElementById('am-room').value = currentRoom;
       document.getElementById('am-room-label').textContent = currentRoom;
       document.getElementById('am-room-label').classList.remove('placeholder');
@@ -1626,9 +1634,25 @@ function amWireRoomDropdown(rooms, currentRoom) {
 }
 
 function amSetRoomDropdownValue(val) {
-  document.getElementById('am-room').value = val;
-  document.getElementById('am-room-label').textContent = val || 'Select a room\u2026';
-  if (val) document.getElementById('am-room-label').classList.remove('placeholder');
+  // v74g: when picking from the dropdown (known room), hide the custom
+  // input box and clear it. Previously this only updated the hidden input
+  // value, leaving the visible custom input still showing from a prior
+  // open-modal cycle, causing the doubled-room-field bug.
+  document.getElementById('am-room').value = val || '';
+  var labelEl = document.getElementById('am-room-label');
+  var customInput = document.getElementById('am-room-custom');
+  if (!val) {
+    labelEl.textContent = 'Select a room…';
+    labelEl.classList.add('placeholder');
+    if (customInput) { customInput.style.display = 'none'; customInput.value = ''; }
+    amendmentState.customMode = false;
+    amMarkSelectedOption(null);
+    return;
+  }
+  labelEl.textContent = val;
+  labelEl.classList.remove('placeholder');
+  if (customInput) { customInput.style.display = 'none'; customInput.value = ''; }
+  amendmentState.customMode = false;
   amMarkSelectedOption(val);
 }
 
@@ -1671,8 +1695,10 @@ function amRecalc() {
   var newGuests = parseInt(document.getElementById('am-guests').value, 10) || 0;
   var newTotal = parseFloat(document.getElementById('am-total').value) || 0;
 
-  var oldTotal = b.totalAmount || b.total_amount || 0;
-  var oldDeposit = b.depositAmount || b.deposit_amount || 0;
+  // v74g: same field-name fix as openAmendmentModal — read confirmed_*
+  // fields for confirmed bookings.
+  var oldTotal = b.confirmed_total_amount || b.totalAmount || b.total_amount || 0;
+  var oldDeposit = b.depositPaidAmount || b.confirmed_deposit_amount || b.depositAmount || b.deposit_amount || 0;
   var deltaTotal = newTotal - oldTotal;
 
   var commission = (b.commission_pct != null) ? b.commission_pct : 0.30;
