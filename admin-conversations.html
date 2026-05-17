@@ -360,6 +360,24 @@ tbody tr:hover{background:var(--bg);}
 }
 .msg.group-start{margin-top:14px;}
 
+/* v74m: unread-messages divider for admin conv. Same visual idea as the
+   customer side but adapted to admin's color palette (uses --accent
+   which is the terracotta on this page). */
+.unread-divider{
+  align-self:stretch;display:flex;align-items:center;gap:10px;
+  margin:18px 4px 12px;color:var(--accent);
+  font-family:Geist,system-ui,sans-serif;font-size:.6rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.unread-divider::before,
+.unread-divider::after{
+  content:'';flex:1;height:1px;background:rgba(176,88,48,.25);
+}
+.unread-divider-label{
+  padding:2px 10px;background:rgba(176,88,48,.10);
+  border:1px solid rgba(176,88,48,.22);border-radius:100px;
+}
+
 /* Position based on viewer-relative role (from-self = right, from-other = left) */
 .msg.from-other{align-self:flex-start;align-items:flex-start;}
 .msg.from-self{align-self:flex-end;align-items:flex-end;}
@@ -1272,6 +1290,10 @@ window.addEventListener('load', async function() {
 var conversations = [];
 var activeConvId = null;
 var pollInterval = null;
+// v74m: scroll controls (pill + jump button) — installed on open
+var adminScrollControls = null;
+// v74m: unread count captured at chOpen for unread-divider placement
+var adminUnreadAtOpen = 0;
 
 function toast(msg) {
   var el = document.getElementById('toast');
@@ -1481,6 +1503,16 @@ function openConv(id) {
   if (adminLoopPoll) { clearInterval(adminLoopPoll); adminLoopPoll = null; }
   adminLoopState = { loop: null, messages: [] };
   renderList();
+
+  // v74m: capture unread count BEFORE marking read so renderer can place
+  // the unread-divider. Same pattern as customer side.
+  var prevConv = conversations.find(function(c){ return c.id === id; });
+  adminUnreadAtOpen = prevConv ? (prevConv.unreadAdmin || 0) : 0;
+  // v74m: tear down previous conversation's scroll controls
+  if (adminScrollControls && typeof adminScrollControls.destroy === 'function') {
+    adminScrollControls.destroy();
+    adminScrollControls = null;
+  }
 
   // Mark read
   fetch('/api/conversation', {
@@ -1708,7 +1740,7 @@ function renderThread(conv, messages) {
     thread.appendChild(notice);
     quotedMessage = null;
     if (typeof renderContextPanel === 'function') renderContextPanel(conv);
-    window.pinToBottom(wrap);
+    adminFinalizeOpenScroll(wrap);
     return;
   }
 
@@ -1780,7 +1812,30 @@ function renderThread(conv, messages) {
   quotedMessage = null;
   renderContextPanel(conv);
 
-  window.pinToBottom(wrap);
+  adminFinalizeOpenScroll(wrap);
+}
+
+// v74m: post-render scroll + control install for a freshly-opened admin
+// conversation. Mirrors chFinalizeOpenScroll on the customer side:
+//   1. If there's an unread-divider in the DOM, scroll it into view —
+//      admin starts reading at the first unread message they hadn't seen.
+//   2. Otherwise pin to bottom (default for "I've already caught up").
+//   3. Install ConvScroll for the pill + jump button.
+//   4. Reset adminUnreadAtOpen to 0 so polling doesn't re-insert the
+//      divider on every refresh.
+function adminFinalizeOpenScroll(wrap) {
+  var divider = document.getElementById('admin-unread-divider');
+  if (divider) {
+    requestAnimationFrame(function() {
+      divider.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+  } else {
+    window.pinToBottom(wrap);
+  }
+  adminUnreadAtOpen = 0;
+  if (window.ConvScroll && typeof window.ConvScroll.install === 'function') {
+    adminScrollControls = window.ConvScroll.install(wrap, { threshold: 200 });
+  }
 }
 
 function fmtDaySep(date) {
@@ -2603,7 +2658,25 @@ function renderMessagesInto(wrap, conv, messages) {
   }
 
   var lastDay = '';
+  // v74m: compute index where the unread-divider goes (before the first
+  // unread message). adminUnreadAtOpen is captured in openConv() before
+  // the mark-read PATCH; reset to 0 in adminFinalizeOpenScroll once we've
+  // used it so polling refreshes don't re-insert.
+  var unreadDividerIdx = (adminUnreadAtOpen > 0 && messages.length >= adminUnreadAtOpen)
+    ? (messages.length - adminUnreadAtOpen)
+    : -1;
   messages.forEach(function(m, idx) {
+    // v74m: insert divider before the first unread message
+    if (idx === unreadDividerIdx) {
+      var divider = document.createElement('div');
+      divider.className = 'unread-divider';
+      divider.id = 'admin-unread-divider';
+      var lbl = document.createElement('span');
+      lbl.className = 'unread-divider-label';
+      lbl.textContent = adminUnreadAtOpen === 1 ? 'New message' : 'New messages';
+      divider.appendChild(lbl);
+      wrap.appendChild(divider);
+    }
     var role = m.role === 'guest' ? 'guest' : (m.role === 'partner' ? 'partner' : 'admin');
     var side = role === VIEWER_ROLE ? 'from-self' : 'from-other';
     var sentAt = new Date(m.sentAt);
@@ -2949,6 +3022,11 @@ function refreshMessages(conv, messages) {
       if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
     playNotificationSound();
+    // v74m: surface "↓ N new messages" pill if admin is scrolled up.
+    // ConvScroll.showNewMessagesPill is no-op if admin is at bottom.
+    if (adminScrollControls && typeof adminScrollControls.showNewMessagesPill === 'function') {
+      adminScrollControls.showNewMessagesPill(toAnimate);
+    }
     // v74b: surface guest-tab badge with the count of new main-thread messages
     // if admin is currently viewing the loop tab.
     var activeTab = document.querySelector('.ctx-tab.active');

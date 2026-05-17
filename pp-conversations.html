@@ -279,6 +279,24 @@ tbody tr:hover{background:var(--bg);}
 }
 .msg{display:flex;flex-direction:column;max-width:68%;margin-top:1px;position:relative;}
 .msg.group-start{margin-top:14px;}
+
+/* v74m: unread-messages divider. Inserted at openConv when the partner
+   returns to a conversation with unread messages, so they start reading
+   at the first new message rather than at the bottom. */
+.unread-divider{
+  align-self:stretch;display:flex;align-items:center;gap:10px;
+  margin:18px 4px 12px;color:var(--accent);
+  font-family:Geist,system-ui,sans-serif;font-size:.6rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.unread-divider::before,
+.unread-divider::after{
+  content:'';flex:1;height:1px;background:rgba(193,127,62,.25);
+}
+.unread-divider-label{
+  padding:2px 10px;background:rgba(193,127,62,.10);
+  border:1px solid rgba(193,127,62,.22);border-radius:100px;
+}
 .msg.from-other{align-self:flex-start;align-items:flex-start;}
 .msg.from-self{align-self:flex-end;align-items:flex-end;}
 .msg-sender{
@@ -930,6 +948,10 @@ var ppPoll = null;
 var quotedMessage = null;
 var lastMsgCount = {};
 var soundEnabled = localStorage.getItem('tb_pp_sound') !== 'off';
+// v74m: scroll controls (pill + jump button) — installed on open
+var ppScrollControls = null;
+// v74m: unread count captured at openConv for unread-divider placement
+var ppUnreadAtOpen = 0;
 
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1153,6 +1175,17 @@ function openConv(id) {
   if (ppLoopPoll) { clearInterval(ppLoopPoll); ppLoopPoll = null; }
   ppLoopState = { loop: null, messages: [] };
   renderConvList();
+  // v74m: capture unread count BEFORE marking read so renderer can place
+  // the unread-divider. NB: partner's unread count lives on conv.unreadAdmin
+  // (legacy field naming — "admin" here means "messages from the admin/guest
+  // side", i.e. unread for the partner).
+  var prevConv = ppConvs.find(function(c){ return c.id === id; });
+  ppUnreadAtOpen = prevConv ? (prevConv.unreadAdmin || 0) : 0;
+  // v74m: tear down previous conversation's scroll controls
+  if (ppScrollControls && typeof ppScrollControls.destroy === 'function') {
+    ppScrollControls.destroy();
+    ppScrollControls = null;
+  }
   fetch('/api/conversation', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,markReadFor:'admin'})});
   var conv = ppConvs.find(function(c){ return c.id === id; });
   if (conv) conv.unreadAdmin = 0;
@@ -1412,7 +1445,7 @@ function renderThread(conv, messages) {
     thread.appendChild(notice);
     quotedMessage = null;
     renderContextPanel(conv);
-    window.pinToBottom(wrap);
+    ppFinalizeOpenScroll(wrap);
     return;
   }
 
@@ -1459,7 +1492,30 @@ function renderThread(conv, messages) {
   quotedMessage = null;
   renderContextPanel(conv);
 
-  window.pinToBottom(wrap);
+  ppFinalizeOpenScroll(wrap);
+}
+
+// v74m: post-render scroll + control install for a freshly-opened
+// partner conversation. Mirrors chFinalizeOpenScroll (customer) and
+// adminFinalizeOpenScroll (admin). Three behaviours:
+//   1. If unread-divider exists in the DOM, scroll it into view.
+//   2. Otherwise pinToBottom (default).
+//   3. Install ConvScroll for the pill + jump button.
+//   4. Reset ppUnreadAtOpen so polling refreshes don't re-insert the
+//      divider.
+function ppFinalizeOpenScroll(wrap) {
+  var divider = document.getElementById('pp-unread-divider');
+  if (divider) {
+    requestAnimationFrame(function() {
+      divider.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+  } else {
+    window.pinToBottom(wrap);
+  }
+  ppUnreadAtOpen = 0;
+  if (window.ConvScroll && typeof window.ConvScroll.install === 'function') {
+    ppScrollControls = window.ConvScroll.install(wrap, { threshold: 200 });
+  }
 }
 
 function renderMessagesInto(wrap, conv, messages) {
@@ -1486,7 +1542,25 @@ function renderMessagesInto(wrap, conv, messages) {
   }
 
   var lastDay = '';
+  // v74m: compute index where the unread-divider goes (before the first
+  // unread message). ppUnreadAtOpen is captured in openConv() before the
+  // mark-read PATCH; reset to 0 in ppFinalizeOpenScroll once used so
+  // polling refreshes don't re-insert.
+  var unreadDividerIdx = (ppUnreadAtOpen > 0 && messages.length >= ppUnreadAtOpen)
+    ? (messages.length - ppUnreadAtOpen)
+    : -1;
   messages.forEach(function(m, idx) {
+    // v74m: insert divider before the first unread message
+    if (idx === unreadDividerIdx) {
+      var divider = document.createElement('div');
+      divider.className = 'unread-divider';
+      divider.id = 'pp-unread-divider';
+      var lbl = document.createElement('span');
+      lbl.className = 'unread-divider-label';
+      lbl.textContent = ppUnreadAtOpen === 1 ? 'New message' : 'New messages';
+      divider.appendChild(lbl);
+      wrap.appendChild(divider);
+    }
     var role = m.role === 'guest' ? 'guest' : (m.role === 'partner' ? 'partner' : 'admin');
     var side = role === VIEWER_ROLE ? 'from-self' : 'from-other';
     var sentAt = new Date(m.sentAt);
@@ -2318,6 +2392,11 @@ function refreshMessages(conv, messages) {
       if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
     playNotificationSound();
+    // v74m: surface "↓ N new messages" pill if partner is scrolled up.
+    // ConvScroll.showNewMessagesPill is no-op if partner is at bottom.
+    if (ppScrollControls && typeof ppScrollControls.showNewMessagesPill === 'function') {
+      ppScrollControls.showNewMessagesPill(toAnimate);
+    }
     // v74b: if partner is currently on the loop tab, surface a guest-tab
     // badge with the count of new main-thread messages so they don't miss
     // the guest while focused on the private chat.

@@ -694,6 +694,25 @@ html, body { height: 100%; }
 }
 .ch-msg.group-start{margin-top:14px;}
 
+/* v74m: unread-messages divider. Inserted before the first unread message
+   when opening a conversation that has unread messages. Auto-scrolls
+   into view (replacing the pin-to-bottom for the open-with-unread case)
+   so the user starts reading at the right point in history. */
+.ch-unread-divider{
+  align-self:stretch;display:flex;align-items:center;gap:10px;
+  margin:18px 4px 12px;color:var(--terra);
+  font-family:'Geist',sans-serif;font-size:.62rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.ch-unread-divider::before,
+.ch-unread-divider::after{
+  content:'';flex:1;height:1px;background:rgba(176,88,48,.25);
+}
+.ch-unread-divider-label{
+  padding:2px 10px;background:rgba(176,88,48,.10);
+  border:1px solid rgba(176,88,48,.22);border-radius:100px;
+}
+
 /* Viewer-relative positioning */
 .ch-msg.from-other{align-self:flex-start;align-items:flex-start;}
 .ch-msg.from-self{align-self:flex-end;align-items:flex-end;}
@@ -1686,6 +1705,14 @@ var chPoll = null;
 var chQuotedMessage = null;
 var chLastMsgCount = {};
 var chSoundEnabled = localStorage.getItem('tb_guest_sound') !== 'off';
+// v74m: scroll controls (pill + jump button) — installed on open, kept
+// across re-renders so the pill state persists across polls. Reset on
+// every chOpen → new install.
+var chScrollControls = null;
+// v74m: unreadAtOpen carries the conv.unreadGuest count captured at the
+// moment of chOpen (before the mark-read PATCH wipes it server-side).
+// Used by chRenderMessagesInto to insert the unread divider.
+var chUnreadAtOpen = 0;
 var VIEWER_ROLE = 'guest';
 
 function chEscHtml(s) {
@@ -2012,6 +2039,19 @@ function chBuildConvItem(c) {
 function chOpen(id) {
   chActiveId = id;
   chRenderList();
+  // v74m: capture unread count BEFORE marking read so the renderer can
+  // insert an unread-divider at the right place. Reading conv.unreadGuest
+  // from the local list (not after the fetch) — the PATCH below would
+  // wipe it server-side.
+  var prevConv = chConvs.filter(function(c){ return c.id === id; })[0];
+  chUnreadAtOpen = prevConv ? (prevConv.unreadGuest || 0) : 0;
+  // v74m: tear down any existing scroll controls from the previous
+  // conversation. New install happens in chRenderThread once the DOM
+  // is in place.
+  if (chScrollControls && typeof chScrollControls.destroy === 'function') {
+    chScrollControls.destroy();
+    chScrollControls = null;
+  }
   fetch('/api/conversation', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,markReadFor:'guest'})});
   fetch('/api/conversation?id=' + encodeURIComponent(id))
     .then(function(r){ return r.json(); })
@@ -2185,7 +2225,7 @@ function chRenderThread(conv, msgs) {
     // building the composer element.
     chQuotedMessage = null;
     chRenderContextPanel(conv);
-    window.pinToBottom(msgsWrap);
+    chFinalizeOpenScroll(msgsWrap);
     return;
   }
 
@@ -2234,7 +2274,35 @@ function chRenderThread(conv, msgs) {
   chQuotedMessage = null;
   chRenderContextPanel(conv);
 
-  window.pinToBottom(msgsWrap);
+  chFinalizeOpenScroll(msgsWrap);
+}
+
+// v74m: post-render scroll + control install for a freshly-opened
+// conversation. Pulls 3 behaviours together so both code paths
+// (archived + normal) share them:
+//   1. If we have an unread-divider in the DOM, scroll it into view —
+//      user starts reading at the first unread message. Otherwise
+//      pinToBottom (the existing behaviour).
+//   2. Install ConvScroll for the persistent jump button + pill.
+//   3. Reset chUnreadAtOpen to 0 so subsequent re-renders during this
+//      session don't re-insert the divider.
+function chFinalizeOpenScroll(msgsWrap) {
+  var divider = document.getElementById('ch-unread-divider');
+  if (divider) {
+    // Scroll the divider into view rather than the bottom. Use a small
+    // delay so any post-paint reflows have settled.
+    requestAnimationFrame(function() {
+      divider.scrollIntoView({ block: 'center', behavior: 'auto' });
+    });
+  } else {
+    window.pinToBottom(msgsWrap);
+  }
+  // Reset so refresh doesn't re-insert
+  chUnreadAtOpen = 0;
+  // Install scroll controls (pill + jump button)
+  if (window.ConvScroll && typeof window.ConvScroll.install === 'function') {
+    chScrollControls = window.ConvScroll.install(msgsWrap, { threshold: 200 });
+  }
 }
 
 // Shared message rendering
@@ -2263,7 +2331,29 @@ function chRenderMessagesInto(wrap, conv, messages) {
   }
 
   var lastDay = '';
+  // v74m: compute the index where the unread-divider goes.
+  // unreadAtOpen = how many messages were unread when the user opened.
+  // The first unread message is at (messages.length - unreadAtOpen).
+  // -1 means "no divider needed".
+  // This runs on every re-render, but we only insert the divider on the
+  // initial open render (refreshes during the session shouldn't show
+  // the divider, otherwise it'd reappear every poll). We track that via
+  // chUnreadAtOpen being non-zero. Refresh path resets it to 0.
+  var unreadDividerIdx = (chUnreadAtOpen > 0 && messages.length >= chUnreadAtOpen)
+    ? (messages.length - chUnreadAtOpen)
+    : -1;
   messages.forEach(function(m, idx) {
+    // v74m: insert divider before the first unread message
+    if (idx === unreadDividerIdx) {
+      var divider = document.createElement('div');
+      divider.className = 'ch-unread-divider';
+      divider.id = 'ch-unread-divider'; // for scrollIntoView later
+      var lbl = document.createElement('span');
+      lbl.className = 'ch-unread-divider-label';
+      lbl.textContent = chUnreadAtOpen === 1 ? 'New message' : 'New messages';
+      divider.appendChild(lbl);
+      wrap.appendChild(divider);
+    }
     // Map roles: guest=guest, partner=partner (property staff), admin=admin (Bearing)
     // Old 'property' role maps to partner (legacy data)
     var rawRole = m.role || 'partner';
@@ -3146,6 +3236,12 @@ function chRefreshMessages(conv, msgs) {
       if (allMsgEls[i]) allMsgEls[i].classList.add('msg-new');
     }
     chPlayNotificationSound();
+    // v74m: if user is scrolled up, surface a "↓ N new messages" pill.
+    // ConvScroll.showNewMessagesPill is no-op if user is at bottom, so
+    // safe to call unconditionally when new-from-other messages arrive.
+    if (chScrollControls && typeof chScrollControls.showNewMessagesPill === 'function') {
+      chScrollControls.showNewMessagesPill(toAnimate);
+    }
   }
   // v74l: only pin if user was already at bottom. Scrolled-up users stay put.
   window.pinToBottom(wrap, { observe: false, force: wasAtBottom });
