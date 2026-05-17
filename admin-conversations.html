@@ -2919,6 +2919,11 @@ function renderMessagesInto(wrap, conv, messages) {
 function refreshMessages(conv, messages) {
   var wrap = document.getElementById('messages-wrap');
   if (!wrap) return;
+  // v74l: capture scroll state BEFORE re-rendering. renderMessagesInto
+  // does wrap.innerHTML = '' which resets scrollTop to 0, so we'd lose
+  // the user's actual scroll position if we measured after. Prevents
+  // the 5-second poll from yanking an admin out of message history.
+  var wasAtBottom = window.wasAtBottom ? window.wasAtBottom(wrap) : true;
   // Detect new incoming messages (only from others — not our own sends)
   var prevCount = lastMsgCount[conv.id] || 0;
   var newCount = messages.length;
@@ -2959,9 +2964,8 @@ function refreshMessages(conv, messages) {
     }
   }
 
-  // New messages arrived via polling — pin to bottom without ResizeObserver
-  // since the layout is already settled.
-  window.pinToBottom(wrap, { observe: false });
+  // v74l: only pin if admin was already at bottom. Scrolled-up admins stay put.
+  window.pinToBottom(wrap, { observe: false, force: wasAtBottom });
 }
 
 function startPolling(id) {

@@ -3123,6 +3123,12 @@ function chRefresh() {
 function chRefreshMessages(conv, msgs) {
   var wrap = document.getElementById('ch-msgs');
   if (!wrap) return;
+  // v74l: capture scroll state BEFORE re-rendering. chRenderMessagesInto
+  // does wrap.innerHTML = '' which resets scrollTop to 0, so we'd lose
+  // the user's actual scroll position if we measured after. If user was
+  // scrolled up reading history, this prevents the 5-second poll from
+  // yanking them back to bottom.
+  var wasAtBottom = window.wasAtBottom ? window.wasAtBottom(wrap) : true;
   var prevCount = chLastMsgCount[conv.id] || 0;
   var newCount = msgs.length;
   var newFromOther = false;
@@ -3141,7 +3147,8 @@ function chRefreshMessages(conv, msgs) {
     }
     chPlayNotificationSound();
   }
-  window.pinToBottom(wrap, { observe: false });
+  // v74l: only pin if user was already at bottom. Scrolled-up users stay put.
+  window.pinToBottom(wrap, { observe: false, force: wasAtBottom });
 }
 
 function chStartPoll(id) {

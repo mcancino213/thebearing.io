@@ -20,11 +20,34 @@
 //   3. Watching the messages-wrap with a short-lived ResizeObserver — for
 //      ~1s after open, any height change re-pins to bottom.
 //
-// Usage:
+// v74l: NEW `wasAtBottom(wrap)` helper. Callers should sample this BEFORE
+// they re-render messages (which would wipe innerHTML and reset scrollTop),
+// then pass the result as `pinToBottom(wrap, { observe: false, force: bool })`.
+// When `force` is false (the default for observe:false), the pin is skipped
+// — leaving a user who's scrolled up to read history exactly where they are.
+// This fixes the "scroll up to read older messages, get yanked back down
+// 5 seconds later by the poll" bug across all three chat surfaces.
+//
+// Usage (initial open):
 //   pinToBottom(messagesWrapElement);
-// or for the refresh-after-new-message case (no ResizeObserver needed):
-//   pinToBottom(messagesWrapElement, { observe: false });
+// Usage (refresh-poll):
+//   var wasAtBottom = window.wasAtBottom(wrap);
+//   // ... rerender messages ...
+//   pinToBottom(wrap, { observe: false, force: wasAtBottom });
 (function() {
+  // v74l: "at bottom" means within this many pixels of the bottom edge.
+  // 80px gives a comfortable buffer (a single message bubble is ~40-60px)
+  // without being so wide that a deliberately-scrolled user gets snapped
+  // back. Live-typing / just-sent-a-message UX still pins (they're at the
+  // bottom anyway when sending).
+  var BOTTOM_THRESHOLD_PX = 80;
+
+  function wasAtBottom(wrap) {
+    if (!wrap) return true;
+    var distanceFromBottom = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight;
+    return distanceFromBottom <= BOTTOM_THRESHOLD_PX;
+  }
+
   function pinToBottomNow(wrap) {
     if (!wrap) return;
     var last = wrap.lastElementChild;
@@ -43,6 +66,18 @@
     if (!wrap) return;
     opts = opts || {};
     var observe = opts.observe !== false; // default true
+
+    // v74l: when this is a refresh-poll call (observe: false), only pin
+    // if the caller has explicitly said "the user was at the bottom
+    // before I re-rendered" via opts.force = true. Initial-open calls
+    // (observe: true) always pin — that's the expected behavior when
+    // first viewing a conversation.
+    //
+    // We can't read scrollTop here ourselves because the renderer has
+    // already done wrap.innerHTML = '' before reaching this point, which
+    // resets scrollTop to 0. So callers MUST capture wasAtBottom(wrap)
+    // BEFORE re-rendering, then pass it as force.
+    if (!observe && opts.force !== true) return;
 
     // Pin across 3 animation frames so late layout shifts are caught.
     // 3 frames ≈ 50ms at 60fps — same budget as the old setTimeout but
@@ -69,6 +104,7 @@
     setTimeout(function() { ro.disconnect(); }, 1000);
   }
 
-  // Expose globally — each conversation page just calls window.pinToBottom().
+  // Expose globally — each conversation page calls window.pinToBottom().
   window.pinToBottom = pinToBottom;
+  window.wasAtBottom = wasAtBottom;
 })();
