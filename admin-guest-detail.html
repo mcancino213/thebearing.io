@@ -235,6 +235,22 @@ window.addEventListener('load', async function() {
       </div>
     </div></div>
 
+    <!-- v74w: Founding Member management. Reads + mutates member.foundingMember
+         via /api/founding-member/admin/grant and /revoke. Separate from m.tier. -->
+    <div class="card"><div class="card-body" style="padding:24px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Founding Member status</div>
+      <div id="fm-status-display" style="padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;font-size:14px;color:var(--text);">
+        Loading…
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button id="fm-grant-btn" type="button" style="background:#9a7230;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Grant Founding Member</button>
+        <button id="fm-revoke-btn" type="button" style="background:transparent;color:#b54040;border:1px solid #d8a0a0;padding:9px 16px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Revoke</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.55;">
+        Grant assigns the next available Founding Member number and marks the member as <strong>awarded</strong> (skipping the normal pending → awarded flow). Revoke recycles the number for future use. Both actions require a reason and are logged.
+      </div>
+    </div></div>
+
     <div class="card"><div class="card-body" style="padding:24px;">
       <div style="font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text2);margin-bottom:16px;">Travel preferences</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
@@ -319,6 +335,10 @@ window.addEventListener('load', async function() {
     document.getElementById('p-party').value = prefs.party || '';
     document.getElementById('p-dietary').value = prefs.dietary || '';
     document.getElementById('f-notes').value = m.notes || '';
+
+    // v74w: Render FM status panel.
+    renderFmStatus(m);
+
     // Real-data sidebar
     var sb = document.getElementById('sidebar-stats');
     var daysJoined = daysSince(m.joined_at);
@@ -397,6 +417,103 @@ window.addEventListener('load', async function() {
     } finally {
       btn.disabled = false;
       btn.textContent = 'Save changes';
+    }
+  });
+
+  // ── v74w: Founding Member admin controls ──
+  function renderFmStatus(m) {
+    var d = document.getElementById('fm-status-display');
+    if (!d) return;
+    var fm = m && m.foundingMember;
+    var grantBtn = document.getElementById('fm-grant-btn');
+    var revokeBtn = document.getElementById('fm-revoke-btn');
+
+    if (!fm || fm.status === 'voided') {
+      d.innerHTML = '<span style="color:var(--text2);">Not a Founding Member.</span>';
+      if (grantBtn) grantBtn.disabled = false;
+      if (revokeBtn) revokeBtn.disabled = true;
+      if (revokeBtn) revokeBtn.style.opacity = '.4';
+      if (revokeBtn) revokeBtn.style.cursor = 'not-allowed';
+      return;
+    }
+    var num = '#' + fm.number;
+    if (fm.status === 'awarded') {
+      var awardedDate = fm.awardedAt ? new Date(fm.awardedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      var grantedBy = fm.awardedBy ? ' · granted by ' + fm.awardedBy : '';
+      d.innerHTML = '<div style="font-weight:600;color:#9a7230;">✦ Founding Member ' + num + '</div>'
+        + '<div style="font-size:12px;color:var(--text2);margin-top:4px;">Awarded ' + awardedDate + grantedBy + '</div>';
+      if (grantBtn) { grantBtn.disabled = true; grantBtn.style.opacity = '.4'; grantBtn.style.cursor = 'not-allowed'; }
+      if (revokeBtn) { revokeBtn.disabled = false; revokeBtn.style.opacity = '1'; revokeBtn.style.cursor = 'pointer'; }
+    } else if (fm.status === 'pending') {
+      var reservedDate = fm.reservedAt ? new Date(fm.reservedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+      d.innerHTML = '<div style="font-weight:600;color:var(--text);">Founding Member ' + num + ' <span style="font-weight:400;color:var(--text2);font-size:12px;">· pending trip completion</span></div>'
+        + '<div style="font-size:12px;color:var(--text2);margin-top:4px;">Reserved ' + reservedDate + (fm.reservedForBookingRef ? ' on booking ' + fm.reservedForBookingRef : '') + '</div>';
+      if (grantBtn) { grantBtn.disabled = false; grantBtn.style.opacity = '1'; grantBtn.style.cursor = 'pointer'; }
+      if (revokeBtn) { revokeBtn.disabled = false; revokeBtn.style.opacity = '1'; revokeBtn.style.cursor = 'pointer'; }
+    }
+  }
+
+  document.getElementById('fm-grant-btn').addEventListener('click', async function() {
+    if (this.disabled) return;
+    var reason = prompt('Reason for granting Founding Member status? (required)');
+    if (!reason || !reason.trim()) return;
+    var actor = (window.Clerk && window.Clerk.user && window.Clerk.user.primaryEmailAddress)
+      ? window.Clerk.user.primaryEmailAddress.emailAddress : 'admin';
+    this.disabled = true;
+    var origText = this.textContent;
+    this.textContent = 'Granting…';
+    try {
+      var res = await fetch('/api/founding-member/admin/grant', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberId: current.id, actor: actor, reason: reason.trim() })
+      });
+      var data = await res.json();
+      if (data && data.ok) {
+        showStatus('✓ Founding Member #' + data.number + ' granted');
+        await load(); // Reload member data
+      } else {
+        showStatus('Grant failed: ' + (data.error || 'unknown'), true);
+        this.disabled = false;
+        this.textContent = origText;
+      }
+    } catch (e) {
+      showStatus('Grant failed: ' + e.message, true);
+      this.disabled = false;
+      this.textContent = origText;
+    }
+  });
+
+  document.getElementById('fm-revoke-btn').addEventListener('click', async function() {
+    if (this.disabled) return;
+    if (!current || !current.foundingMember) return;
+    var reason = prompt('Reason for revoking Founding Member status? (required)');
+    if (!reason || !reason.trim()) return;
+    if (!confirm('Revoke Founding Member #' + current.foundingMember.number + '? This recycles the number.')) return;
+    var actor = (window.Clerk && window.Clerk.user && window.Clerk.user.primaryEmailAddress)
+      ? window.Clerk.user.primaryEmailAddress.emailAddress : 'admin';
+    this.disabled = true;
+    var origText = this.textContent;
+    this.textContent = 'Revoking…';
+    try {
+      var res = await fetch('/api/founding-member/admin/revoke', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ memberId: current.id, actor: actor, reason: reason.trim() })
+      });
+      var data = await res.json();
+      if (data && data.ok) {
+        showStatus('✓ Founding Member #' + data.revokedNumber + ' revoked');
+        await load();
+      } else {
+        showStatus('Revoke failed: ' + (data.error || 'unknown'), true);
+        this.disabled = false;
+        this.textContent = origText;
+      }
+    } catch (e) {
+      showStatus('Revoke failed: ' + e.message, true);
+      this.disabled = false;
+      this.textContent = origText;
     }
   });
 

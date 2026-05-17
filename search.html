@@ -706,9 +706,6 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
       <div class="filter-title">The Bearing features</div>
       <div class="filter-pills">
         <div class="filter-pill" onclick="toggleFilter(this)">
-          <span class="filter-pill-label"><span class="filter-check"></span>The Lens available</span>
-        </div>
-        <div class="filter-pill" onclick="toggleFilter(this)">
           <span class="filter-pill-label"><span class="filter-check"></span>Private Access included</span>
         </div>
         <div class="filter-pill" onclick="toggleFilter(this)">
@@ -763,7 +760,6 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
             <span class="card-tag">Adults only</span>
             <span class="card-tag">Cultural</span>
             <span class="card-tag">Max 24 guests</span>
-            <span class="card-tag highlight">🔭 The Lens</span>
             <span class="card-tag highlight">✦ Reserve Credits</span>
           </div>
           <div class="private-access">
@@ -808,333 +804,9 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
       </div>
     </div>
 
-    <!-- Card 2: Al Moudira -->
-    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
-      <div class="card-photos">
-        <div class="photo-track" id="track-2">
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Al Moudira suite" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira pool" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira exterior" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Al Moudira courtyard" style="object-position:center 66%;"></div>
-        </div>
-        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-2','dots-2')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
-        </button>
-        <button class="photo-arrow next" onclick="nextPhoto(event,'track-2','dots-2')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
-        <div class="card-top-badges">
-          <span class="badge badge-exclusive">Relais &amp; Châteaux</span>
-        </div>
-        <span class="photo-count">4 photos</span>
-        <div class="photo-nav" id="dots-2">
-          <div class="photo-dot active" onclick="goToPhoto(event,'track-2','dots-2',0)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',1)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',2)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-2','dots-2',3)"></div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="card-main">
-          <div class="card-region">Palace Hotel · Egypt</div>
-          <div class="card-name">Al Moudira</div>
-          <div class="card-loc">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
-            West Bank of the Nile · Luxor, Egypt
-          </div>
-          <div class="card-desc">A honeycomb of ten courtyards built like an oriental palace, with vaulted ceilings, hand-painted Pharaonic murals, and antiques sourced from souks across the Arab world. Surrounded by ten hectares of palm groves, 4km from the Valley of the Kings.</div>
-          <div class="card-tags">
-            <span class="card-tag">Palace hotel</span>
-            <span class="card-tag">Cultural</span>
-            <span class="card-tag">54 rooms</span>
-            <span class="card-tag">West Bank</span>
-            <span class="card-tag highlight">🔭 The Lens</span>
-            <span class="card-tag highlight">✦ Reserve Credits</span>
-          </div>
-          <div class="private-access">
-            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
-            <div>
-              <div class="pa-label">Private Access included</div>
-              <div class="pa-text">A private sunrise visit to Medinet Habu — Ramesses III's mortuary temple — before the coach parties arrive, arranged through Al Moudira's West Bank connections.</div>
-            </div>
-          </div>
-        </div>
-        <div class="card-side">
-          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
-            <button class="card-save" onclick="saveCard(event,this)" title="Save">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </button>
-          </div>
-          <div class="card-price-wrap" style="margin-bottom:14px;">
-            <div class="card-price-from">From</div>
-            <div class="card-price">$420</div>
-            <div class="card-price-unit">per night · 2 guests</div>
-            <div class="card-price-note">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
-              Same price as direct
-            </div>
-          </div>
-          <button class="card-cta">View property →</button>
-        </div>
-      </div>
-      <div class="card-hover-bar">
-        <div class="card-hover-inner">
-          <div class="card-hover-stat"><div class="card-hover-stat-val">54</div><div class="card-hover-stat-lbl">Rooms</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">10</div><div class="card-hover-stat-lbl">Courtyards</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">4km</div><div class="card-hover-stat-lbl">To Valley of Kings</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">$42</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
-        </div>
-      </div>
-    </div>
-
-<!-- Card 3: Casa Cook El Gouna -->
-    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
-      <div class="card-photos">
-        <div class="photo-track" id="track-3">
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna lobby" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna pool" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook El Gouna room" style="object-position:center 66%;"></div>
-        </div>
-        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-3','dots-3')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
-        </button>
-        <button class="photo-arrow next" onclick="nextPhoto(event,'track-3','dots-3')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
-        <div class="card-top-badges">
-          <span class="badge badge-new">Adults only</span>
-        </div>
-        <span class="photo-count">3 photos</span>
-        <div class="photo-nav" id="dots-3">
-          <div class="photo-dot active" onclick="goToPhoto(event,'track-3','dots-3',0)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-3','dots-3',1)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-3','dots-3',2)"></div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="card-main">
-          <div class="card-region">Boutique Hotel · Red Sea</div>
-          <div class="card-name">Casa Cook El Gouna</div>
-          <div class="card-loc">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
-            El Gouna · Red Sea, Egypt · 42km from Hurghada
-          </div>
-          <div class="card-desc">A modernist desert sanctuary where Bedouin aesthetics meet the Red Sea. Earthy tones, raw wood and linen, three pools, a private beach, and an onsite kitesurfing centre — set between golden dunes and crystal-clear water.</div>
-          <div class="card-tags">
-            <span class="card-tag">Boutique hotel</span>
-            <span class="card-tag">Beachfront</span>
-            <span class="card-tag">Adults only</span>
-            <span class="card-tag">Kitesurfing</span>
-            <span class="card-tag highlight">🔭 The Lens</span>
-            <span class="card-tag highlight">✦ Reserve Credits</span>
-          </div>
-          <div class="private-access">
-            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
-            <div>
-              <div class="pa-label">Private Access included</div>
-              <div class="pa-text">A pre-dawn snorkelling session at Sha'ab Abu Nuhas coral garden with Casa Cook's resident Red Sea marine guide — before the dive boats arrive.</div>
-            </div>
-          </div>
-        </div>
-        <div class="card-side">
-          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
-            <button class="card-save" onclick="saveCard(event,this)" title="Save">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </button>
-          </div>
-          <div class="card-price-wrap" style="margin-bottom:14px;">
-            <div class="card-price-from">From</div>
-            <div class="card-price">$320</div>
-            <div class="card-price-unit">per night · 2 guests</div>
-            <div class="card-price-note">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
-              Same price as direct
-            </div>
-          </div>
-          <button class="card-cta">View property →</button>
-        </div>
-      </div>
-      <div class="card-hover-bar">
-        <div class="card-hover-inner">
-          <div class="card-hover-stat"><div class="card-hover-stat-val">100</div><div class="card-hover-stat-lbl">Rooms</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">3</div><div class="card-hover-stat-lbl">Pools</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">$32</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
-        </div>
-      </div>
-    </div>
-
-<!-- Card 4: La Maison Bleue -->
-    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
-      <div class="card-photos">
-        <div class="photo-track" id="track-4">
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue night" style="object-position:center 33%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue pool" style="object-position:center 33%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="La Maison Bleue pool loungers" style="object-position:center 33%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="La Maison Bleue suite" style="object-position:center 33%;"></div>
-        </div>
-        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-4','dots-4')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
-        </button>
-        <button class="photo-arrow next" onclick="nextPhoto(event,'track-4','dots-4')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
-        <div class="card-top-badges">
-          <span class="badge badge-exclusive">Relais &amp; Châteaux</span>
-          <span class="badge badge-new">Adults only</span>
-        </div>
-        <span class="photo-count">4 photos</span>
-        <div class="photo-nav" id="dots-4">
-          <div class="photo-dot active" onclick="goToPhoto(event,'track-4','dots-4',0)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',1)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',2)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-4','dots-4',3)"></div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="card-main">
-          <div class="card-region">Boutique Mansion · Red Sea</div>
-          <div class="card-name">La Maison Bleue</div>
-          <div class="card-loc">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
-            El Gouna · Red Sea, Egypt · Private lagoon
-          </div>
-          <div class="card-desc">Thirteen individually designed suites in a palatial Red Sea mansion — European antiques, domed ceilings, hand-painted murals and parquet floors. Built as a private home, it still feels like one. A Relais & Châteaux property with its own private beach, lagoon and chef's kitchen garden.</div>
-          <div class="card-tags">
-            <span class="card-tag">Boutique mansion</span>
-            <span class="card-tag">Beachfront</span>
-            <span class="card-tag">Adults only</span>
-            <span class="card-tag">13 suites only</span>
-            <span class="card-tag highlight">🔭 The Lens</span>
-            <span class="card-tag highlight">✦ Reserve Credits</span>
-          </div>
-          <div class="private-access">
-            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
-            <div>
-              <div class="pa-label">Private Access included</div>
-              <div class="pa-text">A private dinner in the on-site hydroponic greenhouse with Chef Vincent Guillou — a table set among the herbs and greens that appear on your plate.</div>
-            </div>
-          </div>
-        </div>
-        <div class="card-side">
-          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
-            <button class="card-save" onclick="saveCard(event,this)" title="Save">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </button>
-          </div>
-          <div class="card-price-wrap" style="margin-bottom:14px;">
-            <div class="card-price-from">From</div>
-            <div class="card-price">$680</div>
-            <div class="card-price-unit">per night · 2 guests</div>
-            <div class="card-price-note">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
-              Same price as direct
-            </div>
-          </div>
-          <button class="card-cta">View property →</button>
-        </div>
-      </div>
-      <div class="card-hover-bar">
-        <div class="card-hover-inner">
-          <div class="card-hover-stat"><div class="card-hover-stat-val">13</div><div class="card-hover-stat-lbl">Suites only</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach & lagoon</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">R&amp;C</div><div class="card-hover-stat-lbl">Member</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">$68</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
-        </div>
-      </div>
-    </div>
-
-<!-- Card 5: Casa Cook North Coast -->
-    <div class="prop-card" onclick="navTo(event,'nour-el-nil.html')">
-      <div class="card-photos">
-        <div class="photo-track" id="track-5">
-                    <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook North Coast suite" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1455587734955-081b22074882?w=1200&q=80&fit=crop" alt="Casa Cook North Coast room" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook North Coast pool" style="object-position:center 66%;"></div>
-          <div class="photo-slide"><img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Casa Cook North Coast beach bar" style="object-position:center 66%;"></div>
-          
-        </div>
-        <button class="photo-arrow prev" onclick="prevPhoto(event,'track-5','dots-5')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="10,3 5,8 10,13"/></svg>
-        </button>
-        <button class="photo-arrow next" onclick="nextPhoto(event,'track-5','dots-5')">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6,3 11,8 6,13"/></svg>
-        </button>
-        <div class="card-top-badges">
-          <span class="badge badge-new">Adults only</span>
-        </div>
-        <span class="photo-count">4 photos</span>
-        <div class="photo-nav" id="dots-5">
-          <div class="photo-dot active" onclick="goToPhoto(event,'track-5','dots-5',0)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',1)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',2)"></div>
-          <div class="photo-dot" onclick="goToPhoto(event,'track-5','dots-5',3)"></div>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="card-main">
-          <div class="card-region">Boutique Hotel · Mediterranean</div>
-          <div class="card-name">Casa Cook North Coast</div>
-          <div class="card-loc">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 14s-5-4.686-5-8a5 5 0 0110 0c0 3.314-5 8-5 8z"/><circle cx="8" cy="6" r="1.5"/></svg>
-            El Alamein · North Coast, Egypt · Mediterranean Sea
-          </div>
-          <div class="card-desc">Only 37 rooms on one of North Africa's longest untouched coastlines. Earthy plaster walls, saltwater lagoon, private white-sand beach — a barefoot retreat where the Mediterranean meets the Egyptian desert. The antidote to every resort you've ever stayed in.</div>
-          <div class="card-tags">
-            <span class="card-tag">Boutique hotel</span>
-            <span class="card-tag">Mediterranean</span>
-            <span class="card-tag">Adults only</span>
-            <span class="card-tag">37 rooms only</span>
-            <span class="card-tag highlight">🔭 The Lens</span>
-            <span class="card-tag highlight">✦ Reserve Credits</span>
-          </div>
-          <div class="private-access">
-            <div class="pa-icon"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"><polygon points="8,2 10,6 14,6.5 11,9.5 11.5,14 8,11.8 4.5,14 5,9.5 2,6.5 6,6"/></svg></div>
-            <div>
-              <div class="pa-label">Private Access included</div>
-              <div class="pa-text">A private sunset visit to El Alamein's WWII battlefield with a military historian — a side of Egypt almost no tourist ever sees.</div>
-            </div>
-          </div>
-        </div>
-        <div class="card-side">
-          <div style="display:flex;gap:8px;align-self:flex-start;margin-bottom:12px;">
-            <button class="card-save" onclick="saveCard(event,this)" title="Save">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
-            </button>
-          </div>
-          <div class="card-price-wrap" style="margin-bottom:14px;">
-            <div class="card-price-from">From</div>
-            <div class="card-price">$280</div>
-            <div class="card-price-unit">per night · 2 guests</div>
-            <div class="card-price-note">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,6 5,9 10,3"/></svg>
-              Same price as direct
-            </div>
-          </div>
-          <button class="card-cta">View property →</button>
-        </div>
-      </div>
-      <div class="card-hover-bar">
-        <div class="card-hover-inner">
-          <div class="card-hover-stat"><div class="card-hover-stat-val">37</div><div class="card-hover-stat-lbl">Rooms only</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">Private</div><div class="card-hover-stat-lbl">Beach & lagoon</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">Med</div><div class="card-hover-stat-lbl">Coastline</div></div>
-          <div class="card-hover-sep"></div>
-          <div class="card-hover-stat"><div class="card-hover-stat-val">$28</div><div class="card-hover-stat-lbl">Reserve Credits</div></div>
-        </div>
-      </div>
-    </div>
+    <!-- Demo property cards removed (v74w). Card 1 (Nour El Nil) above is the
+         only real property hardcoded here. Additional cards will be rendered
+         dynamically from KV once the search rendering is wired to the index. -->
 
 <div class="load-more-wrap">
       <button class="load-more" onclick="toast('Loading more properties…')">Show more properties</button>
@@ -1151,7 +823,7 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
@@ -1352,7 +1024,7 @@ function destBlur(){
   var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
     'collections.html','journal.html','how-we-choose.html','founding-member.html',
     'about.html','my-account.html','bookings.html','conversations.html',
-    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+    'saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
   function fname(href){
     try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
   }
@@ -1450,16 +1122,6 @@ function destBlur(){
 
 var CI_PROPERTIES = {
   'nour el nil':        { slug:'nour-el-nil',         label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',       rating:5, img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&fit=crop' },
-  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80&fit=crop' },
-  'la maison bleue':    { slug:'la-maison-bleue',      label:'La Maison Bleue',     loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
-  'alila jabal akhdar': { slug:'alila-jabal-akhdar',   label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',        rating:5, img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
-  'amangiri':           { slug:'amangiri',             label:'Amangiri',            loc:'Utah Desert · USA',               rating:5, img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
-  'aqua nera':          { slug:'aqua-nera',            label:'Aqua Nera',           loc:'Peruvian Amazon Cruise',               rating:5, img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80&fit=crop' },
-  'singita grumeti':    { slug:'singita-grumeti',      label:'Singita Grumeti',     loc:'Serengeti · Tanzania',            rating:5, img:'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=600&q=80&fit=crop' },
-  'beyond ngorongoro':  { slug:'beyond-ngorongoro',    label:'&Beyond Ngorongoro',  loc:'Ngorongoro Crater · Tanzania',    rating:5, img:'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=600&q=80&fit=crop' },
-  'capella ubud':       { slug:'capella-ubud',         label:'Capella Ubud',        loc:'Bali Rainforest · Indonesia',     rating:5, img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&fit=crop' },
-  'mekong navigator':   { slug:'mekong-navigator',     label:'Mekong Navigator',    loc:'Vietnam & Cambodia Cruise',            rating:5, img:'https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=600&q=80&fit=crop' },
-  'soneva fushi':       { slug:'soneva-fushi',         label:'Soneva Fushi',        loc:'Maldives',                             rating:5, img:'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=600&q=80&fit=crop' }
 };
 function ciDetectProperties(text) {
   var lower = text.toLowerCase(), found = [], seen = {};

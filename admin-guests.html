@@ -232,6 +232,7 @@ window.addEventListener('load', async function() {
       <thead><tr>
         <th style="cursor:pointer;" onclick="setMembersSort('name')">Member <span class="sort-arrow" data-field="name"></span></th>
         <th>Tier</th>
+        <th>Founding #</th>
         <th>Location</th>
         <th style="cursor:pointer;" onclick="setMembersSort('joined_at')">Joined <span class="sort-arrow" data-field="joined_at"></span></th>
         <th style="cursor:pointer;" onclick="setMembersSort('bookings')">Bookings <span class="sort-arrow" data-field="bookings"></span></th>
@@ -241,7 +242,7 @@ window.addEventListener('load', async function() {
         <th></th>
       </tr></thead>
       <tbody id="members-tbody">
-        <tr id="members-loading"><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Loading members…</td></tr>
+        <tr id="members-loading"><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Loading members…</td></tr>
       </tbody>
     </table>
     </div>
@@ -339,13 +340,13 @@ function renderMembers() {
   if (!tbody) return;
 
   if (!allMembers.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members yet. They\'ll appear here automatically when users sign up.</td></tr>';
     return;
   }
 
   var filtered = applyFilterSort();
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">No members match your filters.</td></tr>';
     return;
   }
 
@@ -358,6 +359,17 @@ function renderMembers() {
       : m.tier === 'member'
         ? '<span class="badge badge-blue">Member</span>'
         : '<span class="badge">'+escHtml(m.tier||'—')+'</span>';
+    // v74w: real Founding Member number (separate from m.tier — fm comes from
+    // the deposit-paid → trip-complete state machine in the worker).
+    var fm = m.foundingMember || null;
+    var fmCell = '—';
+    if (fm && fm.number) {
+      if (fm.status === 'awarded') {
+        fmCell = '<span style="font-weight:600;color:#9a7230;">✦ #'+fm.number+'</span>';
+      } else if (fm.status === 'pending') {
+        fmCell = '<span style="color:var(--text2);">#'+fm.number+' <span style="opacity:.65;font-size:11px;">pending</span></span>';
+      }
+    }
     var providerLabel = m.provider === 'google' ? 'Google'
                       : m.provider === 'apple' ? 'Apple'
                       : m.provider === 'email' ? 'Email'
@@ -370,6 +382,7 @@ function renderMembers() {
       + '<div><div style="font-size:14px;font-weight:600;">'+escHtml(m.name||'—')+'</div>'
       + '<div style="font-size:12px;color:var(--text2);">'+escHtml(m.email)+'</div></div></div></td>'
       + '<td>'+tierBadge+'</td>'
+      + '<td style="font-size:13px;">'+fmCell+'</td>'
       + '<td style="font-size:13px;">'+escHtml(m.location||'—')+'</td>'
       + '<td style="font-size:13px;">'+joined+'</td>'
       + '<td style="font-weight:600;">'+(m.bookings||0)+'</td>'
@@ -386,7 +399,7 @@ function renderMembers() {
     ? '/api/members' : null;
   var tbody = document.getElementById('members-tbody');
   if (!api) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Member data only available on the live site.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Member data only available on the live site.</td></tr>';
     return;
   }
   try {
@@ -415,7 +428,7 @@ function renderMembers() {
 
     renderMembers();
   } catch(e) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">Failed to load members: '+escHtml(e.message)+'</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);">Failed to load members: '+escHtml(e.message)+'</td></tr>';
   }
 })();
 </script>

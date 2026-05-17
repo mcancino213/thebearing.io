@@ -982,7 +982,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
       <span style="font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#fbbf24;">Founding Member</span>
     </div>
     <h1 style="font-family:'Instrument Serif',serif;font-size:clamp(2.2rem,8vw,3.2rem);color:#fff;line-height:1.08;margin-bottom:14px;">Be one of the first<br><em>1,000 to book.</em></h1>
-    <p style="font-size:.9rem;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:28px;">The Bearing is new. The first 1,000 guests to complete a booking earn Founding Member status — permanently. That means The Lens on every property forever, 48-hour early access to every offer we ever release, and a free cabin on the Nile when you hit $4,000 in Reserve Credits.</p>
+    <p style="font-size:.9rem;color:rgba(255,255,255,.6);line-height:1.7;margin-bottom:28px;">The Bearing is new. The first 1,000 guests to book through us earn Founding Member status — permanently. A membership number that's yours forever, the $4,000 Reserve Credits path to a free cabin on Nour El Nil, and first access to every perk we roll out from here.</p>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
       <button onclick="window.location='/index.html'" style="padding:14px 28px;background:linear-gradient(135deg,#9a7230,#7a5820);color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;">Explore properties →</button>
       <button onclick="window.location='/nour-el-nil.html'" style="padding:14px 28px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer;">See Nour El Nil</button>
@@ -994,11 +994,12 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 
   <!-- Counter -->
   <div style="text-align:center;margin-bottom:40px;">
-    <div style="font-family:'Instrument Serif',serif;font-size:3rem;color:var(--ink);line-height:1;">247</div>
-    <div style="font-size:.78rem;color:var(--stone);margin-top:4px;">of 1,000 Founding Member spots taken</div>
+    <div id="fm-count" style="font-family:'Instrument Serif',serif;font-size:3rem;color:var(--ink);line-height:1;">—</div>
+    <div style="font-size:.78rem;color:var(--stone);margin-top:4px;">of <span id="fm-cap">1,000</span> Founding Member spots taken</div>
     <div style="background:var(--sand);border-radius:100px;height:8px;margin:12px 0 0;overflow:hidden;">
-      <div style="width:24.7%;height:100%;background:linear-gradient(90deg,var(--terra),#fbbf24);border-radius:100px;"></div>
+      <div id="fm-progress" style="width:0%;height:100%;background:linear-gradient(90deg,var(--terra),#fbbf24);border-radius:100px;transition:width .4s ease;"></div>
     </div>
+    <div id="fm-breakdown" style="font-size:.66rem;color:var(--stone);opacity:.7;margin-top:6px;"></div>
   </div>
 
   <!-- What you get -->
@@ -1006,30 +1007,58 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
     <h2 style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);margin-bottom:16px;">What Founding Members get</h2>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);">
-        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a1400,#2d2200);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">🔭</div>
-        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">The Lens — every property, forever</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">Insider perspectives from archaeologists, chefs, naturalists and writers — on every property we list, not just the ones you've booked.</div></div>
-      </div>
-      <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);">
-        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2e5c3e,#1e3d28);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">⚡</div>
-        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">48-hour early access to every offer</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">When a property releases limited availability, a rare departure, or a special rate — you see it 48 hours before anyone else.</div></div>
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3d1e4a,#281232);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">✦</div>
+        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">Permanent badge and membership number</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">Your Founding Member number is yours forever — #1 through #1,000. Once all 1,000 spots are gone, this tier closes permanently.</div></div>
       </div>
       <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);">
         <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#0e1a28,#1a2e40);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">🛶</div>
-        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">Free cabin on Nour El Nil at $4,000 in credits</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">Earn 10% of every booking as Reserve Credits. Hit $4,000 and your cabin on the Nile is on us — September or May, when the river is at its most beautiful.</div></div>
+        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">Free cabin on Nour El Nil at $4,000 in Reserve Credits</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">Earn 10% of every Bearing booking as Reserve Credits. Hit $4,000 and your cabin on the Nile is on us. (Open to all members — Founding Members are simply first in line as new perks come.)</div></div>
       </div>
       <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-lg);">
-        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3d1e4a,#281232);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">✦</div>
-        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">Permanent badge and membership number</div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">Your Founding Member number is yours forever — #1 through #1,000. Once all 1,000 spots are gone, this tier closes permanently.</div></div>
+        <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#2e5c3e,#1e3d28);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.9rem;">⚡</div>
+        <div><div style="font-size:.88rem;font-weight:600;color:var(--ink);margin-bottom:3px;">First access to future perks <span style="opacity:.6;font-weight:400;">(coming soon)</span></div><div style="font-size:.78rem;color:var(--stone);line-height:1.5;">As The Bearing rolls out new features — early access to rare departures, expert content, member-only properties — Founding Members are first in line.</div></div>
       </div>
     </div>
   </div>
 
   <!-- CTA -->
   <div style="background:linear-gradient(135deg,#1a1400,#2d2200);border:1px solid rgba(251,191,36,.3);border-radius:var(--r-xl);padding:28px 24px;text-align:center;">
-    <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fbbf24;margin-bottom:8px;">753 spots remaining</div>
-    <p style="font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:20px;">No membership fee. No subscription. Founding Member status is earned simply by completing your first booking through The Bearing.</p>
+    <div id="fm-remaining" style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fbbf24;margin-bottom:8px;">— spots remaining</div>
+    <p style="font-size:.82rem;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:20px;">No membership fee. No subscription. Founding Member status is earned the moment you pay the deposit on your first Bearing booking — confirmed permanently once you complete your trip.</p>
     <button onclick="window.location='/index.html'" style="padding:14px 36px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">Browse properties to book →</button>
   </div>
+
+  <!-- v74w: live counter wire-up -->
+  <script>
+    (function() {
+      function fmtInt(n) { return Number(n).toLocaleString(); }
+      fetch('/api/founding-member/stats')
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+          if (!d || !d.ok) return;
+          var total = d.totalCount || 0;
+          var cap = d.cap || 1000;
+          var remaining = d.remaining;
+          if (typeof remaining !== 'number') remaining = Math.max(0, cap - total);
+          var pct = cap > 0 ? Math.min(100, (total / cap) * 100) : 0;
+          var elCount = document.getElementById('fm-count');
+          if (elCount) elCount.textContent = fmtInt(total);
+          var elCap = document.getElementById('fm-cap');
+          if (elCap) elCap.textContent = fmtInt(cap);
+          var elProg = document.getElementById('fm-progress');
+          if (elProg) elProg.style.width = pct + '%';
+          var elBreak = document.getElementById('fm-breakdown');
+          if (elBreak) {
+            elBreak.textContent = fmtInt(d.awardedCount || 0) + ' confirmed · ' + fmtInt(d.reservedCount || 0) + ' pending trip completion';
+          }
+          var elRem = document.getElementById('fm-remaining');
+          if (elRem) elRem.textContent = fmtInt(remaining) + ' spots remaining';
+        })
+        .catch(function() {
+          // Silent fail — placeholders stay visible.
+        });
+    })();
+  </script>
 </div><footer style="background:var(--ink);padding:48px 20px 40px;margin-top:60px;">
   <div style="max-width:900px;margin:0 auto;">
     <div style="font-family:'Instrument Serif',serif;font-size:1.4rem;color:#fff;margin-bottom:4px;">The Bearing<span style="color:var(--terra);font-family:'Geist',sans-serif;font-size:.9em;">.io</span></div>
@@ -1067,7 +1096,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
@@ -1126,7 +1155,7 @@ function tcSearchFromInput(inputId) {
   var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
     'collections.html','journal.html','how-we-choose.html','founding-member.html',
     'about.html','my-account.html','bookings.html','conversations.html',
-    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+    'saved.html','preferences.html','settings.html','404.html'];
   function fname(href){
     try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
   }
@@ -1280,16 +1309,6 @@ function ciSend() {
 
 var CI_PROPERTIES = {
   'nour el nil':        { slug:'nour-el-nil',         label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',       rating:5, img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&fit=crop' },
-  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80&fit=crop' },
-  'la maison bleue':    { slug:'la-maison-bleue',      label:'La Maison Bleue',     loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
-  'alila jabal akhdar': { slug:'alila-jabal-akhdar',   label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',        rating:5, img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
-  'amangiri':           { slug:'amangiri',             label:'Amangiri',            loc:'Utah Desert · USA',               rating:5, img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
-  'aqua nera':          { slug:'aqua-nera',            label:'Aqua Nera',           loc:'Peruvian Amazon Cruise',               rating:5, img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80&fit=crop' },
-  'singita grumeti':    { slug:'singita-grumeti',      label:'Singita Grumeti',     loc:'Serengeti · Tanzania',            rating:5, img:'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=600&q=80&fit=crop' },
-  'beyond ngorongoro':  { slug:'beyond-ngorongoro',    label:'&Beyond Ngorongoro',  loc:'Ngorongoro Crater · Tanzania',    rating:5, img:'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=600&q=80&fit=crop' },
-  'capella ubud':       { slug:'capella-ubud',         label:'Capella Ubud',        loc:'Bali Rainforest · Indonesia',     rating:5, img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&fit=crop' },
-  'mekong navigator':   { slug:'mekong-navigator',     label:'Mekong Navigator',    loc:'Vietnam & Cambodia Cruise',            rating:5, img:'https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=600&q=80&fit=crop' },
-  'soneva fushi':       { slug:'soneva-fushi',         label:'Soneva Fushi',        loc:'Maldives',                             rating:5, img:'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=600&q=80&fit=crop' }
 };
 
 function ciDetectProperties(text) {

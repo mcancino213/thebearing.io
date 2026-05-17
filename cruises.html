@@ -1408,7 +1408,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
   var VALID=['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
     'collections.html','journal.html','how-we-choose.html','founding-member.html',
     'about.html','my-account.html','bookings.html','conversations.html',
-    'lens.html','saved.html','preferences.html','settings.html','404.html'];
+    'saved.html','preferences.html','settings.html','404.html'];
   function fname(h){{try{{return h.split('/').pop().split('?')[0].split('#')[0];}}catch(e){{return '';}}}}
   document.addEventListener('click',function(e){{
     var a=e.target.closest('a[href]');if(!a)return;
@@ -1550,16 +1550,6 @@ function ciSend() {
 
 var CI_PROPERTIES = {
   'nour el nil':        { slug:'nour-el-nil',         label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',       rating:5, img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&fit=crop' },
-  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80&fit=crop' },
-  'la maison bleue':    { slug:'la-maison-bleue',      label:'La Maison Bleue',     loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
-  'alila jabal akhdar': { slug:'alila-jabal-akhdar',   label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',        rating:5, img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
-  'amangiri':           { slug:'amangiri',             label:'Amangiri',            loc:'Utah Desert · USA',               rating:5, img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
-  'aqua nera':          { slug:'aqua-nera',            label:'Aqua Nera',           loc:'Peruvian Amazon Cruise',               rating:5, img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80&fit=crop' },
-  'singita grumeti':    { slug:'singita-grumeti',      label:'Singita Grumeti',     loc:'Serengeti · Tanzania',            rating:5, img:'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=600&q=80&fit=crop' },
-  'beyond ngorongoro':  { slug:'beyond-ngorongoro',    label:'&Beyond Ngorongoro',  loc:'Ngorongoro Crater · Tanzania',    rating:5, img:'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=600&q=80&fit=crop' },
-  'capella ubud':       { slug:'capella-ubud',         label:'Capella Ubud',        loc:'Bali Rainforest · Indonesia',     rating:5, img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&fit=crop' },
-  'mekong navigator':   { slug:'mekong-navigator',     label:'Mekong Navigator',    loc:'Vietnam & Cambodia Cruise',            rating:5, img:'https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=600&q=80&fit=crop' },
-  'soneva fushi':       { slug:'soneva-fushi',         label:'Soneva Fushi',        loc:'Maldives',                             rating:5, img:'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=600&q=80&fit=crop' }
 };
 
 function ciDetectProperties(text) {

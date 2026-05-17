@@ -1,6 +1,10 @@
 // Customer-side sidebar populator with sessionStorage caching
 (function() {
   var CACHE_KEY = 'tb_user_cache';
+  // v74w: FM status cached separately so it can update independently of
+  // the user record (FM gets reserved server-side after a deposit; we want
+  // the badge to refresh on next page load even if user record hasn't changed).
+  var FM_CACHE_KEY = 'tb_fm_cache';
 
   function wireSignOut() {
     // Find any tb-signout-btn (static HTML in every page) and wire its click handler
@@ -93,6 +97,57 @@
 
     var profile = document.querySelector('.sidebar-profile');
     if (profile) profile.classList.add('tb-ready');
+
+    // v74w: Founding Member badge. Renders into #tb-fm-badge.
+    // Priority: real FM cache → fall back to "Member since YYYY" → fall back to "Member".
+    applyFmBadge(data);
+  }
+
+  // v74w: render the FM badge based on cached state + user createdAt fallback.
+  function applyFmBadge(data) {
+    var el = document.getElementById('tb-fm-badge');
+    if (!el) return;
+    var fm = null;
+    try {
+      var raw = sessionStorage.getItem(FM_CACHE_KEY);
+      if (raw) fm = JSON.parse(raw);
+    } catch(e) {}
+
+    if (fm && fm.status === 'awarded' && fm.number) {
+      el.innerHTML = '✦ Founding Member #' + fm.number;
+      el.style.color = ''; // inherit
+      return;
+    }
+    if (fm && fm.status === 'pending' && fm.number) {
+      el.innerHTML = '✦ Founding Member <span style="opacity:.65;">#' + fm.number + ' · pending</span>';
+      return;
+    }
+    // Fallback: "Member since YYYY" if we have a createdAt
+    if (data && data.createdAtYear) {
+      el.textContent = 'Member since ' + data.createdAtYear;
+      return;
+    }
+    el.textContent = 'Member';
+  }
+
+  // v74w: fetch FM status from worker and cache it. Idempotent — only updates
+  // if the response differs from cache.
+  async function refreshFmStatus(userId) {
+    if (!userId) return;
+    try {
+      var r = await fetch('/api/founding-member/me?guestId=' + encodeURIComponent(userId));
+      if (!r.ok) return;
+      var d = await r.json();
+      if (!d || !d.ok) return;
+      var payload = { status: d.status || 'none', number: d.number || null };
+      try { sessionStorage.setItem(FM_CACHE_KEY, JSON.stringify(payload)); } catch(e) {}
+      // Re-apply badge with the fresh data
+      var cached = null;
+      try { cached = sessionStorage.getItem(CACHE_KEY); cached = cached ? JSON.parse(cached) : null; } catch(e) {}
+      applyFmBadge(cached);
+    } catch (e) {
+      // Non-fatal — leave the existing badge state
+    }
   }
 
   function applyUser(user) {
@@ -103,9 +158,20 @@
     }
     var email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
     var initials = name.split(' ').map(function(w){return w[0]||''}).join('').toUpperCase().slice(0,2);
-    var data = { name: name, email: email, initials: initials, avatarUrl: user.imageUrl };
+    // v74w: capture year from Clerk user createdAt for the "Member since YYYY" fallback
+    var createdAtYear = '';
+    try {
+      var ca = user.createdAt;
+      if (ca) {
+        var d = (ca instanceof Date) ? ca : new Date(ca);
+        if (!isNaN(d.getTime())) createdAtYear = String(d.getFullYear());
+      }
+    } catch(e) {}
+    var data = { name: name, email: email, initials: initials, avatarUrl: user.imageUrl, createdAtYear: createdAtYear };
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch(e) {}
     applyToDOM(data);
+    // v74w: refresh FM status async — uses Clerk user id as guestId
+    refreshFmStatus(user.id);
   }
 
   function applyCacheNow() {

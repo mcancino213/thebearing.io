@@ -37,7 +37,7 @@
   }
   /* Scroll spy */
   function initScrollSpy(){
-    var secs  = ['sec-overview','sec-gallery','sec-lens','sec-cabins','sec-itinerary'];
+    var secs  = ['sec-overview','sec-gallery','sec-cabins','sec-itinerary'];
     var items = document.querySelectorAll('.subnav-item');
     if(!items.length) return;
     function spy(){
@@ -905,7 +905,6 @@
 <nav class="subnav" id="subnav" aria-label="Page sections">
   <a class="subnav-item active" href="#sec-overview"  onclick="jumpTo('sec-overview');return false;">Overview</a>
   <a class="subnav-item"       href="#sec-gallery"   onclick="jumpTo('sec-gallery');return false;">Gallery</a>
-  <a class="subnav-item"       href="#sec-lens"       onclick="jumpTo('sec-lens');return false;">The Lens</a>
   <a class="subnav-item"       href="#sec-cabins"     onclick="jumpTo('sec-cabins');return false;">Cabins</a>
   <a class="subnav-item"       href="#sec-itinerary"  onclick="jumpTo('sec-itinerary');return false;">Itinerary</a>
 </nav>
@@ -964,18 +963,6 @@
         <div class="dbc-trust-item"><svg stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>No hidden fees · 0% commission</div>
         <div class="dbc-trust-item"><svg stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Reply within 24 hours</div>
       </div>
-    </div>
-    <!-- Lens teaser -->
-    <div class="dbc-lens-teaser">
-      <div class="dbc-lens-title">The Lens — expert perspectives</div>
-      <div class="dbc-lens-sub">4 specialists curated for this journey — an Egyptologist, a chef, a textile designer, a travel writer.</div>
-      <div class="dbc-lens-experts">
-        <div class="dbc-lens-face" style="background:linear-gradient(135deg,#9a7230,#7a5820);">A</div>
-        <div class="dbc-lens-face" style="background:linear-gradient(135deg,#2e6a8a,#1a4a6a);">J</div>
-        <div class="dbc-lens-face" style="background:linear-gradient(135deg,#3a7055,#2a5040);">S</div>
-        <div class="dbc-lens-face" style="background:linear-gradient(135deg,#8c4422,#6a3218);">R</div>
-      </div>
-      <div style="font-size:.7rem;color:rgba(125,211,200,.85);cursor:pointer;" onclick="document.getElementById('sec-lens').scrollIntoView({behavior:'smooth'})">Unlock with booking →</div>
     </div>
     <div style="height:40px;"></div>
   </div>
@@ -1119,253 +1106,8 @@
     }
   </script>
 
-  <!-- ══ THE LENS ══ -->
-  <a name="sec-lens" id="sec-lens"></a>
-  <div class="sec-eyebrow">The Lens</div>
-  <h2 class="sec-title">A different way of <em>seeing</em></h2>
-  <p style="font-size:.82rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">Switch the lens. Four people who know this place deeply — an egyptologist, a chef, a textile designer, a writer. Each one shows you something the guidebooks miss.</p>
-
-  <!-- Expert selector pills -->
-  <div id="expert-pills" style="display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px 16px;scrollbar-width:none;">
-    <style>#expert-pills::-webkit-scrollbar{display:none;}</style>
-
-    <!-- Pill 0 — unlocked -->
-    <button class="xpill active" onclick="selectExpert(0,this)">
-      <div class="xpill-avatar" style="background:linear-gradient(135deg,#9a7230,#7a5820);">A</div>
-      <div class="xpill-text"><div class="xpill-name">Dr. Amira Khalil</div><div class="xpill-role">Egyptologist · Cairo</div></div>
-    </button>
-
-    <!-- Pills 1–3 — locked -->
-    <button class="xpill xpill-locked" onclick="openLensGate()">
-      <div class="xpill-avatar" style="background:linear-gradient(135deg,#2e6a8a,#1a4a6a);filter:blur(3px);">J</div>
-      <div class="xpill-text">
-        <div class="xpill-name" style="filter:blur(4px);user-select:none;">Jean-Marc Favre</div>
-        <div class="xpill-role" style="filter:blur(3px);user-select:none;">Chef · Lyon & Luxor</div>
-      </div>
-      <div class="xpill-lock">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-      </div>
-    </button>
-    <button class="xpill xpill-locked" onclick="openLensGate()">
-      <div class="xpill-avatar" style="background:linear-gradient(135deg,#3a7055,#2a5040);filter:blur(3px);">S</div>
-      <div class="xpill-text">
-        <div class="xpill-name" style="filter:blur(4px);user-select:none;">Sara Osman</div>
-        <div class="xpill-role" style="filter:blur(3px);user-select:none;">Textile designer · Aswan</div>
-      </div>
-      <div class="xpill-lock">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-      </div>
-    </button>
-    <button class="xpill xpill-locked" onclick="openLensGate()">
-      <div class="xpill-avatar" style="background:linear-gradient(135deg,#8c4422,#6a3218);filter:blur(3px);">R</div>
-      <div class="xpill-text">
-        <div class="xpill-name" style="filter:blur(4px);user-select:none;">Richard Mabey</div>
-        <div class="xpill-role" style="filter:blur(3px);user-select:none;">Travel writer · London</div>
-      </div>
-      <div class="xpill-lock">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-      </div>
-    </button>
-  </div>
-
-  <!-- Unlock banner -->
-  <div id="lens-lock-banner" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--linen);border:1px solid var(--border-hi);border-radius:var(--r-md);margin-bottom:16px;">
-    <div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-    </div>
-    <div style="flex:1;">
-      <div style="font-size:.78rem;font-weight:500;color:var(--ink);margin-bottom:1px;">3 more specialists · members only</div>
-      <div style="font-size:.7rem;color:var(--stone);">Book through The Bearing to unlock — or join as a member for $99/year.</div>
-    </div>
-    <button onclick="openLensGate()" style="flex-shrink:0;padding:8px 14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">Unlock</button>
-  </div>
-
-  <!-- Expert panel -->
-  <div id="expert-panel" style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;">
-
-    <!-- Expert header -->
-    <div id="expert-header" style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;">
-      <div id="expert-avatar" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:1.1rem;font-style:italic;color:#fff;background:linear-gradient(135deg,#9a7230,#7a5820);">A</div>
-      <div>
-        <div id="expert-name" style="font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);margin-bottom:1px;">Dr. Amira Khalil</div>
-        <div id="expert-role" style="font-size:.7rem;color:var(--terra);font-weight:500;letter-spacing:.04em;margin-bottom:6px;">Egyptologist · 22 years at the Cairo Museum</div>
-        <div id="expert-bio" style="font-size:.78rem;color:var(--stone);line-height:1.55;">"Most visitors rush. The Nile rewards patience — the sites that stopped me in my tracks were never the famous ones."</div>
-      </div>
-    </div>
-
-    <!-- Recommendations -->
-    <div id="expert-recs" style="padding:0;">
-      <!-- populated by JS -->
-    </div>
-
-  </div>
-
-  <style>
-    .xpill{display:flex;align-items:center;gap:9px;padding:8px 14px 8px 8px;border-radius:100px;border:1px solid var(--border-hi);background:#fff;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:border-color .18s,background .18s;}
-    .xpill-locked{opacity:.7;cursor:pointer;position:relative;}
-    .xpill-locked:hover{border-color:var(--border-hi);background:#fff;}
-    .xpill-lock{width:20px;height:20px;border-radius:50%;background:var(--sand);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--stone);}
-
-    /* Lens gate overlay */
-    .lens-gate{position:fixed;inset:0;z-index:250;background:rgba(20,14,7,.5);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:20px;}
-    .lens-gate.open{display:flex;}
-    .lens-gate-sheet{width:100%;max-width:400px;background:var(--cream);border-radius:var(--r-xl);padding:0 24px 32px;border:1px solid var(--border-hi);}
-    .lens-gate-grip{width:36px;height:4px;background:var(--sand);border-radius:2px;margin:14px auto 24px;}
-    .lens-gate-icon{width:48px;height:48px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
-    .lens-gate-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;}
-    .lens-gate-title{font-family:'Instrument Serif',serif;font-size:1.5rem;color:var(--ink);text-align:center;margin-bottom:6px;}
-    .lens-gate-sub{font-size:.8rem;color:var(--stone);text-align:center;line-height:1.6;margin-bottom:24px;}
-    .lens-gate-experts{display:flex;gap:8px;justify-content:center;margin-bottom:24px;}
-    .lens-gate-face{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:.9rem;font-style:italic;color:#fff;border:2px solid var(--cream);}
-    .lens-gate-input{width:100%;padding:13px 16px;border:1px solid var(--border-hi);border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.9rem;color:var(--ink);outline:none;background:#fff;transition:border-color .18s;margin-bottom:10px;}
-    .lens-gate-input:focus{border-color:var(--terra);}
-    .lens-gate-submit{width:100%;padding:14px;border:none;border-radius:var(--r-md);background:var(--ink);color:#fff;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:opacity .15s;margin-bottom:10px;}
-    .lens-gate-submit:hover{opacity:.88;}
-    .lens-gate-note{font-size:.68rem;color:var(--mist);text-align:center;line-height:1.6;}
-    .xpill.active{border-color:var(--terra);background:var(--terra-dim);}
-    .xpill-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:.85rem;font-style:italic;color:#fff;flex-shrink:0;}
-    .xpill-name{font-size:.75rem;font-weight:500;color:var(--ink);line-height:1.2;}
-    .xpill-role{font-size:.62rem;color:var(--stone);}
-    .xrec{display:flex;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border);align-items:flex-start;cursor:pointer;transition:background .15s;}
-    .xrec:last-child{border-bottom:none;}
-    .xrec:hover{background:var(--linen);}
-    .xrec-img{width:56px;height:56px;border-radius:var(--r-md);overflow:hidden;flex-shrink:0;background:var(--sand);}
-    .xrec-img img{width:100%;height:100%;object-fit:cover;}
-    .xrec-tag{display:inline-block;font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:4px;}
-    .xrec-title{font-size:.88rem;font-weight:500;color:var(--ink);margin-bottom:2px;line-height:1.3;}
-    .xrec-body-preview{font-size:.75rem;color:var(--stone);line-height:1.5;}
-    .xrec-body-full{font-size:.75rem;color:var(--stone);line-height:1.5;display:none;}
-    .xrec-expand{font-size:.68rem;font-weight:500;color:var(--terra);cursor:pointer;border:none;background:none;padding:4px 0 0;font-family:'Geist',sans-serif;letter-spacing:.02em;}
-    .xrec-expand:hover{opacity:.75;}
-    .xrec-num{width:22px;height:22px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:600;color:var(--mist);flex-shrink:0;margin-top:2px;}
-  </style>
-
-  <script>
-  var experts = [
-    {
-      initial:'A', bg:'linear-gradient(135deg,#9a7230,#7a5820)',
-      name:'Dr. Amira Khalil', role:'Egyptologist · 22 years at the Cairo Museum',
-      bio:'"Most visitors rush. The Nile rewards patience — the sites that stopped me in my tracks were never the famous ones."',
-      recs:[
-        { tag:'Hidden site', tagColor:'#9a7230', tagBg:'rgba(154,114,48,.1)',
-          title:'The necropolis at El Kab',
-          body:'The decorated tombs carved into the cliff face here predate the New Kingdom. On a good day you will have them entirely to yourself. The tomb of Renni has the finest agricultural scenes in all of Upper Egypt.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Unmissable', tagColor:'#b05830', tagBg:'rgba(176,88,48,.1)',
-          title:'The astronomical ceiling at Esna',
-          body:'Recently restored — the original colours, dominant reds and yellows, are now visible for the first time in 1,800 years. The zodiac ceiling alone justifies the detour.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Avoid', tagColor:'#5f5e5a', tagBg:'rgba(80,60,30,.07)',
-          title:'The main entrance at Edfu, 10am–2pm',
-          body:'Come at dawn with Nour El Nil\'s private access, or at dusk when the coach tours have left. The temple at midday in high season is a different, lesser experience.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-      ]
-    },
-    {
-      initial:'J', bg:'linear-gradient(135deg,#2e6a8a,#1a4a6a)',
-      name:'Jean-Marc Favre', role:'Chef · Runs a cookery school between Lyon and Luxor',
-      bio:'"Egyptian food is one of the least understood cuisines in the world. The Nile corridor has its own vocabulary — fish, spice, technique — that the restaurants in Cairo barely touch."',
-      recs:[
-        { tag:'Eat here', tagColor:'#2e6a8a', tagBg:'rgba(46,106,138,.1)',
-          title:'The covered market in Edfu',
-          body:'Ask the Nour El Nil crew to let you shop here before re-boarding. The small-batch spice stalls on the eastern side sell dried hibiscus, cumin and fenugreek blends you will not find in Luxor.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'On the boat', tagColor:'#3a7055', tagBg:'rgba(58,112,85,.1)',
-          title:'Ask for the Nile perch',
-          body:'Freshly caught each morning and cooked in a chermoula-adjacent spice paste. It is the single dish that most defines this stretch of the river — simple, perfect, unrepeatable.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Bring home', tagColor:'#9a7230', tagBg:'rgba(154,114,48,.1)',
-          title:'Dried doum palm fruit, Aswan market',
-          body:'Ground and steeped, it makes a smoky, slightly caramel tea that tastes of the desert. Available only in the south. Buy more than you think you need.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-      ]
-    },
-    {
-      initial:'S', bg:'linear-gradient(135deg,#3a7055,#2a5040)',
-      name:'Sara Osman', role:'Textile designer based between Aswan and London',
-      bio:'"The weaving traditions of Nubia are almost entirely absent from the tourist trail. That\'s exactly where I spend most of my time."',
-      recs:[
-        { tag:'Craft', tagColor:'#3a7055', tagBg:'rgba(58,112,85,.1)',
-          title:'The weavers of Gharb Soheil',
-          body:'The Nubian village a short boat ride from Aswan has a cluster of family workshops producing handwoven cotton textiles in patterns unchanged for generations. Go early and ask to watch.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Buy', tagColor:'#9a7230', tagBg:'rgba(154,114,48,.1)',
-          title:'Hand-stitched galabiya cloth, Esna souk',
-          body:'The textile market around the temple is one of the last places to find hand-produced galabiya fabric at source prices. The indigo-dyed linen is particularly fine.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Colour', tagColor:'#b05830', tagBg:'rgba(176,88,48,.1)',
-          title:'The painted houses of Kom Ombo',
-          body:'The Nubian architectural tradition of decorating house exteriors with bright geometric murals survives here in pockets. Walk 10 minutes from the temple toward the river and you\'ll find it.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-      ]
-    },
-    {
-      initial:'R', bg:'linear-gradient(135deg,#8c4422,#6a3218)',
-      name:'Richard Mabey', role:'Travel writer · Has sailed the Nile four times',
-      bio:'"The mistake everyone makes is thinking the temples are the story. The real story is the river itself — and the life on its banks."',
-      recs:[
-        { tag:'Slow down', tagColor:'#8c4422', tagBg:'rgba(140,68,34,.1)',
-          title:'Stay on deck between Edfu and Silsileh',
-          body:'This is the quietest, wildest stretch. No towns, no cruise ships, just riverbank and desert. The light at 4pm on the sandstone cliffs is unlike anything else on the Nile.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Read first', tagColor:'#2e6a8a', tagBg:'rgba(46,106,138,.1)',
-          title:'Amelia Edwards: A Thousand Miles Up the Nile (1877)',
-          body:'The Victorian traveller who did exactly this route, in a dahabiya, 150 years ago. Her descriptions of the sites are still the best written in English. Read it the week before you board.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-        { tag:'Watch', tagColor:'#3a7055', tagBg:'rgba(58,112,85,.1)',
-          title:'The egrets at dusk, from the upper deck',
-          body:'Every evening the white egrets return to roost in the acacia trees along the bank. It happens in the same half-hour window each day. Bring whatever you\'re drinking and say nothing.',
-          img:'https://imagedelivery.net/YyCqpmHo4EG6ShyDMCRcVQ/1dec565c-7f8c-4777-479a-40f17fd8d400/public' },
-      ]
-    }
-  ];
-
-  function xrecToggle(uid){
-    var full=document.getElementById('full-'+uid);
-    var btn=document.getElementById('btn-'+uid);
-    if(!full||!btn) return;
-    var open=full.style.display==='block';
-    full.style.display=open?'none':'block';
-    btn.textContent=open?'Read more ↓':'Show less ↑';
-  }
-
-  function selectExpert(idx, btn) {
-    document.querySelectorAll('.xpill').forEach(function(p){ p.classList.remove('active'); });
-    btn.classList.add('active');
-    var e = experts[idx];
-    var h = document.getElementById('expert-header');
-    document.getElementById('expert-avatar').style.background = e.bg;
-    document.getElementById('expert-avatar').textContent = e.initial;
-    document.getElementById('expert-name').textContent = e.name;
-    document.getElementById('expert-role').textContent = e.role;
-    document.getElementById('expert-bio').textContent  = e.bio;
-
-    var recs = document.getElementById('expert-recs');
-    recs.innerHTML = e.recs.map(function(r, i){
-      var body = r.body||'';
-      var sentences = body.replace(/([.!?])\s+/g,'$1\n').split('\n').filter(Boolean);
-      var preview = sentences.slice(0,2).join(' ');
-      var rest = sentences.slice(2).join(' ');
-      var hasMore = rest.length > 0;
-      var uid = 'xrec-'+i+'-'+Math.random().toString(36).slice(2);
-      return '<div class="xrec">'
-        + '<div class="xrec-num">' + (i+1) + '</div>'
-        + '<div style="flex:1;">'
-        + '<span class="xrec-tag" style="color:'+r.tagColor+';background:'+r.tagBg+';border:1px solid '+r.tagColor+'33;">'+r.tag+'</span>'
-        + '<div class="xrec-title">'+r.title+'</div>'
-        + '<div class="xrec-body-preview" id="prev-'+uid+'">'+preview+'</div>'
-        + (hasMore ? '<div class="xrec-body-full" id="full-'+uid+'" style="display:none;font-size:.75rem;color:var(--stone);line-height:1.5;">'+rest+'</div>' : '')
-        + (hasMore ? '<button class="xrec-expand" id="btn-'+uid+'" onclick="xrecToggle(\''+uid+'\')">Read more ↓</button>' : '')
-        + '</div>'
-        + '<div class="xrec-img"><img src="'+r.img+'" alt="'+r.title+'"></div>'
-        + '</div>';
-    }).join('');
-  }
-
-  // Init with first expert
-  selectExpert(0, document.querySelector('.xpill'));
-  </script>
-
+  <!-- The Lens section removed v74w (Option C: hide UI surfaces,
+       keep marketing language elsewhere). -->
 
   <!-- Cabin types -->
   <a name="sec-cabins" id="sec-cabins" class="full-width"></a>
@@ -1571,37 +1313,10 @@
     <button class="promise-btn" onclick="tbAuthEnquire()">Start your inquiry — no commitment</button>
   </div>
 
-  <!-- Similar -->
-
-  <!-- Similar journeys -->
-  <div class="sec-eyebrow">You might also love</div>
-  <h2 class="sec-title">Similar <em>journeys</em></h2>
-  <div class="similar-scroll">
-    <div class="sim-card" onclick="toast('Aqua Nera coming soon')">
-      <div class="sim-img"><img src="https://d20knvk822eu5a.cloudfront.net/s3fs-public-optimized/static-assets/ships/aqua-nera/suites/suite-with-daybed.webp.webp?format=auto&width=800&quality=80" alt="Aqua Nera"></div>
-      <div class="sim-body">
-        <div class="sim-region">Peru · Amazon</div>
-        <div class="sim-name">Aqua Nera</div>
-        <div class="sim-price">From <strong>$6,800pp</strong></div>
-      </div>
-    </div>
-    <div class="sim-card" onclick="toast('Gypsy coming soon')">
-      <div class="sim-img"><img src="https://d1jxe9bpbkcsev.cloudfront.net/2024/07/Gypsy-gallery-11.jpg" alt="Gypsy Mekong"></div>
-      <div class="sim-body">
-        <div class="sim-region">Southeast Asia · Mekong</div>
-        <div class="sim-name">Gypsy by Mekong Kingdoms</div>
-        <div class="sim-price">From <strong>$5,400pp</strong></div>
-      </div>
-    </div>
-    <div class="sim-card" onclick="toast('Chablé coming soon')">
-      <div class="sim-img"><img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/2e/50/a7/casita-terrace-each-casita.jpg?w=600&h=-1&s=1" alt="Chablé Yucatan"></div>
-      <div class="sim-body">
-        <div class="sim-region">Mexico · Yucatan</div>
-        <div class="sim-name">Chablé Yucatan</div>
-        <div class="sim-price">From <strong>$980/night</strong></div>
-      </div>
-    </div>
-  </div>
+  <!-- Similar journeys section removed v74w: was hardcoded demo data
+       (Aqua Nera/Gypsy/Chablé with "coming soon" toasts, not real listings).
+       Will be re-introduced when there are enough real KV-backed properties
+       to drive an actual "similar" recommendation. -->
 
 </div><!-- /prop-body -->
 
@@ -1853,7 +1568,7 @@ var CI_SYSTEM = "You are The Envoy — the AI travel specialist of The Bearing, 
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
@@ -2045,45 +1760,7 @@ window.addEventListener('beforeunload', function() {
 </script>
 
 
-<!-- ══ LENS GATE OVERLAY ══ -->
-<div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
-  <div class="lens-gate-sheet">
-    <div class="lens-gate-grip" onclick="closeLensGate()"></div>
-    <div class="lens-gate-icon">
-      <svg viewBox="0 0 12 12"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-    </div>
-    <div class="lens-gate-title">Unlock The Lens</div>
-    <div class="lens-gate-sub">Three specialists are waiting — the chef, the textile designer, the writer. Access is included when you book through The Bearing, or join as a member.</div>
-
-    <!-- Expert faces preview -->
-    <div class="lens-gate-experts">
-      <div class="lens-gate-face" style="background:linear-gradient(135deg,#9a7230,#7a5820);margin-right:-8px;z-index:3;">A</div>
-      <div class="lens-gate-face" style="background:linear-gradient(135deg,#2e6a8a,#1a4a6a);margin-right:-8px;z-index:2;">J</div>
-      <div class="lens-gate-face" style="background:linear-gradient(135deg,#3a7055,#2a5040);margin-right:-8px;z-index:1;">S</div>
-      <div class="lens-gate-face" style="background:linear-gradient(135deg,#8c4422,#6a3218);">R</div>
-    </div>
-
-    <!-- Two paths -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-      <div style="border:1px solid var(--border-hi);border-radius:var(--r-md);padding:14px 12px;text-align:center;cursor:pointer;" onclick="openOverlay('inq-overlay');closeLensGate();">
-        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--terra);margin-bottom:4px;">Included with booking</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:var(--ink);margin-bottom:4px;">Book this property</div>
-        <div style="font-size:.7rem;color:var(--stone);line-height:1.4;">The Lens unlocks automatically for this property and sitewide for 1 year.</div>
-      </div>
-      <div style="border:1.5px solid var(--ink);border-radius:var(--r-md);padding:14px 12px;text-align:center;background:var(--ink);cursor:pointer;" onclick="showMemberSignup()">
-        <div style="font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,200,120,.9);margin-bottom:4px;">Annual membership</div>
-        <div style="font-family:'Instrument Serif',serif;font-size:1rem;color:#fff;margin-bottom:4px;">$99 / year</div>
-        <div style="font-size:.7rem;color:rgba(255,255,255,.6);line-height:1.4;">All properties · All specialists · Priority advisor access.</div>
-      </div>
-    </div>
-
-    <div id="member-signup" style="display:none;">
-      <input class="lens-gate-input" id="lens-email" type="email" placeholder="Your email address" autocomplete="email">
-      <button class="lens-gate-submit" onclick="submitLensGate()">Continue to payment</button>
-    </div>
-    <div class="lens-gate-note">Book first and The Lens is complimentary · Cancel membership anytime</div>
-  </div>
-</div>
+<!-- Lens gate overlay removed v74w. -->
 
 <div class="toast" id="toast-el"></div>
 
@@ -2611,7 +2288,7 @@ function tcSearchFromInput(inputId) {
   var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
     'collections.html','journal.html','how-we-choose.html','founding-member.html',
     'about.html','my-account.html','bookings.html','conversations.html',
-    'lens.html','saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+    'saved.html','preferences.html','settings.html','404.html'];
   function fname(href){
     try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
   }

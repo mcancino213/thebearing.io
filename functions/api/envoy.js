@@ -970,6 +970,9 @@ export default {
           // so credits shouldn't exist yet. The void is a no-op in that case
           // but cheap and safe.
           try { await creditsVoidOnCancellation(env, booking); } catch(e) {}
+          // v74w: same defensive cleanup for FM (stale enquiries never had
+          // deposit paid, so no FM was reserved — void is a no-op).
+          try { await foundingMemberVoidIfPendingForBooking(env, booking); } catch(e) {}
         } catch (e) {
           errors.push({ ref, error: String(e && e.message || e) });
         }
@@ -1492,6 +1495,99 @@ export default {
       }
     }
 
+    // ── /api/founding-member ──────────────────────────────────────
+    // v74w: Founding Member status endpoints.
+    //
+    //   GET  /api/founding-member/me?guestId=X     — guest reads own status
+    //   GET  /api/founding-member/stats            — public counter (founding-member.html)
+    //   POST /api/founding-member/admin/grant      — admin manual grant (admin-gated)
+    //   POST /api/founding-member/admin/revoke     — admin manual revoke (admin-gated)
+    //   POST /api/founding-member/admin/run-scan   — manual promotion-scan trigger
+    if (url.pathname === '/api/founding-member/me') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (request.method !== 'GET') return jsonResponse({ error: 'method not allowed' }, 405);
+      const guestId = url.searchParams.get('guestId');
+      if (!guestId) return jsonResponse({ error: 'guestId required' }, 400);
+      const member = await fmLoadMember(env, guestId);
+      if (!member || !member.foundingMember || member.foundingMember.status === 'voided') {
+        return jsonResponse({ ok: true, status: 'none', cap: FOUNDING_MEMBER_CAP });
+      }
+      const fm = member.foundingMember;
+      return jsonResponse({
+        ok: true,
+        status: fm.status,
+        number: fm.number,
+        reservedAt: fm.reservedAt,
+        awardedAt: fm.awardedAt || null,
+        cap: FOUNDING_MEMBER_CAP,
+      });
+    }
+
+    if (url.pathname === '/api/founding-member/stats') {
+      // Public read — no auth. Used by founding-member.html to display the
+      // "X of 1,000 spots taken" counter. Returns combined (reserved+awarded)
+      // total per Miguel's v74w decision #3.
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (request.method !== 'GET') return jsonResponse({ error: 'method not allowed' }, 405);
+      const counter = await fmLoadCounter(env);
+      const reserved = counter.reservedCount || 0;
+      const awarded = counter.awardedCount || 0;
+      const total = reserved + awarded;
+      const cap = counter.cap || FOUNDING_MEMBER_CAP;
+      return jsonResponse({
+        ok: true,
+        reservedCount: reserved,
+        awardedCount: awarded,
+        totalCount: total,
+        cap,
+        remaining: Math.max(0, cap - total),
+      });
+    }
+
+    if (url.pathname === '/api/founding-member/admin/grant') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const body = await request.json();
+        const { memberId, actor, reason } = body;
+        if (!memberId) return jsonResponse({ error: 'memberId required' }, 400);
+        if (!reason || !reason.trim()) return jsonResponse({ error: 'reason required' }, 400);
+        const res = await foundingMemberAdminGrant(env, memberId, actor || 'admin', reason.trim());
+        return jsonResponse(res);
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
+    if (url.pathname === '/api/founding-member/admin/revoke') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const body = await request.json();
+        const { memberId, actor, reason } = body;
+        if (!memberId) return jsonResponse({ error: 'memberId required' }, 400);
+        if (!reason || !reason.trim()) return jsonResponse({ error: 'reason required' }, 400);
+        const res = await foundingMemberAdminRevoke(env, memberId, actor || 'admin', reason.trim());
+        return jsonResponse(res);
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
+    if (url.pathname === '/api/founding-member/admin/run-scan') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const result = await foundingMemberRunPromotionScan(env);
+        return jsonResponse({ ok: true, ...result });
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
     // ── /api/booking ──────────────────────────────────────────────
     if (url.pathname === '/api/booking') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
@@ -1794,6 +1890,18 @@ View in admin: https://thebearing.io/admin-bookings.html
             console.error('[credits] cancellation hook failed:', e && e.message);
           }
 
+          // v74w: void Founding Member status if it was reserved for this
+          // booking (and is still pending). Recycles the number. May re-reserve
+          // against another confirmed booking if one exists.
+          try {
+            const fmRes = await foundingMemberVoidIfPendingForBooking(env, booking);
+            if (fmRes && fmRes.voidedNumber) {
+              console.log('[fm] voided #' + fmRes.voidedNumber + ' on cancel of ' + ref);
+            }
+          } catch (e) {
+            console.error('[fm] void failed on manual cancel:', e && e.message);
+          }
+
           // Archive the linked conversation so it stops showing as open.
           if (booking.conversationId) {
             try {
@@ -1861,6 +1969,8 @@ View in admin: https://thebearing.io/admin-bookings.html
         } catch (e) {
           console.error('[credits] DELETE cancellation hook failed:', e && e.message);
         }
+        // v74w: void FM if reserved for this booking
+        try { await foundingMemberVoidIfPendingForBooking(env, booking); } catch(e) {}
         return jsonResponse({ ok: true, ref });
       }
       return jsonResponse({ error: 'method not allowed' }, 405);
@@ -5387,6 +5497,15 @@ View in admin: https://thebearing.io/admin-bookings.html
           } catch (e) {
             console.error('[zero-deposit redeem] failed:', e && e.message);
           }
+          // v74w: Founding Member reserve (a free trip is still a trip).
+          try {
+            const fmRes = await foundingMemberReserve(env, booking);
+            if (fmRes && fmRes.ok && !fmRes.skipped) {
+              console.log('[fm] zero-deposit reserved #' + fmRes.number + ' (pending) for ' + fmRes.memberId);
+            }
+          } catch (e) {
+            console.error('[fm] reserve failed on zero-deposit:', e && e.message);
+          }
           // Post conversation message
           const convId = booking.conversationId || '';
           if (convId) {
@@ -5580,6 +5699,18 @@ View in admin: https://thebearing.io/admin-bookings.html
         }
       } catch (e) {
         console.error('[credits] accrue/redeem failed on rescue path:', e && e.message);
+      }
+
+      // v74w: Founding Member — reserve pending FM status on deposit paid.
+      // Idempotent (no-op if member already enrolled). Cap-enforced (no-op
+      // once 1,000 spots filled).
+      try {
+        const fmRes = await foundingMemberReserve(env, booking);
+        if (fmRes && fmRes.ok && !fmRes.skipped) {
+          console.log('[fm] reserved #' + fmRes.number + ' (pending) for ' + fmRes.memberId + ' on rescue path');
+        }
+      } catch (e) {
+        console.error('[fm] reserve failed on rescue path:', e && e.message);
       }
 
       if (acceptedOffer) {
@@ -5814,6 +5945,16 @@ View in admin: https://thebearing.io/admin-bookings.html
         }
       } catch (e) {
         console.error('[credits] accrue/redeem failed on sync-payment:', e && e.message);
+      }
+
+      // v74w: Founding Member reserve
+      try {
+        const fmRes = await foundingMemberReserve(env, booking);
+        if (fmRes && fmRes.ok && !fmRes.skipped) {
+          console.log('[fm] reserved #' + fmRes.number + ' (pending) for ' + fmRes.memberId + ' on sync-payment');
+        }
+      } catch (e) {
+        console.error('[fm] reserve failed on sync-payment:', e && e.message);
       }
 
       // Mark offer accepted
@@ -6340,6 +6481,16 @@ View in admin: https://thebearing.io/admin-bookings.html
             console.error('[credits] accrue/redeem failed on webhook:', e && e.message);
           }
 
+          // v74w: Founding Member reserve
+          try {
+            const fmRes = await foundingMemberReserve(env, booking);
+            if (fmRes && fmRes.ok && !fmRes.skipped) {
+              console.log('[fm] webhook reserved #' + fmRes.number + ' (pending) for ' + fmRes.memberId);
+            }
+          } catch (e) {
+            console.error('[fm] reserve failed on webhook:', e && e.message);
+          }
+
           // 2. Update offer (mark accepted)
           try {
             if (acceptedOffer) {
@@ -6591,6 +6742,9 @@ View in admin: https://thebearing.io/admin-bookings.html
     ctx.waitUntil(runStaleConvReminders(env));
     ctx.waitUntil(creditsRunPromotionScan(env).catch(function(e) {
       console.error('[credits-cron] scan failed:', e && e.message);
+    }));
+    ctx.waitUntil(foundingMemberRunPromotionScan(env).catch(function(e) {
+      console.error('[fm-cron] scan failed:', e && e.message);
     }));
   }
 };
@@ -7271,6 +7425,355 @@ async function creditsRunPromotionScan(env) {
   // Persist last-run state for admin visibility
   try { await env.DOSSIERS.put('__credits:last_run', JSON.stringify(summary)); } catch(e) {}
   return summary;
+}
+
+// v74w: independent FM promotion pass. Scans all members; for any with
+// foundingMember.status === 'pending', check if they have a completed trip
+// and promote to awarded if so. Independent of credits because Nour El Nil
+// bookings (excluded from earning credits) still count toward FM.
+async function foundingMemberRunPromotionScan(env) {
+  if (!env.DOSSIERS) return { ok: false, error: 'KV not bound' };
+  const startedAt = new Date().toISOString();
+  let scanned = 0, promoted = 0, errors = 0;
+  try {
+    const rawIdx = await env.DOSSIERS.get('__members_index');
+    const ids = rawIdx ? JSON.parse(rawIdx) : [];
+    if (!Array.isArray(ids)) return { ok: true, scanned: 0, promoted: 0, errors: 0 };
+    for (const memberId of ids) {
+      try {
+        const member = await fmLoadMember(env, memberId);
+        if (!member || !member.foundingMember) continue;
+        if (member.foundingMember.status !== 'pending') continue;
+        scanned++;
+        const res = await foundingMemberPromote(env, memberId);
+        if (res && res.ok && res.number) promoted++;
+      } catch (e) {
+        errors++;
+        console.error('[fm-scan] member ' + memberId + ' failed:', e);
+      }
+    }
+  } catch (e) {
+    return { ok: false, error: String(e && e.message || e) };
+  }
+  const completedAt = new Date().toISOString();
+  const summary = { ok: true, startedAt, completedAt, scanned, promoted, errors };
+  try { await env.DOSSIERS.put('__founding_member:last_run', JSON.stringify(summary)); } catch(e) {}
+  return summary;
+}
+
+
+// ── FOUNDING MEMBER ──────────────────────────────────────────────────────
+//
+// v74w. Brand-tier loyalty: first 1,000 guests to complete a Bearing booking
+// earn permanent Founding Member status with a member number.
+//
+//   State machine per member:
+//     pending  → awarded   (when any trip completes — see creditsRunPromotionScan)
+//     pending  → voided    (when the reserving booking is cancelled before completion)
+//     awarded                (terminal — never revoked by automation)
+//
+//   Storage:
+//     member:{id} now has optional `foundingMember` field
+//     __founding_member:state — single counter document
+//
+//   Counter shape:
+//     { nextNumber, reservedCount, awardedCount, voidedNumbers: [...], cap, updatedAt }
+//
+//   Number assignment:
+//     Smallest recycled number first; fall back to nextNumber++.
+//     Recycling keeps the visible range compact when early bookings cancel.
+//
+//   Cap:
+//     Soft-enforced via FOUNDING_MEMBER_CAP constant. Once reservedCount +
+//     awardedCount >= cap, new reservations fail (no number assigned, no error
+//     thrown — just no FM status awarded). Bump the constant to raise the cap.
+//
+//   Once-and-done:
+//     A member earns FM exactly once. Subsequent bookings don't re-trigger.
+//     If the FM-reserving booking is cancelled and another confirmed booking
+//     exists, the void hook re-reserves FM against the next booking (with a
+//     new number — old one is recycled).
+//
+//   No retroactive grants for pre-v74w bookings. Admin can manually grant.
+
+const FOUNDING_MEMBER_CAP = 1000;
+
+async function fmLoadCounter(env) {
+  try {
+    const raw = await env.DOSSIERS.get('__founding_member:state');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error('[fm] counter load failed:', e);
+  }
+  return {
+    nextNumber: 1,
+    reservedCount: 0,
+    awardedCount: 0,
+    voidedNumbers: [],
+    cap: FOUNDING_MEMBER_CAP,
+    updatedAt: null,
+  };
+}
+
+async function fmSaveCounter(env, counter) {
+  counter.updatedAt = new Date().toISOString();
+  await env.DOSSIERS.put('__founding_member:state', JSON.stringify(counter));
+}
+
+async function fmLoadMember(env, memberId) {
+  if (!memberId) return null;
+  try {
+    const raw = await env.DOSSIERS.get('member:' + memberId);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function fmSaveMember(env, memberId, member) {
+  await env.DOSSIERS.put('member:' + memberId, JSON.stringify(member));
+}
+
+// Pick the next available number. Prefer recycled numbers (smallest first)
+// before consuming nextNumber. Returns the number AND mutates the counter
+// (in-memory only — caller must save).
+function fmAllocateNumber(counter) {
+  if (counter.voidedNumbers && counter.voidedNumbers.length > 0) {
+    counter.voidedNumbers.sort(function(a, b) { return a - b; });
+    return counter.voidedNumbers.shift();
+  }
+  const n = counter.nextNumber;
+  counter.nextNumber = n + 1;
+  return n;
+}
+
+// Reserve FM status for the member who owns this booking. Idempotent: if the
+// member already has FM status (any state), no-op. If the cap is reached, no-op
+// with `skipped: 'cap_reached'`. Otherwise allocates a number and sets pending.
+async function foundingMemberReserve(env, booking) {
+  if (!booking) return { ok: false, skipped: 'no_booking' };
+  const status = String(booking.status || '').toLowerCase();
+  if (status === 'cancelled') return { ok: false, skipped: 'cancelled_booking' };
+
+  const memberId = await creditsResolveMemberId(env, booking);
+  if (!memberId) return { ok: false, skipped: 'no_member' };
+
+  const member = await fmLoadMember(env, memberId);
+  if (!member) return { ok: false, skipped: 'no_member_record' };
+  if (member.foundingMember && member.foundingMember.status && member.foundingMember.status !== 'voided') {
+    // Already enrolled (pending or awarded). Idempotent no-op.
+    return { ok: true, skipped: 'already_enrolled', number: member.foundingMember.number, status: member.foundingMember.status };
+  }
+
+  const counter = await fmLoadCounter(env);
+  const totalUsed = (counter.reservedCount || 0) + (counter.awardedCount || 0);
+  if (totalUsed >= counter.cap) {
+    return { ok: false, skipped: 'cap_reached', cap: counter.cap };
+  }
+
+  const number = fmAllocateNumber(counter);
+  counter.reservedCount = (counter.reservedCount || 0) + 1;
+
+  member.foundingMember = {
+    number,
+    status: 'pending',
+    reservedAt: new Date().toISOString(),
+    reservedForBookingRef: booking.ref || '',
+    awardedAt: null,
+    voidedAt: null,
+    voidedReason: null,
+  };
+
+  await fmSaveMember(env, memberId, member);
+  await fmSaveCounter(env, counter);
+  console.log('[fm] reserved #' + number + ' (pending) for member ' + memberId + ' on booking ' + (booking.ref || '?'));
+  return { ok: true, memberId, number, status: 'pending' };
+}
+
+// Void FM status if it was reserved for this specific booking AND is still
+// pending. If awarded, no action (a different trip already completed and
+// secured them). If the void leaves them with another confirmed booking we
+// could re-reserve from, do so (so they still get FM, possibly with a new
+// number).
+async function foundingMemberVoidIfPendingForBooking(env, booking) {
+  if (!booking) return { ok: false, skipped: 'no_booking' };
+  const memberId = await creditsResolveMemberId(env, booking);
+  if (!memberId) return { ok: false, skipped: 'no_member' };
+
+  const member = await fmLoadMember(env, memberId);
+  if (!member || !member.foundingMember) return { ok: true, skipped: 'no_fm' };
+  const fm = member.foundingMember;
+  if (fm.status !== 'pending') return { ok: true, skipped: 'not_pending' };
+  if (fm.reservedForBookingRef !== booking.ref) {
+    // Pending FM was reserved by a DIFFERENT booking — leave it alone.
+    return { ok: true, skipped: 'reserved_by_other_booking' };
+  }
+
+  const counter = await fmLoadCounter(env);
+  const releasedNumber = fm.number;
+
+  fm.status = 'voided';
+  fm.voidedAt = new Date().toISOString();
+  fm.voidedReason = 'reserving_booking_cancelled';
+  counter.reservedCount = Math.max(0, (counter.reservedCount || 0) - 1);
+  counter.voidedNumbers = counter.voidedNumbers || [];
+  counter.voidedNumbers.push(releasedNumber);
+
+  await fmSaveMember(env, memberId, member);
+  await fmSaveCounter(env, counter);
+  console.log('[fm] voided #' + releasedNumber + ' for member ' + memberId + ' (booking ' + booking.ref + ' cancelled)');
+
+  // Try to re-reserve against another confirmed booking, if any.
+  try {
+    const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+    if (bIdxRaw) {
+      const refs = JSON.parse(bIdxRaw) || [];
+      for (const ref of refs) {
+        if (ref === booking.ref) continue;
+        const bRaw = await env.DOSSIERS.get('booking:' + ref);
+        if (!bRaw) continue;
+        const b = JSON.parse(bRaw);
+        if (String(b.status || '').toLowerCase() !== 'confirmed') continue;
+        // Match by guestId or email
+        let isSameMember = false;
+        if (b.guestId && b.guestId === memberId) isSameMember = true;
+        else if (b.email && member.email && String(b.email).toLowerCase() === String(member.email).toLowerCase()) isSameMember = true;
+        else if (b.email && Array.isArray(member.emailAddresses)) {
+          for (const e of member.emailAddresses) {
+            const val = typeof e === 'string' ? e : (e && e.emailAddress) || '';
+            if (val && val.toLowerCase() === String(b.email).toLowerCase()) { isSameMember = true; break; }
+          }
+        }
+        if (!isSameMember) continue;
+        // Re-reserve. Note: foundingMemberReserve checks `member.foundingMember.status`
+        // — we just set it to 'voided' above, so reserve() will allocate a new number.
+        const reRes = await foundingMemberReserve(env, b);
+        if (reRes && reRes.ok && !reRes.skipped) {
+          console.log('[fm] re-reserved #' + reRes.number + ' for member ' + memberId + ' against backup booking ' + ref);
+        }
+        break;
+      }
+    }
+  } catch (e) {
+    console.error('[fm] re-reserve scan failed:', e && e.message);
+  }
+
+  return { ok: true, voidedNumber: releasedNumber };
+}
+
+// Promote pending → awarded for any member with FM status who has completed
+// at least one trip (booking.paymentStatus='paid' AND checkout+7days passed).
+// Called from creditsRunPromotionScan in the same hourly cron pass.
+async function foundingMemberPromote(env, memberId) {
+  if (!memberId) return { ok: false };
+  const member = await fmLoadMember(env, memberId);
+  if (!member || !member.foundingMember) return { ok: true, skipped: 'no_fm' };
+  if (member.foundingMember.status !== 'pending') return { ok: true, skipped: 'not_pending' };
+
+  // Find any completed trip for this member
+  const bIdxRaw = await env.DOSSIERS.get('__bookings_index');
+  if (!bIdxRaw) return { ok: true, skipped: 'no_bookings' };
+  const refs = JSON.parse(bIdxRaw) || [];
+  let foundCompleted = false;
+  const now = Date.now();
+  const graceMs = 7 * 24 * 60 * 60 * 1000;
+  for (const ref of refs) {
+    const bRaw = await env.DOSSIERS.get('booking:' + ref);
+    if (!bRaw) continue;
+    const b = JSON.parse(bRaw);
+    // Match member
+    let isSameMember = false;
+    if (b.guestId && b.guestId === memberId) isSameMember = true;
+    else if (b.email && member.email && String(b.email).toLowerCase() === String(member.email).toLowerCase()) isSameMember = true;
+    if (!isSameMember) continue;
+    if (String(b.paymentStatus || '').toLowerCase() !== 'paid') continue;
+    const dep = b.departure || b.confirmed_balance_due_date;
+    if (!dep) continue;
+    const depMs = new Date(dep).getTime();
+    if (isNaN(depMs)) continue;
+    if ((now - depMs) < graceMs) continue;
+    foundCompleted = true;
+    break;
+  }
+  if (!foundCompleted) return { ok: true, skipped: 'no_completed_trip' };
+
+  const counter = await fmLoadCounter(env);
+  member.foundingMember.status = 'awarded';
+  member.foundingMember.awardedAt = new Date().toISOString();
+  counter.reservedCount = Math.max(0, (counter.reservedCount || 0) - 1);
+  counter.awardedCount = (counter.awardedCount || 0) + 1;
+
+  await fmSaveMember(env, memberId, member);
+  await fmSaveCounter(env, counter);
+  console.log('[fm] promoted #' + member.foundingMember.number + ' to awarded for member ' + memberId);
+  return { ok: true, number: member.foundingMember.number };
+}
+
+// Admin manual grant — assigns FM directly to a member with status=awarded.
+// Used for comp grants, post-launch goodwill, etc.
+async function foundingMemberAdminGrant(env, memberId, actor, reason) {
+  if (!memberId) return { ok: false, error: 'no_member' };
+  const member = await fmLoadMember(env, memberId);
+  if (!member) return { ok: false, error: 'member_not_found' };
+  if (member.foundingMember && member.foundingMember.status === 'awarded') {
+    return { ok: true, skipped: 'already_awarded', number: member.foundingMember.number };
+  }
+
+  const counter = await fmLoadCounter(env);
+  const totalUsed = (counter.reservedCount || 0) + (counter.awardedCount || 0);
+  if (totalUsed >= counter.cap) {
+    return { ok: false, error: 'cap_reached', cap: counter.cap };
+  }
+
+  let number;
+  if (member.foundingMember && member.foundingMember.status === 'pending') {
+    // Promote existing pending to awarded
+    number = member.foundingMember.number;
+    counter.reservedCount = Math.max(0, (counter.reservedCount || 0) - 1);
+  } else {
+    number = fmAllocateNumber(counter);
+  }
+  counter.awardedCount = (counter.awardedCount || 0) + 1;
+
+  member.foundingMember = {
+    number,
+    status: 'awarded',
+    reservedAt: (member.foundingMember && member.foundingMember.reservedAt) || new Date().toISOString(),
+    reservedForBookingRef: (member.foundingMember && member.foundingMember.reservedForBookingRef) || '',
+    awardedAt: new Date().toISOString(),
+    awardedBy: actor || 'admin',
+    awardedReason: reason || 'manual grant',
+    voidedAt: null,
+    voidedReason: null,
+  };
+  await fmSaveMember(env, memberId, member);
+  await fmSaveCounter(env, counter);
+  console.log('[fm] admin granted #' + number + ' to member ' + memberId + ' (by ' + actor + ': ' + reason + ')');
+  return { ok: true, number, status: 'awarded' };
+}
+
+// Admin manual revoke — removes FM status. Recycles the number.
+async function foundingMemberAdminRevoke(env, memberId, actor, reason) {
+  if (!memberId) return { ok: false, error: 'no_member' };
+  const member = await fmLoadMember(env, memberId);
+  if (!member || !member.foundingMember) return { ok: false, error: 'no_fm_to_revoke' };
+  const fm = member.foundingMember;
+  const releasedNumber = fm.number;
+  const counter = await fmLoadCounter(env);
+
+  if (fm.status === 'pending') counter.reservedCount = Math.max(0, (counter.reservedCount || 0) - 1);
+  else if (fm.status === 'awarded') counter.awardedCount = Math.max(0, (counter.awardedCount || 0) - 1);
+
+  fm.status = 'voided';
+  fm.voidedAt = new Date().toISOString();
+  fm.voidedReason = (reason || 'admin revoke') + ' (by ' + (actor || 'admin') + ')';
+  counter.voidedNumbers = counter.voidedNumbers || [];
+  counter.voidedNumbers.push(releasedNumber);
+
+  await fmSaveMember(env, memberId, member);
+  await fmSaveCounter(env, counter);
+  return { ok: true, revokedNumber: releasedNumber };
 }
 
 

@@ -14,7 +14,7 @@ function jumpTo(id){
   window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-chrome,behavior:'smooth'});
 }
 function initScrollSpy(){
-  var secs=['sec-overview','sec-gallery','sec-lens','sec-rooms','sec-itinerary'];
+  var secs=['sec-overview','sec-gallery','sec-rooms','sec-itinerary'];
   var items=document.querySelectorAll('.subnav-item');
   if(!items.length)return;
   function spy(){var y=window.pageYOffset+220,a=0;secs.forEach(function(id,i){var el=document.getElementById(id);if(el&&el.offsetTop<=y)a=i;});items.forEach(function(it,i){it.classList.toggle('active',i===a);});}
@@ -1137,7 +1137,6 @@ button{font-family:inherit;cursor:pointer;}
   <nav class="subnav">
     <button class="subnav-item active" onclick="jumpTo('sec-overview')">Overview</button>
     <button class="subnav-item" id="sub-gallery" style="display:none;" onclick="jumpTo('sec-gallery')">Gallery</button>
-    <button class="subnav-item" id="sub-lens" style="display:none;" onclick="jumpTo('sec-lens')">The Lens</button>
     <button class="subnav-item" id="sub-rooms" style="display:none;" onclick="jumpTo('sec-rooms')">Rooms</button>
     <button class="subnav-item" id="sub-itin" style="display:none;" onclick="jumpTo('sec-itinerary')">Itinerary</button>
   </nav>
@@ -1246,53 +1245,7 @@ button{font-family:inherit;cursor:pointer;}
     </div>
 
     
-<!-- THE LENS -->
-    <div id="lens-section" style="display:none;">
-      <a name="sec-lens" id="sec-lens"></a>
-      <div class="sec-eyebrow">The Lens</div>
-      <h2 class="sec-title">A different way of <em>seeing</em></h2>
-      <p id="lens-intro" style="font-size:.82rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">Switch the lens. Local specialists curated for this journey — each one shows you something the guidebooks miss.</p>
-      <div id="expert-pills" style="display:flex;gap:8px;overflow-x:auto;margin:0 -20px;padding:0 20px 16px;scrollbar-width:none;">
-        <style>#expert-pills::-webkit-scrollbar{display:none;}</style>
-      </div>
-      <div id="lens-lock-banner" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--linen);border:1px solid var(--border-hi);border-radius:var(--r-md);margin-bottom:16px;">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg width="14" height="14" viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg>
-        </div>
-        <div style="flex:1;">
-          <div id="lens-lock-label" style="font-size:.78rem;font-weight:500;color:var(--ink);margin-bottom:1px;">More specialists · members only</div>
-          <div style="font-size:.7rem;color:var(--stone);">Book through The Bearing to unlock — or join as a member for $99/year.</div>
-        </div>
-        <button onclick="openLensGate()" style="flex-shrink:0;padding:8px 14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-md);font-family:'Geist',sans-serif;font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;">Unlock</button>
-      </div>
-      <div id="expert-panel" style="background:#fff;border:1px solid var(--border-hi);border-radius:var(--r-xl);overflow:hidden;margin-bottom:28px;">
-        <div id="expert-header" style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:14px;">
-          <div id="expert-avatar" style="width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:1.1rem;font-style:italic;color:#fff;background:linear-gradient(135deg,#9a7230,#7a5820);"></div>
-          <div>
-            <div id="expert-name" style="font-family:'Instrument Serif',serif;font-size:1.05rem;color:var(--ink);margin-bottom:1px;"></div>
-            <div id="expert-role" style="font-size:.7rem;color:var(--terra);font-weight:500;letter-spacing:.04em;margin-bottom:6px;"></div>
-            <div id="expert-bio" style="font-size:.78rem;color:var(--stone);line-height:1.55;"></div>
-          </div>
-        </div>
-        <div id="expert-recs" style="padding:0;"></div>
-      </div>
-    </div>
-
-    
-<!-- LENS GATE OVERLAY -->
-    <div class="lens-gate" id="lens-gate" onclick="if(event.target===this)closeLensGate()">
-      <div class="lens-gate-sheet">
-        <div class="lens-gate-grip"></div>
-        <div class="lens-gate-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div class="lens-gate-title">Unlock The Lens</div>
-        <div class="lens-gate-sub">Book through The Bearing to unlock all specialists — or join as a member for $99/year.</div>
-        <div class="lens-gate-experts" id="lens-gate-faces"></div>
-        <input class="lens-gate-input" id="lens-gate-email" type="email" placeholder="Your email address">
-        <button class="lens-gate-submit" onclick="submitLensGate()">Unlock all specialists</button>
-        <div class="lens-gate-note">No spam. One email to confirm your access.</div>
-      </div>
-    </div>
-
+<!-- The Lens removed v74w (Option C: hide UI surfaces). -->
     
 <!-- ROOMS / CABINS -->
     <a name="sec-rooms" id="sec-rooms"></a>
@@ -1772,36 +1725,10 @@ function renderProperty(p,slug){
     show('access-card');
   }
 
-  // The Lens
-  if(p.lens&&p.lens.experts&&p.lens.experts.length){
-    var lexperts=p.lens.experts;
-    window._lexperts=lexperts;
-    if(p.lens.intro)document.getElementById('lens-intro').textContent=p.lens.intro;
-    // Build pills
-    var pillsEl=document.getElementById('expert-pills');
-    pillsEl.innerHTML=lexperts.map(function(ex,i){
-      var locked=i>0;
-      var blurStyle=locked?'filter:blur(3px);':'';
-      var blurText=locked?'filter:blur(4px);user-select:none;':'';
-      var blurRole=locked?'filter:blur(3px);user-select:none;':'';
-      var lockIcon=locked?'<div class="xpill-lock"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="2" y="5.5" width="8" height="5.5" rx="1.5"/><path d="M4 5.5V3.5a2 2 0 014 0v2"/></svg></div>':'';
-      var onclick=locked?'onclick="openLensGate()"':'onclick="selectLensExpert('+i+',this)"';
-      return '<button class="xpill'+(locked?' xpill-locked':'')+(i===0?' active':'')+'" '+onclick+'>'
-        +'<div class="xpill-avatar" style="background:'+esc(ex.color||'linear-gradient(135deg,#9a7230,#7a5820)')+';'+blurStyle+'">'+esc((ex.initial||ex.name||'?')[0])+'</div>'
-        +'<div class="xpill-text"><div class="xpill-name" style="'+blurText+'">'+esc(ex.name||'')+'</div><div class="xpill-role" style="'+blurRole+'">'+esc(ex.role||'')+'</div></div>'
-        +lockIcon+'</button>';
-    }).join('');
-    // Lock banner label
-    var locked_count=lexperts.length-1;
-    if(locked_count>0)document.getElementById('lens-lock-label').textContent=locked_count+' more specialist'+(locked_count>1?'s':'')+' · members only';
-    else document.getElementById('lens-lock-banner').style.display='none';
-    // Gate faces
-    var gf=document.getElementById('lens-gate-faces');
-    if(gf)gf.innerHTML=lexperts.map(function(ex){return '<div class="lens-gate-face" style="background:'+esc(ex.color||'linear-gradient(135deg,#9a7230,#7a5820)')+'">'+esc((ex.initial||ex.name||'?')[0])+'</div>';}).join('');
-    // Init first expert
-    selectLensExpert(0,pillsEl.querySelector('.xpill'));
-    show('lens-section');
-  }
+  // The Lens — v74w: rendering disabled. The Lens UI is hidden across the
+  // portal per Option C (no live functional feature; marketing language only).
+  // KV-stored lens data on the property object is left intact for future use.
+  // if(p.lens&&p.lens.experts&&p.lens.experts.length){ ... }
 
   // Itinerary
   if(hasItin){
@@ -2896,7 +2823,7 @@ function submitAccount(){
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil','al-moudira','al-moudira-estate','alila-jabal-akhdar','amangiri','amangiri-villas','aqua-nera','beyond-ngorongoro','capella-ubud','la-maison-bleue','mekong-navigator','singita-grumeti','soneva-fushi'];
+  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   // On property.html we read ?slug= from the query string.
   // On a legacy hardcoded property page (nour-el-nil.html etc.) we'd fall back to the filename.
   var qs = new URLSearchParams(location.search);
@@ -3060,16 +2987,6 @@ function ciSend() {
 
 var CI_PROPERTIES = {
   'nour el nil':        { slug:'nour-el-nil',         label:'Nour El Nil',         loc:'Nile River Cruise · Egypt',       rating:5, img:'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80&fit=crop' },
-  'al moudira':         { slug:'al-moudira',           label:'Al Moudira',          loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?w=600&q=80&fit=crop' },
-  'la maison bleue':    { slug:'la-maison-bleue',      label:'La Maison Bleue',     loc:'Luxor · Egypt',                   rating:5, img:'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=600&q=80&fit=crop' },
-  'alila jabal akhdar': { slug:'alila-jabal-akhdar',   label:'Alila Jabal Akhdar',  loc:'Oman · Arabian Mountains',        rating:5, img:'https://images.unsplash.com/photo-1586500036706-41963de24d8b?w=600&q=80&fit=crop' },
-  'amangiri':           { slug:'amangiri',             label:'Amangiri',            loc:'Utah Desert · USA',               rating:5, img:'https://images.unsplash.com/photo-1605649487212-47bdab064df7?w=600&q=80&fit=crop' },
-  'aqua nera':          { slug:'aqua-nera',            label:'Aqua Nera',           loc:'Peruvian Amazon Cruise',               rating:5, img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=80&fit=crop' },
-  'singita grumeti':    { slug:'singita-grumeti',      label:'Singita Grumeti',     loc:'Serengeti · Tanzania',            rating:5, img:'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=600&q=80&fit=crop' },
-  'beyond ngorongoro':  { slug:'beyond-ngorongoro',    label:'&Beyond Ngorongoro',  loc:'Ngorongoro Crater · Tanzania',    rating:5, img:'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?w=600&q=80&fit=crop' },
-  'capella ubud':       { slug:'capella-ubud',         label:'Capella Ubud',        loc:'Bali Rainforest · Indonesia',     rating:5, img:'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&q=80&fit=crop' },
-  'mekong navigator':   { slug:'mekong-navigator',     label:'Mekong Navigator',    loc:'Vietnam & Cambodia Cruise',            rating:5, img:'https://images.unsplash.com/photo-1528702748617-c64d49f918af?w=600&q=80&fit=crop' },
-  'soneva fushi':       { slug:'soneva-fushi',         label:'Soneva Fushi',        loc:'Maldives',                             rating:5, img:'https://images.unsplash.com/photo-1439405326854-014607f694d7?w=600&q=80&fit=crop' }
 };
 
 function ciDetectProperties(text) {
