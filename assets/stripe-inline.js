@@ -335,5 +335,143 @@
     };
   }
 
-  window.TBStripeInline = { payDeposit: payDeposit };
+  // ────────────────────────────────────────────────────────────────────
+  // v74k: payAmendment — inline Stripe Payment Element for amendment
+  // delta-deposit charge (Build 2 inline version).
+  // Mirrors payDeposit but:
+  //   - Calls /api/amendment/create-intent (not /api/checkout/create-intent)
+  //   - Sends amendmentId (not offerId)
+  //   - On success calls /api/checkout/sync-payment (handles both flows)
+  //   - Success callback decides where to navigate (caller passes onSuccess)
+  // ────────────────────────────────────────────────────────────────────
+  function payAmendment(config) {
+    config = config || {};
+    var amendmentId = config.amendmentId;
+    var amendmentLabel = config.amendmentLabel || 'Booking change';
+    var onSuccess = config.onSuccess || function() {};
+    var onCancel  = config.onCancel  || function() {};
+    var onError   = config.onError   || function(){};
+
+    if (!amendmentId) {
+      onError('Missing amendment reference. Please refresh and try again.');
+      return;
+    }
+
+    var user = window.Clerk && window.Clerk.user;
+    var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+    if (!email) {
+      onError('Sign-in expired. Please refresh and sign in again.');
+      return;
+    }
+
+    var modal = createModal(amendmentLabel);
+    modal.setStatus('loading', 'Preparing secure payment\u2026');
+
+    var intentPromise = fetch('/api/amendment/create-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amendmentId: amendmentId, requesterEmail: email }),
+    }).then(function(r) {
+      return r.json().then(function(j){ return { ok: r.ok, body: j }; });
+    });
+
+    Promise.all([intentPromise, loadStripeJs()])
+      .then(function(results) {
+        var intentRes = results[0];
+        var Stripe = results[1];
+        if (!intentRes.ok) {
+          var msg = (intentRes.body && intentRes.body.error) || 'Could not start payment';
+          modal.setStatus('error', msg);
+          return;
+        }
+        var clientSecret = intentRes.body.client_secret;
+        var publishableKey = intentRes.body.publishable_key;
+        var amountCents = intentRes.body.amount;
+        var currency = (intentRes.body.currency || 'usd').toUpperCase();
+
+        if (!clientSecret || !publishableKey) {
+          modal.setStatus('error', 'Stripe response missing required keys');
+          return;
+        }
+
+        var stripe = Stripe(publishableKey);
+        var elements = stripe.elements({
+          clientSecret: clientSecret,
+          appearance: {
+            theme: 'stripe',
+            variables: {
+              colorPrimary: '#b05830',
+              colorBackground: '#ffffff',
+              colorText: '#1e1810',
+              colorDanger: '#b91c1c',
+              fontFamily: 'Geist, system-ui, sans-serif',
+              borderRadius: '10px',
+            }
+          }
+        });
+        var paymentElement = elements.create('payment', {
+          layout: { type: 'tabs', defaultCollapsed: false }
+        });
+        paymentElement.mount('#tb-pe-mount');
+
+        modal.setStatus('ready', '', { amount: amountCents, currency: currency });
+
+        modal.onSubmit(function() {
+          modal.setStatus('processing', 'Processing your payment\u2026');
+          stripe.confirmPayment({
+            elements: elements,
+            confirmParams: {
+              return_url: window.location.origin + '/conversations.html?amendment=success',
+              receipt_email: email,
+            },
+            redirect: 'if_required',
+          }).then(function(result) {
+            if (result.error) {
+              modal.setStatus('error', result.error.message || 'Payment failed');
+            } else if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+              modal.setStatus('processing', 'Confirming your booking change\u2026');
+              fetch('/api/checkout/sync-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentIntentId: result.paymentIntent.id,
+                  requesterEmail: email,
+                }),
+              })
+                .then(function(r) { return r.json().then(function(j){ return { ok: r.ok, body: j }; }); })
+                .then(function(syncRes) {
+                  if (syncRes.ok && syncRes.body.status) {
+                    modal.setStatus('success', 'Payment confirmed.');
+                    setTimeout(function() {
+                      modal.close();
+                      onSuccess(result.paymentIntent);
+                    }, 900);
+                  } else {
+                    console.error('[Stripe inline][amendment] sync failed:', syncRes);
+                    modal.setStatus('error',
+                      'Payment received but we could not finalise your booking change on our side. ' +
+                      'Please contact us at admin@thebearing.io with reference ' +
+                      result.paymentIntent.id + ' \u2014 your payment is safe.');
+                  }
+                })
+                .catch(function(err) {
+                  console.error('[Stripe inline][amendment] sync error:', err);
+                  modal.setStatus('error',
+                    'Payment received but we could not finalise your booking change on our side. ' +
+                    'Please contact us at admin@thebearing.io with reference ' +
+                    result.paymentIntent.id + ' \u2014 your payment is safe.');
+                });
+            }
+          });
+        });
+
+        modal.onCancel(function() { onCancel(); });
+      })
+      .catch(function(err) {
+        console.error('[Stripe inline][amendment] setup error:', err);
+        modal.setStatus('error', 'Could not load payment form: ' + (err.message || 'unknown'));
+      });
+  }
+
+  window.TBStripeInline = { payDeposit: payDeposit, payAmendment: payAmendment };
 })();

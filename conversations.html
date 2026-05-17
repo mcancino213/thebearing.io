@@ -2488,7 +2488,7 @@ function chRenderMessagesInto(wrap, conv, messages) {
             tbConfirm({
               title: 'Approve this change?',
               body:
-                'You\u2019ll be taken to a secure Stripe checkout to pay ' + amMoney(amDeltaDeposit) + ' to The Bearing now.\n\n' +
+                'A secure payment form will open here for the ' + amMoney(amDeltaDeposit) + ' commission to The Bearing.\n\n' +
                 amS.propertyName + ' will then collect the remaining ' + amMoney(propBal) + ' from you directly through their usual settlement flow.\n\n' +
                 'Your booking will update once payment is confirmed.',
               primaryLabel: 'Continue to payment',
@@ -3295,15 +3295,17 @@ function tbAlert(opts) {
   } catch (e) { console.error('[Amendment return] handler failed:', e); }
 })();
 
-// v74j: handle Approve / Decline button click on an in-conversation
+// v74k: handle Approve / Decline button click on an in-conversation
 // amendment_card.
 //
-// DECLINE: unchanged — PATCH /api/amendment with action='decline'.
+// DECLINE: PATCH /api/amendment with action='decline'.
 //
 // APPROVE: branches on deltaDeposit.
-//   - delta_deposit > 0 → POST /api/amendment/checkout to get a Stripe
-//     URL, then redirect. Webhook handles the booking update on payment
-//     success. This is Build 2's real Stripe wiring (v74j).
+//   - delta_deposit > 0 → opens the TBStripeInline.payAmendment widget
+//     (inline Payment Element, same UX as deposit payment). On success
+//     the widget calls /api/checkout/sync-payment which dispatches to
+//     the shared confirmAmendmentPayment helper. Guest stays on
+//     thebearing.io throughout.
 //   - delta_deposit === 0 (price-neutral change, e.g. same-priced room
 //     swap, party reshuffle) → PATCH /api/amendment with action='approve'
 //     for immediate confirmation, no payment step.
@@ -3332,37 +3334,52 @@ function handleAmendmentDecision(amendmentId, action, approveBtn, declineBtn, de
     btn.style.cursor = 'pointer';
   }
 
-  // APPROVE + delta > 0: route through Stripe Checkout
+  // APPROVE + delta > 0: inline Stripe Payment Element (v74k).
+  // Replaces the v74j redirect-to-Stripe flow. Guest stays on
+  // thebearing.io throughout — same UX as the initial deposit payment.
+  // The TBStripeInline.payAmendment helper handles the modal, intent
+  // creation, confirmPayment, and sync-payment call. On success we
+  // refresh the conversation so the amendment_accepted card appears.
   if (action === 'approve' && deltaDeposit && deltaDeposit > 0) {
-    setLoading(approveBtn, 'Redirecting to payment\u2026');
+    setLoading(approveBtn, 'Opening payment\u2026');
     setLoading(declineBtn);
-    fetch('/api/amendment/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amendmentId: amendmentId, requesterEmail: email }),
-    })
-      .then(function(r) { return r.json().then(function(j) { return { ok: r.ok, body: j }; }); })
-      .then(function(res) {
-        if (!res.ok || !res.body || !res.body.url) {
-          tbAlert({
-            title: 'Could not start payment',
-            body: (res.body && res.body.error) || 'Something went wrong starting the payment flow. Please try again, and contact the property if the issue persists.',
-          });
-          setNormal(approveBtn);
-          setNormal(declineBtn);
-          if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
-          return;
+    if (!window.TBStripeInline || typeof window.TBStripeInline.payAmendment !== 'function') {
+      tbAlert({
+        title: 'Payment widget unavailable',
+        body: 'The secure payment form failed to load. Please refresh the page and try again.',
+      });
+      setNormal(approveBtn);
+      setNormal(declineBtn);
+      if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
+      return;
+    }
+    var label = 'Booking change \u00b7 ' + (window.chActiveConv && chActiveConv.propertyName ? chActiveConv.propertyName : 'your booking');
+    window.TBStripeInline.payAmendment({
+      amendmentId: amendmentId,
+      amendmentLabel: label,
+      onSuccess: function() {
+        // Refresh conversation so amendment_accepted card appears + buttons collapse.
+        if (typeof chLoadMessages === 'function' && typeof chActiveId !== 'undefined') {
+          chLoadMessages(chActiveId);
+        } else {
+          location.reload();
         }
-        window.location.href = res.body.url;
-      })
-      .catch(function() {
+      },
+      onCancel: function() {
+        setNormal(approveBtn);
+        setNormal(declineBtn);
+        if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
+      },
+      onError: function(msg) {
         tbAlert({
-          title: 'Network error',
-          body: 'Could not reach the server to start payment. Please check your connection and try again.',
+          title: 'Payment couldn\u2019t start',
+          body: msg || 'Something went wrong. Please try again, and contact the property if the issue persists.',
         });
         setNormal(approveBtn);
         setNormal(declineBtn);
-      });
+        if (approveBtn) approveBtn.textContent = approveBtn.dataset.origLabel || 'Approve change';
+      },
+    });
     return;
   }
 
