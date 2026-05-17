@@ -170,6 +170,52 @@ tbody tr:hover{background:var(--bg);}
 
 
 </style>
+<!-- v74u-head-inject -->
+<script>
+// v74u: render-blocking head script for partner pages. Two purposes:
+//   (1) Force parse-pause so portal-chrome.css finishes loading and
+//       registers its @view-transition opt-in before navigation activates.
+//       admin & customer both have head <script> tags; partner had none —
+//       this is the one structural difference between portals that maps
+//       onto "admin/customer don't flash, partner does".
+//   (2) Pre-warm the sidebar cache check. If sessionStorage has the cached
+//       sidebar HTML, register a MutationObserver that injects it the
+//       INSTANT the empty mount element appears in the DOM — no waiting
+//       for DOMContentLoaded, no waiting for the body-level inject script.
+//       This means the first paint of body already has the populated sidebar.
+(function(){try{
+  var KEY = 'tb_pp_sidebar_v1';
+  var cached = sessionStorage.getItem(KEY);
+  if (!cached) return;
+  var injected = false;
+  function tryInject() {
+    if (injected) return;
+    var el = document.getElementById('pp-sidebar-mount');
+    if (!el) return;
+    el.innerHTML = cached;
+    // Apply active state from body[data-page]
+    try {
+      var page = (document.body && document.body.getAttribute('data-page')) || '';
+      if (page) {
+        var link = el.querySelector('a[data-page="' + page + '"]');
+        if (link) link.classList.add('active');
+      }
+    } catch(e) {}
+    injected = true;
+  }
+  // Try immediately (script might run after mount is parsed in some edge cases)
+  tryInject();
+  if (!injected) {
+    var obs = new MutationObserver(function(){
+      tryInject();
+      if (injected) obs.disconnect();
+    });
+    obs.observe(document.documentElement, {childList:true, subtree:true});
+    // Backstop
+    document.addEventListener('DOMContentLoaded', tryInject);
+  }
+}catch(e){}})();
+</script>
 </head>
 <body data-page="pp-availability">
 <div class="app">
