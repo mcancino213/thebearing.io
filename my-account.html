@@ -16,7 +16,15 @@
      keeps flash prevention working while letting view transitions
      capture body+sidebar snapshots correctly. Conversations.html never
      had this rule at all, which is why it was the only customer page
-     where the sidebar transitioned smoothly. */
+     where the sidebar transitioned smoothly.
+     v74r: the .account-wrap{opacity:0} → opacity:1 fade-in was itself
+     the navigation flash users complained about. Fix: the pre-paint
+     script below (tb-cached-styles) now also injects an !important
+     override `.account-wrap{opacity:1;transition:none}` whenever the
+     session cache exists. Net: signed-in users (cache present) get
+     instant full-opacity content on every navigation \u2014 no fade.
+     First-visit / cache-cleared users still get the fade-in protection
+     against showing account content before Clerk confirms auth. */
   .account-wrap { opacity: 0; transition: opacity .15s ease-in; }
 </style>
 <noscript><style>.account-wrap{opacity:1 !important;}</style></noscript>
@@ -29,7 +37,7 @@
   // Force sidebar visible from the start since we have cached data
   var s=document.createElement('style');
   s.id='tb-cached-styles';
-  s.textContent='.sidebar-profile{visibility:visible!important;}';
+  s.textContent='.sidebar-profile{visibility:visible!important;}.account-wrap{opacity:1!important;transition:none!important;}';
   document.documentElement.appendChild(s);
   
   var populated=false;
