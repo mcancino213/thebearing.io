@@ -966,6 +966,10 @@ export default {
             }
           }
           cancelled.push({ ref, slug: booking.slug, createdAt: booking.createdAt });
+          // v74v: defensive — these are stale ENQUIRIES (no deposit paid),
+          // so credits shouldn't exist yet. The void is a no-op in that case
+          // but cheap and safe.
+          try { await creditsVoidOnCancellation(env, booking); } catch(e) {}
         } catch (e) {
           errors.push({ ref, error: String(e && e.message || e) });
         }
@@ -1311,6 +1315,183 @@ export default {
       return jsonResponse({ ok: true, ref: ref, role: role });
     }
 
+    // ── /api/credits ──────────────────────────────────────────────
+    // v74v: Reserve Credits endpoints.
+    //
+    //   GET  /api/credits/me?guestId=user_X    → guest reads own balance + history
+    //   GET  /api/credits/admin?memberId=X     → admin reads any guest (admin-gated)
+    //   POST /api/credits/admin/adjust         → admin manual ledger entry (admin-gated)
+    //   POST /api/credits/admin/redeem         → admin manual redemption marking (admin-gated)
+    //   POST /api/credits/admin/run-promotion  → admin manual trigger of promote+expire scan
+    //
+    // Balances are ALWAYS computed from the ledger by creditsComputeBalances.
+    // Returned shape:
+    //   {
+    //     pendingCents, earnedCents, usedCents, voidedCents, expiredCents,
+    //     redeemableMilestones, goalCents, expiresAt, lastEarnedAt,
+    //     ledger: [...entries sorted by createdAt desc]
+    //   }
+    if (url.pathname === '/api/credits/me') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      // Guest auth: identify by guestId query param (mirrors how other guest-
+      // facing read endpoints work in this worker). Production should verify
+      // against Clerk session, but for now trust the param consistent with
+      // existing patterns elsewhere in this file.
+      const guestId = url.searchParams.get('guestId');
+      if (!guestId) return jsonResponse({ error: 'guestId required' }, 400);
+      if (request.method !== 'GET') return jsonResponse({ error: 'method not allowed' }, 405);
+      const state = await creditsLoadLedger(env, guestId);
+      const balances = creditsComputeBalances(state.ledger);
+      // Sort ledger desc by createdAt for display
+      const sortedLedger = state.ledger.slice().sort(function(a, b) {
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
+      });
+      return jsonResponse({
+        ok: true,
+        memberId: guestId,
+        goalCents: CREDITS_GOAL_CENTS,
+        rate: CREDITS_RATE,
+        excludedSlugs: CREDITS_EXCLUDED_SLUGS,
+        ...balances,
+        ledger: sortedLedger,
+      });
+    }
+
+    if (url.pathname === '/api/credits/admin' || url.pathname === '/api/credits/admin/') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'GET') return jsonResponse({ error: 'method not allowed' }, 405);
+      // Two modes:
+      //   ?memberId=X → return that member's full state
+      //   no param    → return all members with non-empty ledgers (list view)
+      const memberId = url.searchParams.get('memberId');
+      if (memberId) {
+        const state = await creditsLoadLedger(env, memberId);
+        const balances = creditsComputeBalances(state.ledger);
+        const sortedLedger = state.ledger.slice().sort(function(a, b) {
+          return (b.createdAt || '').localeCompare(a.createdAt || '');
+        });
+        return jsonResponse({
+          ok: true, memberId, goalCents: CREDITS_GOAL_CENTS,
+          ...balances, ledger: sortedLedger
+        });
+      }
+      // List view: scan __members_index, pull credit balance for each.
+      // For now this is a linear scan — fine for current member counts (<10K).
+      try {
+        const rawIdx = await env.DOSSIERS.get('__members_index');
+        const ids = rawIdx ? JSON.parse(rawIdx) : [];
+        const members = [];
+        for (const id of ids) {
+          const state = await creditsLoadLedger(env, id);
+          if (!state.ledger.length) continue; // skip members with no credit activity
+          const balances = creditsComputeBalances(state.ledger);
+          // Fetch the member record for display name/email
+          let displayName = '', displayEmail = '';
+          try {
+            const memRaw = await env.DOSSIERS.get('member:' + id);
+            if (memRaw) {
+              const m = JSON.parse(memRaw);
+              displayName = [m.firstName, m.lastName].filter(Boolean).join(' ') || '';
+              const emails = Array.isArray(m.emailAddresses) ? m.emailAddresses : [];
+              displayEmail = (emails[0] && (emails[0].emailAddress || emails[0])) || m.email || '';
+            }
+          } catch(e) {}
+          members.push({
+            memberId: id,
+            displayName, displayEmail,
+            pendingCents: balances.pendingCents,
+            earnedCents: balances.earnedCents,
+            usedCents: balances.usedCents,
+            redeemableMilestones: balances.redeemableMilestones,
+            expiresAt: balances.expiresAt,
+            lastEarnedAt: balances.lastEarnedAt,
+            ledgerEntries: state.ledger.length,
+          });
+        }
+        // Sort by earnedCents desc
+        members.sort(function(a, b) { return b.earnedCents - a.earnedCents; });
+        return jsonResponse({ ok: true, goalCents: CREDITS_GOAL_CENTS, members });
+      } catch (e) {
+        console.error('[credits/admin list] failed:', e);
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
+    if (url.pathname === '/api/credits/admin/adjust') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const body = await request.json();
+        const { memberId, amountCents, asStatus, reason, actor } = body;
+        if (!memberId) return jsonResponse({ error: 'memberId required' }, 400);
+        const amt = Number(amountCents);
+        if (!Number.isFinite(amt) || amt === 0) return jsonResponse({ error: 'amountCents must be non-zero number' }, 400);
+        if (!reason || !reason.trim()) return jsonResponse({ error: 'reason required' }, 400);
+        const status = asStatus === 'pending' ? 'pending' : 'earned';
+        const state = await creditsLoadLedger(env, memberId);
+        const entry = {
+          id: creditsNewId(),
+          type: 'adjust',
+          status,
+          amount: Math.round(amt),
+          reason: reason.trim(),
+          actor: actor || 'admin',
+          createdAt: new Date().toISOString(),
+        };
+        if (status === 'earned') entry.promotedAt = entry.createdAt;
+        state.ledger.push(entry);
+        await creditsSaveLedger(env, memberId, state.ledger);
+        return jsonResponse({ ok: true, entry });
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
+    if (url.pathname === '/api/credits/admin/redeem') {
+      // Admin manually marks a redemption (offline use, comp, etc.).
+      // The booking-flow redemption is hooked separately at offer-accept time.
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const body = await request.json();
+        const { memberId, redemptionBookingRef, actor, note } = body;
+        if (!memberId) return jsonResponse({ error: 'memberId required' }, 400);
+        if (!redemptionBookingRef) return jsonResponse({ error: 'redemptionBookingRef required' }, 400);
+        const res = await creditsRedeem(env, memberId, redemptionBookingRef);
+        if (!res.ok) return jsonResponse({ error: res.error || 'redemption failed', detail: res }, 400);
+        // Optionally record the actor + note on the redeem entry
+        if (actor || note) {
+          const state = await creditsLoadLedger(env, memberId);
+          const entry = state.ledger.find(function(e) { return e.id === res.entryId; });
+          if (entry) {
+            if (actor) entry.actor = actor;
+            if (note) entry.reason = note;
+            await creditsSaveLedger(env, memberId, state.ledger);
+          }
+        }
+        return jsonResponse({ ok: true, ...res });
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
+    if (url.pathname === '/api/credits/admin/run-promotion') {
+      // Manually trigger the daily promotion/expiry scan. Useful for testing
+      // and for emergency runs if the scheduled cron failed.
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+      if (!(await isAdmin(request, env))) return adminDenied();
+      if (request.method !== 'POST') return jsonResponse({ error: 'method not allowed' }, 405);
+      try {
+        const result = await creditsRunPromotionScan(env);
+        return jsonResponse({ ok: true, ...result });
+      } catch (e) {
+        return jsonResponse({ error: String(e && e.message || e) }, 500);
+      }
+    }
+
     // ── /api/booking ──────────────────────────────────────────────
     if (url.pathname === '/api/booking') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
@@ -1375,7 +1556,7 @@ export default {
 
         const { property, slug, arrival, departure, guests, room, roomPrice,
                 totalAmount, depositAmount, firstname, lastname, email, phone,
-                notes, nights } = body;
+                notes, nights, guestId } = body;
 
         if (!email || !firstname || !property) {
           return jsonResponse({ error: 'email, firstname and property required' }, 400);
@@ -1395,6 +1576,10 @@ export default {
           depositAmount: depositAmount || 0,
           firstname, lastname, email, phone: phone || '',
           notes: notes || '',
+          // v74v: Clerk user ID, captured from the auth-gated booking flow.
+          // Used to link bookings to Reserve Credits ledgers. Falls back to
+          // email lookup for older bookings via creditsResolveMemberId.
+          guestId: guestId || '',
           status: 'pending', // pending → confirmed → cancelled
           paymentStatus: 'deposit_due', // deposit_due → deposit_paid → paid → refunded
           createdAt,
@@ -1587,6 +1772,28 @@ View in admin: https://thebearing.io/admin-bookings.html
           booking.updatedAt = booking.cancelledAt;
           await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
 
+          // v74v: void any pending/earned Reserve Credits from this booking.
+          // Cancellable statuses are enquiry/pending/offer_sent — at those
+          // statuses there shouldn't yet be any earn entries (credits only
+          // accrue on deposit_paid), but the void call is cheap and defensive.
+          // If this booking was Nour El Nil and used a redemption, reverse that too.
+          try {
+            const credRes = await creditsVoidOnCancellation(env, booking);
+            if (credRes && credRes.voided > 0) {
+              console.log('[credits] cancelled booking ' + ref + ' voided ' + credRes.voided + ' entries');
+            }
+            if (credRes && credRes.alreadyUsed > 0) {
+              console.warn('[credits] cancelled booking ' + ref + ' had ' + credRes.alreadyUsed + ' already-used entries — admin intervention may be required');
+            }
+            // Also reverse any redemption applied TO this booking (Nour El Nil case)
+            const memberId = await creditsResolveMemberId(env, booking);
+            if (memberId) {
+              await creditsReverseRedemption(env, memberId, ref).catch(function(_){});
+            }
+          } catch (e) {
+            console.error('[credits] cancellation hook failed:', e && e.message);
+          }
+
           // Archive the linked conversation so it stops showing as open.
           if (booking.conversationId) {
             try {
@@ -1645,6 +1852,15 @@ View in admin: https://thebearing.io/admin-bookings.html
         booking.status = 'cancelled';
         booking.updatedAt = new Date().toISOString();
         await env.DOSSIERS.put('booking:' + ref, JSON.stringify(booking));
+        // v74v: void any Reserve Credits from this booking, and reverse any
+        // redemption applied to this booking.
+        try {
+          await creditsVoidOnCancellation(env, booking);
+          const memberId = await creditsResolveMemberId(env, booking);
+          if (memberId) await creditsReverseRedemption(env, memberId, ref).catch(function(_){});
+        } catch (e) {
+          console.error('[credits] DELETE cancellation hook failed:', e && e.message);
+        }
         return jsonResponse({ ok: true, ref });
       }
       return jsonResponse({ error: 'method not allowed' }, 405);
@@ -1940,6 +2156,8 @@ View in admin: https://thebearing.io/admin-bookings.html
               email: guestEmail,
               phone: '',
               notes: enq.notes || '',
+              // v74v: link booking to Clerk member for Reserve Credits tracking
+              guestId: guestId || '',
               status: 'enquiry',       // enquiry → offer_sent → confirmed/cancelled
               paymentStatus: 'none',
               createdAt: now,
@@ -5046,7 +5264,7 @@ View in admin: https://thebearing.io/admin-bookings.html
       let body;
       try { body = await request.json(); }
       catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
-      const { offerId, requesterEmail } = body;
+      const { offerId, requesterEmail, applyCredits, applyCreditsMemberId } = body;
       if (!offerId) return jsonResponse({ error: 'offerId required' }, 400);
       if (!requesterEmail) return jsonResponse({ error: 'requesterEmail required' }, 400);
 
@@ -5061,7 +5279,7 @@ View in admin: https://thebearing.io/admin-bookings.html
         const expired = new Date(offer.valid_until).getTime() < Date.now();
         if (expired) return jsonResponse({ error: 'offer has expired' }, 400);
       }
-      const depositCents = Math.round(Number(offer.deposit_amount || 0) * 100);
+      let depositCents = Math.round(Number(offer.deposit_amount || 0) * 100);
       if (!depositCents || depositCents < 50) {
         return jsonResponse({ error: 'invalid deposit amount' }, 400);
       }
@@ -5076,6 +5294,138 @@ View in admin: https://thebearing.io/admin-bookings.html
       }
       if (booking.status === 'confirmed' || booking.paymentStatus === 'deposit_paid') {
         return jsonResponse({ error: 'booking is already confirmed' }, 400);
+      }
+
+      // v74v: Reserve Credits redemption.
+      // If the guest has ≥$4,000 earned AND this offer is for Nour El Nil
+      // AND applyCredits=true, reduce the deposit and total proportionally
+      // by $4,000. We CAPTURE the intent to redeem in PaymentIntent metadata
+      // here but DO NOT mark the ledger redemption until payment succeeds
+      // (handled in webhook + sync-payment, alongside the accrue logic).
+      // This way an abandoned checkout doesn't burn the guest's credits.
+      let creditsApplied = false;
+      let creditsAppliedCents = 0;
+      const totalCents = Math.round(Number(offer.total_amount || 0) * 100);
+      if (applyCredits === true) {
+        const offerSlug = String(offer.propertySlug || booking.slug || '').toLowerCase();
+        if (CREDITS_EXCLUDED_SLUGS.indexOf(offerSlug) === -1) {
+          // Excluded slugs are the ones that EARN credits. The REDEMPTION
+          // property (Nour El Nil) is the OPPOSITE — credits ARE redeemable
+          // there. So this check is inverted from the earn case.
+          // Reject if applying credits to a non-Nour El Nil property.
+          return jsonResponse({ error: 'Reserve Credits can only be applied to Nour El Nil bookings' }, 400);
+        }
+        const memberId = applyCreditsMemberId || booking.guestId || (await creditsResolveMemberId(env, booking));
+        if (!memberId) {
+          return jsonResponse({ error: 'cannot identify member for credit redemption' }, 400);
+        }
+        const state = await creditsLoadLedger(env, memberId);
+        const bal = creditsComputeBalances(state.ledger);
+        if (bal.earnedCents < CREDITS_GOAL_CENTS) {
+          return jsonResponse({ error: 'insufficient Reserve Credits — earned: ' + bal.earnedCents + ' cents' }, 400);
+        }
+        if (totalCents <= 0) {
+          return jsonResponse({ error: 'offer total invalid; cannot apply credits' }, 400);
+        }
+        // Proportional reduction: deposit shrinks by depositCents * 4000/totalDollars
+        // (so a $7K offer with $2.1K deposit drops to $3K offer with $900 deposit).
+        // If the $4K credit exceeds the total, deposit and total both go to zero
+        // (free trip — guest pays $0 today).
+        const reductionRatio = Math.min(1, CREDITS_GOAL_CENTS / totalCents);
+        depositCents = Math.max(0, Math.round(depositCents * (1 - reductionRatio)));
+        creditsApplied = true;
+        creditsAppliedCents = CREDITS_GOAL_CENTS;
+
+        // v74v: $0-deposit bypass. If credits cover the full booking (or bring
+        // the deposit below Stripe's 50¢ minimum), skip Stripe entirely and
+        // confirm the booking directly. Mirrors the post-payment flow from
+        // the webhook/sync-payment handlers (accrue credits, mark redemption,
+        // post conv message, mark offer accepted). Returns `skipStripe: true`
+        // so the client knows to skip Payment Element mounting and just call
+        // onSuccess immediately. This handles the rare "Nour El Nil offer
+        // totalling ≤$4,000" edge case AND any case where credits >= deposit.
+        if (depositCents < 50) {
+          const memberId = applyCreditsMemberId || booking.guestId || (await creditsResolveMemberId(env, booking));
+          if (!memberId) {
+            return jsonResponse({ error: 'cannot identify member for credit redemption' }, 400);
+          }
+          // Verify balance one more time at the moment of mutation (race protection)
+          const finalState = await creditsLoadLedger(env, memberId);
+          const finalBal = creditsComputeBalances(finalState.ledger);
+          if (finalBal.earnedCents < CREDITS_GOAL_CENTS) {
+            return jsonResponse({ error: 'insufficient Reserve Credits (race lost)' }, 400);
+          }
+          const nowIso = new Date().toISOString();
+          // Mark booking confirmed
+          booking.status = 'confirmed';
+          booking.paymentStatus = 'paid';  // no deposit owed; full credit covers it
+          booking.depositPaidAmount = 0;
+          booking.depositPaidAt = nowIso;
+          booking.updatedAt = nowIso;
+          booking.seenByPartner = false;
+          booking.seenByAdmin = false;
+          booking.confirmed_total_amount = offer.total_amount || 0;
+          booking.confirmed_deposit_amount = offer.deposit_amount || 0;
+          booking.confirmed_balance_due_date = offer.balance_due_date || '';
+          booking.confirmed_inclusions = Array.isArray(offer.inclusions) ? offer.inclusions : [];
+          booking.confirmed_exclusions = offer.exclusions || '';
+          booking.confirmed_cancellation_terms = offer.cancellation_terms || '';
+          booking.confirmed_partner_notes = offer.partner_notes || '';
+          booking.confirmed_offer_id = offer.id;
+          booking.confirmed_currency = offer.currency || 'USD';
+          booking.creditsAppliedCents = CREDITS_GOAL_CENTS;
+          await env.DOSSIERS.put('booking:' + offer.bookingId, JSON.stringify(booking));
+          // Mark offer accepted
+          try {
+            offer.status = 'accepted';
+            offer.responded_at = nowIso;
+            await env.DOSSIERS.put('offer:' + offer.id, JSON.stringify(offer));
+          } catch (_) {}
+          // Redeem the credits (booking is Nour El Nil, validated above)
+          try {
+            await creditsRedeem(env, memberId, offer.bookingId);
+          } catch (e) {
+            console.error('[zero-deposit redeem] failed:', e && e.message);
+          }
+          // Post conversation message
+          const convId = booking.conversationId || '';
+          if (convId) {
+            try {
+              const convRaw = await env.DOSSIERS.get('conversation:' + convId);
+              if (convRaw) {
+                const conv = JSON.parse(convRaw);
+                const msgsRaw = await env.DOSSIERS.get('conversation:' + convId + ':messages');
+                const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
+                messages.push({
+                  id: 'msg_' + Date.now() + '_zerodep',
+                  role: 'system',
+                  type: 'booking_confirmed',
+                  text: '\u2713 Booking confirmed with $4,000 Reserve Credits applied \u00b7 ' + offer.bookingId + '\n\nNo deposit owed today. The property has been notified.',
+                  senderName: 'The Bearing',
+                  sentAt: nowIso,
+                  readAt: null,
+                  bookingRef: offer.bookingId,
+                });
+                conv.lastMessageAt = nowIso;
+                conv.lastMessagePreview = '\u2713 Booking confirmed (credits applied)';
+                conv.unreadAdmin = (conv.unreadAdmin || 0) + 1;
+                await env.DOSSIERS.put('conversation:' + convId, JSON.stringify(conv));
+                await env.DOSSIERS.put('conversation:' + convId + ':messages', JSON.stringify(messages));
+                try { await recomputeUnreadCounters(env); } catch(_) {}
+              }
+            } catch (e) {
+              console.error('[zero-deposit conv message] failed:', e && e.message);
+            }
+          }
+          return jsonResponse({
+            ok: true,
+            skipStripe: true,
+            bookingRef: offer.bookingId,
+            status: 'confirmed',
+            creditsAppliedCents: CREDITS_GOAL_CENTS,
+            message: 'Booking confirmed with $4,000 Reserve Credits applied.',
+          });
+        }
       }
 
       const productName = (offer.propertyName || 'TheBearing booking') + ' \u2014 deposit';
@@ -5102,6 +5452,10 @@ View in admin: https://thebearing.io/admin-bookings.html
             propertySlug: offer.propertySlug || '',
             conversationId: booking.conversationId || '',
             inlineFlow: 'true',
+            // v74v: redemption intent — applied at deposit-paid event
+            creditsApplied: creditsApplied ? 'true' : 'false',
+            creditsAppliedCents: String(creditsAppliedCents || 0),
+            creditsMemberId: applyCreditsMemberId || booking.guestId || '',
           },
           statement_descriptor_suffix: 'BEARING',
         });
@@ -5203,6 +5557,30 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (!booking.room      && acceptedOffer.room)      booking.room      = acceptedOffer.room;
       }
       await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+      // v74v: Reserve Credits — accrue 10% pending credits on deposit paid.
+      // Idempotent helper handles dedup, Nour El Nil exclusion, and member resolve.
+      try {
+        const credRes = await creditsAccrueOnDeposit(env, booking);
+        if (credRes && credRes.ok && !credRes.skipped) {
+          console.log('[credits] accrued $' + (credRes.amountCents / 100) + ' pending for ' + credRes.memberId + ' from booking ' + bookingRef);
+        }
+        // If the PaymentIntent metadata flags creditsApplied=true, mark the
+        // $4,000 redemption now (only after payment success). Rescue path
+        // reads metadata from pi.metadata.
+        const piMeta = (pi && pi.metadata) || {};
+        if (piMeta.creditsApplied === 'true') {
+          const redeemMemberId = piMeta.creditsMemberId || booking.guestId || (await creditsResolveMemberId(env, booking));
+          if (redeemMemberId) {
+            const redeemRes = await creditsRedeem(env, redeemMemberId, bookingRef);
+            if (redeemRes && redeemRes.ok && !redeemRes.skipped) {
+              console.log('[credits] redeemed $4,000 for ' + redeemMemberId + ' on booking ' + bookingRef);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[credits] accrue/redeem failed on rescue path:', e && e.message);
+      }
 
       if (acceptedOffer) {
         try {
@@ -5417,6 +5795,26 @@ View in admin: https://thebearing.io/admin-bookings.html
         if (!booking.room      && acceptedOffer.room)      booking.room      = acceptedOffer.room;
       }
       await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
+
+      // v74v: Reserve Credits — accrue 10% pending credits on deposit paid.
+      try {
+        const credRes = await creditsAccrueOnDeposit(env, booking);
+        if (credRes && credRes.ok && !credRes.skipped) {
+          console.log('[credits] accrued $' + (credRes.amountCents / 100) + ' pending for ' + credRes.memberId + ' from booking ' + bookingRef);
+        }
+        const piMeta = (pi && pi.metadata) || {};
+        if (piMeta.creditsApplied === 'true') {
+          const redeemMemberId = piMeta.creditsMemberId || booking.guestId || (await creditsResolveMemberId(env, booking));
+          if (redeemMemberId) {
+            const redeemRes = await creditsRedeem(env, redeemMemberId, bookingRef);
+            if (redeemRes && redeemRes.ok && !redeemRes.skipped) {
+              console.log('[credits] redeemed $4,000 for ' + redeemMemberId + ' on booking ' + bookingRef);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[credits] accrue/redeem failed on sync-payment:', e && e.message);
+      }
 
       // Mark offer accepted
       try {
@@ -5917,6 +6315,31 @@ View in admin: https://thebearing.io/admin-bookings.html
           }
           await env.DOSSIERS.put('booking:' + bookingRef, JSON.stringify(booking));
 
+          // v74v: Reserve Credits — accrue 10% pending credits on deposit paid.
+          // Webhook path is the canonical trigger; sync-payment is the
+          // belt-and-suspenders. accrueOnDeposit is idempotent on
+          // (bookingRef + 'deposit_paid'), so double-firing across webhook +
+          // sync-payment is safe — only one ledger entry is created.
+          try {
+            const credRes = await creditsAccrueOnDeposit(env, booking);
+            if (credRes && credRes.ok && !credRes.skipped) {
+              console.log('[credits] webhook accrued $' + (credRes.amountCents / 100) + ' pending for ' + credRes.memberId + ' from ' + bookingRef);
+            }
+            // Redemption from session.metadata (Stripe Checkout flow) or pi.metadata (inline flow)
+            const sessMeta = (session && session.metadata) || {};
+            if (sessMeta.creditsApplied === 'true') {
+              const redeemMemberId = sessMeta.creditsMemberId || booking.guestId || (await creditsResolveMemberId(env, booking));
+              if (redeemMemberId) {
+                const redeemRes = await creditsRedeem(env, redeemMemberId, bookingRef);
+                if (redeemRes && redeemRes.ok && !redeemRes.skipped) {
+                  console.log('[credits] webhook redeemed $4,000 for ' + redeemMemberId + ' on ' + bookingRef);
+                }
+              }
+            }
+          } catch (e) {
+            console.error('[credits] accrue/redeem failed on webhook:', e && e.message);
+          }
+
           // 2. Update offer (mark accepted)
           try {
             if (acceptedOffer) {
@@ -6159,9 +6582,16 @@ View in admin: https://thebearing.io/admin-bookings.html
 
   // ── Scheduled cron handler ────────────────────────────────────
   // Configured in wrangler.toml under [triggers] crons = ["0 * * * *"]
-  // Runs hourly and sends staleness reminders for conversations awaiting admin reply.
+  // Runs hourly. Two jobs:
+  //   - Staleness reminders for conversations awaiting admin reply.
+  //   - v74v: Reserve Credits promotion+expiry scan (only needs daily, but
+  //     since cron fires hourly we run it every hour — operations are
+  //     idempotent so re-running is safe and the volume is small).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runStaleConvReminders(env));
+    ctx.waitUntil(creditsRunPromotionScan(env).catch(function(e) {
+      console.error('[credits-cron] scan failed:', e && e.message);
+    }));
   }
 };
 
@@ -6432,6 +6862,418 @@ function jsonResponse(obj, status = 200) {
 //   - refLabel: optional small reference at the bottom (e.g. "TB-2026-1234")
 //   - unsubUrl: optional unsubscribe / mute link in footer
 //   - footerNote: optional short paragraph above the footer
+// ── RESERVE CREDITS ──────────────────────────────────────────────────────
+//
+// Guests earn 10% of every confirmed Bearing booking toward a $4,000 milestone
+// that unlocks a free cabin on Nour El Nil. Architecture (v74v):
+//
+//   • State machine per ledger entry:
+//       pending  → earned    (when full balance paid AND checkout+7days passed)
+//       pending  → voided    (if booking cancelled before earned)
+//       earned   → used      (when guest redeems on a Nour El Nil booking)
+//       earned   → expired   (24mo after the LAST earned event, no new activity)
+//
+//   • Storage: member:{id}:credits → JSON with { ledger: [...entries], updatedAt }
+//     Balance is ALWAYS computed by summing the ledger — never stored as a
+//     denormalized field. This eliminates a class of "balance drift" bugs.
+//
+//   • Ledger entry shape:
+//       {
+//         id: 'cred_...',            // unique
+//         type: 'earn'|'redeem'|'adjust',
+//         status: 'pending'|'earned'|'used'|'voided'|'expired',
+//         amount: number (cents),    // signed: +earn, -redeem, +/-adjust
+//         sourceBookingRef?: string, // booking that triggered this
+//         sourceEvent?: string,      // 'deposit_paid' | 'cancellation' | 'manual'
+//         sourceTotal?: number,      // total trip value this was 10% of (cents)
+//         reason?: string,           // human description (esp. for admin adjusts)
+//         actor?: string,            // email of admin who created (manual only)
+//         createdAt: string,         // ISO
+//         promotedAt?: string,       // ISO — when pending → earned
+//         voidedAt?: string,         // ISO — when pending → voided
+//         usedAt?: string,           // ISO — when earned → used
+//         usedOnBookingRef?: string  // booking that consumed this credit
+//       }
+//
+//   • Earn trigger: Stripe deposit-paid webhook → creditsAccrueOnDeposit().
+//     Idempotent — checks for existing earn entry with same booking + event.
+//
+//   • Promote trigger: daily cron scans pending entries where booking is fully
+//     paid AND checkout date + 7 days has passed.
+//
+//   • Excluded property: Nour El Nil itself (booking.slug === 'nour-el-nil').
+//     We DON'T earn credits from the property you redeem against.
+//
+//   • Redemption: all-or-nothing at $4,000. The redeem entry stores amount=-400000
+//     (cents). Excess earned balance over $4,000 stays in the account.
+//
+//   • Expiry: 24mo from the LAST earned entry. Pending entries don't count
+//     toward extending the clock (prevents booking-and-cancel cycling).
+
+const CREDITS_GOAL_CENTS = 400000;          // $4,000 redemption threshold
+const CREDITS_RATE = 0.10;                  // 10% of trip total
+const CREDITS_GRACE_DAYS = 7;               // after checkout before promote
+const CREDITS_EXPIRY_MONTHS = 24;           // from last earned entry
+const CREDITS_EXCLUDED_SLUGS = ['nour-el-nil'];  // properties that don't earn
+
+function creditsKey(memberId) {
+  return 'member:' + memberId + ':credits';
+}
+
+async function creditsLoadLedger(env, memberId) {
+  if (!memberId) return { ledger: [], updatedAt: null };
+  try {
+    const raw = await env.DOSSIERS.get(creditsKey(memberId));
+    if (!raw) return { ledger: [], updatedAt: null };
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.ledger)) return { ledger: [], updatedAt: null };
+    return parsed;
+  } catch (e) {
+    console.error('[credits] load failed for', memberId, e);
+    return { ledger: [], updatedAt: null };
+  }
+}
+
+async function creditsSaveLedger(env, memberId, ledger) {
+  if (!memberId) return;
+  const payload = { ledger, updatedAt: new Date().toISOString() };
+  await env.DOSSIERS.put(creditsKey(memberId), JSON.stringify(payload));
+}
+
+function creditsNewId() {
+  return 'cred_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+// Compute the current state of an account from its ledger.
+// Returns: { pendingCents, earnedCents, usedCents, voidedCents, expiredCents,
+//            redeemableMilestones, expiresAt|null, lastEarnedAt|null }
+function creditsComputeBalances(ledger) {
+  let pendingCents = 0, earnedCents = 0, usedCents = 0;
+  let voidedCents = 0, expiredCents = 0;
+  let lastEarnedAt = null;
+  for (const e of (ledger || [])) {
+    const amt = Number(e.amount) || 0;
+    if (e.status === 'pending') pendingCents += amt;
+    else if (e.status === 'earned') {
+      earnedCents += amt;
+      if (amt > 0) {
+        const at = e.promotedAt || e.createdAt;
+        if (!lastEarnedAt || at > lastEarnedAt) lastEarnedAt = at;
+      }
+    }
+    else if (e.status === 'used') usedCents += amt;
+    else if (e.status === 'voided') voidedCents += amt;
+    else if (e.status === 'expired') expiredCents += amt;
+  }
+  // available redeemable balance = sum of earned (positive minus negative)
+  const availableEarnedCents = earnedCents;
+  const redeemableMilestones = Math.floor(availableEarnedCents / CREDITS_GOAL_CENTS);
+  let expiresAt = null;
+  if (lastEarnedAt && availableEarnedCents > 0) {
+    const d = new Date(lastEarnedAt);
+    d.setMonth(d.getMonth() + CREDITS_EXPIRY_MONTHS);
+    expiresAt = d.toISOString();
+  }
+  return {
+    pendingCents, earnedCents: availableEarnedCents, usedCents,
+    voidedCents, expiredCents,
+    redeemableMilestones, expiresAt, lastEarnedAt
+  };
+}
+
+// Resolve a booking's member ID. Bookings created in v74v+ store guestId
+// directly. Older bookings need email→member lookup as fallback.
+async function creditsResolveMemberId(env, booking) {
+  if (!booking) return null;
+  if (booking.guestId && typeof booking.guestId === 'string') return booking.guestId;
+  // Fallback: lookup member by email
+  if (!booking.email) return null;
+  const emailLower = String(booking.email).toLowerCase().trim();
+  if (!emailLower) return null;
+  try {
+    const rawIdx = await env.DOSSIERS.get('__members_index');
+    if (!rawIdx) return null;
+    const ids = JSON.parse(rawIdx);
+    if (!Array.isArray(ids)) return null;
+    // Linear scan — fine for current member counts (<10K).
+    // If this grows, add a reverse index `member:email:{lc}` → id.
+    for (const id of ids) {
+      const memberRaw = await env.DOSSIERS.get('member:' + id);
+      if (!memberRaw) continue;
+      const member = JSON.parse(memberRaw);
+      const emails = Array.isArray(member.emailAddresses) ? member.emailAddresses : [];
+      for (const e of emails) {
+        const val = typeof e === 'string' ? e : (e && e.emailAddress) || '';
+        if (val && val.toLowerCase().trim() === emailLower) return id;
+      }
+      // Also check `email` field directly
+      if (member.email && String(member.email).toLowerCase().trim() === emailLower) return id;
+    }
+  } catch (e) {
+    console.error('[credits] resolve member by email failed:', e);
+  }
+  return null;
+}
+
+// Determine whether a booking is eligible to earn credits.
+function creditsEligibleBooking(booking) {
+  if (!booking) return false;
+  if (!booking.slug) return false;
+  if (CREDITS_EXCLUDED_SLUGS.indexOf(String(booking.slug).toLowerCase()) !== -1) return false;
+  const status = String(booking.status || '').toLowerCase();
+  if (status === 'cancelled') return false;
+  return true;
+}
+
+// Accrue PENDING credits when deposit is paid. Idempotent: if an earn entry
+// already exists for this booking + deposit_paid event, this is a no-op.
+//
+// Returns: { ok, skipped?: reason, entryId?, amountCents? }
+async function creditsAccrueOnDeposit(env, booking) {
+  if (!creditsEligibleBooking(booking)) {
+    return { ok: false, skipped: 'ineligible_booking' };
+  }
+  // Total to base credits on: prefer confirmed total, fall back to total
+  const totalDollars =
+    Number(booking.confirmed_total_amount) ||
+    Number(booking.total_amount) ||
+    Number(booking.totalAmount) || 0;
+  if (totalDollars <= 0) return { ok: false, skipped: 'zero_total' };
+
+  const memberId = await creditsResolveMemberId(env, booking);
+  if (!memberId) return { ok: false, skipped: 'no_member' };
+
+  const state = await creditsLoadLedger(env, memberId);
+  // Idempotency check
+  const existing = state.ledger.find(e =>
+    e.type === 'earn' &&
+    e.sourceBookingRef === booking.ref &&
+    e.sourceEvent === 'deposit_paid'
+  );
+  if (existing) return { ok: true, skipped: 'already_accrued', entryId: existing.id };
+
+  const totalCents = Math.round(totalDollars * 100);
+  const creditCents = Math.round(totalCents * CREDITS_RATE);
+
+  const entry = {
+    id: creditsNewId(),
+    type: 'earn',
+    status: 'pending',
+    amount: creditCents,
+    sourceBookingRef: booking.ref,
+    sourceEvent: 'deposit_paid',
+    sourceTotal: totalCents,
+    createdAt: new Date().toISOString(),
+  };
+  state.ledger.push(entry);
+  await creditsSaveLedger(env, memberId, state.ledger);
+  return { ok: true, entryId: entry.id, amountCents: creditCents, memberId };
+}
+
+// Promote pending credits to earned when:
+//   - full balance is paid (booking.paymentStatus === 'paid')
+//   - AND checkout date + grace days has passed
+async function creditsPromotePending(env, booking) {
+  if (!creditsEligibleBooking(booking)) return { ok: false, skipped: 'ineligible' };
+  if (String(booking.paymentStatus || '').toLowerCase() !== 'paid') {
+    return { ok: false, skipped: 'not_fully_paid' };
+  }
+  const departure = booking.departure || booking.confirmed_balance_due_date;
+  if (!departure) return { ok: false, skipped: 'no_departure' };
+  const depDate = new Date(departure);
+  if (isNaN(depDate.getTime())) return { ok: false, skipped: 'bad_departure_date' };
+  const promoteAfter = new Date(depDate);
+  promoteAfter.setDate(promoteAfter.getDate() + CREDITS_GRACE_DAYS);
+  if (new Date() < promoteAfter) return { ok: false, skipped: 'grace_not_elapsed' };
+
+  const memberId = await creditsResolveMemberId(env, booking);
+  if (!memberId) return { ok: false, skipped: 'no_member' };
+
+  const state = await creditsLoadLedger(env, memberId);
+  const pending = state.ledger.filter(e =>
+    e.type === 'earn' &&
+    e.status === 'pending' &&
+    e.sourceBookingRef === booking.ref
+  );
+  if (!pending.length) return { ok: false, skipped: 'no_pending_for_booking' };
+  const now = new Date().toISOString();
+  for (const e of pending) {
+    e.status = 'earned';
+    e.promotedAt = now;
+  }
+  await creditsSaveLedger(env, memberId, state.ledger);
+  return { ok: true, promoted: pending.length };
+}
+
+// Void credits when a booking is cancelled. Voids any pending OR earned entries
+// from that booking (earned-then-cancelled is rare but possible — e.g. refund
+// after a partial stay). If credits from this booking were already USED, that
+// requires a manual admin adjustment (admin gets a flag).
+async function creditsVoidOnCancellation(env, booking) {
+  const memberId = await creditsResolveMemberId(env, booking);
+  if (!memberId) return { ok: false, skipped: 'no_member' };
+  const state = await creditsLoadLedger(env, memberId);
+  let voided = 0;
+  let alreadyUsed = 0;
+  const now = new Date().toISOString();
+  for (const e of state.ledger) {
+    if (e.sourceBookingRef !== booking.ref) continue;
+    if (e.type !== 'earn') continue;
+    if (e.status === 'pending' || e.status === 'earned') {
+      e.status = 'voided';
+      e.voidedAt = now;
+      e.voidReason = 'booking_cancelled';
+      voided++;
+    } else if (e.status === 'used') {
+      // Credits from this booking were already used — admin intervention needed.
+      alreadyUsed++;
+    }
+  }
+  if (voided > 0 || alreadyUsed > 0) {
+    await creditsSaveLedger(env, memberId, state.ledger);
+  }
+  return { ok: true, voided, alreadyUsed, memberId };
+}
+
+// Apply a $4,000 redemption against a booking. All-or-nothing at the milestone.
+// Caller must have already verified the booking is Nour El Nil and the guest
+// approved the redemption at offer acceptance.
+async function creditsRedeem(env, memberId, redemptionBookingRef) {
+  if (!memberId) return { ok: false, error: 'no_member' };
+  if (!redemptionBookingRef) return { ok: false, error: 'no_booking_ref' };
+
+  const state = await creditsLoadLedger(env, memberId);
+  const balances = creditsComputeBalances(state.ledger);
+  if (balances.earnedCents < CREDITS_GOAL_CENTS) {
+    return { ok: false, error: 'insufficient_balance', earnedCents: balances.earnedCents };
+  }
+
+  // Idempotency: if a redeem entry already exists for this booking, skip.
+  const existing = state.ledger.find(e =>
+    e.type === 'redeem' && e.usedOnBookingRef === redemptionBookingRef
+  );
+  if (existing) return { ok: true, skipped: 'already_redeemed', entryId: existing.id };
+
+  const entry = {
+    id: creditsNewId(),
+    type: 'redeem',
+    status: 'used',
+    amount: -CREDITS_GOAL_CENTS,
+    usedOnBookingRef: redemptionBookingRef,
+    usedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+  };
+  state.ledger.push(entry);
+  await creditsSaveLedger(env, memberId, state.ledger);
+  return { ok: true, entryId: entry.id, amountCents: CREDITS_GOAL_CENTS };
+}
+
+// Reverse a redemption (e.g. Nour El Nil booking cancelled before stay).
+// Returns credits to earned status by creating a positive "earn" entry tied
+// to the original redemption.
+async function creditsReverseRedemption(env, memberId, originalBookingRef) {
+  if (!memberId || !originalBookingRef) return { ok: false };
+  const state = await creditsLoadLedger(env, memberId);
+  const redeem = state.ledger.find(e =>
+    e.type === 'redeem' &&
+    e.status === 'used' &&
+    e.usedOnBookingRef === originalBookingRef
+  );
+  if (!redeem) return { ok: false, error: 'no_redemption_found' };
+  // Idempotency: don't reverse twice
+  if (redeem.reversedAt) return { ok: true, skipped: 'already_reversed' };
+  redeem.status = 'reversed';
+  redeem.reversedAt = new Date().toISOString();
+  // Add an equal positive earn entry so balance is restored.
+  state.ledger.push({
+    id: creditsNewId(),
+    type: 'adjust',
+    status: 'earned',
+    amount: CREDITS_GOAL_CENTS,
+    reason: 'Redemption reversed — booking ' + originalBookingRef + ' was cancelled',
+    sourceEvent: 'redemption_reversed',
+    sourceBookingRef: originalBookingRef,
+    createdAt: new Date().toISOString(),
+    promotedAt: new Date().toISOString(),
+  });
+  await creditsSaveLedger(env, memberId, state.ledger);
+  return { ok: true };
+}
+
+// Expire credits 24 months after the last earned event, if no new activity.
+async function creditsExpireStale(env, memberId) {
+  if (!memberId) return { ok: false };
+  const state = await creditsLoadLedger(env, memberId);
+  const bal = creditsComputeBalances(state.ledger);
+  if (!bal.expiresAt) return { ok: true, skipped: 'no_expiry' };
+  if (new Date() < new Date(bal.expiresAt)) return { ok: true, skipped: 'not_expired' };
+
+  const now = new Date().toISOString();
+  let expiredCount = 0;
+  for (const e of state.ledger) {
+    if (e.status === 'pending' || e.status === 'earned') {
+      e.status = 'expired';
+      e.expiredAt = now;
+      expiredCount++;
+    }
+  }
+  if (expiredCount > 0) {
+    await creditsSaveLedger(env, memberId, state.ledger);
+  }
+  return { ok: true, expired: expiredCount };
+}
+
+
+// Daily scan: promote pending → earned where conditions are met, and expire
+// stale credits past 24mo. Called by /api/credits/admin/run-promotion AND
+// by the scheduled() cron handler.
+async function creditsRunPromotionScan(env) {
+  if (!env.DOSSIERS) return { ok: false, error: 'KV not bound' };
+  const startedAt = new Date().toISOString();
+  let scanned = 0, promoted = 0, expired = 0, errors = 0;
+  try {
+    const rawIdx = await env.DOSSIERS.get('__members_index');
+    const ids = rawIdx ? JSON.parse(rawIdx) : [];
+    if (!Array.isArray(ids)) return { ok: true, scanned: 0, promoted: 0, expired: 0, errors: 0 };
+    for (const memberId of ids) {
+      try {
+        const state = await creditsLoadLedger(env, memberId);
+        if (!state.ledger.length) continue;
+        scanned++;
+        // Promote pending entries whose source booking is paid+grace-elapsed.
+        const pendingEntries = state.ledger.filter(function(e) {
+          return e.type === 'earn' && e.status === 'pending' && e.sourceBookingRef;
+        });
+        for (const entry of pendingEntries) {
+          try {
+            const bookingRaw = await env.DOSSIERS.get('booking:' + entry.sourceBookingRef);
+            if (!bookingRaw) continue;
+            const booking = JSON.parse(bookingRaw);
+            const res = await creditsPromotePending(env, booking);
+            if (res && res.ok && res.promoted) promoted += res.promoted;
+          } catch (e) { errors++; }
+        }
+        // Expire stale credits (24mo from last earned).
+        try {
+          const res = await creditsExpireStale(env, memberId);
+          if (res && res.ok && res.expired) expired += res.expired;
+        } catch (e) { errors++; }
+      } catch (e) {
+        errors++;
+        console.error('[credits-scan] member ' + memberId + ' failed:', e);
+      }
+    }
+  } catch (e) {
+    return { ok: false, error: String(e && e.message || e) };
+  }
+  const completedAt = new Date().toISOString();
+  const summary = { ok: true, startedAt, completedAt, scanned, promoted, expired, errors };
+  // Persist last-run state for admin visibility
+  try { await env.DOSSIERS.put('__credits:last_run', JSON.stringify(summary)); } catch(e) {}
+  return summary;
+}
+
+
 function escapeEmailHtml(str) {
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')

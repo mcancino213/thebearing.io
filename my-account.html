@@ -554,9 +554,9 @@
     <div class="stat-icon" style="width:32px;height:32px;border-radius:10px;background:rgba(251,146,60,.15);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="rgba(251,146,60,.9)" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>
     </div>
-    <div style="font-family:'Instrument Serif',serif;font-size:2.2rem;color:#fff;line-height:1;">$420</div>
+    <div id="tile-credits-value" style="font-family:'Instrument Serif',serif;font-size:2.2rem;color:#fff;line-height:1;">$0</div>
     <div style="font-size:.72rem;color:rgba(255,255,255,.5);margin-top:4px;">Reserve Credits</div>
-    <div style="font-size:.66rem;color:rgba(251,146,60,.8);margin-top:4px;font-weight:500;">$3,080 to free cabin</div>
+    <div id="tile-credits-sub" style="font-size:.66rem;color:rgba(251,146,60,.8);margin-top:4px;font-weight:500;">$4,000 to free cabin</div>
   </div>
   <div class="stat-card s4" style="background:linear-gradient(135deg,#2a2210,#1a1508);border:1px solid rgba(154,114,48,.35);border-radius:16px;padding:22px 20px;position:relative;overflow:hidden;">
     <div class="stat-icon" style="width:32px;height:32px;border-radius:10px;background:rgba(251,191,36,.15);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
@@ -615,16 +615,20 @@
     </div>
   </div>
 
-  <div style="background:var(--ink);border-radius:var(--r-xl);padding:22px;display:flex;flex-direction:column;gap:12px;">
+  <div id="reserve-credits-card" style="background:var(--ink);border-radius:var(--r-xl);padding:22px;display:flex;flex-direction:column;gap:12px;">
     <div style="font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--terra);margin-bottom:2px;">Reserve Credits progress</div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;">
-      <div style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#fff;">$420 earned</div>
-      <div style="font-size:.75rem;color:rgba(255,255,255,.35);">Goal: $3,500</div>
+      <div id="rc-earned-display" style="font-family:'Instrument Serif',serif;font-size:1.5rem;color:#fff;">$0 earned</div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.35);">Goal: $4,000</div>
     </div>
     <div style="background:rgba(255,255,255,.1);border-radius:100px;height:6px;overflow:hidden;">
-      <div style="background:linear-gradient(90deg,var(--terra),var(--gold));height:100%;width:12%;border-radius:100px;"></div>
+      <div id="rc-progress-fill" style="background:linear-gradient(90deg,var(--terra),var(--gold));height:100%;width:0%;border-radius:100px;transition:width .4s ease;"></div>
     </div>
-    <div style="font-size:.72rem;color:rgba(255,255,255,.4);line-height:1.5;">$3,080 more to earn your complimentary Nour El Nil cabin. Every The Bearing booking earns 10% back.</div>
+    <div id="rc-pending-row" style="display:none;font-size:.7rem;color:rgba(255,255,255,.5);">
+      <span style="color:rgba(255,255,255,.7);">+ <span id="rc-pending-amount">$0</span> pending</span>
+      <span style="color:rgba(255,255,255,.35);margin-left:6px;">— credits earned officially after each trip completes</span>
+    </div>
+    <div id="rc-status-line" style="font-size:.72rem;color:rgba(255,255,255,.4);line-height:1.5;">Earn 10% of every Bearing booking back as Reserve Credits. Reach $4,000 and your cabin on Nour El Nil is on us.</div>
     <a href="/nour-el-nil.html" style="margin-top:4px;font-size:.78rem;color:var(--terra);font-weight:600;text-decoration:none;">View Nour El Nil →</a>
   </div>
 </div>
@@ -1038,6 +1042,59 @@ window.addEventListener('load', async function() {
       window.location.reload();
     }
   });
+
+  // v74v: load Reserve Credits balances from /api/credits/me once user is known.
+  // Updates both the stat tile and the progress card. Falls back gracefully
+  // if the API errors — the placeholder $0 stays visible.
+  if (window.Clerk.user && window.Clerk.user.id) {
+    fetch('/api/credits/me?guestId=' + encodeURIComponent(window.Clerk.user.id))
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) {
+        if (!d || !d.ok) return;
+        var goalCents = d.goalCents || 400000;
+        var earned = d.earnedCents || 0;
+        var pending = d.pendingCents || 0;
+        var pct = Math.min(100, Math.round((earned / goalCents) * 100));
+        function fmtUSD(cents) {
+          return '$' + Math.round(cents / 100).toLocaleString();
+        }
+        // Stat tile
+        var tileVal = document.getElementById('tile-credits-value');
+        var tileSub = document.getElementById('tile-credits-sub');
+        if (tileVal) tileVal.textContent = fmtUSD(earned);
+        if (tileSub) {
+          if (earned >= goalCents) {
+            tileSub.textContent = '✨ Free cabin unlocked!';
+          } else {
+            var remaining = goalCents - earned;
+            tileSub.textContent = fmtUSD(remaining) + ' to free cabin';
+          }
+        }
+        // Progress card
+        var rcEarned = document.getElementById('rc-earned-display');
+        var rcFill = document.getElementById('rc-progress-fill');
+        var rcStatus = document.getElementById('rc-status-line');
+        var rcPendingRow = document.getElementById('rc-pending-row');
+        var rcPendingAmt = document.getElementById('rc-pending-amount');
+        if (rcEarned) rcEarned.textContent = fmtUSD(earned) + ' earned';
+        if (rcFill) rcFill.style.width = pct + '%';
+        if (rcPendingRow && rcPendingAmt) {
+          if (pending > 0) {
+            rcPendingAmt.textContent = fmtUSD(pending);
+            rcPendingRow.style.display = '';
+          }
+        }
+        if (rcStatus) {
+          if (earned >= goalCents) {
+            rcStatus.innerHTML = '<strong style="color:var(--gold);">Your free Nour El Nil cabin is unlocked.</strong> Book your trip and apply $4,000 in credits at checkout.';
+          } else {
+            var remaining = goalCents - earned;
+            rcStatus.textContent = fmtUSD(remaining) + ' more to earn your complimentary Nour El Nil cabin. Every Bearing booking (except Nour El Nil itself) earns 10% back.';
+          }
+        }
+      })
+      .catch(function(e) { console.warn('[credits] fetch failed:', e); });
+  }
   } catch(err) {
     console.error('Clerk load failed:', err);
     // Trigger the failsafe screen immediately

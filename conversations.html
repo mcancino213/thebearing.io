@@ -3009,6 +3009,10 @@ function openOfferDetail(offerId) {
         (o.exclusions ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Not included</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + chEsc(o.exclusions) + '</div></div>' : '') +
         (o.cancellation_terms ? '<div style="margin:18px 0;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Cancellation</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;">' + chEsc(o.cancellation_terms) + '</div></div>' : '') +
         (o.partner_notes ? '<div style="margin:18px 0;padding:14px 16px;background:#fff;border:1px solid rgba(80,60,30,.1);border-radius:12px;"><div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:6px;">Note from the property</div><div style="font-size:.85rem;color:#1e1810;line-height:1.55;white-space:pre-line;font-style:italic;">' + chEsc(o.partner_notes) + '</div></div>' : '') +
+        // v74v: Reserve Credits redemption slot. Populated async after the modal
+        // renders by checkAndRenderCreditsRedemption() below. Only visible if
+        // this is a Nour El Nil offer AND the guest has ≥$4,000 earned.
+        '<div id="tb-credits-redemption-slot" style="display:none;"></div>' +
         (validLine ? '<div style="font-size:.75rem;color:#9a8e80;text-align:center;margin:14px 0 18px;">' + chEsc(validLine) + '</div>' : '') +
         // Actions — primary Accept, secondary Request changes, tertiary Decline
         (o.status === 'sent' ?
@@ -3022,6 +3026,62 @@ function openOfferDetail(offerId) {
           : '');
 
       document.getElementById('tb-offer-body').innerHTML = html;
+
+      // v74v: check if this is a Nour El Nil offer AND the guest has enough
+      // Reserve Credits to redeem. If yes, render a checkbox in the slot we
+      // reserved in the HTML above. The accept handler reads the checkbox.
+      var creditsApplyRequested = false;  // updated by checkbox onchange
+      (function checkAndRenderCreditsRedemption() {
+        try {
+          var slug = String(o.propertySlug || '').toLowerCase();
+          if (slug !== 'nour-el-nil') return;
+          var user = window.Clerk && window.Clerk.user;
+          if (!user || !user.id) return;
+          fetch('/api/credits/me?guestId=' + encodeURIComponent(user.id))
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(d) {
+              if (!d || !d.ok) return;
+              var goalCents = d.goalCents || 400000;
+              var earnedCents = d.earnedCents || 0;
+              if (earnedCents < goalCents) return;  // not enough yet
+              var slot = document.getElementById('tb-credits-redemption-slot');
+              if (!slot) return;
+              var totalAmount = Number(o.total_amount || 0);
+              var depositAmount = Number(o.deposit_amount || 0);
+              if (totalAmount <= 0 || depositAmount <= 0) return;
+              var redeemDollars = goalCents / 100;  // $4,000
+              var reductionRatio = Math.min(1, redeemDollars / totalAmount);
+              var newDeposit = Math.max(0, depositAmount * (1 - reductionRatio));
+              var newTotal = Math.max(0, totalAmount - redeemDollars);
+              slot.style.display = '';
+              slot.innerHTML =
+                '<div style="margin:18px 0;padding:16px;background:linear-gradient(135deg,rgba(176,88,48,.08),rgba(176,88,48,.04));border:1px solid rgba(176,88,48,.3);border-radius:14px;">' +
+                  '<label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;">' +
+                    '<input type="checkbox" id="tb-apply-credits" style="margin-top:3px;flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:#b05830;">' +
+                    '<div style="flex:1;">' +
+                      '<div style="font-size:.86rem;font-weight:600;color:#1e1810;line-height:1.4;">' +
+                        '✦ Apply $4,000 in Reserve Credits' +
+                      '</div>' +
+                      '<div style="font-size:.74rem;color:#5a4e40;margin-top:4px;line-height:1.5;">' +
+                        'You\'ve earned ' + Math.floor(earnedCents/100).toLocaleString() + ' in credits. Apply $4,000 toward this booking.' +
+                      '</div>' +
+                      '<div id="tb-credits-preview" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(255,255,255,.7);border-radius:8px;font-size:.76rem;color:#1e1810;line-height:1.6;">' +
+                        '<div>New deposit due today: <strong>$' + Math.round(newDeposit).toLocaleString() + '</strong> <span style="color:#9a8e80;">(was $' + Math.round(depositAmount).toLocaleString() + ')</span></div>' +
+                        '<div style="margin-top:2px;">New total: <strong>$' + Math.round(newTotal).toLocaleString() + '</strong> <span style="color:#9a8e80;">(was $' + Math.round(totalAmount).toLocaleString() + ')</span></div>' +
+                      '</div>' +
+                    '</div>' +
+                  '</label>' +
+                '</div>';
+              var cbox = document.getElementById('tb-apply-credits');
+              var preview = document.getElementById('tb-credits-preview');
+              if (cbox) cbox.addEventListener('change', function() {
+                creditsApplyRequested = !!this.checked;
+                if (preview) preview.style.display = creditsApplyRequested ? '' : 'none';
+              });
+            })
+            .catch(function(e) { console.warn('[credits] redemption check failed:', e); });
+        } catch (e) { /* non-fatal */ }
+      })();
 
       // v73ab: inline Stripe Payment Element flow. Replaces the previous
       // redirect to Stripe-hosted Checkout. Customer stays on thebearing.io
@@ -3058,6 +3118,10 @@ function openOfferDetail(offerId) {
         window.TBStripeInline.payDeposit({
           offerId: offerId,
           offerLabel: offerLabel,
+          // v74v: pass redemption flag — picked up by payDeposit and sent to
+          // /api/checkout/create-intent, which reduces the deposit accordingly.
+          applyCredits: creditsApplyRequested,
+          applyCreditsMemberId: (window.Clerk && window.Clerk.user && window.Clerk.user.id) || '',
           onSuccess: function() {
             // Webhook will have fired by now (or will momentarily). Redirect
             // to /bookings with success flag \u2014 the persistent hero card

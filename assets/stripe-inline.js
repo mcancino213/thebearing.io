@@ -54,6 +54,13 @@
     var onSuccess = config.onSuccess || function() {};
     var onCancel  = config.onCancel  || function() {};
     var onError   = config.onError   || function(){};
+    // v74v: Reserve Credits redemption flag — caller (conversation offer
+    // accept handler) sets this when the guest ticks the "Apply $4,000"
+    // checkbox. Forwarded to /api/checkout/create-intent which reduces
+    // the deposit proportionally and stamps PI metadata. Redemption is
+    // only marked in the ledger on payment success, not at intent create.
+    var applyCredits = config.applyCredits === true;
+    var applyCreditsMemberId = config.applyCreditsMemberId || '';
 
     if (!offerId) {
       onError('Missing offer reference. Please refresh and try again.');
@@ -77,7 +84,12 @@
     var intentPromise = fetch('/api/checkout/create-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ offerId: offerId, requesterEmail: email }),
+      body: JSON.stringify({
+        offerId: offerId,
+        requesterEmail: email,
+        applyCredits: applyCredits,
+        applyCreditsMemberId: applyCreditsMemberId,
+      }),
     }).then(function(r) {
       return r.json().then(function(j){ return { ok: r.ok, body: j }; });
     });
@@ -89,6 +101,17 @@
         if (!intentRes.ok) {
           var msg = (intentRes.body && intentRes.body.error) || 'Could not start payment';
           modal.setStatus('error', msg);
+          return;
+        }
+        // v74v: $0-deposit bypass. When credits cover the full booking, the
+        // worker confirms the booking server-side and returns skipStripe:true.
+        // No Payment Element needed — just show success and trigger onSuccess.
+        if (intentRes.body && intentRes.body.skipStripe === true) {
+          modal.setStatus('success', intentRes.body.message || 'Booking confirmed with credits applied.');
+          setTimeout(function() {
+            try { modal.close(); } catch(_) {}
+            onSuccess();
+          }, 1500);
           return;
         }
         var clientSecret = intentRes.body.client_secret;

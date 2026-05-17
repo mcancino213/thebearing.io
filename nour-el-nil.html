@@ -952,6 +952,12 @@
         </button>
       </div>
       <div style="font-size:.68rem;color:var(--stone);text-align:center;margin-bottom:4px;">Same price as booking direct · 0% fees</div>
+      <!-- v74v: Reserve Credits notice. Nour El Nil is the REDEMPTION property,
+           not an earning property — book here doesn't earn credits, but you
+           CAN apply $4,000 in earned credits toward your room at checkout. -->
+      <div id="rc-noten" style="margin-top:10px;padding:10px 12px;background:rgba(176,88,48,.06);border:1px solid rgba(176,88,48,.15);border-radius:8px;font-size:.66rem;color:var(--bark);line-height:1.55;text-align:center;">
+        <span style="color:var(--terra);font-weight:600;">Reserve Credits:</span> bookings on Nour El Nil don't earn credits, but you can <strong>redeem $4,000 in earned credits</strong> for a free standard cabin (or a discount on a premium room).
+      </div>
       <div class="dbc-divider"></div>
       <div class="dbc-trust">
         <div class="dbc-trust-item"><svg stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Same price as booking direct</div>
@@ -3174,7 +3180,11 @@ function tbSubmitBooking() {
     lastname: lastname,
     email: email,
     phone: phone,
-    notes: notes
+    notes: notes,
+    // v74v: pass Clerk user ID so the booking is linked to the member for
+    // Reserve Credits tracking. Falls back to email lookup on the worker
+    // side if guestId is missing.
+    guestId: (window.Clerk && window.Clerk.user && window.Clerk.user.id) || ''
   };
 
   fetch('/api/booking', {
