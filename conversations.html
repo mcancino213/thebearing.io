@@ -2125,40 +2125,33 @@ function chRenderThread(conv, msgs) {
   info.appendChild(name);
   info.appendChild(sub);
 
-  // Header actions: email notifications slider (guest-scoped — notifyGuest)
+  // v74p: Email notifications — icon-only bell button (was a verbose pill
+  // saying "Email notifications [Off|switch|On]"). 32×32 button, bell SVG
+  // when on, bell-with-slash when muted. Tooltip describes state and action.
+  // Cream/ink palette to match customer-side aesthetic.
   var actions = document.createElement('div');
   actions.className = 'ch-thread-actions';
 
-  var notifyWrap = document.createElement('div');
-  notifyWrap.style.cssText = 'display:flex;align-items:center;gap:8px;font-family:Geist,sans-serif;font-size:.7rem;font-weight:500;color:#5a4f43;padding:4px 10px;background:var(--cream);border:1px solid var(--border-hi);border-radius:8px;';
   var notifyOn = (conv.notifyGuest !== false);
-  var notifyLabel = document.createElement('span');
-  notifyLabel.textContent = 'Email notifications';
-  notifyLabel.style.cssText = 'color:var(--stone);';
-  var notifyOff = document.createElement('span');
-  notifyOff.textContent = 'Off';
-  notifyOff.style.cssText = 'font-size:.68rem;color:#9a8e80;';
-  var notifySwitch = document.createElement('button');
-  notifySwitch.type = 'button';
-  notifySwitch.title = 'Toggle email notifications for this conversation';
-  notifySwitch.style.cssText = 'position:relative;width:32px;height:18px;border-radius:100px;border:none;padding:0;cursor:pointer;transition:background .18s ease;flex-shrink:0;';
-  var notifyKnob = document.createElement('span');
-  notifyKnob.style.cssText = 'position:absolute;top:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15);transition:left .18s ease;';
-  notifySwitch.appendChild(notifyKnob);
-  var notifyOnLbl = document.createElement('span');
-  notifyOnLbl.textContent = 'On';
-  notifyOnLbl.style.cssText = 'font-size:.68rem;color:#9a8e80;';
+  var notifyBtn = document.createElement('button');
+  notifyBtn.type = 'button';
+  notifyBtn.style.cssText = 'display:flex;align-items:center;justify-content:center;width:32px;height:32px;border:1px solid var(--border-hi);background:var(--cream);border-radius:8px;cursor:pointer;padding:0;transition:background .15s,border-color .15s,color .15s;';
   function paintNotifyBtn() {
-    notifySwitch.style.background = notifyOn ? '#1e1810' : '#d8cfc0';
-    notifyKnob.style.left = notifyOn ? '16px' : '2px';
-    notifyOff.style.color = notifyOn ? '#9a8e80' : '#1e1810';
-    notifyOff.style.fontWeight = notifyOn ? '500' : '600';
-    notifyOnLbl.style.color = notifyOn ? '#1e1810' : '#9a8e80';
-    notifyOnLbl.style.fontWeight = notifyOn ? '600' : '500';
+    var bellOn = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+    var bellOff = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    notifyBtn.innerHTML = notifyOn ? bellOn : bellOff;
+    notifyBtn.style.color = notifyOn ? '#5a4f43' : '#9a8e80';
+    notifyBtn.title = notifyOn
+      ? 'Email notifications on for this conversation — click to mute'
+      : 'Email notifications muted for this conversation — click to unmute';
+    notifyBtn.setAttribute('aria-label', notifyBtn.title);
+    notifyBtn.setAttribute('aria-pressed', notifyOn ? 'true' : 'false');
   }
   paintNotifyBtn();
-  notifySwitch.onclick = async function() {
-    notifySwitch.disabled = true;
+  notifyBtn.onmouseover = function(){ notifyBtn.style.background = '#f5f1e9'; };
+  notifyBtn.onmouseout = function(){ notifyBtn.style.background = 'var(--cream)'; };
+  notifyBtn.onclick = async function() {
+    notifyBtn.disabled = true;
     try {
       var r = await fetch('/api/notify-toggle', {
         method: 'POST', headers: {'Content-Type':'application/json'},
@@ -2167,13 +2160,9 @@ function chRenderThread(conv, msgs) {
       var d = await r.json();
       if (d.ok) { notifyOn = d.notifyGuest; conv.notifyGuest = notifyOn; paintNotifyBtn(); }
     } catch(e) {}
-    notifySwitch.disabled = false;
+    notifyBtn.disabled = false;
   };
-  notifyWrap.appendChild(notifyLabel);
-  notifyWrap.appendChild(notifyOff);
-  notifyWrap.appendChild(notifySwitch);
-  notifyWrap.appendChild(notifyOnLbl);
-  actions.appendChild(notifyWrap);
+  actions.appendChild(notifyBtn);
 
   hdr.appendChild(av);
   hdr.appendChild(info);
@@ -2287,6 +2276,12 @@ function chRenderThread(conv, msgs) {
 //   3. Reset chUnreadAtOpen to 0 so subsequent re-renders during this
 //      session don't re-insert the divider.
 function chFinalizeOpenScroll(msgsWrap) {
+  // v74p: install scroll controls FIRST so the stage wrapper is in place
+  // BEFORE we scroll. Reparenting (moving msgsWrap into the stage) can
+  // reset scrollTop; doing it before the pin keeps the bottom position.
+  if (window.ConvScroll && typeof window.ConvScroll.install === 'function') {
+    chScrollControls = window.ConvScroll.install(msgsWrap, { threshold: 200 });
+  }
   var divider = document.getElementById('ch-unread-divider');
   if (divider) {
     // Scroll the divider into view rather than the bottom. Use a small
@@ -2299,10 +2294,6 @@ function chFinalizeOpenScroll(msgsWrap) {
   }
   // Reset so refresh doesn't re-insert
   chUnreadAtOpen = 0;
-  // Install scroll controls (pill + jump button)
-  if (window.ConvScroll && typeof window.ConvScroll.install === 'function') {
-    chScrollControls = window.ConvScroll.install(msgsWrap, { threshold: 200 });
-  }
 }
 
 // Shared message rendering

@@ -140,23 +140,49 @@
     var threshold = typeof opts.threshold === 'number' ? opts.threshold : 200;
     var pillUnreadCount = 0;
 
-    // Find the container that controls our positioning. Walk up looking
-    // for a position:relative/absolute/fixed ancestor; fall back to wrap
-    // itself wrapped in a relative container if needed.
-    function positionedAncestor(el) {
-      var cur = el.parentElement;
-      while (cur && cur !== document.body) {
-        var pos = getComputedStyle(cur).position;
-        if (pos === 'relative' || pos === 'absolute' || pos === 'fixed') return cur;
-        cur = cur.parentElement;
+    // v74p: The previous strategy (walk up to find a positioned ancestor +
+    // position the controls at `bottom:96px` inside it) was unreliable —
+    // the "positioned ancestor" was usually the whole chat column, so
+    // `bottom:96px` put the controls ABOVE the column bottom (which is
+    // below the composer), causing the controls to float over the
+    // composer/reply box at certain composer heights.
+    //
+    // New approach: wrap the messages-wrap in a position:relative "stage"
+    // that shares the same flex behaviour. The messages-wrap (which has
+    // overflow-y:auto) goes inside the stage; the pill + jump button get
+    // absolutely positioned at `bottom:16px right:18px` of the stage. The
+    // composer is a SIBLING of the stage, never overlapped.
+    //
+    // This is idempotent — if a stage is already in place from a previous
+    // install on the same wrap, we reuse it (callers call destroy() then
+    // re-install on the same DOM, so this can happen).
+    var stage;
+    if (wrap.parentElement && wrap.parentElement.classList.contains('conv-scroll-stage')) {
+      stage = wrap.parentElement;
+      // Clear any previous controls
+      var oldBtn = stage.querySelector('.conv-scroll-jump-btn');
+      var oldPill = stage.querySelector('.conv-scroll-new-pill');
+      if (oldBtn) oldBtn.remove();
+      if (oldPill) oldPill.remove();
+    } else {
+      stage = document.createElement('div');
+      stage.className = 'conv-scroll-stage';
+      // Match the messages-wrap's flex behaviour so layout doesn't shift.
+      // The wrap typically has `flex:1` inside a flex column; the stage
+      // inherits that role and the wrap inside it gets `flex:1 1 0; min-height:0`
+      // so it fills the stage and scrolls.
+      stage.style.cssText = 'position:relative;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;';
+      // Insert stage in the same position as the wrap, then move wrap inside
+      var parent = wrap.parentElement;
+      if (parent) {
+        parent.insertBefore(stage, wrap);
+        stage.appendChild(wrap);
+        // Ensure the inner wrap can fill the stage and scroll
+        wrap.style.flex = '1 1 0';
+        wrap.style.minHeight = '0';
       }
-      return el.parentElement || document.body;
     }
-    var anchor = positionedAncestor(wrap);
-    // Ensure anchor is positioned — defensive
-    if (getComputedStyle(anchor).position === 'static') {
-      anchor.style.position = 'relative';
-    }
+    var anchor = stage;
 
     // ─ Button ──
     var btn = document.createElement('button');
@@ -169,7 +195,7 @@
       '<polyline points="19 12 12 19 5 12"/>' +
       '</svg>';
     btn.style.cssText =
-      'position:absolute;right:18px;bottom:96px;' +
+      'position:absolute;right:18px;bottom:16px;' +
       'width:38px;height:38px;border-radius:50%;' +
       'background:#fff;color:#1e1810;border:1px solid rgba(80,60,30,.18);' +
       'box-shadow:0 4px 14px rgba(0,0,0,.10),0 2px 4px rgba(0,0,0,.05);' +
@@ -187,7 +213,7 @@
     pill.type = 'button';
     pill.className = 'conv-scroll-new-pill';
     pill.style.cssText =
-      'position:absolute;right:18px;bottom:96px;' +
+      'position:absolute;right:18px;bottom:16px;' +
       'padding:9px 16px 9px 14px;border-radius:100px;' +
       'background:linear-gradient(135deg,#b05830,#8c4422);color:#fff;' +
       'border:none;box-shadow:0 4px 18px rgba(176,88,48,.30);' +
