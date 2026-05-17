@@ -954,7 +954,7 @@ function openConfirmedDetailModal(bookingRef) {
           '<div>' +
             '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Guest</div>' +
             '<div style="font-size:.95rem;color:#1e1810;font-weight:500;">' + escHtml([b.firstname, b.lastname].filter(Boolean).join(' ') || '\u2014') + '</div>' +
-            '<div style="font-size:.78rem;color:#9a8e80;margin-top:2px;">' + escHtml(b.email || '') + '</div>' +
+            // v74o: guest email removed — partners must communicate via The Bearing only
           '</div>' +
           '<div>' +
             '<div style="font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9a8e80;margin-bottom:4px;">Stay</div>' +
@@ -1045,7 +1045,11 @@ function renderBookings() {
   var rows = ALL_BOOKINGS.filter(function(b) {
     if (CURRENT_FILTER !== 'all' && bookingFilterCategory(b) !== CURRENT_FILTER) return false;
     if (!q) return true;
-    var hay = [b.ref, b.firstname, b.lastname, b.email].join(' ').toLowerCase();
+    // v74o: removed b.email from search haystack. Partners can't see
+    // guest emails anywhere in the UI, so they have no way to search
+    // by email — keeping it in the search would be a privacy leak via
+    // typing-the-email-and-seeing-which-row-matches.
+    var hay = [b.ref, b.firstname, b.lastname].join(' ').toLowerCase();
     return hay.indexOf(q) !== -1;
   });
 
@@ -1060,7 +1064,8 @@ function renderBookings() {
 
   var html = '';
   rows.forEach(function(b) {
-    var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || '—');
+    // v74o: guest name fallback is now generic "Guest", never email
+    var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || 'Guest';
     var category = bookingFilterCategory(b);
     // Action button changes by state:
     //   enquiry   → "Build offer"
@@ -1155,7 +1160,8 @@ function renderBookings() {
 
     html += '<tr' + (hasPCR ? ' class="row-has-pcr"' : (wasDeclined ? ' class="row-was-declined"' : '')) + '>' +
       '<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:var(--text2);">' + escHtml(b.ref) + '</span></td>' +
-      '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escHtml(initials(guestName)) + '</div><div><div style="font-size:14px;font-weight:500;">' + escHtml(guestName) + '</div><div style="font-size:12px;color:var(--text3);">' + escHtml(b.email || '') + '</div></div></div></td>' +
+      // v74o: removed email subline from guest cell — partners must communicate via The Bearing only
+      '<td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar avatar-sm">' + escHtml(initials(guestName)) + '</div><div><div style="font-size:14px;font-weight:500;">' + escHtml(guestName) + '</div></div></div></td>' +
       '<td>' + datesCol + '</td>' +
       '<td>' + escHtml(b.guests || '') + '</td>' +
       '<td>' + statusBadge(b) + '</td>' +
@@ -1275,7 +1281,8 @@ function openOfferModal(bookingRef, mode) {
       }
       // Set up modal state
       modalState.bookingRef = bookingRef;
-      modalState.bookingGuest = ((b.firstname||'') + ' ' + (b.lastname||'')).trim() || b.email;
+      // v74o: fallback is generic "Guest", not the email
+      modalState.bookingGuest = ((b.firstname||'') + ' ' + (b.lastname||'')).trim() || 'Guest';
       modalState.supersedesId = null;
       modalState.commissionPct = prop.commission_pct;
       modalState.propertyName = prop.name || PP_SLUG;
@@ -1498,7 +1505,8 @@ function openAmendmentModal(bookingRef) {
   var selectEl = document.getElementById('am-room-select');
   if (selectEl) selectEl.classList.remove('open');
 
-  var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || (b.email || 'guest');
+  // v74o: fallback is generic "guest", never the email
+  var guestName = ((b.firstname || '') + ' ' + (b.lastname || '')).trim() || 'guest';
   document.getElementById('am-sub').textContent = 'Propose a change to ' + bookingRef + ' \u00b7 ' + guestName;
   amClearError();
 

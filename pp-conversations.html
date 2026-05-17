@@ -241,7 +241,7 @@ tbody tr:hover{background:var(--bg);}
 }
 .thread-header-avatar img{width:100%;height:100%;object-fit:cover;}
 .thread-header-info{flex:1;min-width:0;}
-.thread-title{font-size:1rem;font-weight:600;color:var(--text);line-height:1.2;}
+.thread-title{font-size:1rem;font-weight:600;color:var(--text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .thread-sub{font-size:.74rem;color:var(--text2);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
 .thread-sub-sep{color:var(--text3);}
 .thread-header-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
@@ -626,7 +626,7 @@ tbody tr:hover{background:var(--bg);}
 }
 .context-avatar img{width:100%;height:100%;object-fit:cover;}
 .context-name{font-size:1.02rem;font-weight:600;color:var(--text);line-height:1.3;}
-.context-email{font-size:.74rem;color:var(--text2);margin-top:4px;word-break:break-all;}
+/* v74o: .context-email rule removed — partners must never see guest emails */
 .context-presence{font-size:.7rem;margin-top:8px;color:var(--text2);display:inline-flex;align-items:center;gap:5px;}
 .context-section{padding:18px 20px;border-bottom:1px solid #f0f0f0;}
 .context-section-title{font-size:.66rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;}
@@ -885,15 +885,10 @@ tbody tr:hover{background:var(--bg);}
 </aside>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Conversations</div><div class=topbar-sub>3 unread threads</div></div>
+  <div><div class="topbar-title">Conversations</div><div class=topbar-sub>Guest communications</div></div>
   <div class="topbar-right"></div>
 </div>
 <div class="page-body" style="padding:16px 32px 16px;display:flex;flex-direction:column;">
-
-<div style="margin-bottom:12px;">
-  <div style="font-size:.65rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);">Guest communications</div>
-  <div style="font-size:1.1rem;font-weight:600;color:var(--text);margin-top:2px;">Conversations</div>
-</div>
 
 <div class="conv-layout">
   <!-- Left: conversation list -->
@@ -1101,7 +1096,10 @@ function renderConvList() {
 }
 
 function buildConvItem(c) {
-  var initials = (c.guestName || c.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  // v74o: privacy — never derive initials or display name from the
+  // guest's email on the partner side. If we don't have a guestName
+  // on record, show "?" as the avatar and "Guest" as the display name.
+  var initials = (c.guestName || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
   var hasUnread = (c.unreadAdmin || 0) > 0;
   var item = document.createElement('div');
   item.className = 'conv-item' + (c.id === ppActiveId ? ' active' : '') + (hasUnread ? ' unread' : '');
@@ -1123,7 +1121,8 @@ function buildConvItem(c) {
   line1.className = 'conv-line1';
   var nameEl = document.createElement('div');
   nameEl.className = 'conv-guest-name';
-  nameEl.textContent = c.guestName || c.guestEmail || '';
+  // v74o: no email fallback. Use generic "Guest" if no name on record.
+  nameEl.textContent = c.guestName || 'Guest';
   var timeEl = document.createElement('span');
   timeEl.className = 'conv-time';
   timeEl.textContent = fmt(c.lastMessageAt);
@@ -1219,7 +1218,8 @@ function renderThread(conv, messages) {
   var hdr = document.createElement('div');
   hdr.className = 'thread-header';
 
-  var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  // v74o: privacy — don't derive initials from email when name is missing
+  var initials = (conv.guestName || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
   var avatar = document.createElement('div');
   avatar.className = 'thread-header-avatar';
   if (conv.guestAvatar) {
@@ -1233,12 +1233,22 @@ function renderThread(conv, messages) {
   info.className = 'thread-header-info';
   var title = document.createElement('div');
   title.className = 'thread-title';
-  title.textContent = conv.guestName || conv.guestEmail;
+  // v74o: privacy — never show the guest's email on the partner side.
+  // The whole point of TheBearing-in-the-middle is that the partner
+  // can't communicate with the guest outside the platform. If we have
+  // no name on record, show a generic "Guest" rather than leaking the
+  // email as a fallback.
+  title.textContent = conv.guestName || 'Guest';
   var sub = document.createElement('div');
   sub.className = 'thread-sub';
   sub.id = 'pp-presence-line';
-  sub.innerHTML = '<span>' + escHtml(conv.guestEmail || '') + '</span>' +
-                  (conv.enquiry && conv.enquiry.cabin ? '<span class="thread-sub-sep">·</span><span>' + escHtml(conv.enquiry.cabin) + '</span>' : '');
+  // v74o: subline previously led with the guest's email — replaced with
+  // the enquiry cabin (which is what the partner needs to know to
+  // service the conversation). Presence ("Online" / "Last seen X") is
+  // appended below.
+  sub.innerHTML = (conv.enquiry && conv.enquiry.cabin
+    ? '<span>' + escHtml(conv.enquiry.cabin) + '</span>'
+    : '');
   info.appendChild(title);
   info.appendChild(sub);
 
@@ -1246,9 +1256,13 @@ function renderThread(conv, messages) {
     window.ConvPresence.fetchPresence({ guestId: conv.guestId }).then(function(p) {
       var line = document.getElementById('pp-presence-line');
       if (!line) return;
+      // v74o: when the sub was previously empty (no cabin), prepend a
+      // bare status span without the leading bullet separator.
+      var isEmpty = !line.innerHTML.trim();
+      var sep = isEmpty ? '' : '<span class="thread-sub-sep">·</span>';
       var status = '';
-      if (p.guestOnline) status = '<span class="thread-sub-sep">·</span><span style="color:#10b981;font-weight:600;display:inline-flex;align-items:center;gap:5px;"><span class="online-dot"></span>Online</span>';
-      else if (p.guestLastSeen) status = '<span class="thread-sub-sep">·</span><span>Last seen ' + escHtml(window.ConvPresence.timeAgo(p.guestLastSeen)) + '</span>';
+      if (p.guestOnline) status = sep + '<span style="color:#10b981;font-weight:600;display:inline-flex;align-items:center;gap:5px;"><span class="online-dot"></span>Online</span>';
+      else if (p.guestLastSeen) status = sep + '<span>Last seen ' + escHtml(window.ConvPresence.timeAgo(p.guestLastSeen)) + '</span>';
       if (status) line.innerHTML = line.innerHTML + status;
     }).catch(function(){});
   }
@@ -1936,7 +1950,8 @@ function renderGuestPane(conv) {
   var pane = document.getElementById('ctx-pane-guest');
   if (!pane) return;
   pane.innerHTML = '<div class="conv-loading">Loading guest details…</div>';
-  var initials = (conv.guestName || conv.guestEmail || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
+  // v74o: privacy — never derive initials from email on the partner side
+  var initials = (conv.guestName || '?').split(/\s+/).map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
 
   var html = '';
   html += '<div class="context-header">';
@@ -1945,7 +1960,9 @@ function renderGuestPane(conv) {
   else html += escHtml(initials || '?');
   html += '</div>';
   html += '<div class="context-name">' + escHtml(conv.guestName || 'Guest') + '</div>';
-  html += '<div class="context-email">' + escHtml(conv.guestEmail || '') + '</div>';
+  // v74o: removed `<div class="context-email">…</div>`. Partners must
+  // never see the guest's email — the whole point of The Bearing in
+  // the middle is to keep communication inside the platform.
   html += '<div class="context-presence" id="ctx-presence"></div>';
   html += '</div>';
 
