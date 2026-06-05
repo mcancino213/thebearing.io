@@ -223,37 +223,49 @@ tbody tr:hover{background:var(--bg);}
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Dashboard</div><div class=topbar-sub>Nour El Nil · Partner Portal</div></div>
-  <div class="topbar-right"><button class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg> Preview listing</button><a href="pp-listing" class="btn btn-primary btn-sm">Edit listing</a></div>
+  <div><div class="topbar-title">Dashboard</div><div class=topbar-sub id="ppd-topbar-sub">Loading…</div></div>
+  <div class="topbar-right">
+    <a id="ppd-preview-link" href="#" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>
+      Preview listing
+    </a>
+    <a href="pp-listing" class="btn btn-primary btn-sm">Edit listing</a>
+  </div>
 </div>
 <div class="page-body">
 
 <div class="page-header">
   <div class="page-eyebrow">Overview</div>
-  <div class="page-title">Welcome back, Mohamed</div>
-  <div class="page-subtitle">Here's how Nour El Nil is performing on The Bearing.</div>
+  <div class="page-title" id="ppd-title">Welcome back</div>
+  <div class="page-subtitle" id="ppd-subtitle">Loading your property data…</div>
 </div>
+
+<!-- v74z: real KV-backed dashboard. Replaces dummy-data version with hardcoded
+     "Welcome back, Mohamed", 24/8/$42,400/86% stat tiles, fake upcoming-booking
+     rows (Sarah Alderton / Thomas Müller / Patricia Chen), fake unread messages,
+     and fake listing-health checklist. Wired to /api/property, /api/booking,
+     /api/conversation. -->
 
 <div class="stats-grid cols-4">
   <div class="stat-tile">
     <div class="stat-label">Enquiries this month</div>
-    <div class="stat-value accent">24</div>
-    <div class="stat-delta">↑ 6 vs last month</div>
+    <div class="stat-value accent" id="ppd-stat-enquiries">—</div>
+    <div class="stat-delta" id="ppd-stat-enquiries-sub" style="color:var(--text2);">Loading…</div>
   </div>
   <div class="stat-tile">
     <div class="stat-label">Confirmed bookings</div>
-    <div class="stat-value">8</div>
-    <div class="stat-delta">↑ 2 vs last month</div>
+    <div class="stat-value" id="ppd-stat-bookings">—</div>
+    <div class="stat-delta" id="ppd-stat-bookings-sub" style="color:var(--text2);">Loading…</div>
   </div>
   <div class="stat-tile">
-    <div class="stat-label">Revenue via The Bearing</div>
-    <div class="stat-value" style="font-size:24px;">$42,400</div>
-    <div class="stat-delta">↑ 18% YoY</div>
+    <div class="stat-label">Pipeline revenue</div>
+    <div class="stat-value" id="ppd-stat-revenue" style="font-size:24px;">—</div>
+    <div class="stat-delta" id="ppd-stat-revenue-sub" style="color:var(--text2);">Loading…</div>
   </div>
   <div class="stat-tile">
     <div class="stat-label">Listing health</div>
-    <div class="stat-value" style="color:var(--emerald);">86%</div>
-    <div class="stat-delta" style="color:var(--amber);">2 items to improve</div>
+    <div class="stat-value" id="ppd-stat-health">—</div>
+    <div class="stat-delta" id="ppd-stat-health-sub" style="color:var(--text2);">Loading…</div>
   </div>
 </div>
 
@@ -264,78 +276,26 @@ tbody tr:hover{background:var(--bg);}
       <div><div class="card-title">Upcoming bookings</div><div class="card-subtitle">Next 90 days</div></div>
       <div class="card-header-right"><a href="pp-bookings" class="btn btn-ghost btn-sm">View all</a></div>
     </div>
-    <div class="card-body" style="padding:0;">
-      <table>
-        <thead><tr><th>Guest</th><th>Dates</th><th>Cabin</th><th>Guests</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm">SA</div><div><div style="font-weight:500;font-size:14px;">Sarah & James Alderton</div><div style="font-size:12px;color:var(--text2);">London, UK · Founding Member</div></div></div></td>
-            <td><div style="font-weight:500;">Apr 15–21</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td>
-            <td>Panoramic Suite</td>
-            <td>2</td>
-            <td><span class="badge badge-green">Confirmed</span></td>
-            <td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div><div><div style="font-weight:500;font-size:14px;">Thomas Müller</div><div style="font-size:12px;color:var(--text2);">Munich, DE</div></div></div></td>
-            <td><div style="font-weight:500;">May 3–9</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td>
-            <td>Luxury Room ×2</td>
-            <td>4</td>
-            <td><span class="badge badge-amber">Pending</span></td>
-            <td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td>
-          </tr>
-          <tr>
-            <td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm" style="background:linear-gradient(135deg,#059669,#10b981);">PC</div><div><div style="font-weight:500;font-size:14px;">Patricia Chen</div><div style="font-size:12px;color:var(--text2);">San Francisco, US</div></div></div></td>
-            <td><div style="font-weight:500;">May 18–24</div><div style="font-size:12px;color:var(--text2);">6 nights</div></td>
-            <td>Deluxe Suite</td>
-            <td>2</td>
-            <td><span class="badge badge-green">Confirmed</span></td>
-            <td><a href="pp-booking-detail" class="btn btn-ghost btn-sm">View</a></td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="card-body" style="padding:0;" id="ppd-upcoming-body">
+      <div style="padding:32px;text-align:center;color:var(--text3);font-size:13px;">Loading…</div>
     </div>
   </div>
 
   <div style="display:flex;flex-direction:column;gap:16px;">
     <div class="card">
       <div class="card-header">
-        <div><div class="card-title">Unread messages</div></div>
+        <div><div class="card-title">Recent messages</div></div>
         <div class="card-header-right"><a href="pp-conversations" class="btn btn-ghost btn-sm">View all</a></div>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start;cursor:pointer;">
-          <div class="avatar avatar-sm">SA</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;">Sarah Alderton</div>
-            <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Could we arrange the private Edfu sunrise you mentioned?</div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);flex-shrink:0;">2h ago</div>
-        </div>
-        <div style="padding:14px 20px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;">
-          <div class="avatar avatar-sm" style="background:linear-gradient(135deg,#2563eb,#3b82f6);">TM</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;">Thomas Müller</div>
-            <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Question about the dietary requirements for our group</div>
-          </div>
-          <div style="font-size:11px;color:var(--text3);flex-shrink:0;">1d ago</div>
-        </div>
+      <div class="card-body" style="padding:0;" id="ppd-messages-body">
+        <div style="padding:24px;text-align:center;color:var(--text3);font-size:13px;">Loading…</div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Listing health</div></div>
-      <div class="card-body" style="padding:16px 20px;">
-        <div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:var(--text2);">Overall completeness</span><span style="font-weight:600;color:var(--emerald);">86%</span></div>
-          <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;"><div style="height:100%;width:86%;background:var(--emerald);border-radius:3px;"></div></div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="color:var(--emerald);">✓</span><span>Property description</span></div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="color:var(--emerald);">✓</span><span>Room types &amp; pricing</span></div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="color:var(--amber);">○</span><span style="color:var(--text2);">Private Access experiences <span style="color:var(--amber);">— add at least 1</span></span></div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;"><span style="color:var(--amber);">○</span><span style="color:var(--text2);">Photo gallery <span style="color:var(--amber);">— 4 more needed</span></span></div>
-        </div>
+      <div class="card-body" style="padding:16px 20px;" id="ppd-health-body">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:12px 0;">Loading…</div>
       </div>
     </div>
   </div>
@@ -344,6 +304,314 @@ tbody tr:hover{background:var(--bg);}
 </div>
 </div>
 </div>
+
+<script>
+// v74z: real KV-backed dashboard wiring.
+//
+// Three data sources:
+//   - /api/property?slug=PP_SLUG       → property record (for header + health check)
+//   - /api/booking?slug=PP_SLUG        → bookings list (for upcoming + KPIs)
+//   - /api/conversation?slug=PP_SLUG   → conversations list (for messages + KPIs)
+//
+// Design choices:
+//   - "Welcome back to {property.name}" — partner identity isn't wired yet
+//     (see v74x notes on missing Clerk in partner pages). Using the property
+//     name is honest and useful; using "Mohamed" was a lie.
+//   - "Enquiries this month" uses calendar-month boundary, not last-30-days.
+//     The label says "this month" so that's the literal interpretation.
+//   - "Confirmed bookings" counts ALL confirmed+completed (lifetime), not
+//     "this month" — partners care about the booked total, not a monthly cut.
+//   - Pipeline revenue = sum of totalAmount on confirmed+completed bookings.
+//   - Listing health = percentage of essential fields populated on the
+//     property record. Computed honestly: each missing field counts. Lists
+//     specific items below the percentage.
+//   - "Upcoming bookings" = confirmed+completed bookings with arrival in the
+//     next 90 days, sorted by arrival ascending.
+//   - "Recent messages" = most recent 3 conversations by updatedAt, with
+//     unread badge if loopSummary.unreadPartner > 0.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+
+  function fmt(n) { return Number(n).toLocaleString(); }
+  function fmtMoney(n) {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 10000) return '$' + Math.round(n / 1000) + 'k';
+    return '$' + fmt(Math.round(n));
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function initials(name) {
+    return String(name || '?').split(/\s+/).map(function(w){return (w[0]||'').toUpperCase();}).join('').slice(0,2) || '?';
+  }
+  function daysAgo(iso) {
+    if (!iso) return '—';
+    var ms = Date.now() - new Date(iso).getTime();
+    if (isNaN(ms)) return '—';
+    var hrs = Math.floor(ms / 3600000);
+    if (hrs < 1) return 'just now';
+    if (hrs < 24) return hrs + 'h ago';
+    var days = Math.floor(hrs / 24);
+    if (days === 1) return 'yesterday';
+    if (days < 30) return days + 'd ago';
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  function fmtDateRange(arrival, departure) {
+    try {
+      var a = new Date(arrival);
+      var d = departure ? new Date(departure) : null;
+      var aStr = a.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (!d || isNaN(d.getTime())) return aStr;
+      var dStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      // Same month → "Apr 15–21"
+      if (a.getMonth() === d.getMonth() && a.getFullYear() === d.getFullYear()) {
+        return aStr + '–' + d.getDate();
+      }
+      return aStr + ' – ' + dStr;
+    } catch(e) { return '—'; }
+  }
+  function nightsBetween(arrival, departure) {
+    if (!arrival || !departure) return null;
+    var a = new Date(arrival).getTime();
+    var d = new Date(departure).getTime();
+    if (isNaN(a) || isNaN(d)) return null;
+    return Math.max(0, Math.round((d - a) / 86400000));
+  }
+
+  // ── Listing health computation ────────────────────────────────────
+  // Each field in this list is checked for being non-empty. The health
+  // percentage is just the ratio populated. Missing fields are surfaced
+  // below the percentage so the partner knows what to fill in.
+  function computeHealth(property) {
+    if (!property) return { pct: 0, items: [], missing: [{ key: 'all', label: 'Property record not found' }] };
+    var checks = [
+      { key: 'name',          label: 'Name',              ok: !!property.name },
+      { key: 'tagline',       label: 'Tagline',           ok: !!property.tagline },
+      { key: 'location',      label: 'Location',          ok: !!property.location },
+      { key: 'price_from',    label: 'Starting price',    ok: !!property.price_from },
+      { key: 'bearing_edit',  label: 'Editorial intro',   ok: !!property.bearing_edit },
+      { key: 'photos',        label: 'Hero photo',        ok: !!(property.photos && property.photos.hero && property.photos.hero.length > 0) },
+      { key: 'rooms',         label: 'Room types',        ok: !!(Array.isArray(property.rooms) && property.rooms.length > 0) },
+      { key: 'tags',          label: 'Tags',              ok: !!(Array.isArray(property.tags) && property.tags.length > 0) },
+      { key: 'included',      label: 'What\'s included',  ok: !!(Array.isArray(property.included) && property.included.length > 0) },
+    ];
+    var done = checks.filter(function(c){return c.ok;}).length;
+    var pct = Math.round(100 * done / checks.length);
+    return { pct: pct, items: checks, missing: checks.filter(function(c){return !c.ok;}) };
+  }
+
+  function applyHeader(property) {
+    var name = property && property.name ? property.name : PP_SLUG;
+    var title = document.getElementById('ppd-title');
+    var sub = document.getElementById('ppd-subtitle');
+    var topbarSub = document.getElementById('ppd-topbar-sub');
+    if (title) title.textContent = 'Welcome back to ' + name;
+    if (sub) sub.textContent = 'Here\'s how ' + name + ' is performing on The Bearing.';
+    if (topbarSub) topbarSub.textContent = name + ' · Partner Portal';
+    var prev = document.getElementById('ppd-preview-link');
+    if (prev) {
+      // Nour El Nil has a dedicated page; everything else uses property.html?slug=X
+      prev.href = PP_SLUG === 'nour-el-nil' ? '/nour-el-nil' : '/property?slug=' + encodeURIComponent(PP_SLUG);
+    }
+  }
+
+  function applyStats(property, bookings, convs) {
+    // Enquiries this calendar month
+    var now = new Date();
+    var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    var prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
+    var enquiriesThis = convs.filter(function(c){
+      var t = new Date(c.createdAt || c.updatedAt || 0).getTime();
+      return t >= monthStart;
+    }).length;
+    var enquiriesPrev = convs.filter(function(c){
+      var t = new Date(c.createdAt || c.updatedAt || 0).getTime();
+      return t >= prevMonthStart && t < monthStart;
+    }).length;
+
+    document.getElementById('ppd-stat-enquiries').textContent = fmt(enquiriesThis);
+    var enqSub = document.getElementById('ppd-stat-enquiries-sub');
+    if (enquiriesThis === 0 && enquiriesPrev === 0) {
+      enqSub.textContent = 'No enquiries yet';
+    } else if (enquiriesThis === 0) {
+      enqSub.textContent = enquiriesPrev + ' last month';
+    } else {
+      var diff = enquiriesThis - enquiriesPrev;
+      if (diff > 0) {
+        enqSub.textContent = '↑ ' + diff + ' vs last month';
+        enqSub.style.color = 'var(--emerald)';
+      } else if (diff < 0) {
+        enqSub.textContent = '↓ ' + Math.abs(diff) + ' vs last month';
+        enqSub.style.color = 'var(--red)';
+      } else {
+        enqSub.textContent = 'Same as last month';
+      }
+    }
+
+    // Confirmed bookings (lifetime — what partners care about)
+    var confirmed = bookings.filter(function(b){
+      var s = String(b.status || '').toLowerCase();
+      return s === 'confirmed' || s === 'completed';
+    });
+    document.getElementById('ppd-stat-bookings').textContent = fmt(confirmed.length);
+    document.getElementById('ppd-stat-bookings-sub').textContent =
+      confirmed.length === 0 ? 'No bookings yet' : (confirmed.length === 1 ? '1 confirmed' : confirmed.length + ' total');
+
+    // Pipeline revenue
+    var pipeline = confirmed.reduce(function(sum, b){ return sum + (parseFloat(b.totalAmount) || 0); }, 0);
+    document.getElementById('ppd-stat-revenue').textContent = pipeline === 0 ? '$0' : fmtMoney(pipeline);
+    document.getElementById('ppd-stat-revenue-sub').textContent =
+      pipeline === 0 ? 'Activate Stripe to start collecting' : 'From ' + confirmed.length + ' booking' + (confirmed.length === 1 ? '' : 's');
+
+    // Listing health
+    var h = computeHealth(property);
+    var hEl = document.getElementById('ppd-stat-health');
+    hEl.textContent = h.pct + '%';
+    hEl.style.color = h.pct >= 80 ? 'var(--emerald)' : h.pct >= 50 ? 'var(--amber)' : 'var(--red)';
+    var hSub = document.getElementById('ppd-stat-health-sub');
+    if (h.missing.length === 0) {
+      hSub.textContent = 'Listing complete';
+      hSub.style.color = 'var(--emerald)';
+    } else {
+      hSub.textContent = h.missing.length + ' item' + (h.missing.length === 1 ? '' : 's') + ' to improve';
+      hSub.style.color = 'var(--amber)';
+    }
+  }
+
+  function applyUpcoming(bookings) {
+    var body = document.getElementById('ppd-upcoming-body');
+    var now = Date.now();
+    var ninetyDays = now + 90 * 86400000;
+    var upcoming = bookings.filter(function(b){
+      var s = String(b.status || '').toLowerCase();
+      if (s !== 'confirmed' && s !== 'pending') return false;
+      var t = new Date(b.arrival || b.checkin || 0).getTime();
+      if (isNaN(t)) return false;
+      return t >= now && t <= ninetyDays;
+    }).sort(function(a, b){
+      return new Date(a.arrival || a.checkin).getTime() - new Date(b.arrival || b.checkin).getTime();
+    }).slice(0, 5);
+
+    if (upcoming.length === 0) {
+      body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px;">No upcoming bookings in the next 90 days.<br><span style="font-size:12px;">New confirmed bookings will appear here.</span></div>';
+      return;
+    }
+
+    var html = '<table><thead><tr><th>Guest</th><th>Dates</th><th>Cabin</th><th>Guests</th><th>Status</th><th></th></tr></thead><tbody>';
+    upcoming.forEach(function(b){
+      var name = b.guestName || b.guestEmail || 'Anonymous guest';
+      var loc = b.guestLocation || '';
+      var nights = nightsBetween(b.arrival || b.checkin, b.departure || b.checkout);
+      var statusClass = String(b.status || '').toLowerCase() === 'confirmed' ? 'badge-green' : 'badge-amber';
+      var statusLabel = (b.status || 'pending').charAt(0).toUpperCase() + (b.status || 'pending').slice(1);
+      html += '<tr>'
+        + '<td><div style="display:flex;align-items:center;gap:10px;"><div class="avatar avatar-sm">' + escapeHtml(initials(name)) + '</div>'
+          + '<div><div style="font-weight:500;font-size:14px;">' + escapeHtml(name) + '</div>'
+          + (loc ? '<div style="font-size:12px;color:var(--text2);">' + escapeHtml(loc) + '</div>' : '') + '</div></div></td>'
+        + '<td><div style="font-weight:500;">' + escapeHtml(fmtDateRange(b.arrival || b.checkin, b.departure || b.checkout)) + '</div>'
+          + (nights !== null ? '<div style="font-size:12px;color:var(--text2);">' + nights + ' night' + (nights === 1 ? '' : 's') + '</div>' : '') + '</td>'
+        + '<td>' + escapeHtml(b.roomName || b.cabin || '—') + '</td>'
+        + '<td>' + escapeHtml(String(b.guests || b.numGuests || '—')) + '</td>'
+        + '<td><span class="badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span></td>'
+        + '<td><a href="pp-booking-detail?ref=' + encodeURIComponent(b.ref || '') + '" class="btn btn-ghost btn-sm">View</a></td>'
+        + '</tr>';
+    });
+    html += '</tbody></table>';
+    body.innerHTML = html;
+  }
+
+  function applyMessages(convs) {
+    var body = document.getElementById('ppd-messages-body');
+    var recent = convs.slice().sort(function(a,b){
+      var ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      var tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return tb - ta;
+    }).slice(0, 3);
+
+    if (recent.length === 0) {
+      body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px;">No messages yet.</div>';
+      return;
+    }
+
+    var html = '';
+    recent.forEach(function(c, i){
+      var name = c.guestName || c.guestEmail || 'Anonymous guest';
+      var preview = c.lastMessage || c.firstMessage || '';
+      if (preview.length > 60) preview = preview.slice(0, 60) + '…';
+      var unread = (c.loopSummary && c.loopSummary.unreadPartner) || 0;
+      var border = i < recent.length - 1 ? 'border-bottom:1px solid var(--border);' : '';
+      html += '<a href="pp-conversations?id=' + encodeURIComponent(c.id) + '" style="display:flex;padding:14px 20px;' + border + 'gap:12px;align-items:flex-start;color:inherit;">'
+        + '<div class="avatar avatar-sm">' + escapeHtml(initials(name)) + '</div>'
+        + '<div style="flex:1;min-width:0;">'
+          + '<div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;">'
+            + escapeHtml(name)
+            + (unread > 0 ? '<span style="background:var(--accent);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;">' + unread + '</span>' : '')
+          + '</div>'
+          + (preview ? '<div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(preview) + '</div>' : '')
+        + '</div>'
+        + '<div style="font-size:11px;color:var(--text3);flex-shrink:0;">' + escapeHtml(daysAgo(c.updatedAt || c.createdAt)) + '</div>'
+        + '</a>';
+    });
+    body.innerHTML = html;
+  }
+
+  function applyHealthCard(property) {
+    var body = document.getElementById('ppd-health-body');
+    var h = computeHealth(property);
+    var color = h.pct >= 80 ? 'var(--emerald)' : h.pct >= 50 ? 'var(--amber)' : 'var(--red)';
+
+    var html = '<div style="margin-bottom:14px;">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">'
+      + '<span style="color:var(--text2);">Overall completeness</span><span style="font-weight:600;color:' + color + ';">' + h.pct + '%</span>'
+      + '</div>'
+      + '<div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;">'
+      + '<div style="height:100%;width:' + h.pct + '%;background:' + color + ';border-radius:3px;"></div>'
+      + '</div></div>';
+
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    h.items.forEach(function(item){
+      var icon = item.ok ? '<span style="color:var(--emerald);">✓</span>' : '<span style="color:var(--amber);">○</span>';
+      var labelStyle = item.ok ? '' : 'color:var(--text2);';
+      var note = item.ok ? '' : ' <span style="color:var(--amber);">— add</span>';
+      html += '<div style="display:flex;align-items:center;gap:8px;font-size:13px;">' + icon
+        + '<span style="' + labelStyle + '">' + escapeHtml(item.label) + note + '</span></div>';
+    });
+    html += '</div>';
+
+    if (h.missing.length > 0) {
+      html += '<a href="pp-listing" class="btn btn-sm" style="margin-top:14px;width:100%;justify-content:center;">Improve listing</a>';
+    }
+    body.innerHTML = html;
+  }
+
+  async function load() {
+    try {
+      var [propR, bookR, convR] = await Promise.all([
+        fetch('/api/property?slug=' + encodeURIComponent(PP_SLUG)).then(function(r){return r.json();}).catch(function(){return null;}),
+        fetch('/api/booking?slug=' + encodeURIComponent(PP_SLUG)).then(function(r){return r.json();}).catch(function(){return null;}),
+        fetch('/api/conversation?slug=' + encodeURIComponent(PP_SLUG)).then(function(r){return r.json();}).catch(function(){return null;}),
+      ]);
+      var property = (propR && propR.data) || (propR && !propR.error ? propR : null);
+      var bookings = (bookR && Array.isArray(bookR.bookings)) ? bookR.bookings : [];
+      var convs = (convR && Array.isArray(convR.conversations)) ? convR.conversations : [];
+
+      applyHeader(property);
+      applyStats(property, bookings, convs);
+      applyUpcoming(bookings);
+      applyMessages(convs);
+      applyHealthCard(property);
+    } catch (e) {
+      console.error('[ppd] load failed:', e);
+      var sub = document.getElementById('ppd-subtitle');
+      if (sub) sub.textContent = 'Could not load property data — try refreshing.';
+    }
+  }
+
+  load();
+})();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
