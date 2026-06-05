@@ -223,69 +223,348 @@ tbody tr:hover{background:var(--bg);}
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Analytics</div><div class=topbar-sub>How Nour El Nil is performing on The Bearing platform.</div></div>
-  <div class="topbar-right"><select class="btn btn-ghost btn-sm"><option>Last 12 months</option><option>Last 6 months</option><option>This season</option></select></div>
+  <div><div class="topbar-title">Analytics</div><div class=topbar-sub>How your property is performing on The Bearing.</div></div>
+  <div class="topbar-right">
+    <select id="ppa-period" class="btn btn-ghost btn-sm">
+      <option value="30">Last 30 days</option>
+      <option value="90">Last 90 days</option>
+      <option value="365">Last 12 months</option>
+      <option value="all" selected>All time</option>
+    </select>
+  </div>
 </div>
 <div class="page-body">
 
-<div class="stats-grid cols-4">
-  <div class="stat-tile"><div class="stat-label">Page views (30d)</div><div class="stat-value">1,847</div><div class="stat-delta">↑ 34% vs prev period</div></div>
-  <div class="stat-tile"><div class="stat-label">Enquiry rate</div><div class="stat-value">3.2<span style="font-size:18px;font-family:'DM Sans'">%</span></div><div class="stat-delta">↑ 0.4pp</div></div>
-  <div class="stat-tile"><div class="stat-label">Enquiry → booking</div><div class="stat-value">33<span style="font-size:18px;font-family:'DM Sans'">%</span></div><div class="stat-delta">Industry avg: 24%</div></div>
-  <div class="stat-tile"><div class="stat-label">Avg review score</div><div class="stat-value accent">4.96</div><div class="stat-delta">Based on 84 voyages</div></div>
+<!-- v74y: rebuilt with real KV-backed data. Replaces the previous v66-era
+     dummy-data page that violated the no-fake-data rule. -->
+
+<!-- KPI tiles: each driven by /api/conversation?propertySlug=X and
+     /api/booking?slug=X, filtered to the current period. -->
+<div class="stats-grid cols-4" id="ppa-kpis">
+  <div class="stat-tile">
+    <div class="stat-label">Enquiries</div>
+    <div class="stat-value" id="ppa-enquiries">—</div>
+    <div class="stat-delta" id="ppa-enquiries-sub" style="color:var(--text2);">Loading…</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Bookings</div>
+    <div class="stat-value" id="ppa-bookings">—</div>
+    <div class="stat-delta" id="ppa-bookings-sub" style="color:var(--text2);">Loading…</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Enquiry → booking</div>
+    <div class="stat-value" id="ppa-conversion">—</div>
+    <div class="stat-delta" id="ppa-conversion-sub" style="color:var(--text2);">Loading…</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-label">Pipeline revenue</div>
+    <div class="stat-value" id="ppa-revenue" style="font-size:24px;">—</div>
+    <div class="stat-delta" id="ppa-revenue-sub" style="color:var(--text2);">Loading…</div>
+  </div>
 </div>
 
+<!-- Booking pipeline + recent enquiries side-by-side -->
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
   <div class="card">
-    <div class="card-header"><div class="card-title">Guest origin</div></div>
-    <div class="card-body">
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>United Kingdom</span><span style="font-weight:600;">34%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:34%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>United States</span><span style="font-weight:600;">28%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:28%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Germany / DACH</span><span style="font-weight:600;">16%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:16%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>France</span><span style="font-weight:600;">10%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:10%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>Other</span><span style="font-weight:600;">12%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:12%;height:100%;background:var(--text3);border-radius:4px;"></div></div></div>
-      </div>
+    <div class="card-header"><div class="card-title">Booking pipeline</div></div>
+    <div class="card-body" id="ppa-pipeline-body">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:24px 0;">Loading…</div>
     </div>
   </div>
+
   <div class="card">
-    <div class="card-header"><div class="card-title">Booking lead time</div></div>
-    <div class="card-body">
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>0–30 days</span><span style="font-weight:600;">8%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:8%;height:100%;background:var(--blue);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>31–60 days</span><span style="font-weight:600;">19%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:19%;height:100%;background:var(--blue);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>61–120 days</span><span style="font-weight:600;">38%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:38%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>121–180 days</span><span style="font-weight:600;">24%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:24%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div>
-        <div><div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;"><span>180+ days</span><span style="font-weight:600;">11%</span></div><div style="height:7px;background:var(--bg);border-radius:4px;"><div style="width:11%;height:100%;background:var(--emerald);border-radius:4px;"></div></div></div>
-      </div>
+    <div class="card-header"><div class="card-title">Recent enquiries</div></div>
+    <div class="card-body" id="ppa-recent-body" style="padding:0;">
+      <div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Loading…</div>
     </div>
   </div>
+
 </div>
 
+<!-- Booking lead time — honest implementation. Hidden until we have ≥5
+     confirmed bookings; below that, the distribution is noise not signal. -->
+<div class="card" id="ppa-leadtime-card" style="display:none;margin-bottom:20px;">
+  <div class="card-header"><div class="card-title">Booking lead time</div><div class="card-subtitle" style="margin-top:0;margin-left:8px;font-size:13px;color:var(--text2);">Days between booking confirmation and arrival</div></div>
+  <div class="card-body" id="ppa-leadtime-body"></div>
+</div>
+
+<!-- Not-yet-tracked notice. Honest about what we can't show. -->
 <div class="card">
-  <div class="card-header"><div class="card-title">Revenue from The Bearing</div><div class="card-subtitle" style="margin-top:0;margin-left:8px;font-size:13px;color:var(--text2);">Trailing 12 months</div></div>
-  <div class="card-body">
-    <div style="display:flex;gap:0;align-items:flex-end;height:120px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:8px;">
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.5;border-radius:4px 4px 0 0;height:30px;"></div><div style="font-size:10px;color:var(--text3);">Apr</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.5;border-radius:4px 4px 0 0;height:20px;"></div><div style="font-size:10px;color:var(--text3);">May</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--text3);opacity:.4;border-radius:4px 4px 0 0;height:8px;"></div><div style="font-size:10px;color:var(--text3);">Jun</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--text3);opacity:.4;border-radius:4px 4px 0 0;height:6px;"></div><div style="font-size:10px;color:var(--text3);">Jul</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--text3);opacity:.4;border-radius:4px 4px 0 0;height:8px;"></div><div style="font-size:10px;color:var(--text3);">Aug</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--text3);opacity:.4;border-radius:4px 4px 0 0;height:6px;"></div><div style="font-size:10px;color:var(--text3);">Sep</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.7;border-radius:4px 4px 0 0;height:60px;"></div><div style="font-size:10px;color:var(--text3);">Oct</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.8;border-radius:4px 4px 0 0;height:80px;"></div><div style="font-size:10px;color:var(--text3);">Nov</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.7;border-radius:4px 4px 0 0;height:55px;"></div><div style="font-size:10px;color:var(--text3);">Dec</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.6;border-radius:4px 4px 0 0;height:40px;"></div><div style="font-size:10px;color:var(--text3);">Jan</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);opacity:.5;border-radius:4px 4px 0 0;height:35px;"></div><div style="font-size:10px;color:var(--text3);">Feb</div></div>
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;"><div style="width:32px;background:var(--accent);border-radius:4px 4px 0 0;height:100px;"></div><div style="font-size:10px;color:var(--text3);">Mar</div></div>
+  <div class="card-header"><div class="card-title">Coming as the platform grows</div></div>
+  <div class="card-body" style="padding:24px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;font-size:13px;color:var(--text2);line-height:1.55;">
+      <div><strong style="color:var(--text);">Page views &amp; impressions.</strong> Web analytics aren't wired yet. Once they are, you'll see traffic to your property page.</div>
+      <div><strong style="color:var(--text);">Guest reviews &amp; ratings.</strong> The Bearing's post-stay review system is on the roadmap. Until then, reviews live with Nour El Nil directly.</div>
+      <div><strong style="color:var(--text);">Guest origin &amp; demographics.</strong> We don't collect country / demographic data from enquirers. If you want this, we'd add an optional field to the booking flow.</div>
+      <div><strong style="color:var(--text);">Industry benchmarks.</strong> Once there are enough properties on The Bearing, we'll surface comparable benchmarks. Below ~20 properties, comparisons would be noise.</div>
     </div>
-    <div style="font-size:13px;color:var(--text2);">Total 12-month revenue: <strong style="color:var(--text);">$82,600</strong> · Peak season Oct–Apr</div>
   </div>
 </div>
 
 </div>
 </div>
 </div>
+
+<script>
+// v74y: real analytics wiring. Fetches conversations + bookings scoped to
+// PP_SLUG, applies the period filter, derives KPIs honestly.
+//
+// Honest design choices:
+//   - Empty states everywhere. "0 enquiries" is fine; fake "1,847 page views"
+//     is not.
+//   - Conversion rate only shown when we have ≥3 enquiries. Below that it
+//     either reads "—" or 0% / 100% which is misleading either way.
+//   - Lead-time histogram hidden until ≥5 confirmed bookings (distribution
+//     below that is noise).
+//   - Pipeline revenue = sum of totalAmount on confirmed bookings only.
+//     Pending bookings excluded (haven't paid deposit yet).
+//   - Period filter applies to enquiries by `createdAt` and bookings by
+//     `createdAt` (when the booking was made, not the arrival date).
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+
+  var state = {
+    convs: [],
+    bookings: [],
+    period: 'all',
+  };
+
+  function fmt(n) { return Number(n).toLocaleString(); }
+  function fmtMoney(n) {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+    if (n >= 10000) return '$' + Math.round(n / 1000) + 'k';
+    return '$' + fmt(Math.round(n));
+  }
+  function pctStr(num, den) {
+    if (!den || den < 3) return '—';
+    return Math.round(100 * num / den) + '%';
+  }
+  function daysAgo(ms) {
+    return Math.max(0, Math.floor((Date.now() - ms) / 86400000));
+  }
+  function periodMsFloor() {
+    if (state.period === 'all') return 0;
+    var days = parseInt(state.period, 10) || 30;
+    return Date.now() - days * 86400000;
+  }
+  function inPeriod(iso) {
+    if (state.period === 'all') return true;
+    if (!iso) return false;
+    var ms = new Date(iso).getTime();
+    if (isNaN(ms)) return false;
+    return ms >= periodMsFloor();
+  }
+
+  function renderKpis() {
+    var floor = periodMsFloor();
+    var convsInPeriod = state.convs.filter(function(c) {
+      return inPeriod(c.createdAt || c.updatedAt);
+    });
+    var bookingsInPeriod = state.bookings.filter(function(b) {
+      return inPeriod(b.createdAt);
+    });
+    var confirmed = bookingsInPeriod.filter(function(b) {
+      var s = String(b.status || '').toLowerCase();
+      return s === 'confirmed' || s === 'completed';
+    });
+    var pipeline = confirmed.reduce(function(sum, b) {
+      return sum + (parseFloat(b.totalAmount) || 0);
+    }, 0);
+
+    document.getElementById('ppa-enquiries').textContent = fmt(convsInPeriod.length);
+    document.getElementById('ppa-enquiries-sub').textContent =
+      convsInPeriod.length === 0 ? 'No enquiries in this period yet' : (convsInPeriod.length === 1 ? '1 enquiry' : convsInPeriod.length + ' enquiries');
+
+    document.getElementById('ppa-bookings').textContent = fmt(confirmed.length);
+    document.getElementById('ppa-bookings-sub').textContent =
+      confirmed.length === 0 ? 'No confirmed bookings yet' : (confirmed.length === 1 ? '1 confirmed' : confirmed.length + ' confirmed');
+
+    document.getElementById('ppa-conversion').textContent = pctStr(confirmed.length, convsInPeriod.length);
+    document.getElementById('ppa-conversion-sub').textContent =
+      convsInPeriod.length < 3 ? 'Need at least 3 enquiries for a rate' : confirmed.length + ' of ' + convsInPeriod.length + ' enquiries booked';
+
+    document.getElementById('ppa-revenue').textContent = pipeline === 0 ? '$0' : fmtMoney(pipeline);
+    document.getElementById('ppa-revenue-sub').textContent =
+      pipeline === 0 ? 'No revenue yet' : 'From ' + confirmed.length + ' confirmed booking' + (confirmed.length === 1 ? '' : 's');
+  }
+
+  function renderPipeline() {
+    var body = document.getElementById('ppa-pipeline-body');
+    var bookingsInPeriod = state.bookings.filter(function(b) {
+      return inPeriod(b.createdAt);
+    });
+
+    if (bookingsInPeriod.length === 0) {
+      body.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px 0;">No bookings in this period yet. They\'ll appear here as enquiries turn into confirmed bookings.</div>';
+      return;
+    }
+
+    var buckets = { pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    var values = { pending: 0, confirmed: 0, completed: 0, cancelled: 0 };
+    bookingsInPeriod.forEach(function(b) {
+      var s = String(b.status || 'pending').toLowerCase();
+      if (!buckets.hasOwnProperty(s)) s = 'pending';
+      buckets[s]++;
+      values[s] += parseFloat(b.totalAmount) || 0;
+    });
+
+    var rows = [
+      { key: 'pending',   label: 'Pending',   color: 'var(--amber)' },
+      { key: 'confirmed', label: 'Confirmed', color: 'var(--emerald)' },
+      { key: 'completed', label: 'Completed', color: 'var(--blue)' },
+      { key: 'cancelled', label: 'Cancelled', color: 'var(--text3)' },
+    ];
+
+    var html = '<div style="display:flex;flex-direction:column;gap:14px;">';
+    rows.forEach(function(r) {
+      var n = buckets[r.key];
+      var v = values[r.key];
+      var pct = bookingsInPeriod.length > 0 ? (100 * n / bookingsInPeriod.length) : 0;
+      html += '<div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;">'
+        + '<span>' + r.label + '</span>'
+        + '<span style="font-weight:600;">' + n + (v > 0 ? ' <span style="color:var(--text3);font-weight:400;">· ' + fmtMoney(v) + '</span>' : '') + '</span>'
+        + '</div>'
+        + '<div style="height:7px;background:var(--bg);border-radius:4px;">'
+        + '<div style="width:' + pct.toFixed(1) + '%;height:100%;background:' + r.color + ';border-radius:4px;"></div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function renderRecent() {
+    var body = document.getElementById('ppa-recent-body');
+    // Recent enquiries — most recent 5 within the period
+    var convs = state.convs
+      .filter(function(c) { return inPeriod(c.createdAt || c.updatedAt); })
+      .slice()
+      .sort(function(a, b) {
+        var ta = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        var tb = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return tb - ta;
+      })
+      .slice(0, 5);
+
+    if (convs.length === 0) {
+      body.innerHTML = '<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">No enquiries in this period yet.</div>';
+      return;
+    }
+
+    var html = '<div>';
+    convs.forEach(function(c, i) {
+      var when = c.createdAt || c.updatedAt;
+      var days = when ? daysAgo(new Date(when).getTime()) : null;
+      var label = days === null ? '—' : (days === 0 ? 'today' : days === 1 ? 'yesterday' : days + 'd ago');
+      var name = c.guestName || c.guestEmail || 'Anonymous guest';
+      var preview = c.lastMessage || c.firstMessage || '';
+      if (preview.length > 80) preview = preview.slice(0, 80) + '…';
+      html += '<a href="pp-conversations?id=' + encodeURIComponent(c.id) + '" style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:' + (i < convs.length - 1 ? '1px solid var(--border)' : 'none') + ';color:var(--text);">'
+        + '<div class="avatar avatar-sm" style="font-size:11px;">' + escapeHtml(name.split(/\s+/).map(function(w){return (w[0]||'').toUpperCase();}).join('').slice(0,2) || '?') + '</div>'
+        + '<div style="flex:1;min-width:0;">'
+          + '<div style="font-size:14px;font-weight:500;color:var(--text);">' + escapeHtml(name) + '</div>'
+          + (preview ? '<div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(preview) + '</div>' : '')
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--text3);flex-shrink:0;">' + label + '</div>'
+        + '</a>';
+    });
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  function renderLeadTime() {
+    var confirmed = state.bookings.filter(function(b) {
+      var s = String(b.status || '').toLowerCase();
+      if (s !== 'confirmed' && s !== 'completed') return false;
+      if (!inPeriod(b.createdAt)) return false;
+      return b.createdAt && (b.arrival || b.checkin);
+    });
+
+    var card = document.getElementById('ppa-leadtime-card');
+    if (confirmed.length < 5) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+
+    var buckets = {
+      '0-30':   { range: '0–30 days',   count: 0, color: 'var(--blue)' },
+      '31-60':  { range: '31–60 days',  count: 0, color: 'var(--blue)' },
+      '61-120': { range: '61–120 days', count: 0, color: 'var(--accent)' },
+      '121-180':{ range: '121–180 days',count: 0, color: 'var(--accent)' },
+      '180+':   { range: '180+ days',   count: 0, color: 'var(--emerald)' },
+    };
+    confirmed.forEach(function(b) {
+      var created = new Date(b.createdAt).getTime();
+      var arrival = new Date(b.arrival || b.checkin).getTime();
+      if (isNaN(created) || isNaN(arrival)) return;
+      var lead = Math.max(0, Math.floor((arrival - created) / 86400000));
+      var k = lead <= 30 ? '0-30'
+            : lead <= 60 ? '31-60'
+            : lead <= 120 ? '61-120'
+            : lead <= 180 ? '121-180'
+            : '180+';
+      buckets[k].count++;
+    });
+
+    var body = document.getElementById('ppa-leadtime-body');
+    var html = '<div style="display:flex;flex-direction:column;gap:12px;">';
+    Object.keys(buckets).forEach(function(k) {
+      var b = buckets[k];
+      var pct = confirmed.length > 0 ? (100 * b.count / confirmed.length) : 0;
+      html += '<div>'
+        + '<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px;">'
+        + '<span>' + b.range + '</span><span style="font-weight:600;">' + Math.round(pct) + '%</span>'
+        + '</div>'
+        + '<div style="height:7px;background:var(--bg);border-radius:4px;">'
+        + '<div style="width:' + pct.toFixed(1) + '%;height:100%;background:' + b.color + ';border-radius:4px;"></div>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--text3);margin-top:14px;">Based on ' + confirmed.length + ' confirmed bookings.</div>';
+    body.innerHTML = html;
+  }
+
+  function renderAll() {
+    renderKpis();
+    renderPipeline();
+    renderRecent();
+    renderLeadTime();
+  }
+
+  async function load() {
+    try {
+      var [cvR, bkR] = await Promise.all([
+        fetch('/api/conversation?slug=' + encodeURIComponent(PP_SLUG)).then(function(r){return r.json();}).catch(function(){return null;}),
+        fetch('/api/booking?slug=' + encodeURIComponent(PP_SLUG)).then(function(r){return r.json();}).catch(function(){return null;}),
+      ]);
+      state.convs = (cvR && Array.isArray(cvR.conversations)) ? cvR.conversations : [];
+      state.bookings = (bkR && Array.isArray(bkR.bookings)) ? bkR.bookings : [];
+    } catch (e) {
+      console.error('[ppa] load failed:', e);
+      state.convs = [];
+      state.bookings = [];
+    }
+    renderAll();
+  }
+
+  document.getElementById('ppa-period').addEventListener('change', function() {
+    state.period = this.value;
+    renderAll();
+  });
+
+  load();
+})();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
