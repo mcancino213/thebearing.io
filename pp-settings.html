@@ -227,18 +227,130 @@ tbody tr:hover{background:var(--bg);}
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div style="font-size:32px;margin-bottom:16px;opacity:.5;">⚙️</div>
-  <div style="font-family:Fraunces,serif;font-size:22px;color:var(--text);margin-bottom:8px;">Coming soon</div>
-  <div style="font-size:14px;color:var(--text2);max-width:440px;margin:0 auto 24px;line-height:1.55;">A full settings panel — property details, billing &amp; payout info, and account preferences — is on the way. For now, the settings that <em>are</em> live live in their own pages.</div>
-  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-    <a href="pp-notifications" class="btn btn-primary">Notification preferences →</a>
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
+<div class="page-header">
+  <div class="page-eyebrow">Account &amp; property</div>
+  <div class="page-title">Settings</div>
+  <div class="page-subtitle">Manage the settings for your property and account.</div>
+</div>
+
+<!-- Settings hubs grid -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:32px;">
+
+  <!-- Property listing -->
+  <a href="pp-listing" class="settings-tile">
+    <div class="settings-tile-icon" style="background:var(--accent-bg);color:var(--accent);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </div>
+    <div class="settings-tile-body">
+      <div class="settings-tile-title">Property listing</div>
+      <div class="settings-tile-desc">Name, location, photos, rooms, pricing, and the editorial content that appears on your public property page.</div>
+    </div>
+    <div class="settings-tile-arrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
+  </a>
+
+  <!-- Notifications -->
+  <a href="pp-notifications" class="settings-tile">
+    <div class="settings-tile-icon" style="background:#eff6ff;color:#2563eb;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <div class="settings-tile-body">
+      <div class="settings-tile-title">Email notifications</div>
+      <div class="settings-tile-desc">Choose which booking, enquiry, and conversation events trigger an email to you. Mute everything or pick per-event.</div>
+    </div>
+    <div class="settings-tile-arrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
+  </a>
+
+  <!-- Team -->
+  <a href="pp-team" class="settings-tile">
+    <div class="settings-tile-icon" style="background:#ecfdf5;color:#059669;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="settings-tile-body">
+      <div class="settings-tile-title">Team members</div>
+      <div class="settings-tile-desc">Add or remove colleagues who can manage this property's listing, bookings, and conversations.</div>
+    </div>
+    <div class="settings-tile-arrow">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </div>
+  </a>
+
+</div>
+
+<!-- Account section -->
+<div class="form-section">
+  <div class="fs-head" style="background:#fafafa;">
+    <div class="fs-num" style="background:var(--text);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </div>
+    <div>
+      <div class="fs-title">Your account</div>
+      <div class="fs-subtitle">Sign out of the partner portal on this device.</div>
+    </div>
   </div>
-</div></div>
+  <div class="fs-body">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="acct-signout" class="btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign out
+      </button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.6;">
+      Account identity (your name, email, password) is managed on the sign-in screen. Changing those today means signing out and back in. A richer account panel is on the roadmap.
+    </div>
+  </div>
+</div>
+
 </div>
 </div>
 </div>
+
+<style>
+.settings-tile{display:flex;align-items:flex-start;gap:14px;padding:20px;background:var(--surface);border:1px solid var(--border);border-radius:14px;transition:border-color .15s,box-shadow .15s,transform .15s;cursor:pointer;color:var(--text);text-decoration:none;}
+.settings-tile:hover{border-color:var(--text2);box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.settings-tile-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.settings-tile-body{flex:1;min-width:0;}
+.settings-tile-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.settings-tile-desc{font-size:13px;color:var(--text2);line-height:1.5;}
+.settings-tile-arrow{flex-shrink:0;color:var(--text3);align-self:center;transition:transform .15s,color .15s;}
+.settings-tile:hover .settings-tile-arrow{transform:translateX(2px);color:var(--text);}
+</style>
+
+<script>
+// v74x: sign-out wiring for the partner portal.
+// Note: partner pages don't currently load Clerk after pp-login, so we can't
+// show user identity here — that's intentionally left for a future build that
+// adds real partner auth across all pp-* pages. For now this button does the
+// simple-but-correct thing: clear any client storage that resembles partner
+// session state, then redirect to the login page. If Clerk happens to be
+// loaded (e.g. someone navigated here directly from pp-login in the same tab),
+// we'll also call Clerk.signOut so the central session ends too.
+(function() {
+  document.getElementById('acct-signout').addEventListener('click', async function() {
+    var btn = this;
+    btn.disabled = true;
+    btn.style.opacity = '.6';
+    try {
+      if (window.Clerk && typeof window.Clerk.signOut === 'function') {
+        try { await window.Clerk.signOut(); } catch(e) {}
+      }
+      // Best-effort clear of any partner-scoped session storage. These are
+      // belt-and-suspenders — none of them are auth-secret storage, but
+      // clearing keeps the next sign-in clean.
+      try {
+        sessionStorage.removeItem('tb_pp_sidebar_v1');
+        sessionStorage.removeItem('tb_pp_user_cache');
+        localStorage.removeItem('tb_pp_active_slug');
+      } catch(e) {}
+    } finally {
+      window.location.href = '/pp-login';
+    }
+  });
+})();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
