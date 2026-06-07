@@ -194,6 +194,33 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;bac
   type="text/javascript">
 </script>
 <script>
+// v75: helper to extract a portable user record from Clerk and write it to
+// sessionStorage. Partner pages (sidebar, dashboard header, settings card)
+// read this cache instead of loading Clerk on every page. Mirrors the
+// customer-side `tb_user_cache` pattern set up in v74w.
+function tbPpCacheUser(user) {
+  if (!user) return;
+  try {
+    var name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+    var email = user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
+    if (!name && email) name = email.split('@')[0];
+    var initials = name.split(/\s+/).map(function(w){return (w[0]||'').toUpperCase();}).join('').slice(0,2) || '?';
+    var data = {
+      id: user.id || '',
+      name: name || '',
+      email: email || '',
+      avatarUrl: user.imageUrl || '',
+      initials: initials,
+      signedInAt: new Date().toISOString(),
+    };
+    sessionStorage.setItem('tb_pp_user_cache', JSON.stringify(data));
+  } catch(e) {
+    // Non-fatal — page will fall back to blank placeholders
+    console.warn('[pp-login] cache write failed:', e);
+  }
+}
+</script>
+<script>
 window.addEventListener('load', async function() {
   try {
     await window.Clerk.load({
@@ -217,6 +244,7 @@ window.addEventListener('load', async function() {
     });
 
     if (window.Clerk.user) {
+      tbPpCacheUser(window.Clerk.user);
       window.location.href = '/pp-dashboard';
       return;
     }
@@ -230,6 +258,7 @@ window.addEventListener('load', async function() {
 
     window.Clerk.addListener(function(resources) {
       if (resources.user) {
+        tbPpCacheUser(resources.user);
         window.location.href = '/pp-dashboard';
       }
     });

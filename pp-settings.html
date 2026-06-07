@@ -288,17 +288,27 @@ tbody tr:hover{background:var(--bg);}
     </div>
     <div>
       <div class="fs-title">Your account</div>
-      <div class="fs-subtitle">Sign out of the partner portal on this device.</div>
+      <div class="fs-subtitle" id="acct-subtitle">Sign out of the partner portal on this device.</div>
     </div>
   </div>
   <div class="fs-body">
+    <!-- v75: account row populated from tb_pp_user_cache. Hidden by default;
+         revealed when a real user is signed in. The empty/signed-out state
+         shows just the sign-out button + helper note. -->
+    <div id="acct-row" style="display:none;align-items:center;gap:14px;padding:14px 16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;">
+      <div id="acct-avatar" class="avatar" style="width:42px;height:42px;font-size:14px;"></div>
+      <div style="flex:1;min-width:0;">
+        <div id="acct-name" style="font-size:14px;font-weight:600;color:var(--text);"></div>
+        <div id="acct-email" style="font-size:13px;color:var(--text2);margin-top:2px;"></div>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button id="acct-signout" class="btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         Sign out
       </button>
     </div>
-    <div style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.6;">
+    <div style="font-size:12px;color:var(--text3);margin-top:14px;line-height:1.6;" id="acct-helper">
       Account identity (your name, email, password) is managed on the sign-in screen. Changing those today means signing out and back in. A richer account panel is on the roadmap.
     </div>
   </div>
@@ -320,15 +330,45 @@ tbody tr:hover{background:var(--bg);}
 </style>
 
 <script>
-// v74x: sign-out wiring for the partner portal.
-// Note: partner pages don't currently load Clerk after pp-login, so we can't
-// show user identity here — that's intentionally left for a future build that
-// adds real partner auth across all pp-* pages. For now this button does the
-// simple-but-correct thing: clear any client storage that resembles partner
-// session state, then redirect to the login page. If Clerk happens to be
-// loaded (e.g. someone navigated here directly from pp-login in the same tab),
-// we'll also call Clerk.signOut so the central session ends too.
+// v75: pp-settings account card — driven by tb_pp_user_cache written on
+// pp-login. When a real user is signed in, show name/email/avatar; when not,
+// show just the sign-out button + helper note (handles people who land on
+// settings directly without a session).
 (function() {
+  // Populate account row from cache
+  try {
+    var raw = sessionStorage.getItem('tb_pp_user_cache');
+    if (raw) {
+      var data = JSON.parse(raw);
+      if (data && (data.name || data.email)) {
+        var row = document.getElementById('acct-row');
+        var nameEl = document.getElementById('acct-name');
+        var emailEl = document.getElementById('acct-email');
+        var avEl = document.getElementById('acct-avatar');
+        var sub = document.getElementById('acct-subtitle');
+        var helper = document.getElementById('acct-helper');
+        if (row) row.style.display = 'flex';
+        if (nameEl) nameEl.textContent = data.name || (data.email ? data.email.split('@')[0] : '');
+        if (emailEl) emailEl.textContent = data.email || '';
+        if (avEl) {
+          if (data.avatarUrl) {
+            avEl.innerHTML = '<img src="' + data.avatarUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />';
+            avEl.style.background = '#fff';
+          } else {
+            avEl.textContent = data.initials || '?';
+          }
+        }
+        if (sub) sub.textContent = 'Signed in. Manage account-level settings or sign out.';
+        if (helper) {
+          helper.innerHTML = 'To change your name, email, password, or other login details, sign out and use the sign-in screen. A richer in-portal account panel is on the roadmap.';
+        }
+      }
+    }
+  } catch(e) {
+    // Non-fatal — fall through to the signed-out state
+  }
+
+  // Sign out wiring
   document.getElementById('acct-signout').addEventListener('click', async function() {
     var btn = this;
     btn.disabled = true;
@@ -337,11 +377,9 @@ tbody tr:hover{background:var(--bg);}
       if (window.Clerk && typeof window.Clerk.signOut === 'function') {
         try { await window.Clerk.signOut(); } catch(e) {}
       }
-      // Best-effort clear of any partner-scoped session storage. These are
-      // belt-and-suspenders — none of them are auth-secret storage, but
-      // clearing keeps the next sign-in clean.
       try {
         sessionStorage.removeItem('tb_pp_sidebar_v1');
+        sessionStorage.removeItem('tb_pp_sidebar_v2');
         sessionStorage.removeItem('tb_pp_user_cache');
         localStorage.removeItem('tb_pp_active_slug');
       } catch(e) {}

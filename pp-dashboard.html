@@ -403,13 +403,28 @@ tbody tr:hover{background:var(--bg);}
   }
 
   function applyHeader(property) {
-    var name = property && property.name ? property.name : PP_SLUG;
+    var propName = property && property.name ? property.name : PP_SLUG;
+    // v75: prefer the signed-in partner's name from tb_pp_user_cache.
+    // Falls back to property name when no partner is signed in (current state
+    // until pp-login starts writing the cache, or for fresh-browser sessions).
+    var partnerName = '';
+    try {
+      var raw = sessionStorage.getItem('tb_pp_user_cache');
+      if (raw) {
+        var data = JSON.parse(raw);
+        if (data && data.name) partnerName = data.name;
+      }
+    } catch(e) {}
     var title = document.getElementById('ppd-title');
     var sub = document.getElementById('ppd-subtitle');
     var topbarSub = document.getElementById('ppd-topbar-sub');
-    if (title) title.textContent = 'Welcome back to ' + name;
-    if (sub) sub.textContent = 'Here\'s how ' + name + ' is performing on The Bearing.';
-    if (topbarSub) topbarSub.textContent = name + ' · Partner Portal';
+    if (title) {
+      // First name only when we have it — feels more personal in a header.
+      var firstName = partnerName ? partnerName.split(/\s+/)[0] : '';
+      title.textContent = firstName ? ('Welcome back, ' + firstName) : ('Welcome back to ' + propName);
+    }
+    if (sub) sub.textContent = 'Here\'s how ' + propName + ' is performing on The Bearing.';
+    if (topbarSub) topbarSub.textContent = propName + ' · Partner Portal';
     var prev = document.getElementById('ppd-preview-link');
     if (prev) {
       // Nour El Nil has a dedicated page; everything else uses property.html?slug=X

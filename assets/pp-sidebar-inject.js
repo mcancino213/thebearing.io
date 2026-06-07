@@ -32,8 +32,9 @@
 //
 // Cache invalidation: bump SIDEBAR_VERSION whenever pp-sidebar.html changes.
 (function() {
-  var SIDEBAR_VERSION = 1;
+  var SIDEBAR_VERSION = 2;
   var STORAGE_KEY = 'tb_pp_sidebar_v' + SIDEBAR_VERSION;
+  var USER_CACHE_KEY = 'tb_pp_user_cache';
 
   function applyActive(mount) {
     var page = (document.body && document.body.getAttribute('data-page')) || '';
@@ -42,9 +43,43 @@
     if (link) link.classList.add('active');
   }
 
+  // v75: populate the footer user block from sessionStorage tb_pp_user_cache.
+  // Written by pp-login.html when Clerk reports a signed-in user. If empty
+  // (no user signed in this session), the footer stays invisible — its
+  // wrapper has opacity:0 in the partial, and we only flip it to opacity:1
+  // once we have something real to show.
+  function applyFooterUser(mount) {
+    var wrap = mount.querySelector('#pp-sb-footer-user');
+    if (!wrap) return;
+    var data = null;
+    try {
+      var raw = sessionStorage.getItem(USER_CACHE_KEY);
+      if (raw) data = JSON.parse(raw);
+    } catch(e) {}
+    if (!data || (!data.name && !data.email)) {
+      // No user → leave invisible, matching the "blank until signed in" rule.
+      return;
+    }
+    var nameEl = mount.querySelector('#pp-sb-name');
+    var roleEl = mount.querySelector('#pp-sb-role');
+    var avEl = mount.querySelector('#pp-sb-avatar');
+    if (nameEl) nameEl.textContent = data.name || (data.email ? data.email.split('@')[0] : '');
+    if (roleEl) roleEl.textContent = data.email || '';
+    if (avEl) {
+      if (data.avatarUrl) {
+        avEl.innerHTML = '<img src="' + data.avatarUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />';
+        avEl.style.background = 'transparent';
+      } else {
+        avEl.textContent = data.initials || '?';
+      }
+    }
+    wrap.style.opacity = '1';
+  }
+
   function inject(mount, html) {
     mount.innerHTML = html;
     applyActive(mount);
+    applyFooterUser(mount);
     // v73f: preserve ?as=X across partner-portal navigation. If the current
     // URL has ?as=X, rewrite every `.sb-item` sidebar link to carry the same
     // param. This used to live in pp-sidebar-badges.js but it ran on
