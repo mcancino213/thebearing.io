@@ -32,7 +32,7 @@
 //
 // Cache invalidation: bump SIDEBAR_VERSION whenever pp-sidebar.html changes.
 (function() {
-  var SIDEBAR_VERSION = 2;
+  var SIDEBAR_VERSION = 3;
   var STORAGE_KEY = 'tb_pp_sidebar_v' + SIDEBAR_VERSION;
   var USER_CACHE_KEY = 'tb_pp_user_cache';
 

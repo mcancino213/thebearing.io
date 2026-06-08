@@ -329,11 +329,20 @@ tbody tr:hover{background:var(--bg);}
 .settings-tile:hover .settings-tile-arrow{transform:translateX(2px);color:var(--text);}
 </style>
 
+<!-- v75c: Clerk SDK loaded here so the sign-out button can actually call
+     Clerk.signOut(). Without these scripts window.Clerk is undefined and
+     the sign-out only clears the local cache — the session lives on, which
+     is why "sign out" appeared to do nothing in v75b. -->
+<script defer crossorigin="anonymous"
+  src="https://measured-joey-15.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+  data-clerk-publishable-key="pk_test_bWVhc3VyZWQtam9leS0xNS5jbGVyay5hY2NvdW50cy5kZXYk"
+  type="text/javascript">
+</script>
+
 <script>
-// v75: pp-settings account card — driven by tb_pp_user_cache written on
-// pp-login. When a real user is signed in, show name/email/avatar; when not,
-// show just the sign-out button + helper note (handles people who land on
-// settings directly without a session).
+// v75c: pp-settings — populate account card from cache + load Clerk so
+// sign-out actually signs out (was the v75b bug: window.Clerk was undefined
+// so Clerk.signOut() never ran, leaving the session live).
 (function() {
   // Populate account row from cache
   try {
@@ -364,28 +373,71 @@ tbody tr:hover{background:var(--bg);}
         }
       }
     }
-  } catch(e) {
-    // Non-fatal — fall through to the signed-out state
+  } catch(e) {}
+
+  // v75c: Sign out wiring — properly awaits Clerk before calling signOut().
+  // Sequence:
+  //   1. Disable button immediately so it can't be double-clicked
+  //   2. Wait for Clerk to be loaded (cap at 6s)
+  //   3. Call Clerk.signOut() — this terminates the session server-side
+  //   4. Clear our local caches
+  //   5. Redirect to /pp-login
+  // If Clerk never loads (script blocked / offline), the local-cache clear
+  // and redirect still happen, but the server session would remain — at
+  // which point pp-login would just bounce the user right back to dashboard.
+  // We surface that case with an alert rather than silently failing.
+  async function waitForClerk(timeoutMs) {
+    var deadline = Date.now() + (timeoutMs || 6000);
+    while (Date.now() < deadline) {
+      if (window.Clerk && typeof window.Clerk.signOut === 'function') {
+        // Clerk script has loaded — but it also needs to have called .load()
+        // to be functional. Some versions of Clerk auto-load via the script
+        // tag, others require explicit Clerk.load(). Be defensive: if .load
+        // exists and Clerk.loaded is false, await it.
+        if (window.Clerk.loaded === false && typeof window.Clerk.load === 'function') {
+          try { await window.Clerk.load(); } catch(e) {}
+        }
+        return true;
+      }
+      await new Promise(function(r){ setTimeout(r, 80); });
+    }
+    return false;
   }
 
-  // Sign out wiring
   document.getElementById('acct-signout').addEventListener('click', async function() {
     var btn = this;
     btn.disabled = true;
     btn.style.opacity = '.6';
-    try {
-      if (window.Clerk && typeof window.Clerk.signOut === 'function') {
-        try { await window.Clerk.signOut(); } catch(e) {}
-      }
-      try {
-        sessionStorage.removeItem('tb_pp_sidebar_v1');
-        sessionStorage.removeItem('tb_pp_sidebar_v2');
-        sessionStorage.removeItem('tb_pp_user_cache');
-        localStorage.removeItem('tb_pp_active_slug');
-      } catch(e) {}
-    } finally {
-      window.location.href = '/pp-login';
+    var origText = btn.innerHTML;
+    btn.innerHTML = 'Signing out…';
+
+    var clerkReady = await waitForClerk(6000);
+    if (!clerkReady) {
+      alert('Sign-out is unavailable right now (Clerk failed to load). Please check your connection and try again.');
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = origText;
+      return;
     }
+
+    try {
+      await window.Clerk.signOut();
+    } catch (e) {
+      // Even if Clerk.signOut() throws, try to clean up locally and redirect.
+      // Worst case the user lands on /pp-login still signed in and gets
+      // bounced back — but at least we tried.
+      console.error('[pp-settings] Clerk.signOut() failed:', e);
+    }
+
+    try {
+      sessionStorage.removeItem('tb_pp_sidebar_v1');
+      sessionStorage.removeItem('tb_pp_sidebar_v2');
+      sessionStorage.removeItem('tb_pp_sidebar_v3');
+      sessionStorage.removeItem('tb_pp_user_cache');
+      localStorage.removeItem('tb_pp_active_slug');
+    } catch(e) {}
+
+    window.location.href = '/pp-login';
   });
 })();
 </script>
