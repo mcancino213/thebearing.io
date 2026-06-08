@@ -184,7 +184,7 @@ tbody tr:hover{background:var(--bg);}
 //       for DOMContentLoaded, no waiting for the body-level inject script.
 //       This means the first paint of body already has the populated sidebar.
 (function(){try{
-  var KEY = 'tb_pp_sidebar_v1';
+  var KEY = 'tb_pp_sidebar_v3';
   var cached = sessionStorage.getItem(KEY);
   if (!cached) return;
   var injected = false;
@@ -216,6 +216,7 @@ tbody tr:hover{background:var(--bg);}
   }
 }catch(e){}})();
 </script>
+<script src="/assets/partner-gate.js"></script>
 </head>
 <body data-page="pp-settings">
 <div class="app">

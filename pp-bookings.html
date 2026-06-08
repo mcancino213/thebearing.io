@@ -297,7 +297,7 @@ tr.row-was-declined:hover{background:#f5ecd9;}
 //       for DOMContentLoaded, no waiting for the body-level inject script.
 //       This means the first paint of body already has the populated sidebar.
 (function(){try{
-  var KEY = 'tb_pp_sidebar_v1';
+  var KEY = 'tb_pp_sidebar_v3';
   var cached = sessionStorage.getItem(KEY);
   if (!cached) return;
   var injected = false;
@@ -329,6 +329,19 @@ tr.row-was-declined:hover{background:#f5ecd9;}
   }
 }catch(e){}})();
 </script>
+<!-- v75e: Clerk SDK + Partner Gate. Loaded on every partner page so
+     signed-out visitors get redirected to /pp-login. Mirrors the admin-gate
+     pattern. Closes the gap flagged in v74x/v75c. -->
+<script defer crossorigin="anonymous" data-clerk-publishable-key="pk_test_bWVhc3VyZWQtam9leS0xNS5jbGVyay5hY2NvdW50cy5kZXYk"
+  src="https://measured-joey-15.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+  type="text/javascript">
+</script>
+<script>
+window.addEventListener('load', async function() {
+  try { await window.Clerk.load(); } catch(err) { console.error('Clerk load failed:', err); }
+});
+</script>
+<script src="/assets/partner-gate.js"></script>
 </head>
 <body data-page="pp-bookings">
 <div class="app">
