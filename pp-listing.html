@@ -223,18 +223,30 @@ tbody tr:hover{background:var(--bg);}
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Edit listing</div><div class=topbar-sub>Nour El Nil</div></div>
-  <div class="topbar-right"><button class="btn btn-ghost btn-sm">Discard changes</button><button class="btn btn-primary">Submit for review</button></div>
+  <div><div class="topbar-title">Edit listing</div><div class=topbar-sub id="ppl-topbar-sub">Loading…</div></div>
+  <div class="topbar-right">
+    <span id="ppl-save-status" style="font-size:12px;color:var(--text3);margin-right:8px;"></span>
+    <button id="ppl-discard-btn" class="btn btn-ghost btn-sm" disabled>Discard changes</button>
+    <button id="ppl-save-btn" class="btn btn-primary" disabled>Save changes</button>
+  </div>
 </div>
 <div class="page-body">
 
 <div class="page-header">
   <div class="page-eyebrow">My listing</div>
   <div class="page-title">Edit your listing</div>
-  <div class="page-subtitle">Changes save as draft and go live after The Bearing reviews them.</div>
+  <div class="page-subtitle">Changes save directly to your live listing. Operational fields (commission, status) are managed by The Bearing.</div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+<!-- Loading skeleton — replaced once data arrives. If the partner isn't
+     authorized, this stays visible with an error. -->
+<div id="ppl-state-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading your listing…</div>
+<div id="ppl-state-error" style="display:none;padding:32px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;">
+  <div style="font-weight:600;margin-bottom:6px;" id="ppl-error-title">Couldn't load listing</div>
+  <div style="font-size:13px;" id="ppl-error-detail"></div>
+</div>
+
+<div id="ppl-state-ready" style="display:none;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
 <div>
 
 <div class="form-section">
@@ -244,23 +256,32 @@ tbody tr:hover{background:var(--bg);}
   </div>
   <div class="fs-body">
     <div class="form-row c2">
-      <div class="field"><label>Property name <span class="req">*</span></label><input type="text" value="Nour El Nil"></div>
-      <div class="field"><label>Property type <span class="req">*</span></label><select><option selected>River Cruise · Dahabiya Fleet</option><option>Safari Lodge</option><option>Boutique Hotel</option><option>Villa</option></select></div>
+      <div class="field"><label>Property name <span class="req">*</span></label><input type="text" data-field="name" placeholder="Your property's display name"></div>
+      <div class="field"><label>Property type <span class="req">*</span></label>
+        <select data-field="type">
+          <option value="">— select —</option>
+          <option value="River Cruise">River Cruise</option>
+          <option value="Safari Lodge">Safari Lodge</option>
+          <option value="Boutique Hotel">Boutique Hotel</option>
+          <option value="Villa">Villa</option>
+          <option value="Resort">Resort</option>
+          <option value="Camp">Camp</option>
+        </select>
+      </div>
     </div>
     <div class="form-row c3">
-      <div class="field"><label>Country <span class="req">*</span></label><input type="text" value="Egypt"></div>
-      <div class="field"><label>Region / area</label><input type="text" value="Nile River · Esna to Aswan"></div>
-      <div class="field"><label>Nearest airport</label><input type="text" value="LXR · Luxor"></div>
+      <div class="field"><label>Country <span class="req">*</span></label><input type="text" data-field="country" placeholder="e.g. Egypt"></div>
+      <div class="field"><label>Region / area</label><input type="text" data-field="region" placeholder="e.g. Nile · Esna to Aswan"></div>
+      <div class="field"><label>Nearest airport</label><input type="text" data-field="nearest_airport" placeholder="e.g. LXR · Luxor"></div>
     </div>
-    <div class="form-row c2">
-      <div class="field"><label>Display tag <span class="hint">(shown on card)</span></label><input type="text" value="Dahabiya Fleet · Egypt's finest"></div>
-      <div class="field"><label>Status</label><select><option selected>Live</option><option>Draft</option><option>Paused</option></select></div>
+    <div class="form-row c1">
+      <div class="field"><label>Display tag <span class="hint">(shown on card)</span></label><input type="text" data-field="display_tag" placeholder="e.g. Dahabiya Fleet · Egypt's finest"></div>
     </div>
     <div class="form-row c1">
       <div class="field">
         <label>One-line hook <span class="req">*</span><span class="hint">— shown on card, make it unforgettable</span></label>
-        <textarea style="min-height:72px;">The last great Nile voyage. Six boats, sixty guests at a time, and a silence you'll carry home.</textarea>
-        <div style="text-align:right;font-size:12px;color:var(--text3);margin-top:5px;">89 / 140</div>
+        <textarea data-field="tagline" style="min-height:72px;" placeholder="The hook line for your card"></textarea>
+        <div style="text-align:right;font-size:12px;color:var(--text3);margin-top:5px;"><span id="ppl-tagline-count">0</span> / 140</div>
       </div>
     </div>
   </div>
@@ -275,17 +296,19 @@ tbody tr:hover{background:var(--bg);}
     <div class="form-row c1">
       <div class="field">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;"><label>Short description <span class="req">*</span></label><span style="font-size:12px;color:var(--text3);">2–3 sentences · above the fold</span></div>
-        <textarea style="min-height:100px;">Nour El Nil operates six intimate dahabiyas on the Nile between Luxor and Aswan — each carrying just eight to twelve guests. Every voyage moves at the pace of a felucca sail, pausing at temples most tourists never reach. It's not a cruise. It's a private journey through one of the world's oldest civilisations.</textarea>
+        <textarea data-field="short_pitch" style="min-height:100px;" placeholder="A short evocative pitch…"></textarea>
       </div>
     </div>
     <div class="form-row c1">
       <div class="field">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;"><label>Full description</label><span style="font-size:12px;color:var(--text3);">4–6 paragraphs · property page body</span></div>
-        <textarea style="min-height:160px;">Founded in 2005, Nour El Nil pioneered the revival of the traditional Egyptian dahabiya — a wooden sailing vessel that once carried royalty and explorers along the Nile. Where modern cruise ships carry hundreds, each Nour El Nil boat carries eight to twelve guests in rooms that feel more like small suites than cabins.
-
-The itinerary runs from Esna to Aswan over five nights, threading through villages and archaeological sites that appear on no mainstream tour. The Edfu Temple at dawn, with no one else present, is the kind of experience guests describe years later. The chef prepares entirely from local markets each morning; meals happen on deck as the Nile slides past.
-
-What Nour El Nil offers isn't convenience — it's immersion. Slow travel at its most considered.</textarea>
+        <textarea data-field="long_pitch" style="min-height:160px;" placeholder="The full description of your property…"></textarea>
+      </div>
+    </div>
+    <div class="form-row c1">
+      <div class="field">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;"><label>History / background</label><span style="font-size:12px;color:var(--text3);">Optional · backstory section</span></div>
+        <textarea data-field="long_history" style="min-height:120px;" placeholder="The story behind your property…"></textarea>
       </div>
     </div>
   </div>
@@ -298,15 +321,29 @@ What Nour El Nil offers isn't convenience — it's immersion. Slow travel at its
   </div>
   <div class="fs-body">
     <div class="form-row c2">
-      <div class="field"><label>Starting from <span class="req">*</span><span class="hint">per person per night</span></label>
-        <div style="display:flex;gap:8px;"><select style="max-width:82px;"><option>USD</option><option>EUR</option><option>GBP</option></select><input type="text" value="1,450" style="flex:1;"></div>
+      <div class="field"><label>Starting from <span class="req">*</span><span class="hint">number only — currency below</span></label>
+        <div style="display:flex;gap:8px;">
+          <select data-field="price_currency" style="max-width:82px;">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+          </select>
+          <input type="text" data-field="price_from" style="flex:1;" placeholder="e.g. 1450">
+        </div>
       </div>
-      <div class="field"><label>Pricing model</label><select><option selected>Per person per night</option><option>Per cabin per night</option><option>Enquire for rates</option></select></div>
+      <div class="field"><label>Pricing model</label>
+        <select data-field="pricing_model">
+          <option value="per_person_per_night">Per person per night</option>
+          <option value="per_cabin_per_night">Per cabin per night</option>
+          <option value="per_room_per_night">Per room per night</option>
+          <option value="enquire">Enquire for rates</option>
+        </select>
+      </div>
     </div>
     <div class="form-row c3">
-      <div class="field"><label>Season open</label><input type="text" value="Oct – Apr (main), Jun–Sep (select)"></div>
-      <div class="field"><label>Minimum stay</label><input type="text" value="5 nights"></div>
-      <div class="field"><label>Maximum group size</label><input type="text" value="12 per boat"></div>
+      <div class="field"><label>Season open</label><input type="text" data-field="season_open" placeholder="e.g. Oct – Apr"></div>
+      <div class="field"><label>Minimum stay</label><input type="text" data-field="min_stay" placeholder="e.g. 5 nights"></div>
+      <div class="field"><label>Maximum group size</label><input type="text" data-field="max_group" placeholder="e.g. 12 per boat"></div>
     </div>
   </div>
 </div>
@@ -318,18 +355,32 @@ What Nour El Nil offers isn't convenience — it's immersion. Slow travel at its
   </div>
   <div class="fs-body">
     <div class="form-row c2">
-      <div class="field"><label>Check-in time</label><input type="text" value="From 3:00 PM in Luxor"></div>
-      <div class="field"><label>Check-out time</label><input type="text" value="By 9:00 AM in Aswan"></div>
+      <div class="field"><label>Check-in time</label><input type="text" data-field="checkin_time" placeholder="e.g. From 3:00 PM"></div>
+      <div class="field"><label>Check-out time</label><input type="text" data-field="checkout_time" placeholder="e.g. By 9:00 AM"></div>
     </div>
     <div class="form-row c2">
-      <div class="field"><label>Children policy</label><select><option selected>Welcome (all ages)</option><option>12+ only</option><option>Adults only</option></select></div>
-      <div class="field"><label>Pet policy</label><select><option>Not permitted</option><option selected>On request</option></select></div>
+      <div class="field"><label>Children policy</label>
+        <select data-field="children_policy">
+          <option value="">— select —</option>
+          <option value="welcome">Welcome (all ages)</option>
+          <option value="12+">12+ only</option>
+          <option value="adults_only">Adults only</option>
+        </select>
+      </div>
+      <div class="field"><label>Pet policy</label>
+        <select data-field="pet_policy">
+          <option value="">— select —</option>
+          <option value="not_permitted">Not permitted</option>
+          <option value="on_request">On request</option>
+          <option value="welcome">Welcome</option>
+        </select>
+      </div>
     </div>
     <div class="form-row c1">
-      <div class="field"><label>What's included</label><textarea style="min-height:80px;">All meals and soft drinks, guided excursions to all temples, airport transfers in Luxor and Aswan, traditional felucca sailing, onboard Wi-Fi</textarea></div>
+      <div class="field"><label>What's included <span class="hint">comma-separated</span></label><textarea data-field="included" style="min-height:80px;" placeholder="e.g. All meals, guided excursions, airport transfers"></textarea></div>
     </div>
     <div class="form-row c1">
-      <div class="field"><label>Not included</label><textarea style="min-height:60px;">Flights, travel insurance, alcoholic beverages, gratuities, personal items</textarea></div>
+      <div class="field"><label>Not included <span class="hint">comma-separated</span></label><textarea data-field="not_included" style="min-height:60px;" placeholder="e.g. Flights, gratuities, personal items"></textarea></div>
     </div>
   </div>
 </div>
@@ -340,17 +391,17 @@ What Nour El Nil offers isn't convenience — it's immersion. Slow travel at its
 <div style="display:flex;flex-direction:column;gap:16px;position:sticky;top:80px;">
 
   <div class="card">
-    <div class="card-header"><div class="card-title">Card preview</div><button class="btn btn-ghost btn-sm">Live preview</button></div>
+    <div class="card-header"><div class="card-title">Card preview</div><a id="ppl-live-preview" href="#" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Live preview</a></div>
     <div class="card-body" style="padding:16px;">
       <div style="border:1.5px solid var(--border);border-radius:12px;overflow:hidden;">
-        <div style="height:150px;background:linear-gradient(135deg,#c5b08a,#a08060);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:13px;">Hero photo</div>
+        <div id="ppl-card-hero" style="height:150px;background:linear-gradient(135deg,#c5b08a,#a08060);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:13px;">Hero photo</div>
         <div style="padding:14px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">River Cruise · Dahabiya Fleet</div>
-          <div style="font-family:'Fraunces',serif;font-size:17px;color:var(--text);margin-bottom:5px;font-style:italic;">Nour El Nil</div>
-          <div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px;font-style:italic;">"The last great Nile voyage. Six boats, sixty guests at a time…"</div>
+          <div id="ppl-card-type" style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">—</div>
+          <div id="ppl-card-name" style="font-family:'Fraunces',serif;font-size:17px;color:var(--text);margin-bottom:5px;font-style:italic;">—</div>
+          <div id="ppl-card-tagline" style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px;font-style:italic;">—</div>
           <div style="display:flex;align-items:center;justify-content:space-between;">
-            <div style="font-size:13px;color:var(--text2);">From $1,450 / night</div>
-            <div style="display:flex;gap:6px;"><button class="btn btn-sm" style="padding:5px 10px;font-size:11px;">Enquire</button><button class="btn btn-primary btn-sm" style="padding:5px 10px;font-size:11px;">Book now</button></div>
+            <div id="ppl-card-price" style="font-size:13px;color:var(--text2);">—</div>
+            <div style="display:flex;gap:6px;"><button class="btn btn-sm" style="padding:5px 10px;font-size:11px;" disabled>Enquire</button><button class="btn btn-primary btn-sm" style="padding:5px 10px;font-size:11px;" disabled>Book now</button></div>
           </div>
         </div>
       </div>
@@ -360,33 +411,295 @@ What Nour El Nil offers isn't convenience — it's immersion. Slow travel at its
   <div class="card">
     <div class="card-header"><div class="card-title">Publish checklist</div></div>
     <div class="card-body" style="padding:14px 20px;">
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Property name</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Property type</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Hook line</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text2);"><span style="color:var(--amber);font-size:15px;">○</span>Hero photo</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Short description</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Rates</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text2);"><span style="color:var(--amber);font-size:15px;">○</span>6+ photos in gallery</div>
-        <div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>Room types</div>
+      <div id="ppl-checklist" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="color:var(--text3);font-size:13px;">Loading…</div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-header"><div class="card-title">Review status</div></div>
+    <div class="card-header"><div class="card-title">Listing controls</div></div>
     <div class="card-body" style="padding:14px 20px;">
-      <span class="badge badge-green" style="margin-bottom:10px;">Live</span>
-      <div style="font-size:13px;color:var(--text2);line-height:1.6;">Changes you submit will be reviewed by The Bearing within 24 hours before going live.</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6;">Operational settings (live status, commission, payouts) are managed by The Bearing. Contact <a href="mailto:partners@thebearing.io" style="color:var(--accent);">partners@thebearing.io</a> if you need changes there.</div>
     </div>
   </div>
 </div>
 
 </div>
+</div>
+</div>
+</div>
 
-</div>
-</div>
-</div>
+<script>
+// v75b: real listing editor. Reads from /api/partner-listing?slug=X&userId=Y,
+// saves to POST /api/partner-listing.
+//
+// Trust model: requires tb_pp_user_cache (written by pp-login when Clerk
+// reports a signed-in user). The cached user id must appear in the property's
+// partnerUserIds list, which an admin sets via admin-property-editor. Without
+// either, this page shows an error state and the form stays blocked.
+//
+// State machine:
+//   loading → ready  (data fetched OK)
+//   loading → error  (not signed in / not a partner / fetch failed)
+//
+// Save model: explicit save button (no auto-save). Tracks dirty fields and
+// only sends the diff. Discard reverts to last-saved snapshot.
+//
+// Operational fields (status, commission_pct, slug) are NOT touched by this
+// page — the worker's /api/partner-listing whitelist refuses them server-side
+// even if a malicious client tried to send them.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+  var SAVE_ENDPOINT = '/api/partner-listing';
+
+  // Field list — must match worker's PARTNER_LISTING_EDITABLE_FIELDS
+  var FIELDS = [
+    'name','tagline','type','country','region','nearest_airport','display_tag',
+    'short_pitch','long_pitch','long_history',
+    'price_from','price_currency','pricing_model',
+    'season_open','min_stay','max_group',
+    'checkin_time','checkout_time','children_policy','pet_policy',
+    'included','not_included',
+  ];
+
+  // Read tb_pp_user_cache (written by pp-login). If absent → not signed in.
+  function getUserId() {
+    try {
+      var raw = sessionStorage.getItem('tb_pp_user_cache');
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      return (data && data.id) || null;
+    } catch(e) { return null; }
+  }
+
+  var snapshot = {};  // last-saved values, used by Discard
+  var current = {};   // working values, updated on every input
+  var dirty = {};     // fields modified since last save
+
+  function showError(title, detail) {
+    document.getElementById('ppl-state-loading').style.display = 'none';
+    document.getElementById('ppl-state-ready').style.display = 'none';
+    var box = document.getElementById('ppl-state-error');
+    document.getElementById('ppl-error-title').textContent = title;
+    document.getElementById('ppl-error-detail').textContent = detail;
+    box.style.display = 'block';
+  }
+
+  function showReady() {
+    document.getElementById('ppl-state-loading').style.display = 'none';
+    document.getElementById('ppl-state-error').style.display = 'none';
+    document.getElementById('ppl-state-ready').style.display = 'grid';
+  }
+
+  // Populate form from a fields object
+  function populate(fields) {
+    FIELDS.forEach(function(field) {
+      var el = document.querySelector('[data-field="' + field + '"]');
+      if (!el) return;
+      var value = fields[field];
+      if (value === undefined || value === null) value = '';
+
+      // Arrays come back from the worker as arrays for tags/included/etc;
+      // we render comma-separated in textareas
+      if (Array.isArray(value)) value = value.join(', ');
+
+      el.value = String(value);
+    });
+  }
+
+  function snapshotFromForm() {
+    var snap = {};
+    FIELDS.forEach(function(field) {
+      var el = document.querySelector('[data-field="' + field + '"]');
+      if (el) snap[field] = el.value;
+    });
+    return snap;
+  }
+
+  function diff(a, b) {
+    var out = {};
+    Object.keys(b).forEach(function(k) {
+      if (a[k] !== b[k]) out[k] = b[k];
+    });
+    return out;
+  }
+
+  function updateDirty() {
+    dirty = diff(snapshot, snapshotFromForm());
+    var n = Object.keys(dirty).length;
+    var saveBtn = document.getElementById('ppl-save-btn');
+    var discardBtn = document.getElementById('ppl-discard-btn');
+    var status = document.getElementById('ppl-save-status');
+    if (n > 0) {
+      saveBtn.disabled = false;
+      discardBtn.disabled = false;
+      saveBtn.textContent = 'Save ' + n + ' change' + (n === 1 ? '' : 's');
+      status.textContent = 'Unsaved';
+      status.style.color = 'var(--amber)';
+    } else {
+      saveBtn.disabled = true;
+      discardBtn.disabled = true;
+      saveBtn.textContent = 'Save changes';
+      status.textContent = '';
+    }
+    renderPreviewCard();
+    renderChecklist();
+    renderCharCount();
+  }
+
+  function renderPreviewCard() {
+    var f = snapshotFromForm();
+    document.getElementById('ppl-card-name').textContent = f.name || '—';
+    document.getElementById('ppl-card-type').textContent = [f.type, f.region].filter(Boolean).join(' · ') || '—';
+    document.getElementById('ppl-card-tagline').textContent = f.tagline ? ('"' + f.tagline + '"') : '—';
+    var price = f.price_from ? ((f.price_currency || 'USD') + ' ' + f.price_from + ' / night') : '—';
+    document.getElementById('ppl-card-price').textContent = price === '—' ? '—' : 'From ' + price;
+  }
+
+  function renderChecklist() {
+    var f = snapshotFromForm();
+    var items = [
+      { label: 'Property name', ok: !!f.name },
+      { label: 'Property type', ok: !!f.type },
+      { label: 'Hook line', ok: !!f.tagline },
+      { label: 'Short description', ok: !!f.short_pitch },
+      { label: 'Country', ok: !!f.country },
+      { label: 'Starting price', ok: !!f.price_from },
+      { label: 'What\'s included', ok: !!f.included && String(f.included).length > 3 },
+    ];
+    var html = items.map(function(it) {
+      if (it.ok) {
+        return '<div style="display:flex;align-items:center;gap:9px;font-size:13.5px;"><span style="color:var(--emerald);font-size:15px;">✓</span>' + it.label + '</div>';
+      }
+      return '<div style="display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--text2);"><span style="color:var(--amber);font-size:15px;">○</span>' + it.label + '</div>';
+    }).join('');
+    document.getElementById('ppl-checklist').innerHTML = html;
+  }
+
+  function renderCharCount() {
+    var t = document.querySelector('[data-field="tagline"]');
+    var c = document.getElementById('ppl-tagline-count');
+    if (t && c) c.textContent = String((t.value || '').length);
+  }
+
+  // Bind input change tracking on all data-field elements
+  function bindInputs() {
+    FIELDS.forEach(function(field) {
+      var el = document.querySelector('[data-field="' + field + '"]');
+      if (!el) return;
+      el.addEventListener('input', updateDirty);
+      el.addEventListener('change', updateDirty);
+    });
+  }
+
+  // Discard — revert to snapshot
+  document.getElementById('ppl-discard-btn').addEventListener('click', function() {
+    if (!confirm('Discard ' + Object.keys(dirty).length + ' unsaved change(s)?')) return;
+    populate(snapshot);
+    updateDirty();
+  });
+
+  // Save
+  document.getElementById('ppl-save-btn').addEventListener('click', async function() {
+    var userId = getUserId();
+    if (!userId) {
+      alert('You need to sign in to save changes.');
+      return;
+    }
+    var btn = this;
+    var origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    var status = document.getElementById('ppl-save-status');
+    status.textContent = 'Saving…';
+    status.style.color = 'var(--text3)';
+    try {
+      // Convert comma-separated textareas to arrays for known list fields
+      var payload = {};
+      var listFields = ['included', 'not_included'];
+      Object.keys(dirty).forEach(function(k) {
+        if (listFields.indexOf(k) !== -1) {
+          payload[k] = String(dirty[k]).split(',').map(function(s){return s.trim();}).filter(Boolean);
+        } else {
+          payload[k] = dirty[k];
+        }
+      });
+
+      var r = await fetch(SAVE_ENDPOINT, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ slug: PP_SLUG, userId: userId, changes: payload }),
+      });
+      var data = await r.json();
+      if (!r.ok || !data.ok) {
+        throw new Error((data && data.error) || ('HTTP ' + r.status));
+      }
+      // Success: refresh snapshot from form (the form values become the new
+      // truth) and clear dirty.
+      snapshot = snapshotFromForm();
+      dirty = {};
+      updateDirty();
+      status.textContent = '✓ Saved';
+      status.style.color = 'var(--emerald)';
+      setTimeout(function() { status.textContent = ''; }, 2500);
+    } catch (e) {
+      console.error('[pp-listing] save failed:', e);
+      status.textContent = 'Save failed';
+      status.style.color = 'var(--red)';
+      btn.disabled = false;
+      btn.textContent = origText;
+      alert('Save failed: ' + (e && e.message || e));
+    }
+  });
+
+  // Wire live-preview link
+  var prev = document.getElementById('ppl-live-preview');
+  if (prev) {
+    prev.href = PP_SLUG === 'nour-el-nil' ? '/nour-el-nil' : '/property?slug=' + encodeURIComponent(PP_SLUG);
+  }
+
+  // Initial load
+  async function load() {
+    var userId = getUserId();
+    if (!userId) {
+      showError('You need to sign in', 'Go to the sign-in page to access your listing editor.');
+      return;
+    }
+    try {
+      var r = await fetch(SAVE_ENDPOINT + '?slug=' + encodeURIComponent(PP_SLUG) + '&userId=' + encodeURIComponent(userId));
+      var data = await r.json();
+      if (r.status === 403) {
+        showError('Not authorized', 'Your account isn\'t linked to this property as a partner yet. Contact partners@thebearing.io to be added.');
+        return;
+      }
+      if (r.status === 404) {
+        showError('Property not found', 'The property "' + PP_SLUG + '" doesn\'t exist yet.');
+        return;
+      }
+      if (!r.ok || !data.ok) {
+        throw new Error((data && data.error) || ('HTTP ' + r.status));
+      }
+      // Populate form
+      populate(data.fields || {});
+      // Snapshot AFTER populate so it captures the rendered values (including
+      // array-to-string conversions for textareas)
+      snapshot = snapshotFromForm();
+      dirty = {};
+      bindInputs();
+      updateDirty();
+      // Topbar sub
+      document.getElementById('ppl-topbar-sub').textContent = (data.fields && data.fields.name) || PP_SLUG;
+      showReady();
+    } catch (e) {
+      console.error('[pp-listing] load failed:', e);
+      showError('Couldn\'t load listing', String(e && e.message || e));
+    }
+  }
+
+  load();
+})();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>

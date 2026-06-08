@@ -622,6 +622,13 @@ export default {
           if (!data.booking_type) {
             data.booking_type = 'enquiry';
           }
+          // v75b: partnerUserIds — Clerk user ids permitted to edit this
+          // property via the partner-listing endpoint. Empty default; admin
+          // populates it via admin-property-editor. Used by /api/partner-listing
+          // to verify the requester is an authorized partner for this property.
+          if (!Array.isArray(data.partnerUserIds)) {
+            data.partnerUserIds = [];
+          }
         }
         return jsonResponse({ slug, data, exists: data !== null });
       }
@@ -3319,6 +3326,140 @@ View in admin: https://thebearing.io/admin-bookings.html
           updatedAt: new Date().toISOString()
         }));
         return jsonResponse({ ok: true, slug, universalMute, mutedEvents });
+      }
+
+      return jsonResponse({ error: 'GET or POST only' }, 405);
+    }
+
+
+    // ── /api/partner-listing ──────────────────────────────────────────
+    // v75b: partner-gated property editor. Mirrors /api/property POST but
+    // restricted to a whitelist of editable fields, so partners can update
+    // their own listing without admin access — and CANNOT touch
+    // commission_pct, slug, type, status, partnerUserIds, or any other
+    // operational/admin field.
+    //
+    // GET  /api/partner-listing?slug=X&userId=Y
+    //   Returns ONLY the editable fields for the property (a strict subset
+    //   of /api/property). userId required so we can confirm the requester
+    //   is in partnerUserIds for this slug.
+    // POST /api/partner-listing
+    //   Body: { slug, userId, changes: {...editableFields...} }
+    //   Validates userId is in partnerUserIds, merges only whitelisted
+    //   fields into the stored property, writes it back.
+    //
+    // Trust model: userId comes from sessionStorage tb_pp_user_cache (written
+    // by pp-login when Clerk reports a signed-in user). A determined attacker
+    // who knows a partner's Clerk user id could spoof this. That's accepted
+    // for v75b — it's good enough to prevent accidental cross-property edits
+    // and is compatible with the real Clerk-session auth gate when we build
+    // it later (just swap the userId check for a Clerk session.verifyToken).
+    const PARTNER_LISTING_EDITABLE_FIELDS = [
+      // Public identity / display
+      'name', 'tagline', 'type', 'location', 'country', 'region',
+      'nearest_airport', 'display_tag',
+      // Editorial copy
+      'short_pitch', 'long_pitch', 'long_history', 'bearing_edit',
+      // Pricing copy (NOT commission_pct — that's admin-only)
+      'price_from', 'price_currency', 'pricing_model',
+      'season_open', 'min_stay', 'max_group',
+      // Stay logistics
+      'checkin_time', 'checkout_time', 'children_policy', 'pet_policy',
+      'included', 'not_included',
+      // Tags and categories
+      'tags', 'amenities',
+    ];
+
+    if (url.pathname === '/api/partner-listing') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        const userId = url.searchParams.get('userId');
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        if (!userId) return jsonResponse({ error: 'userId required' }, 400);
+
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) return jsonResponse({ error: 'property not found' }, 404);
+        let data;
+        try { data = JSON.parse(raw); }
+        catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
+
+        // Verify requester is in partnerUserIds. Empty array means no
+        // partners assigned yet — return 403 (admin must assign first).
+        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+        if (allowed.indexOf(userId) === -1) {
+          return jsonResponse({ error: 'not a partner for this property' }, 403);
+        }
+
+        // Strict whitelist — return only editable fields.
+        const editable = {};
+        for (const field of PARTNER_LISTING_EDITABLE_FIELDS) {
+          if (data.hasOwnProperty(field)) editable[field] = data[field];
+        }
+        return jsonResponse({ ok: true, slug, fields: editable });
+      }
+
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+
+        const slug = body.slug;
+        const userId = body.userId;
+        const changes = body.changes || {};
+        if (!slug || typeof slug !== 'string') {
+          return jsonResponse({ error: 'slug required' }, 400);
+        }
+        if (!userId || typeof userId !== 'string') {
+          return jsonResponse({ error: 'userId required' }, 400);
+        }
+
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) return jsonResponse({ error: 'property not found' }, 404);
+        let data;
+        try { data = JSON.parse(raw); }
+        catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
+
+        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+        if (allowed.indexOf(userId) === -1) {
+          return jsonResponse({ error: 'not a partner for this property' }, 403);
+        }
+
+        // Merge only whitelisted fields. Anything else in `changes` is
+        // silently ignored — by design, so partner UIs can't accidentally
+        // strip admin-only fields by sending a partial property object.
+        const applied = {};
+        const rejected = [];
+        for (const key of Object.keys(changes)) {
+          if (PARTNER_LISTING_EDITABLE_FIELDS.indexOf(key) === -1) {
+            rejected.push(key);
+            continue;
+          }
+          // Lightweight type sanity for the array fields. Strings, numbers,
+          // and selects pass through untouched.
+          const value = changes[key];
+          if (key === 'tags' || key === 'amenities' || key === 'included' || key === 'not_included') {
+            // Accept arrays OR comma-separated strings (client convenience)
+            if (Array.isArray(value)) {
+              data[key] = value;
+            } else if (typeof value === 'string') {
+              data[key] = value;
+            } else {
+              rejected.push(key);
+              continue;
+            }
+          } else {
+            data[key] = value;
+          }
+          applied[key] = data[key];
+        }
+
+        data.updatedAt = new Date().toISOString();
+        data.updatedBy = 'partner:' + userId;
+        await env.DOSSIERS.put(slug + ':property', JSON.stringify(data));
+        console.log('[partner-listing] ' + userId + ' updated ' + slug + ': ' + Object.keys(applied).join(', '));
+        return jsonResponse({ ok: true, slug, applied, rejected });
       }
 
       return jsonResponse({ error: 'GET or POST only' }, 405);

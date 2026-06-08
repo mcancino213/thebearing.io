@@ -632,6 +632,25 @@ window.addEventListener('load', async function() {
               One or more email addresses to receive operational notifications: new enquiry, guest reply, offer accepted (deposit paid), offer declined, change request, and stale-conversation reminders (24h / 48h / 72h). Multiple emails get the same copy. Press Enter or click Add after each address.
             </div>
           </div>
+
+          <!-- v75b: PARTNER USER IDS — Clerk user ids of accounts that can
+               edit this property through the partner portal pp-listing page.
+               Each id is the value of the `id` field on the Clerk user
+               object (starts with `user_`). Until populated, this property's
+               partner editor returns 403 for everyone. Partners can find
+               their own id in browser DevTools by signing into pp-login then
+               running `window.Clerk.user.id` in the console. -->
+          <div class="pe-field" style="margin-top:14px;">
+            <label class="pe-label">Partner user IDs <span style="font-size:10px;font-weight:500;color:#6a6660;margin-left:6px;">admin only · pp-listing editor access</span></label>
+            <div id="f-partner-user-ids-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+            <div style="display:flex;gap:8px;">
+              <input class="pe-input" id="f-partner-user-id-input" type="text" placeholder="user_xxxxxxxxxxxxxxxxxxxxxxxx" style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPartnerUserId();}">
+              <button type="button" class="pe-btn-secondary" onclick="addPartnerUserId()" style="padding:9px 16px;background:#1e2530;color:#fff;border:1px solid #2a3340;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">Add</button>
+            </div>
+            <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
+              Clerk user IDs (start with <code>user_</code>) of partners permitted to edit this listing via the pp-listing page. Each partner can find their own ID by signing into pp-login and running <code>window.Clerk.user.id</code> in the browser console. Without at least one ID here, the partner editor will return "not authorized."
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2093,6 +2112,55 @@ function removePartnerEmail(index) {
   renderPartnerEmailChips();
 }
 
+// ── v75b: partnerUserIds chip list ──────────────────────────────
+// Same pattern as partner emails. State on window.__partnerUserIds.
+// Saved on the property record under `partnerUserIds`. Loaded by
+// /api/partner-listing when checking if a requesting user is permitted.
+window.__partnerUserIds = window.__partnerUserIds || [];
+
+function renderPartnerUserIdChips() {
+  var wrap = document.getElementById('f-partner-user-ids-chips');
+  if (!wrap) return;
+  var ids = window.__partnerUserIds || [];
+  wrap.innerHTML = ids.map(function(id, i) {
+    return '<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 6px 5px 11px;background:#1e2530;border:1px solid #2a3340;border-radius:14px;font-size:12px;color:#e4dfd6;font-family:monospace;">'
+      + escAttr(id)
+      + '<button type="button" onclick="removePartnerUserId(' + i + ')" style="display:flex;align-items:center;justify-content:center;width:18px;height:18px;border:none;background:transparent;color:#8a8580;cursor:pointer;border-radius:50%;padding:0;" title="Remove">'
+      + '<svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>'
+      + '</button>'
+      + '</span>';
+  }).join('');
+}
+
+function addPartnerUserId() {
+  var input = document.getElementById('f-partner-user-id-input');
+  if (!input) return;
+  var raw = (input.value || '').trim();
+  if (!raw) return;
+  // Clerk user ids are 32+ chars and start with "user_". Reject anything
+  // that's obviously not a Clerk id, but don't be overly strict.
+  if (!/^user_[A-Za-z0-9]{20,}$/.test(raw)) {
+    showToast('Doesn\'t look like a Clerk user ID (should start with user_ and be ~32 chars)', 'error');
+    return;
+  }
+  window.__partnerUserIds = window.__partnerUserIds || [];
+  if (window.__partnerUserIds.indexOf(raw) !== -1) {
+    showToast('Already added', 'warning');
+    input.value = '';
+    return;
+  }
+  window.__partnerUserIds.push(raw);
+  input.value = '';
+  renderPartnerUserIdChips();
+}
+
+function removePartnerUserId(index) {
+  if (!Array.isArray(window.__partnerUserIds)) return;
+  if (index < 0 || index >= window.__partnerUserIds.length) return;
+  window.__partnerUserIds.splice(index, 1);
+  renderPartnerUserIdChips();
+}
+
 // Helper: HTML attribute escape (chips render user-supplied emails)
 function escAttr(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -2473,6 +2541,8 @@ function updateJSON() {
     // v73al: partner contact emails — array of addresses to receive
     // operational notifications. Managed by chip list UI in section 0.
     partner_emails: (window.__partnerEmails || []).slice(),
+    // v75b: partner user IDs — Clerk user ids permitted to edit via pp-listing
+    partnerUserIds: (window.__partnerUserIds || []).slice(),
 
     // Core identity
     name: getFieldVal('f-name'),
@@ -3811,6 +3881,9 @@ async function propLoad() {
     // v73al: sync partner_emails into the chip list
     window.__partnerEmails = Array.isArray(saved.partner_emails) ? saved.partner_emails.slice() : [];
     if (typeof renderPartnerEmailChips === 'function') renderPartnerEmailChips();
+    // v75b: sync partnerUserIds into its chip list
+    window.__partnerUserIds = Array.isArray(saved.partnerUserIds) ? saved.partnerUserIds.slice() : [];
+    if (typeof renderPartnerUserIdChips === 'function') renderPartnerUserIdChips();
     // Refresh the inline help text after load
     if (typeof validateCommission === 'function') validateCommission();
 
