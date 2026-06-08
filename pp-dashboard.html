@@ -402,8 +402,22 @@ tbody tr:hover{background:var(--bg);}
     return { pct: pct, items: checks, missing: checks.filter(function(c){return !c.ok;}) };
   }
 
+  // v75a: slug-to-pretty-name fallback. Used when the property record's
+  // `name` field is missing or the /api/property fetch fails — converts
+  // "nour-el-nil" → "Nour El Nil" rather than showing the raw slug.
+  // Acronyms and short words stay capitalized normally; this is intentionally
+  // dumb. If a property has a name like "B&B Lac Léman" the real `name` in
+  // the KV record should be set so this fallback never runs.
+  function prettifySlug(slug) {
+    if (!slug) return '';
+    return String(slug).split('-').map(function(word) {
+      if (!word) return '';
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  }
+
   function applyHeader(property) {
-    var propName = property && property.name ? property.name : PP_SLUG;
+    var propName = (property && property.name) ? property.name : prettifySlug(PP_SLUG);
     // v75: prefer the signed-in partner's name from tb_pp_user_cache.
     // Falls back to property name when no partner is signed in (current state
     // until pp-login starts writing the cache, or for fresh-browser sessions).
