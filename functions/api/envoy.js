@@ -149,6 +149,75 @@ export default {
       return jsonResponse({ error: 'admin access required' }, 403);
     }
 
+    // ── v75f: requester identity + partner authorization helpers ──
+    //
+    // getRequesterUserId() — returns the Clerk user_id of the requester, or
+    // null if no valid session token was sent. Verifies via the Clerk
+    // backend API (using CLERK_SECRET_KEY). This is the same path admin's
+    // isAdmin() uses, just returning the user_id instead of an authz boolean.
+    //
+    // Result is cached on the closure to avoid double-verifying within one
+    // request (e.g. when an endpoint checks identity then calls a helper
+    // that also checks).
+    let cachedUserId = undefined;  // undefined = not yet checked, null = no auth, string = verified id
+    async function getRequesterUserId() {
+      if (cachedUserId !== undefined) return cachedUserId;
+      const sessionToken = request.headers.get('X-Clerk-Session');
+      if (!sessionToken || !env.CLERK_SECRET_KEY) {
+        cachedUserId = null;
+        return null;
+      }
+      try {
+        // The /sessions/{sid} endpoint returns session metadata including user_id.
+        // (Different from /sessions/{sid}/tokens which returns a JWT.)
+        const r = await fetch('https://api.clerk.com/v1/sessions/' + sessionToken, {
+          headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
+        });
+        if (!r.ok) {
+          console.log('[identity] session fetch failed:', r.status);
+          cachedUserId = null;
+          return null;
+        }
+        const data = await r.json();
+        // Session response includes `user_id` and `status` ('active','expired',...)
+        if (data.status !== 'active') {
+          console.log('[identity] session not active:', data.status);
+          cachedUserId = null;
+          return null;
+        }
+        cachedUserId = data.user_id || null;
+        return cachedUserId;
+      } catch(e) {
+        console.log('[identity] verify exception:', e.message);
+        cachedUserId = null;
+        return null;
+      }
+    }
+
+    // isPartnerOf(slug, userId) — returns true if `userId` appears in the
+    // property's partnerUserIds list. Used to authorize partner data fetches
+    // (e.g. /api/booking?slug=X, /api/conversation?slug=X).
+    async function isPartnerOf(slug, userId) {
+      if (!slug || !userId) return false;
+      try {
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        const ids = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+        return ids.indexOf(userId) !== -1;
+      } catch(e) {
+        console.log('[isPartnerOf] error:', e.message);
+        return false;
+      }
+    }
+
+    // partnerDenied() — uniform 403 response shape for partner gate failures.
+    // Distinct error message helps the client know to redirect to /pp-login
+    // vs other failure modes.
+    function partnerDenied(reason) {
+      return jsonResponse({ error: 'partner access required', reason: reason || 'unauthorized' }, 403);
+    }
+
     // ── /api/envoy — Anthropic API proxy (RAG-enhanced) ──────────
     if (url.pathname === '/api/envoy') {
       if (request.method !== 'POST') {
@@ -1616,13 +1685,41 @@ export default {
       }
       if (request.method === 'GET') {
         const ref = url.searchParams.get('ref');
+        const slugFilter = url.searchParams.get('slug');
+        const emailFilter = url.searchParams.get('email');
+
+        // v75f: partner-facing authorization for ?slug=X queries. Other
+        // query shapes (?ref=, ?email=) remain open because hardening them
+        // would break customer flows (bookings.html, property.html,
+        // nour-el-nil.html) that don't yet use a Clerk-session fetch
+        // wrapper. Customer-side hardening lives in v75g.
+        // TODO v75g: lock ?ref= to require admin OR booking's partner OR booking's guest
+        // TODO v75g: lock ?email= to require admin OR guest with that Clerk-verified email
+        const requesterAdmin = await isAdmin();
+
+        // Single booking by ref (NOT YET LOCKED — see TODO)
         if (ref) {
           const raw = await env.DOSSIERS.get('booking:' + ref);
           const data = raw ? backfillBookingShape(JSON.parse(raw)) : null;
           return jsonResponse({ ref, data, exists: !!data });
         }
-        const slugFilter = url.searchParams.get('slug');
-        const emailFilter = url.searchParams.get('email'); // v73k: customer-scoped lookup
+
+        if (slugFilter) {
+          // Partner-scoped view (LOCKED — partner of slug or admin only)
+          if (!requesterAdmin) {
+            const requesterId = await getRequesterUserId();
+            if (!requesterId) return partnerDenied('not_signed_in');
+            if (!(await isPartnerOf(slugFilter, requesterId))) {
+              return partnerDenied('not_partner_of_' + slugFilter);
+            }
+          }
+        } else if (emailFilter) {
+          // Customer-scoped view (NOT YET LOCKED — see TODO)
+        } else {
+          // No filter — admin-only bulk list.
+          if (!requesterAdmin) return adminDenied();
+        }
+
         const rawIndex = await env.DOSSIERS.get('__bookings_index');
         const refs = rawIndex ? JSON.parse(rawIndex) : [];
         let bookings = await Promise.all(refs.map(async (r) => {
@@ -1633,16 +1730,9 @@ export default {
         }));
         bookings = bookings.filter(Boolean);
         if (slugFilter) {
-          // Partner-scoped view: only bookings for this property.
-          // Match against the canonical `slug` field. Bookings without a slug
-          // are excluded from partner views (they shouldn't exist post-v72y
-          // since the booking POST always stores slug now).
           bookings = bookings.filter(function(b) { return b.slug === slugFilter; });
         }
         if (emailFilter) {
-          // v73k: customer-scoped view — used by /bookings.html to show
-          // a guest their own bookings + enquiries. Case-insensitive match
-          // since email comparisons should be.
           const needle = emailFilter.toLowerCase().trim();
           bookings = bookings.filter(function(b) {
             return b.email && b.email.toLowerCase().trim() === needle;
@@ -2075,7 +2165,16 @@ View in admin: https://thebearing.io/admin-bookings.html
         const guestId = url.searchParams.get('guestId');
         const slug = url.searchParams.get('slug');
 
-        // Fetch single conversation with messages
+        // v75f: partner-facing authorization for ?slug=X queries. Other
+        // query shapes (?id=, ?guestId=) currently remain open because
+        // hardening them would break customer flows that don't yet use a
+        // Clerk-session fetch wrapper. Customer-side hardening lives in
+        // v75g (add customer-fetch.js + lock these branches).
+        // TODO v75g: lock ?guestId= to require requesterId === guestId
+        // TODO v75g: lock ?id= to require admin OR partner OR conv's guest
+        const requesterAdmin = await isAdmin();
+
+        // Fetch single conversation with messages (NOT YET LOCKED — see TODO)
         if (id) {
           const raw = await env.DOSSIERS.get('conversation:' + id);
           if (!raw) return jsonResponse({ error: 'not found' }, 404);
@@ -2085,7 +2184,7 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ conversation: conv, messages });
         }
 
-        // List conversations for a guest
+        // List conversations for a guest (NOT YET LOCKED — see TODO)
         if (guestId) {
           const rawIds = await env.DOSSIERS.get('guest:' + guestId + ':convs');
           const ids = rawIds ? JSON.parse(rawIds) : [];
@@ -2096,8 +2195,15 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ conversations: convs });
         }
 
-        // List conversations for a property
+        // List conversations for a property (LOCKED — partner or admin only)
         if (slug) {
+          if (!requesterAdmin) {
+            const requesterId = await getRequesterUserId();
+            if (!requesterId) return partnerDenied('not_signed_in');
+            if (!(await isPartnerOf(slug, requesterId))) {
+              return partnerDenied('not_partner_of_' + slug);
+            }
+          }
           const rawIds = await env.DOSSIERS.get('prop:' + slug + ':convs');
           const ids = rawIds ? JSON.parse(rawIds) : [];
           const convs = (await Promise.all(ids.map(async i => {
@@ -2122,7 +2228,8 @@ View in admin: https://thebearing.io/admin-bookings.html
           return jsonResponse({ conversations: convs });
         }
 
-        // List all conversations (admin) — enriched with guest avatars + loop summary
+        // List all conversations (admin only)
+        if (!requesterAdmin) return adminDenied();
         const rawIndex = await env.DOSSIERS.get('__conversations_index');
         const ids = rawIndex ? JSON.parse(rawIndex) : [];
         const convs = (await Promise.all(ids.slice(-50).map(async i => {
@@ -3373,11 +3480,32 @@ View in admin: https://thebearing.io/admin-bookings.html
     if (url.pathname === '/api/partner-listing') {
       if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
 
+      // v75f: identity is now Clerk-session-verified (not URL-param-trusted).
+      // We still accept the `userId` URL/body param for backwards compat and
+      // for diagnostic logging, but the authorization decision uses the
+      // verified Clerk user id from the session token. If the URL param and
+      // the session disagree, the session wins and we log a warning.
+      const requesterAdmin = await isAdmin();
+      const verifiedUserId = await getRequesterUserId();
+      const acl = function(slug, claimedUserId) {
+        // Admins can always read/write.
+        if (requesterAdmin) return { ok: true, userId: verifiedUserId || claimedUserId || 'admin' };
+        // Partners must have a verified session.
+        if (!verifiedUserId) return { ok: false, reason: 'not_signed_in' };
+        // Optional sanity: log if the URL claims a different user_id than the session
+        if (claimedUserId && claimedUserId !== verifiedUserId) {
+          console.log('[partner-listing] userId mismatch — url claims', claimedUserId, 'session is', verifiedUserId);
+        }
+        return { ok: true, userId: verifiedUserId };
+      };
+
       if (request.method === 'GET') {
         const slug = url.searchParams.get('slug');
-        const userId = url.searchParams.get('userId');
+        const claimedUserId = url.searchParams.get('userId');
         if (!slug) return jsonResponse({ error: 'slug required' }, 400);
-        if (!userId) return jsonResponse({ error: 'userId required' }, 400);
+
+        const authz = acl(slug, claimedUserId);
+        if (!authz.ok) return partnerDenied(authz.reason);
 
         const raw = await env.DOSSIERS.get(slug + ':property');
         if (!raw) return jsonResponse({ error: 'property not found' }, 404);
@@ -3385,11 +3513,13 @@ View in admin: https://thebearing.io/admin-bookings.html
         try { data = JSON.parse(raw); }
         catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
 
-        // Verify requester is in partnerUserIds. Empty array means no
-        // partners assigned yet — return 403 (admin must assign first).
-        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
-        if (allowed.indexOf(userId) === -1) {
-          return jsonResponse({ error: 'not a partner for this property' }, 403);
+        // Even with a verified session, the user must be in partnerUserIds
+        // for this property (unless admin).
+        if (!requesterAdmin) {
+          const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+          if (allowed.indexOf(authz.userId) === -1) {
+            return jsonResponse({ error: 'not a partner for this property' }, 403);
+          }
         }
 
         // Strict whitelist — return only editable fields.
@@ -3406,14 +3536,14 @@ View in admin: https://thebearing.io/admin-bookings.html
         catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
 
         const slug = body.slug;
-        const userId = body.userId;
+        const claimedUserId = body.userId;
         const changes = body.changes || {};
         if (!slug || typeof slug !== 'string') {
           return jsonResponse({ error: 'slug required' }, 400);
         }
-        if (!userId || typeof userId !== 'string') {
-          return jsonResponse({ error: 'userId required' }, 400);
-        }
+
+        const authz = acl(slug, claimedUserId);
+        if (!authz.ok) return partnerDenied(authz.reason);
 
         const raw = await env.DOSSIERS.get(slug + ':property');
         if (!raw) return jsonResponse({ error: 'property not found' }, 404);
@@ -3421,9 +3551,11 @@ View in admin: https://thebearing.io/admin-bookings.html
         try { data = JSON.parse(raw); }
         catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
 
-        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
-        if (allowed.indexOf(userId) === -1) {
-          return jsonResponse({ error: 'not a partner for this property' }, 403);
+        if (!requesterAdmin) {
+          const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+          if (allowed.indexOf(authz.userId) === -1) {
+            return jsonResponse({ error: 'not a partner for this property' }, 403);
+          }
         }
 
         // Merge only whitelisted fields. Anything else in `changes` is
@@ -3456,9 +3588,9 @@ View in admin: https://thebearing.io/admin-bookings.html
         }
 
         data.updatedAt = new Date().toISOString();
-        data.updatedBy = 'partner:' + userId;
+        data.updatedBy = (requesterAdmin ? 'admin:' : 'partner:') + authz.userId;
         await env.DOSSIERS.put(slug + ':property', JSON.stringify(data));
-        console.log('[partner-listing] ' + userId + ' updated ' + slug + ': ' + Object.keys(applied).join(', '));
+        console.log('[partner-listing] ' + authz.userId + ' updated ' + slug + ': ' + Object.keys(applied).join(', '));
         return jsonResponse({ ok: true, slug, applied, rejected });
       }
 
