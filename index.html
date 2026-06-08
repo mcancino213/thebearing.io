@@ -1026,6 +1026,41 @@
   .module-inner,.h-scroll{padding-left:16px!important;padding-right:0!important;}
 }
 </style>
+
+<script>
+// v75d: handshake redirect rescue. When Clerk OAuth completes via the
+// social provider redirect chain, it can land the user on `/?__clerk_handshake=…`
+// instead of the requested afterSignInUrl (because the social provider's
+// redirect URL is configured in the Clerk dashboard, not at the client call
+// site). This catches that case: if a Clerk handshake is in progress AND we
+// have a recent sign-in intent (set by pp-login or admin-login), redirect to
+// the intended target as soon as the handshake completes processing.
+//
+// Why not redirect immediately on URL match: Clerk needs a moment to consume
+// the handshake parameter and establish the session. Redirecting too fast
+// would lose the session. We give it 800ms.
+(function() {
+  if (!location.search || location.search.indexOf('__clerk_handshake') === -1) return;
+  var raw = null;
+  try { raw = localStorage.getItem('tb_signin_intent'); } catch(e) {}
+  if (!raw) return;
+  var intent = null;
+  try { intent = JSON.parse(raw); } catch(e) {}
+  if (!intent || !intent.target) return;
+  // Expire stale intent after 10 minutes so a forgotten intent doesn't
+  // keep ricocheting people from the homepage forever.
+  if (!intent.setAt || (Date.now() - intent.setAt) > 10 * 60 * 1000) {
+    try { localStorage.removeItem('tb_signin_intent'); } catch(e) {}
+    return;
+  }
+  // Consume the intent immediately so a reload doesn't redirect again.
+  try { localStorage.removeItem('tb_signin_intent'); } catch(e) {}
+  setTimeout(function() {
+    window.location.href = intent.target;
+  }, 800);
+})();
+</script>
+
 </head>
 <body>
 

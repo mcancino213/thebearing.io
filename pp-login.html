@@ -223,6 +223,22 @@ function tbPpCacheUser(user) {
 <script>
 window.addEventListener('load', async function() {
   try {
+    // v75d: persist sign-in intent so that if Clerk's OAuth flow lands the
+    // user on `/?__clerk_handshake=…` (because the social provider's
+    // redirect URL is dashboard-configured, not client-overridable), the
+    // homepage's bootstrap script can redirect them to /pp-dashboard.
+    // Uses localStorage (not sessionStorage) because the OAuth redirect
+    // goes through Google/Apple's domain and back, which may create a new
+    // browsing context in some browsers — sessionStorage can be lost.
+    // 10-minute expiry so a stale intent doesn't keep redirecting people
+    // from the homepage forever.
+    try {
+      localStorage.setItem('tb_signin_intent', JSON.stringify({
+        target: '/pp-dashboard',
+        setAt: Date.now(),
+      }));
+    } catch(e) {}
+
     await window.Clerk.load({
       ui: { ClerkUI: window.__internal_ClerkUICtor },
       appearance: {
@@ -251,7 +267,18 @@ window.addEventListener('load', async function() {
 
     window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
       signUpUrl: null,
+      // v75d: Clerk 6.x deprecated `afterSignInUrl` in favor of
+      // signInForceRedirectUrl (always redirect there) and
+      // signInFallbackRedirectUrl (redirect there if Clerk has no other
+      // stored intent). Setting all three names defensively in case
+      // some flows still honor the old name. The handshake URL bug
+      // (signing in via Google/Apple landing on `/?__clerk_handshake=…`
+      // instead of /pp-dashboard) was the visible symptom of the v75c
+      // mountSignIn config being honored only for inline-form sign-ins,
+      // not for the OAuth roundtrip flow.
       afterSignInUrl: '/pp-dashboard',
+      signInForceRedirectUrl: '/pp-dashboard',
+      signInFallbackRedirectUrl: '/pp-dashboard',
       socialProvider: ['google', 'apple'],
       waitlistMode: false,
     });
