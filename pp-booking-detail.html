@@ -240,20 +240,238 @@ window.addEventListener('load', async function() {
   <div><div class="topbar-title">Booking TB-2025-0847</div><div class=topbar-sub>Full booking details, guest profile, and communication history.</div></div>
   <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
 </div>
+<div class="topbar">
+  <div class="topbar-breadcrumb">
+    <a href="pp-bookings" style="color:var(--text2);text-decoration:none;">Bookings</a>
+    <span class="sep">/</span>
+    <span class="cur" id="bd-crumb">Detail</span>
+  </div>
+  <div class="topbar-right">
+    <a id="bd-conv-link" href="#" class="btn btn-ghost btn-sm" style="display:none;">View conversation</a>
+    <a href="pp-bookings" class="btn btn-ghost btn-sm">← All bookings</a>
+  </div>
+</div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Booking TB-2025-0847</div>
-  <div class="empty-desc" style="margin-top:8px;">Full booking details, guest profile, and communication history.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
+<!-- v75j: real booking detail. Reads ?ref=X, fetches /api/booking?ref=X
+     (partner-fetch.js attaches the Clerk JWT; the v75i auth lock authorizes
+     admin / partner-of-property / booking-guest). Read-only view — actions
+     like sending offers or amendments live in the richer pp-bookings flow. -->
+
+<div id="bd-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading booking…</div>
+
+<div id="bd-error" style="display:none;padding:32px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;max-width:560px;">
+  <div style="font-weight:600;margin-bottom:6px;" id="bd-error-title">Couldn't load booking</div>
+  <div style="font-size:13px;" id="bd-error-detail"></div>
+  <a href="pp-bookings" class="btn btn-ghost btn-sm" style="margin-top:16px;">← Back to bookings</a>
+</div>
+
+<div id="bd-content" style="display:none;">
+
+  <!-- Header: ref + status -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap;">
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text3);letter-spacing:.02em;" id="bd-ref">—</div>
+      <div style="font-family:Fraunces,serif;font-size:26px;color:var(--text);margin-top:4px;" id="bd-guest-name">—</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:2px;" id="bd-guest-email">—</div>
+    </div>
+    <div id="bd-status">—</div>
   </div>
-</div></div>
+
+  <!-- Three-column fact cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:20px;">
+    <div class="card"><div class="card-body" style="padding:18px 20px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;">Stay</div>
+      <div style="font-size:15px;font-weight:500;color:var(--text);" id="bd-dates">—</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:3px;" id="bd-nights">—</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:8px;"><span id="bd-room">—</span></div>
+      <div style="font-size:13px;color:var(--text2);margin-top:3px;"><span id="bd-guests">—</span></div>
+    </div></div>
+
+    <div class="card"><div class="card-body" style="padding:18px 20px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;">Value</div>
+      <div style="font-size:22px;font-weight:600;color:var(--text);" id="bd-total">—</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px;" id="bd-deposit">—</div>
+      <div style="font-size:13px;margin-top:3px;" id="bd-payment-status">—</div>
+    </div></div>
+
+    <div class="card"><div class="card-body" style="padding:18px 20px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;">Property</div>
+      <div style="font-size:15px;font-weight:500;color:var(--text);" id="bd-property">—</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px;" id="bd-created">—</div>
+    </div></div>
+  </div>
+
+  <!-- Guest's enquiry notes -->
+  <div class="card" id="bd-notes-card" style="margin-bottom:20px;display:none;">
+    <div class="card-header"><div class="card-title">Guest's enquiry</div></div>
+    <div class="card-body" style="padding:18px 20px;font-size:14px;color:var(--text);line-height:1.6;white-space:pre-wrap;" id="bd-notes"></div>
+  </div>
+
+  <!-- Offer history -->
+  <div class="card" id="bd-offers-card" style="margin-bottom:20px;display:none;">
+    <div class="card-header"><div class="card-title">Offer history</div></div>
+    <div class="card-body" style="padding:0;" id="bd-offers"></div>
+  </div>
+
+  <!-- Honest footer note about where actions live -->
+  <div style="font-size:12px;color:var(--text3);line-height:1.6;max-width:620px;">
+    This is a read-only summary. To send an offer, amend dates, or message the guest, use the
+    <a href="pp-bookings" style="color:var(--accent);">Bookings</a> page or open the
+    <a href="#" id="bd-conv-inline" style="color:var(--accent);">conversation</a>.
+  </div>
+
+</div>
+
 </div>
 </div>
 </div>
+
+<script>
+// v75j: booking detail view. Read-only. Auth handled by partner-gate (page
+// access) + partner-fetch (attaches Clerk JWT) + the worker's v75i ?ref= lock.
+(function() {
+  var ref = new URLSearchParams(location.search).get('ref');
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function fmtMoney(n){
+    var v = parseFloat(n);
+    if (isNaN(v) || v === 0) return null;
+    return '$' + v.toLocaleString(undefined, {maximumFractionDigits:0});
+  }
+  function fmtDate(d){
+    if (!d) return null;
+    var dt = new Date(d);
+    if (isNaN(dt.getTime())) return null;
+    return dt.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+  }
+  function fmtDateRange(a, dep){
+    var fa = fmtDate(a), fd = fmtDate(dep);
+    if (fa && fd) return fa + ' → ' + fd;
+    return fa || fd || '—';
+  }
+  function nights(a, dep, fallback){
+    if (fallback) return fallback;
+    if (!a || !dep) return null;
+    var ms = new Date(dep).getTime() - new Date(a).getTime();
+    if (isNaN(ms)) return null;
+    return Math.max(0, Math.round(ms/86400000));
+  }
+  function statusBadge(s){
+    s = (s||'pending').toLowerCase();
+    if (s === 'confirmed') return '<span class="badge badge-green">Confirmed</span>';
+    if (s === 'completed') return '<span class="badge badge-gray">Completed</span>';
+    if (s === 'cancelled') return '<span class="badge badge-red">Cancelled</span>';
+    if (s === 'offer_sent') return '<span class="badge badge-blue">Offer sent</span>';
+    return '<span class="badge badge-amber">Enquiry</span>';
+  }
+
+  function showError(title, detail){
+    $('bd-loading').style.display = 'none';
+    $('bd-content').style.display = 'none';
+    $('bd-error').style.display = 'block';
+    $('bd-error-title').textContent = title;
+    $('bd-error-detail').textContent = detail || '';
+  }
+
+  function render(b){
+    $('bd-loading').style.display = 'none';
+    $('bd-content').style.display = 'block';
+
+    var guestName = [b.firstname, b.lastname].filter(Boolean).join(' ').trim() || b.guestName || 'Guest';
+    $('bd-crumb').textContent = b.ref || 'Detail';
+    $('bd-ref').textContent = b.ref || '';
+    $('bd-guest-name').textContent = guestName;
+    $('bd-guest-email').textContent = b.email || '';
+    $('bd-status').innerHTML = statusBadge(b.status);
+
+    $('bd-dates').textContent = fmtDateRange(b.arrival, b.departure);
+    var n = nights(b.arrival, b.departure, b.nights);
+    $('bd-nights').textContent = n !== null ? (n + ' night' + (n===1?'':'s')) : '';
+    $('bd-room').textContent = b.room ? ('Room: ' + b.room) : 'Room: —';
+    $('bd-guests').textContent = b.guests ? (b.guests + ' guest' + (b.guests==1?'':'s')) : '';
+
+    // Value — prefer confirmed_total_amount, then totalAmount/total_amount
+    var total = b.confirmed_total_amount || b.totalAmount || b.total_amount;
+    $('bd-total').textContent = fmtMoney(total) || 'Not yet priced';
+    var dep = b.confirmed_deposit_amount || b.depositAmount || b.deposit_amount;
+    var depStr = fmtMoney(dep);
+    $('bd-deposit').textContent = depStr ? (depStr + ' deposit') : '';
+    // Payment status
+    var ps = b.paymentStatus || (b.depositPaidAt ? 'Deposit paid' : '');
+    if (b.depositPaidAmount && fmtMoney(b.depositPaidAmount)) {
+      ps = fmtMoney(b.depositPaidAmount) + ' paid' + (b.depositPaidAt ? (' · ' + fmtDate(b.depositPaidAt)) : '');
+    }
+    $('bd-payment-status').textContent = ps || '';
+    $('bd-payment-status').style.color = ps ? 'var(--emerald)' : 'var(--text2)';
+
+    $('bd-property').textContent = b.property || b.propertySlug || b.slug || '—';
+    $('bd-created').textContent = b.createdAt ? ('Enquired ' + fmtDate(b.createdAt)) : '';
+
+    // Notes
+    if (b.notes && String(b.notes).trim()) {
+      $('bd-notes-card').style.display = 'block';
+      $('bd-notes').textContent = b.notes;
+    }
+
+    // Offer history
+    var offers = Array.isArray(b.offers) ? b.offers : [];
+    if (offers.length) {
+      $('bd-offers-card').style.display = 'block';
+      var html = '';
+      offers.slice().reverse().forEach(function(o, i){
+        var amt = fmtMoney(o.total_amount || o.totalAmount);
+        var when = fmtDate(o.sentAt || o.createdAt);
+        var st = (o.status || '').toLowerCase();
+        var stBadge = st === 'accepted' ? '<span class="badge badge-green">Accepted</span>'
+                    : st === 'declined' ? '<span class="badge badge-red">Declined</span>'
+                    : st === 'expired'  ? '<span class="badge badge-gray">Expired</span>'
+                    : '<span class="badge badge-blue">Sent</span>';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;'
+              + (i < offers.length-1 ? 'border-bottom:1px solid var(--border);' : '') + '">'
+              + '<div><div style="font-size:14px;font-weight:500;color:var(--text);">' + (amt || 'Offer') + '</div>'
+              + '<div style="font-size:12px;color:var(--text3);margin-top:2px;">' + (when || '') + '</div></div>'
+              + stBadge + '</div>';
+      });
+      $('bd-offers').innerHTML = html;
+    }
+
+    // Conversation links — only if we can resolve a conversation id/guest
+    var convHref = null;
+    if (b.conversationId) convHref = 'pp-conversations?id=' + encodeURIComponent(b.conversationId);
+    else if (b.propertySlug || b.slug) convHref = 'pp-conversations';
+    if (convHref) {
+      $('bd-conv-link').href = convHref;
+      $('bd-conv-link').style.display = '';
+      $('bd-conv-inline').href = convHref;
+    }
+  }
+
+  if (!ref) {
+    showError('No booking specified', 'This page needs a ?ref= booking reference. Open a booking from the Bookings page.');
+    return;
+  }
+
+  fetch('/api/booking?ref=' + encodeURIComponent(ref))
+    .then(function(r){
+      if (r.status === 403) throw new Error('You are not authorized to view this booking.');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      if (!d || !d.exists || !d.data) {
+        showError('Booking not found', 'No booking exists for reference ' + ref + '.');
+        return;
+      }
+      render(d.data);
+    })
+    .catch(function(e){
+      showError('Couldn\'t load booking', (e && e.message) || String(e));
+    });
+})();
+</script>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
 </body>
