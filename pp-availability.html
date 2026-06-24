@@ -237,20 +237,44 @@ window.addEventListener('load', async function() {
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Availability calendar</div><div class=topbar-sub>Set your availability and mark any blackout dates.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
+  <div><div class="topbar-title">Availability</div><div class=topbar-sub>How availability works on The Bearing today.</div></div>
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Availability calendar</div>
-  <div class="empty-desc" style="margin-top:8px;">Set your availability and mark any blackout dates.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
+<div style="max-width:640px;">
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-body" style="padding:28px 28px 24px;">
+      <div style="font-family:Fraunces,serif;font-size:21px;color:var(--text);margin-bottom:10px;">Availability is confirmed through enquiries</div>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin:0 0 14px;">
+        The Bearing doesn't take instant bookings. When a member is interested in your property,
+        they send an enquiry — you receive it by email and in your Conversations center, and you
+        confirm availability and details directly with them there.
+      </p>
+      <p style="font-size:14px;color:var(--text2);line-height:1.7;margin:0;">
+        Because every booking is confirmed by hand, there's nothing to block off here — you decide
+        availability conversation by conversation. There's no calendar to keep in sync.
+      </p>
+      <div style="margin-top:20px;">
+        <a href="pp-conversations" class="btn btn-primary btn-sm">Go to Conversations</a>
+      </div>
+    </div>
   </div>
-</div></div>
+
+  <div class="card">
+    <div class="card-body" style="padding:22px 28px;">
+      <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;">Coming later</div>
+      <p style="font-size:13px;color:var(--text2);line-height:1.7;margin:0;">
+        When instant booking arrives, this page will become a real availability calendar — with the
+        option to sync from your channel manager or property-management system (Cloudbeds, SiteMinder,
+        iCal feeds) so you won't have to maintain dates by hand. Until then, Conversations is where
+        availability lives.
+      </p>
+    </div>
+  </div>
+
+</div>
+
 </div>
 </div>
 </div>
