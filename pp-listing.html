@@ -464,7 +464,7 @@ window.addEventListener('load', async function() {
 // page — the worker's /api/partner-listing whitelist refuses them server-side
 // even if a malicious client tried to send them.
 (function() {
-  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
   var SAVE_ENDPOINT = '/api/partner-listing';
 
   // Field list — must match worker's PARTNER_LISTING_EDITABLE_FIELDS

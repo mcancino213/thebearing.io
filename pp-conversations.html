@@ -969,7 +969,7 @@ window.addEventListener('load', async function() {
 <script src="/assets/offer-detail-modal.js"></script>
 <script>
 var VIEWER_ROLE = 'partner';
-var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim(); // v73f: ?as=X override for testing as different partners
+var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim(); // v73f: ?as=X override for testing as different partners
 // v73g: PP_NAME is now derived from the property KV record fetched on load.
 // Initially set to the slug as a sane fallback so any code that reads it
 // before the fetch resolves doesn't break. fetchPartnerIdentity() at the

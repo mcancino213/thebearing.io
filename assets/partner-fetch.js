@@ -49,11 +49,24 @@
     } catch(e) { return null; }
   }
 
+  // v75g: get the session JWT (not the session id). The worker verifies this
+  // JWT's signature and reads the `sub` claim for the user id. getToken() is
+  // async and returns a fresh, short-lived JWT. Returns null if no session.
+  async function getSessionToken() {
+    try {
+      if (window.Clerk && window.Clerk.session && typeof window.Clerk.session.getToken === 'function') {
+        return await window.Clerk.session.getToken();
+      }
+    } catch(e) {
+      console.log('[partner-fetch] getToken failed:', e.message);
+    }
+    return null;
+  }
+
   // Wait until Clerk is ready (loaded === true), capped at 8s. Resolves
-  // either way — the caller checks getSessionId() after.
+  // either way — the caller checks for a token after.
   function awaitClerk(maxMs) {
     return new Promise(function(resolve) {
-      // Fast path
       if (window.Clerk && window.Clerk.loaded === true) { resolve(); return; }
       var deadline = Date.now() + (maxMs || 8000);
       var t = setInterval(function() {
@@ -75,8 +88,8 @@
     var headers = new Headers(init.headers || {});
     if (!headers.has('X-Clerk-Session')) {
       await awaitClerk(8000);
-      var sid = getSessionId();
-      if (sid) headers.set('X-Clerk-Session', sid);
+      var token = await getSessionToken();
+      if (token) headers.set('X-Clerk-Session', token);
     }
     init.headers = headers;
     return originalFetch(input, init);

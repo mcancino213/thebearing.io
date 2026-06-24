@@ -44,6 +44,108 @@ function getStripe(env) {
   return _stripeClient;
 }
 
+// ── v75g: Clerk session JWT verification (networkless after first JWKS fetch) ──
+//
+// Clerk session tokens are RS256-signed JWTs. We verify them with the Web
+// Crypto API against Clerk's public keys, fetched once from the instance's
+// JWKS endpoint and cached at module scope (persists across requests within
+// a single worker instance; re-fetched when the instance is recycled or the
+// cached key fails to verify — handles key rotation).
+//
+// The JWKS URL is derived from the token's `iss` claim (the Frontend API
+// URL of the instance), so we don't need to hardcode it. Validates `exp`
+// (not expired). Returns the decoded claims object on success, throws on
+// any failure.
+let _clerkJwksCache = {};   // kid -> CryptoKey
+let _clerkJwksFetchedAt = 0;
+
+function b64urlToUint8(b64url) {
+  const b64 = b64url.replace(/-/g, '+').replace(/_/g, '/')
+    + '==='.slice((b64url.length + 3) % 4);
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function decodeJwtParts(token) {
+  const parts = token.split('.');
+  if (parts.length !== 3) throw new Error('malformed JWT');
+  const header = JSON.parse(new TextDecoder().decode(b64urlToUint8(parts[0])));
+  const payload = JSON.parse(new TextDecoder().decode(b64urlToUint8(parts[1])));
+  return { header, payload, signingInput: parts[0] + '.' + parts[1], signature: parts[2] };
+}
+
+async function fetchClerkJwks(issuer) {
+  // issuer is like https://measured-joey-15.clerk.accounts.dev
+  const url = issuer.replace(/\/$/, '') + '/.well-known/jwks.json';
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('JWKS fetch failed: ' + r.status);
+  const jwks = await r.json();
+  const cache = {};
+  for (const key of (jwks.keys || [])) {
+    // Import each RSA public key for RS256 verification
+    try {
+      const cryptoKey = await crypto.subtle.importKey(
+        'jwk',
+        { kty: key.kty, n: key.n, e: key.e, alg: 'RS256', ext: true },
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+        false,
+        ['verify']
+      );
+      cache[key.kid] = cryptoKey;
+    } catch (e) {
+      console.log('[jwt] key import failed for kid', key.kid, e.message);
+    }
+  }
+  _clerkJwksCache = cache;
+  _clerkJwksFetchedAt = Date.now();
+  return cache;
+}
+
+async function verifyClerkJWT(token, env) {
+  const { header, payload, signingInput, signature } = decodeJwtParts(token);
+  if (header.alg !== 'RS256') throw new Error('unexpected alg: ' + header.alg);
+
+  // exp / nbf checks (allow 5s clock skew)
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp && now > payload.exp + 5) throw new Error('token expired');
+  if (payload.nbf && now < payload.nbf - 5) throw new Error('token not yet valid');
+  if (!payload.iss) throw new Error('no iss claim');
+  if (!payload.sub) throw new Error('no sub claim');
+
+  // Get the signing key for this kid; fetch JWKS if not cached.
+  let key = _clerkJwksCache[header.kid];
+  if (!key) {
+    await fetchClerkJwks(payload.iss);
+    key = _clerkJwksCache[header.kid];
+  }
+  if (!key) throw new Error('no matching JWKS key for kid ' + header.kid);
+
+  const ok = await crypto.subtle.verify(
+    { name: 'RSASSA-PKCS1-v1_5' },
+    key,
+    b64urlToUint8(signature),
+    new TextEncoder().encode(signingInput)
+  );
+  if (!ok) {
+    // Possible key rotation — force a re-fetch once and retry.
+    await fetchClerkJwks(payload.iss);
+    const key2 = _clerkJwksCache[header.kid];
+    if (key2) {
+      const ok2 = await crypto.subtle.verify(
+        { name: 'RSASSA-PKCS1-v1_5' },
+        key2,
+        b64urlToUint8(signature),
+        new TextEncoder().encode(signingInput)
+      );
+      if (ok2) return payload;
+    }
+    throw new Error('signature verification failed');
+  }
+  return payload;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -149,46 +251,34 @@ export default {
       return jsonResponse({ error: 'admin access required' }, 403);
     }
 
-    // ── v75f: requester identity + partner authorization helpers ──
+    // ── v75f/v75g: requester identity + partner authorization helpers ──
     //
-    // getRequesterUserId() — returns the Clerk user_id of the requester, or
-    // null if no valid session token was sent. Verifies via the Clerk
-    // backend API (using CLERK_SECRET_KEY). This is the same path admin's
-    // isAdmin() uses, just returning the user_id instead of an authz boolean.
+    // getRequesterUserId() — verifies the Clerk session JWT sent in the
+    // X-Clerk-Session header and returns the user id (the JWT `sub` claim),
+    // or null if the token is missing/invalid/expired.
     //
-    // Result is cached on the closure to avoid double-verifying within one
-    // request (e.g. when an endpoint checks identity then calls a helper
-    // that also checks).
-    let cachedUserId = undefined;  // undefined = not yet checked, null = no auth, string = verified id
+    // v75g correction: v75f INCORRECTLY treated the X-Clerk-Session value as
+    // a session ID and tried to look it up via a REST endpoint that doesn't
+    // work that way — every call returned null, so all partner data fetches
+    // 403'd and pp-listing save broke. The correct approach (per Clerk docs):
+    // the client sends the session JWT from Clerk.session.getToken(), and the
+    // worker verifies the JWT signature against Clerk's public key (fetched
+    // from the JWKS endpoint, cached per worker instance), then reads the
+    // `sub` claim. Networkless after the first JWKS fetch.
+    let cachedUserId = undefined;  // undefined=not checked, null=no auth, string=verified
     async function getRequesterUserId() {
       if (cachedUserId !== undefined) return cachedUserId;
-      const sessionToken = request.headers.get('X-Clerk-Session');
-      if (!sessionToken || !env.CLERK_SECRET_KEY) {
+      const token = request.headers.get('X-Clerk-Session');
+      if (!token || token.split('.').length !== 3) {
         cachedUserId = null;
         return null;
       }
       try {
-        // The /sessions/{sid} endpoint returns session metadata including user_id.
-        // (Different from /sessions/{sid}/tokens which returns a JWT.)
-        const r = await fetch('https://api.clerk.com/v1/sessions/' + sessionToken, {
-          headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
-        });
-        if (!r.ok) {
-          console.log('[identity] session fetch failed:', r.status);
-          cachedUserId = null;
-          return null;
-        }
-        const data = await r.json();
-        // Session response includes `user_id` and `status` ('active','expired',...)
-        if (data.status !== 'active') {
-          console.log('[identity] session not active:', data.status);
-          cachedUserId = null;
-          return null;
-        }
-        cachedUserId = data.user_id || null;
+        const claims = await verifyClerkJWT(token, env);
+        cachedUserId = (claims && claims.sub) || null;
         return cachedUserId;
-      } catch(e) {
-        console.log('[identity] verify exception:', e.message);
+      } catch (e) {
+        console.log('[identity] JWT verify failed:', e.message);
         cachedUserId = null;
         return null;
       }

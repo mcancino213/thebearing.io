@@ -659,7 +659,7 @@ window.addEventListener('load', async function() {
 //   /pp-bookings?as=gypsy-by-mekong-kingdoms  → views Gypsy as partner
 //   /pp-bookings                              → defaults to nour-el-nil
 // No persistence — each visit is explicit via URL.
-var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
 var ALL_BOOKINGS = [];        // last-fetched list
 var CURRENT_FILTER = 'all';
 var CURRENT_SEARCH = '';

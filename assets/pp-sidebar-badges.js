@@ -1,7 +1,7 @@
 // Partner portal — Conversations badge uses lean /api/unread-count
 (function() {
   // v73f: ?as=X URL param overrides default slug (for cross-partner testing)
-  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil').trim();
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
   var inFlight = false;
 
   function updateConvBadge() {
