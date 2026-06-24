@@ -3923,6 +3923,140 @@ View in admin: https://thebearing.io/admin-bookings.html
     }
 
 
+    // ── /api/partner-team ─────────────────────────────────────────
+    // v75l: lets a property's partner view who has portal access (the
+    // property's partnerUserIds), with names/emails resolved from Clerk, and
+    // add/remove access. Same auth model as partner-media/partner-listing.
+    //
+    // SECURITY NOTE: allowing a partner to ADD arbitrary Clerk user IDs to
+    // their own property's partnerUserIds is a privilege-escalation vector if
+    // untrusted partners ever get portal access (a partner could add an
+    // accomplice). Acceptable while the operator is sole/trusted. If untrusted
+    // partners are onboarded, gate 'add' behind admin approval or an invite
+    // flow. REMOVE is always safe.
+    //
+    // GET  ?slug=X                    → { ok, members: [{id, name, email, isYou}] }
+    // POST { slug, action:'add', userId }    → add a user id to partnerUserIds
+    // POST { slug, action:'remove', userId } → remove a user id
+    if (url.pathname === '/api/partner-team') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const requesterAdmin = await isAdmin();
+      const verifiedUserId = await getRequesterUserId();
+
+      async function loadAndAuthz(slug) {
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) return { ok: false, notFound: true };
+        let data;
+        try { data = JSON.parse(raw); }
+        catch (e) { return { ok: false, reason: 'property_corrupt' }; }
+        if (requesterAdmin) return { ok: true, data: data };
+        if (!verifiedUserId) return { ok: false, reason: 'not_signed_in' };
+        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+        if (allowed.indexOf(verifiedUserId) === -1) return { ok: false, reason: 'not_partner_of_' + slug };
+        return { ok: true, data: data };
+      }
+
+      // Resolve a Clerk user id to {id, name, email}. Best-effort; on failure
+      // returns the id with empty name/email so the UI still shows the entry.
+      async function resolveUser(uid) {
+        var out = { id: uid, name: '', email: '' };
+        if (!env.CLERK_SECRET_KEY) return out;
+        try {
+          const r = await fetch('https://api.clerk.com/v1/users/' + uid, {
+            headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
+          });
+          if (!r.ok) return out;
+          const u = await r.json();
+          const first = u.first_name || '';
+          const last = u.last_name || '';
+          out.name = (first + ' ' + last).trim();
+          var primary = null;
+          if (Array.isArray(u.email_addresses)) {
+            primary = u.email_addresses.find(function(e){ return e.id === u.primary_email_address_id; })
+                   || u.email_addresses[0];
+          }
+          out.email = primary ? (primary.email_address || '') : '';
+          if (!out.name) out.name = out.email || uid;
+        } catch (e) {
+          console.log('[partner-team] resolveUser failed for', uid, e.message);
+        }
+        return out;
+      }
+
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        const az = await loadAndAuthz(slug);
+        if (!az.ok) {
+          if (az.notFound) return jsonResponse({ error: 'property not found' }, 404);
+          return partnerDenied(az.reason);
+        }
+        const ids = Array.isArray(az.data.partnerUserIds) ? az.data.partnerUserIds : [];
+        const members = [];
+        for (const uid of ids) {       // plain for-of is fine; small list
+          const m = await resolveUser(uid);
+          m.isYou = (uid === verifiedUserId);
+          members.push(m);
+        }
+        return jsonResponse({ ok: true, slug, members });
+      }
+
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        const slug = body.slug;
+        const action = body.action;
+        const targetId = (body.userId || '').trim();
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        if (action !== 'add' && action !== 'remove') return jsonResponse({ error: "action must be 'add' or 'remove'" }, 400);
+        if (!targetId) return jsonResponse({ error: 'userId required' }, 400);
+        if (action === 'add' && targetId.indexOf('user_') !== 0) {
+          return jsonResponse({ error: 'userId must be a Clerk user id (starts with user_)' }, 400);
+        }
+
+        const az = await loadAndAuthz(slug);
+        if (!az.ok) {
+          if (az.notFound) return jsonResponse({ error: 'property not found' }, 404);
+          return partnerDenied(az.reason);
+        }
+        const data = az.data;
+        let ids = Array.isArray(data.partnerUserIds) ? data.partnerUserIds.slice() : [];
+
+        if (action === 'add') {
+          if (ids.indexOf(targetId) === -1) ids.push(targetId);
+        } else {
+          // remove — but never let the list become empty (would orphan the
+          // property with no partner access). Admins can still manage via the
+          // admin editor, but we guard against a partner locking themselves
+          // and everyone else out.
+          if (ids.length <= 1 && ids.indexOf(targetId) !== -1) {
+            return jsonResponse({ error: 'cannot remove the last team member' }, 400);
+          }
+          ids = ids.filter(function(x){ return x !== targetId; });
+        }
+
+        data.partnerUserIds = ids;
+        data.updatedAt = new Date().toISOString();
+        data.updatedBy = (requesterAdmin ? 'admin:' : 'partner:') + (verifiedUserId || 'unknown');
+        await env.DOSSIERS.put(slug + ':property', JSON.stringify(data));
+        console.log('[partner-team] ' + (verifiedUserId||'admin') + ' ' + action + ' ' + targetId + ' on ' + slug);
+
+        // Return the refreshed member list
+        const members = [];
+        for (const uid of ids) {
+          const m = await resolveUser(uid);
+          m.isYou = (uid === verifiedUserId);
+          members.push(m);
+        }
+        return jsonResponse({ ok: true, slug, action, members });
+      }
+
+      return jsonResponse({ error: 'GET or POST only' }, 405);
+    }
+
+
     // ── /api/inbound-email ────────────────────────────────────────
     // Resend inbound webhook. Routes guest+partner email replies back into
     // the conversation thread via the reply+{convId}@replies.thebearing.io

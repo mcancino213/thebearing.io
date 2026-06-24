@@ -237,24 +237,162 @@ window.addEventListener('load', async function() {
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Team</div><div class=topbar-sub>Add or remove team members and set their permission levels.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
+  <div><div class="topbar-title">Team</div><div class=topbar-sub>Who has access to this partner portal for your property.</div></div>
+  <div class="topbar-right"><span id="tm-status" style="font-size:13px;color:var(--text3);"></span></div>
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Team</div>
-  <div class="empty-desc" style="margin-top:8px;">Add or remove team members and set their permission levels.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
+<div id="tm-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading team…</div>
+<div id="tm-error" style="display:none;padding:24px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;max-width:560px;"></div>
+
+<div id="tm-content" style="display:none;max-width:680px;">
+
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header"><div class="card-title">Members with access</div></div>
+    <div class="card-body" style="padding:0;" id="tm-list"></div>
   </div>
-</div></div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Add a team member</div></div>
+    <div class="card-body" style="padding:18px 20px;">
+      <p style="font-size:13px;color:var(--text2);line-height:1.6;margin:0 0 14px;">
+        Adding by Clerk user ID grants immediate portal access. The person must already have a
+        Bearing account. (Email invitations are coming in a future update.)
+      </p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="tm-add-input" type="text" placeholder="user_xxxxxxxxxxxxxxxxxxxxxxxx"
+          style="flex:1;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);font-family:'JetBrains Mono',monospace;">
+        <button class="btn btn-primary btn-sm" id="tm-add-btn">Add</button>
+      </div>
+      <div id="tm-add-msg" style="font-size:12px;margin-top:8px;color:var(--text3);"></div>
+    </div>
+  </div>
+
+</div>
+
 </div>
 </div>
 </div>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
+<script>
+// v75l: pp-team. Manages the property's partnerUserIds via /api/partner-team.
+// View members (names resolved from Clerk), remove access, add by user id.
+// Email invites deferred. DOM-methods only.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
+
+  function $(id){ return document.getElementById(id); }
+  function setStatus(m,c){ $('tm-status').textContent=m||''; $('tm-status').style.color=c||'var(--text3)'; }
+  function showError(m){ $('tm-loading').style.display='none'; $('tm-content').style.display='none'; var e=$('tm-error'); e.style.display='block'; e.textContent=m; }
+
+  function makeRow(m, total) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);';
+
+    var avatar = document.createElement('div');
+    avatar.style.cssText = 'flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:var(--accent-soft,#f0e6dc);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;';
+    var initials = (m.name||m.email||'?').trim().split(/\s+/).map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+    avatar.textContent = initials || '?';
+    row.appendChild(avatar);
+
+    var info = document.createElement('div');
+    info.style.flex = '1';
+    var nameLine = document.createElement('div');
+    nameLine.style.cssText = 'font-size:14px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:8px;';
+    nameLine.appendChild(document.createTextNode(m.name || m.email || m.id));
+    if (m.isYou) {
+      var you = document.createElement('span');
+      you.textContent = 'You';
+      you.style.cssText = 'font-size:10px;font-weight:600;background:var(--accent);color:#fff;padding:2px 7px;border-radius:5px;';
+      nameLine.appendChild(you);
+    }
+    info.appendChild(nameLine);
+    var sub = document.createElement('div');
+    sub.style.cssText = 'font-size:12px;color:var(--text3);margin-top:2px;';
+    sub.textContent = m.email && m.email !== m.name ? m.email : m.id;
+    info.appendChild(sub);
+    row.appendChild(info);
+
+    // Remove button — disabled if this is the last member
+    var rm = document.createElement('button');
+    rm.textContent = 'Remove';
+    rm.className = 'btn btn-ghost btn-sm';
+    rm.style.color = 'var(--red)';
+    if (total <= 1) {
+      rm.disabled = true; rm.style.opacity = '.4'; rm.style.cursor = 'not-allowed';
+      rm.title = 'Cannot remove the last member';
+    } else {
+      rm.addEventListener('click', function(){
+        var label = m.name || m.email || m.id;
+        if (!confirm('Remove ' + label + (m.isYou ? ' (yourself)' : '') + ' from this property\u2019s team?')) return;
+        post('remove', m.id);
+      });
+    }
+    row.appendChild(rm);
+    return row;
+  }
+
+  function render(members) {
+    var list = $('tm-list');
+    while(list.firstChild) list.removeChild(list.firstChild);
+    if (!members.length) {
+      var empty = document.createElement('div');
+      empty.style.cssText='padding:24px 20px;color:var(--text3);font-size:13px;';
+      empty.textContent='No team members yet.';
+      list.appendChild(empty);
+      return;
+    }
+    members.forEach(function(m){ list.appendChild(makeRow(m, members.length)); });
+    // strip the last border
+    if (list.lastChild) list.lastChild.style.borderBottom = 'none';
+  }
+
+  function post(action, userId) {
+    setStatus('Working…','var(--text2)');
+    fetch('/api/partner-team', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ slug: PP_SLUG, action: action, userId: userId })
+    })
+      .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, status:r.status, d:d}; }); })
+      .then(function(res){
+        if (!res.ok || !res.d.ok) throw new Error(res.d.error || ('HTTP ' + res.status));
+        render(res.d.members || []);
+        setStatus('✓ Updated','var(--emerald)');
+        setTimeout(function(){ setStatus(''); },2000);
+        if (action === 'add') { $('tm-add-input').value=''; $('tm-add-msg').textContent=''; }
+      })
+      .catch(function(e){
+        setStatus('','var(--text3)');
+        if (action === 'add') { $('tm-add-msg').textContent = e.message; $('tm-add-msg').style.color='var(--red)'; }
+        else alert('Could not remove member: ' + e.message);
+      });
+  }
+
+  $('tm-add-btn').addEventListener('click', function(){
+    var v = $('tm-add-input').value.trim();
+    if (!v) { $('tm-add-msg').textContent='Enter a Clerk user ID.'; $('tm-add-msg').style.color='var(--red)'; return; }
+    if (v.indexOf('user_') !== 0) { $('tm-add-msg').textContent='User IDs start with "user_".'; $('tm-add-msg').style.color='var(--red)'; return; }
+    post('add', v);
+  });
+  $('tm-add-input').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); $('tm-add-btn').click(); } });
+
+  fetch('/api/partner-team?slug=' + encodeURIComponent(PP_SLUG))
+    .then(function(r){
+      if (r.status===403) throw new Error('You are not authorized to manage this property\u2019s team.');
+      if (r.status===404) throw new Error('Property record not found.');
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      $('tm-loading').style.display='none';
+      $('tm-content').style.display='block';
+      render(d.members || []);
+    })
+    .catch(function(e){ showError(e.message); });
+})();
+</script>
+
+</body>
 </body>
 </html>
