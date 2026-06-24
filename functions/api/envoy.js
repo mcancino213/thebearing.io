@@ -308,6 +308,33 @@ export default {
       return jsonResponse({ error: 'partner access required', reason: reason || 'unauthorized' }, 403);
     }
 
+    // v75i: getRequesterEmails() — returns the lowercased email addresses of
+    // the verified requester (from their Clerk user record), or [] if not
+    // signed in. Used to authorize ?email= booking lookups: the requester can
+    // only read bookings for an email they actually own. Fetches the Clerk
+    // user once (cached per request). Requires CLERK_SECRET_KEY.
+    let cachedEmails = undefined;
+    async function getRequesterEmails() {
+      if (cachedEmails !== undefined) return cachedEmails;
+      const userId = await getRequesterUserId();
+      if (!userId || !env.CLERK_SECRET_KEY) { cachedEmails = []; return cachedEmails; }
+      try {
+        const r = await fetch('https://api.clerk.com/v1/users/' + userId, {
+          headers: { 'Authorization': 'Bearer ' + env.CLERK_SECRET_KEY }
+        });
+        if (!r.ok) { cachedEmails = []; return cachedEmails; }
+        const user = await r.json();
+        cachedEmails = (user.email_addresses || [])
+          .map(function(e) { return (e.email_address || '').toLowerCase().trim(); })
+          .filter(Boolean);
+        return cachedEmails;
+      } catch(e) {
+        console.log('[identity] getRequesterEmails failed:', e.message);
+        cachedEmails = [];
+        return cachedEmails;
+      }
+    }
+
     // ── /api/envoy — Anthropic API proxy (RAG-enhanced) ──────────
     if (url.pathname === '/api/envoy') {
       if (request.method !== 'POST') {
@@ -1778,20 +1805,36 @@ export default {
         const slugFilter = url.searchParams.get('slug');
         const emailFilter = url.searchParams.get('email');
 
-        // v75f: partner-facing authorization for ?slug=X queries. Other
-        // query shapes (?ref=, ?email=) remain open because hardening them
-        // would break customer flows (bookings.html, property.html,
-        // nour-el-nil.html) that don't yet use a Clerk-session fetch
-        // wrapper. Customer-side hardening lives in v75g.
-        // TODO v75g: lock ?ref= to require admin OR booking's partner OR booking's guest
-        // TODO v75g: lock ?email= to require admin OR guest with that Clerk-verified email
+        // v75i: customer-scoped authorization now enforced (was deferred in
+        // v75f until customer pages had a Clerk-session fetch wrapper, which
+        // assets/customer-fetch.js now provides).
+        //   ?ref=X  → admin OR partner of booking's property OR booking's guest
+        //   ?email=X → admin OR a signed-in user who owns email X
+        //   ?slug=X → admin OR partner of X (unchanged from v75f)
+        //   no filter → admin only
         const requesterAdmin = await isAdmin();
 
-        // Single booking by ref (NOT YET LOCKED — see TODO)
+        // Single booking by ref (LOCKED v75i)
         if (ref) {
           const raw = await env.DOSSIERS.get('booking:' + ref);
           const data = raw ? backfillBookingShape(JSON.parse(raw)) : null;
-          return jsonResponse({ ref, data, exists: !!data });
+          if (!data) return jsonResponse({ ref, data: null, exists: false });
+          if (requesterAdmin) return jsonResponse({ ref, data, exists: true });
+          const requesterId = await getRequesterUserId();
+          if (!requesterId) return partnerDenied('not_signed_in');
+          // Guest of this booking? (match Clerk user id, or owned email)
+          if (data.guestId && data.guestId === requesterId) {
+            return jsonResponse({ ref, data, exists: true });
+          }
+          const emails = await getRequesterEmails();
+          if (data.email && emails.indexOf(data.email.toLowerCase().trim()) !== -1) {
+            return jsonResponse({ ref, data, exists: true });
+          }
+          // Partner of the booking's property?
+          if (data.slug && await isPartnerOf(data.slug, requesterId)) {
+            return jsonResponse({ ref, data, exists: true });
+          }
+          return partnerDenied('not_authorized_for_booking');
         }
 
         if (slugFilter) {
@@ -1804,7 +1847,15 @@ export default {
             }
           }
         } else if (emailFilter) {
-          // Customer-scoped view (NOT YET LOCKED — see TODO)
+          // Customer-scoped view (LOCKED v75i) — requester must own the email.
+          if (!requesterAdmin) {
+            const requesterId = await getRequesterUserId();
+            if (!requesterId) return partnerDenied('not_signed_in');
+            const emails = await getRequesterEmails();
+            if (emails.indexOf(emailFilter.toLowerCase().trim()) === -1) {
+              return partnerDenied('email_not_owned');
+            }
+          }
         } else {
           // No filter — admin-only bulk list.
           if (!requesterAdmin) return adminDenied();
@@ -2255,27 +2306,39 @@ View in admin: https://thebearing.io/admin-bookings.html
         const guestId = url.searchParams.get('guestId');
         const slug = url.searchParams.get('slug');
 
-        // v75f: partner-facing authorization for ?slug=X queries. Other
-        // query shapes (?id=, ?guestId=) currently remain open because
-        // hardening them would break customer flows that don't yet use a
-        // Clerk-session fetch wrapper. Customer-side hardening lives in
-        // v75g (add customer-fetch.js + lock these branches).
-        // TODO v75g: lock ?guestId= to require requesterId === guestId
-        // TODO v75g: lock ?id= to require admin OR partner OR conv's guest
+        // v75i: customer-scoped authorization now enforced (was deferred in
+        // v75f). assets/customer-fetch.js attaches the Clerk session JWT on
+        // customer pages, so we can require verified identity here.
+        //   ?id=Y     → admin OR partner of conv's property OR conv's guest
+        //   ?guestId=X → admin OR a signed-in user whose id matches X
+        //   ?slug=X   → admin OR partner of X (unchanged from v75f)
+        //   no filter → admin only
         const requesterAdmin = await isAdmin();
 
-        // Fetch single conversation with messages (NOT YET LOCKED — see TODO)
+        // Fetch single conversation with messages (LOCKED v75i)
         if (id) {
           const raw = await env.DOSSIERS.get('conversation:' + id);
           if (!raw) return jsonResponse({ error: 'not found' }, 404);
           const conv = JSON.parse(raw);
+          if (!requesterAdmin) {
+            const requesterId = await getRequesterUserId();
+            if (!requesterId) return partnerDenied('not_signed_in');
+            const isGuest = conv.guestId && conv.guestId === requesterId;
+            const isPartner = conv.propertySlug && await isPartnerOf(conv.propertySlug, requesterId);
+            if (!isGuest && !isPartner) return partnerDenied('not_authorized_for_conv');
+          }
           const msgsRaw = await env.DOSSIERS.get('conversation:' + id + ':messages');
           const messages = msgsRaw ? JSON.parse(msgsRaw) : [];
           return jsonResponse({ conversation: conv, messages });
         }
 
-        // List conversations for a guest (NOT YET LOCKED — see TODO)
+        // List conversations for a guest (LOCKED v75i)
         if (guestId) {
+          if (!requesterAdmin) {
+            const requesterId = await getRequesterUserId();
+            if (!requesterId) return partnerDenied('not_signed_in');
+            if (requesterId !== guestId) return partnerDenied('guestid_mismatch');
+          }
           const rawIds = await env.DOSSIERS.get('guest:' + guestId + ':convs');
           const ids = rawIds ? JSON.parse(rawIds) : [];
           const convs = (await Promise.all(ids.map(async i => {
