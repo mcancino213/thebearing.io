@@ -237,24 +237,302 @@ window.addEventListener('load', async function() {
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Rooms & pricing</div><div class=topbar-sub>Define your room types, capacities, and seasonal pricing.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
+  <div><div class="topbar-title">Rooms &amp; pricing</div><div class=topbar-sub>Define your room types, capacities, and pricing.</div></div>
+  <div class="topbar-right">
+    <span id="rm-status" style="font-size:13px;color:var(--text3);margin-right:4px;"></span>
+    <button class="btn btn-primary btn-sm" id="rm-save" disabled>Save changes</button>
+  </div>
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Rooms & pricing</div>
-  <div class="empty-desc" style="margin-top:8px;">Define your room types, capacities, and seasonal pricing.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
-  </div>
-</div></div>
+<div id="rm-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading rooms…</div>
+<div id="rm-error" style="display:none;padding:24px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;max-width:560px;"></div>
+
+<div id="rm-content" style="display:none;">
+  <div id="rm-list"></div>
+  <div id="rm-empty" style="display:none;color:var(--text3);font-size:14px;text-align:center;padding:40px 0;">No rooms defined yet. Add your first room type below.</div>
+  <button class="btn btn-ghost" id="rm-add" style="margin-top:16px;">+ Add a room</button>
+</div>
+
 </div>
 </div>
 </div>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
+<script>
+// v75k: pp-rooms editor. Reads/writes the rooms[] array via
+// /api/partner-media. Each room: {name,type,price,per,size,size_unit,beds,
+// max_occupancy,description,photos:[{url,position}]}. Matches the canonical
+// shape admin-property-editor writes (property.html renders both).
+// DOM-methods only.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
+  var POSITIONS = ['center','top','bottom','left','right'];
+  var PER_OPTS = ['night','person','stay','week'];
+  var UNIT_OPTS = ['sqm','sqft'];
+  var ROOM_PHOTO_MAX = 6;
+
+  var rooms = [];   // working state
+  var dirty = false;
+
+  function $(id){ return document.getElementById(id); }
+  function setDirty(d){
+    dirty = d;
+    $('rm-save').disabled = !d;
+    $('rm-save').textContent = d ? 'Save changes' : 'Saved';
+  }
+  function setStatus(msg, color){
+    $('rm-status').textContent = msg || '';
+    $('rm-status').style.color = color || 'var(--text3)';
+  }
+  function showError(msg){
+    $('rm-loading').style.display = 'none';
+    $('rm-content').style.display = 'none';
+    var e = $('rm-error'); e.style.display = 'block'; e.textContent = msg;
+  }
+
+  function field(labelText, hint) {
+    var wrap = document.createElement('div');
+    var l = document.createElement('label');
+    l.textContent = labelText;
+    l.style.cssText = 'display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px;';
+    wrap.appendChild(l);
+    if (hint) { var h=document.createElement('span'); h.textContent=' '+hint; h.style.cssText='font-weight:400;color:var(--text3);'; l.appendChild(h); }
+    return wrap;
+  }
+  function inputEl(value, type) {
+    var i = document.createElement('input');
+    i.type = type || 'text';
+    i.value = (value==null?'':value);
+    i.style.cssText = 'width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);box-sizing:border-box;';
+    return i;
+  }
+  function selectEl(opts, value) {
+    var s = document.createElement('select');
+    s.style.cssText = 'width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);box-sizing:border-box;';
+    opts.forEach(function(o){ var op=document.createElement('option'); op.value=o; op.textContent=o.charAt(0).toUpperCase()+o.slice(1); if(o===value)op.selected=true; s.appendChild(op); });
+    return s;
+  }
+
+  // Build the editable card for room at index i
+  function makeRoomCard(room, i) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '16px';
+
+    var header = document.createElement('div');
+    header.className = 'card-header';
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;';
+    var htitle = document.createElement('div');
+    htitle.className = 'card-title';
+    htitle.textContent = room.name ? room.name : ('Room ' + (i+1));
+    header.appendChild(htitle);
+
+    var hctrl = document.createElement('div');
+    hctrl.style.cssText = 'display:flex;gap:6px;';
+    function hbtn(label, title, fn, disabled){
+      var b=document.createElement('button'); b.textContent=label; b.title=title; b.disabled=!!disabled;
+      b.className='btn btn-ghost btn-sm';
+      b.style.cssText += disabled?'opacity:.4;cursor:not-allowed;':'';
+      if(!disabled) b.addEventListener('click',fn); return b;
+    }
+    hctrl.appendChild(hbtn('↑','Move up',function(){ moveRoom(i,-1); }, i===0));
+    hctrl.appendChild(hbtn('↓','Move down',function(){ moveRoom(i,1); }, i===rooms.length-1));
+    var del = hbtn('Remove','Remove room',function(){ removeRoom(i); });
+    del.style.color = 'var(--red)';
+    hctrl.appendChild(del);
+    header.appendChild(hctrl);
+    card.appendChild(header);
+
+    var body = document.createElement('div');
+    body.className = 'card-body';
+    body.style.padding = '18px 20px';
+
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;';
+
+    // name
+    var fName = field('Room name'); var iName = inputEl(room.name);
+    iName.addEventListener('input', function(){ room.name = iName.value; htitle.textContent = iName.value || ('Room '+(i+1)); setDirty(true); });
+    fName.appendChild(iName); grid.appendChild(fName);
+
+    // type
+    var fType = field('Type', '(e.g. Suite, Cabin)'); var iType = inputEl(room.type);
+    iType.addEventListener('input', function(){ room.type = iType.value; setDirty(true); });
+    fType.appendChild(iType); grid.appendChild(fType);
+
+    // price
+    var fPrice = field('Price'); var iPrice = inputEl(room.price, 'number');
+    iPrice.addEventListener('input', function(){ room.price = parseInt(iPrice.value,10)||0; setDirty(true); });
+    fPrice.appendChild(iPrice); grid.appendChild(fPrice);
+
+    // per
+    var fPer = field('Per'); var sPer = selectEl(PER_OPTS, room.per || 'night');
+    sPer.addEventListener('change', function(){ room.per = sPer.value; setDirty(true); });
+    fPer.appendChild(sPer); grid.appendChild(fPer);
+
+    // size + unit (combined cell)
+    var fSize = field('Size');
+    var sizeRow = document.createElement('div'); sizeRow.style.cssText='display:flex;gap:6px;';
+    var iSize = inputEl(room.size, 'number'); iSize.style.flex='1';
+    iSize.addEventListener('input', function(){ room.size = iSize.value===''?null:(parseInt(iSize.value,10)||null); setDirty(true); });
+    var sUnit = selectEl(UNIT_OPTS, room.size_unit || 'sqm'); sUnit.style.flex='0 0 80px';
+    sUnit.addEventListener('change', function(){ room.size_unit = sUnit.value; setDirty(true); });
+    sizeRow.appendChild(iSize); sizeRow.appendChild(sUnit); fSize.appendChild(sizeRow); grid.appendChild(fSize);
+
+    // beds
+    var fBeds = field('Beds', '(e.g. 1 king)'); var iBeds = inputEl(room.beds);
+    iBeds.addEventListener('input', function(){ room.beds = iBeds.value; setDirty(true); });
+    fBeds.appendChild(iBeds); grid.appendChild(fBeds);
+
+    // max occupancy
+    var fOcc = field('Max guests'); var iOcc = inputEl(room.max_occupancy, 'number');
+    iOcc.addEventListener('input', function(){ room.max_occupancy = iOcc.value===''?null:(parseInt(iOcc.value,10)||null); setDirty(true); });
+    fOcc.appendChild(iOcc); grid.appendChild(fOcc);
+
+    body.appendChild(grid);
+
+    // description (full width)
+    var fDesc = field('Description'); fDesc.style.marginTop='14px';
+    var tDesc = document.createElement('textarea');
+    tDesc.value = room.description || '';
+    tDesc.rows = 3;
+    tDesc.style.cssText = 'width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);box-sizing:border-box;font-family:inherit;resize:vertical;';
+    tDesc.addEventListener('input', function(){ room.description = tDesc.value; setDirty(true); });
+    fDesc.appendChild(tDesc); body.appendChild(fDesc);
+
+    // room photos
+    if (!Array.isArray(room.photos)) room.photos = [];
+    var fPhotos = field('Room photos', '(up to ' + ROOM_PHOTO_MAX + ')'); fPhotos.style.marginTop='14px';
+    var pGrid = document.createElement('div');
+    pGrid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;margin-top:4px;';
+    function renderRoomPhotos(){
+      while(pGrid.firstChild) pGrid.removeChild(pGrid.firstChild);
+      room.photos.forEach(function(ph, pi){
+        var t=document.createElement('div'); t.style.cssText='position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg);';
+        var im=document.createElement('img'); im.src=ph.url; im.style.cssText='width:100%;height:80px;object-fit:cover;display:block;object-position:'+(ph.position||'center')+';';
+        t.appendChild(im);
+        var x=document.createElement('button'); x.textContent='✕'; x.title='Remove';
+        x.style.cssText='position:absolute;top:4px;right:4px;width:22px;height:22px;border:none;background:rgba(0,0,0,.6);color:#fff;border-radius:5px;cursor:pointer;font-size:12px;';
+        x.addEventListener('click', function(){ room.photos.splice(pi,1); renderRoomPhotos(); setDirty(true); });
+        t.appendChild(x);
+        pGrid.appendChild(t);
+      });
+    }
+    renderRoomPhotos();
+    fPhotos.appendChild(pGrid);
+
+    var upLabel = document.createElement('label');
+    upLabel.className = 'btn btn-ghost btn-sm';
+    upLabel.style.cssText='cursor:pointer;margin-top:8px;display:inline-block;';
+    upLabel.textContent = '+ Upload room photo';
+    var upInput = document.createElement('input');
+    upInput.type='file'; upInput.accept='image/*'; upInput.multiple=true; upInput.style.display='none';
+    upInput.addEventListener('change', function(e){
+      var files = Array.prototype.slice.call(e.target.files);
+      var roomLeft = ROOM_PHOTO_MAX - room.photos.length;
+      if (roomLeft<=0){ setStatus('Room photo limit reached','var(--amber)'); e.target.value=''; return; }
+      files = files.slice(0, roomLeft);
+      setStatus('Uploading '+files.length+'…','var(--text2)');
+      Promise.all(files.map(function(f){
+        var fd=new FormData(); fd.append('file',f);
+        return fetch('/api/upload',{method:'POST',body:fd})
+          .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+          .then(function(d){ if(d.ok&&d.url){ room.photos.push({url:d.url,position:'center'}); } })
+          .catch(function(err){ console.log('[pp-rooms] upload err', err.message); });
+      })).then(function(){ renderRoomPhotos(); setDirty(true); setStatus('Uploaded','var(--emerald)'); setTimeout(function(){ if(!dirty)setStatus(''); },2500); });
+      e.target.value='';
+    });
+    upLabel.appendChild(upInput);
+    fPhotos.appendChild(upLabel);
+    body.appendChild(fPhotos);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function renderRooms() {
+    var list = $('rm-list');
+    while(list.firstChild) list.removeChild(list.firstChild);
+    if (!rooms.length) { $('rm-empty').style.display='block'; return; }
+    $('rm-empty').style.display='none';
+    rooms.forEach(function(room, i){ list.appendChild(makeRoomCard(room, i)); });
+  }
+
+  function moveRoom(i, delta){ var j=i+delta; if(j<0||j>=rooms.length)return; var t=rooms[i];rooms[i]=rooms[j];rooms[j]=t; renderRooms(); setDirty(true); }
+  function removeRoom(i){ if(!confirm('Remove this room?'))return; rooms.splice(i,1); renderRooms(); setDirty(true); }
+  function addRoom(){
+    rooms.push({ name:'', type:'', price:0, per:'night', size:null, size_unit:'sqm', beds:'', max_occupancy:null, description:'', photos:[] });
+    renderRooms(); setDirty(true);
+    // scroll to the new card
+    var list=$('rm-list'); if(list.lastChild) list.lastChild.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  function save(){
+    if(!dirty) return;
+    // Drop nameless rooms before saving (the worker also strips them, but warn here)
+    var named = rooms.filter(function(r){ return r.name && r.name.trim(); });
+    if (named.length !== rooms.length) {
+      if (!confirm('Some rooms have no name and will be removed. Continue?')) return;
+      rooms = named; renderRooms();
+    }
+    $('rm-save').disabled = true;
+    setStatus('Saving…','var(--text2)');
+    fetch('/api/partner-media', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ slug: PP_SLUG, rooms: rooms })
+    })
+      .then(function(r){
+        if(r.status===403) throw new Error('Not authorized to save for this property.');
+        if(!r.ok) throw new Error('Save failed (HTTP '+r.status+')');
+        return r.json();
+      })
+      .then(function(d){
+        if(!d.ok) throw new Error(d.error||'Save failed');
+        // Re-sync from server's cleaned version so our state matches exactly
+        rooms = Array.isArray(d.rooms) ? d.rooms : rooms;
+        renderRooms();
+        setDirty(false);
+        setStatus('✓ Saved','var(--emerald)');
+        setTimeout(function(){ setStatus(''); },2500);
+      })
+      .catch(function(e){ $('rm-save').disabled=false; setStatus('','var(--text3)'); alert('Could not save rooms: '+e.message); });
+  }
+
+  function load(){
+    fetch('/api/partner-media?slug='+encodeURIComponent(PP_SLUG))
+      .then(function(r){
+        if(r.status===403) throw new Error('You are not authorized to manage rooms for this property.');
+        if(r.status===404) throw new Error('Property record not found.');
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(d){
+        rooms = Array.isArray(d.rooms) ? d.rooms.map(function(r){
+          // normalise so every field exists for the editor
+          return {
+            name:r.name||'', type:r.type||'', price:r.price||0, per:r.per||'night',
+            size:(typeof r.size==='undefined'?null:r.size), size_unit:r.size_unit||'sqm',
+            beds:r.beds||'', max_occupancy:(typeof r.max_occupancy==='undefined'?null:r.max_occupancy),
+            description:r.description||'', photos:Array.isArray(r.photos)?r.photos:[]
+          };
+        }) : [];
+        $('rm-loading').style.display='none';
+        $('rm-content').style.display='block';
+        renderRooms();
+        setDirty(false);
+        $('rm-save').textContent='Saved';
+      })
+      .catch(function(e){ showError(e.message); });
+  }
+
+  $('rm-add').addEventListener('click', addRoom);
+  $('rm-save').addEventListener('click', save);
+  window.addEventListener('beforeunload', function(e){ if(dirty){ e.preventDefault(); e.returnValue=''; } });
+
+  load();
+})();
+</script>
+
 </body>
 </html>

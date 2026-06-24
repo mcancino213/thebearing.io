@@ -1423,6 +1423,19 @@ export default {
         return new Response('Method not allowed', { status: 405 });
       }
 
+      // v75k: gate uploads. Previously open to anyone — an abuse vector that
+      // let any caller run up the Cloudflare Images bill. Now requires either
+      // an admin session OR a verified Clerk session (any signed-in partner).
+      // We don't tie the upload to a specific property here — the image isn't
+      // attached to a record until the partner saves via /api/partner-media,
+      // which IS property-scoped. Requiring any verified session is enough to
+      // stop anonymous abuse.
+      const uploadAdmin = await isAdmin();
+      if (!uploadAdmin) {
+        const uploaderId = await getRequesterUserId();
+        if (!uploaderId) return partnerDenied('not_signed_in');
+      }
+
       const token = env.CF_IMAGES_TOKEN;
       if (!token) {
         return jsonResponse({ error: 'CF_IMAGES_TOKEN secret not configured' }, 500);
@@ -3745,6 +3758,165 @@ View in admin: https://thebearing.io/admin-bookings.html
         await env.DOSSIERS.put(slug + ':property', JSON.stringify(data));
         console.log('[partner-listing] ' + authz.userId + ' updated ' + slug + ': ' + Object.keys(applied).join(', '));
         return jsonResponse({ ok: true, slug, applied, rejected });
+      }
+
+      return jsonResponse({ error: 'GET or POST only' }, 405);
+    }
+
+
+    // ── /api/partner-media ────────────────────────────────────────
+    // v75k: lets a property's partner read/write the structured `photos`
+    // and `rooms` fields, which are intentionally NOT in the partner-listing
+    // whitelist (they're arrays/objects, not the flat string fields that
+    // endpoint handles). Same auth model as partner-listing: Clerk-session-
+    // verified identity + partnerUserIds membership (admins always allowed).
+    //
+    // Canonical shapes (MUST match admin-property-editor's updateJSON output,
+    // since property.html renders both admin- and partner-written records):
+    //   photos: { hero: [{url, position}], gallery: [{url, position}] }
+    //   rooms:  [{ name, type, price, per, size, size_unit, beds,
+    //             max_occupancy, description, photos: [{url, position}] }]
+    //
+    // GET  ?slug=X            → { ok, slug, photos, rooms }
+    // POST { slug, photos? , rooms? } → updates only the provided field(s),
+    //   read-modify-write so the rest of the property record is untouched.
+    if (url.pathname === '/api/partner-media') {
+      if (!env.DOSSIERS) return jsonResponse({ error: 'KV not bound' }, 500);
+
+      const requesterAdmin = await isAdmin();
+      const verifiedUserId = await getRequesterUserId();
+
+      async function authzFor(slug) {
+        if (requesterAdmin) return { ok: true, userId: verifiedUserId || 'admin' };
+        if (!verifiedUserId) return { ok: false, reason: 'not_signed_in' };
+        const raw = await env.DOSSIERS.get(slug + ':property');
+        if (!raw) return { ok: false, reason: 'property_not_found', notFound: true };
+        let data;
+        try { data = JSON.parse(raw); }
+        catch (e) { return { ok: false, reason: 'property_corrupt' }; }
+        const allowed = Array.isArray(data.partnerUserIds) ? data.partnerUserIds : [];
+        if (allowed.indexOf(verifiedUserId) === -1) {
+          return { ok: false, reason: 'not_partner_of_' + slug };
+        }
+        return { ok: true, userId: verifiedUserId, data: data };
+      }
+
+      // ── sanitizers — coerce client input into the canonical shapes ──
+      function cleanPhotoArray(arr) {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(function(item) {
+          if (!item) return null;
+          var url = typeof item === 'string' ? item : (item.url || '');
+          url = String(url).trim();
+          if (!url) return null;
+          var pos = (item && item.position) ? String(item.position) : 'center';
+          return { url: url, position: pos };
+        }).filter(Boolean);
+      }
+      function cleanPhotos(photos) {
+        photos = photos || {};
+        return {
+          hero: cleanPhotoArray(photos.hero),
+          gallery: cleanPhotoArray(photos.gallery)
+        };
+      }
+      function cleanRooms(rooms) {
+        if (!Array.isArray(rooms)) return [];
+        return rooms.map(function(r) {
+          if (!r || typeof r !== 'object') return null;
+          var name = String(r.name || '').trim();
+          if (!name) return null;  // a room without a name is dropped
+          var price = parseInt(r.price, 10); if (isNaN(price)) price = 0;
+          var size = (r.size === null || r.size === '' || typeof r.size === 'undefined')
+            ? null : (parseInt(r.size, 10) || null);
+          var maxOcc = (r.max_occupancy === null || r.max_occupancy === '' || typeof r.max_occupancy === 'undefined')
+            ? null : (parseInt(r.max_occupancy, 10) || null);
+          return {
+            name: name,
+            type: String(r.type || '').trim(),
+            price: price,
+            per: String(r.per || 'night').trim() || 'night',
+            size: size,
+            size_unit: String(r.size_unit || 'sqm').trim() || 'sqm',
+            beds: String(r.beds || '').trim(),
+            max_occupancy: maxOcc,
+            description: String(r.description || '').trim(),
+            photos: cleanPhotoArray(r.photos)
+          };
+        }).filter(Boolean);
+      }
+
+      if (request.method === 'GET') {
+        const slug = url.searchParams.get('slug');
+        if (!slug) return jsonResponse({ error: 'slug required' }, 400);
+        const authz = await authzFor(slug);
+        if (!authz.ok) {
+          if (authz.notFound) return jsonResponse({ error: 'property not found' }, 404);
+          return partnerDenied(authz.reason);
+        }
+        // For admins, authzFor doesn't load data — load it here.
+        let data = authz.data;
+        if (!data) {
+          const raw = await env.DOSSIERS.get(slug + ':property');
+          if (!raw) return jsonResponse({ error: 'property not found' }, 404);
+          try { data = JSON.parse(raw); }
+          catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
+        }
+        return jsonResponse({
+          ok: true,
+          slug: slug,
+          photos: (data.photos && typeof data.photos === 'object')
+            ? { hero: cleanPhotoArray(data.photos.hero), gallery: cleanPhotoArray(data.photos.gallery) }
+            : { hero: [], gallery: [] },
+          rooms: Array.isArray(data.rooms) ? data.rooms : []
+        });
+      }
+
+      if (request.method === 'POST') {
+        let body;
+        try { body = await request.json(); }
+        catch (e) { return jsonResponse({ error: 'invalid JSON' }, 400); }
+        const slug = body.slug;
+        if (!slug || typeof slug !== 'string') return jsonResponse({ error: 'slug required' }, 400);
+
+        const authz = await authzFor(slug);
+        if (!authz.ok) {
+          if (authz.notFound) return jsonResponse({ error: 'property not found' }, 404);
+          return partnerDenied(authz.reason);
+        }
+        // Load the full record (authzFor loaded it for partners; admins need a load).
+        let data = authz.data;
+        if (!data) {
+          const raw = await env.DOSSIERS.get(slug + ':property');
+          if (!raw) return jsonResponse({ error: 'property not found' }, 404);
+          try { data = JSON.parse(raw); }
+          catch (e) { return jsonResponse({ error: 'property JSON corrupt' }, 500); }
+        }
+
+        const applied = [];
+        if (body.hasOwnProperty('photos')) {
+          data.photos = cleanPhotos(body.photos);
+          applied.push('photos');
+        }
+        if (body.hasOwnProperty('rooms')) {
+          data.rooms = cleanRooms(body.rooms);
+          applied.push('rooms');
+        }
+        if (!applied.length) {
+          return jsonResponse({ error: 'nothing to update — send photos and/or rooms' }, 400);
+        }
+
+        data.updatedAt = new Date().toISOString();
+        data.updatedBy = (requesterAdmin ? 'admin:' : 'partner:') + authz.userId;
+        await env.DOSSIERS.put(slug + ':property', JSON.stringify(data));
+        console.log('[partner-media] ' + authz.userId + ' updated ' + slug + ': ' + applied.join(', '));
+        return jsonResponse({
+          ok: true,
+          slug: slug,
+          applied: applied,
+          photos: data.photos,
+          rooms: data.rooms
+        });
       }
 
       return jsonResponse({ error: 'GET or POST only' }, 405);

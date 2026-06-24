@@ -237,24 +237,261 @@ window.addEventListener('load', async function() {
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Photo gallery</div><div class=topbar-sub>Manage your hero image and photo gallery. At least 10 high-quality photos are recommended.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
+  <div><div class="topbar-title">Photo gallery</div><div class=topbar-sub>Manage your hero images and gallery. At least 10 high-quality photos are recommended.</div></div>
+  <div class="topbar-right">
+    <span id="ph-status" style="font-size:13px;color:var(--text3);margin-right:4px;"></span>
+    <button class="btn btn-primary btn-sm" id="ph-save" disabled>Save changes</button>
+  </div>
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Photo gallery</div>
-  <div class="empty-desc" style="margin-top:8px;">Manage your hero image and photo gallery. At least 10 high-quality photos are recommended.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
+<div id="ph-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading photos…</div>
+<div id="ph-error" style="display:none;padding:24px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;max-width:560px;"></div>
+
+<div id="ph-content" style="display:none;">
+
+  <!-- HERO -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div class="card-title">Hero images</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">The large images at the top of your listing. First image is the primary. Up to 8.</div></div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0;">
+        + Upload<input type="file" accept="image/*" multiple style="display:none;" id="ph-hero-input">
+      </label>
+    </div>
+    <div class="card-body" style="padding:18px 20px;">
+      <div id="ph-hero-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;"></div>
+      <div id="ph-hero-empty" style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center;display:none;">No hero images yet. Upload your best shots — wide, bright, characterful.</div>
+    </div>
   </div>
-</div></div>
+
+  <!-- GALLERY -->
+  <div class="card">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+      <div><div class="card-title">Gallery</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">Additional photos shown further down the listing. Up to 12.</div></div>
+      <label class="btn btn-ghost btn-sm" style="cursor:pointer;margin:0;">
+        + Upload<input type="file" accept="image/*" multiple style="display:none;" id="ph-gallery-input">
+      </label>
+    </div>
+    <div class="card-body" style="padding:18px 20px;">
+      <div id="ph-gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;"></div>
+      <div id="ph-gallery-empty" style="color:var(--text3);font-size:13px;padding:20px 0;text-align:center;display:none;">No gallery images yet.</div>
+    </div>
+  </div>
+
+</div>
+
 </div>
 </div>
 </div>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
+<script>
+// v75k: pp-photos editor. Reads/writes photos.{hero,gallery} via
+// /api/partner-media. Uploads via /api/upload (now gated). Auth: partner-gate
+// (page) + partner-fetch (JWT) + worker partner-media/upload checks.
+// DOM-methods only — no innerHTML string-concat with inline handlers.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
+  var HERO_MAX = 8, GALLERY_MAX = 12;
+  var POSITIONS = ['center','top','bottom','left','right'];
+
+  var state = { hero: [], gallery: [] };
+  var dirty = false;
+
+  function $(id){ return document.getElementById(id); }
+  function setDirty(d){
+    dirty = d;
+    $('ph-save').disabled = !d;
+    $('ph-save').textContent = d ? 'Save changes' : 'Saved';
+  }
+  function setStatus(msg, color){
+    $('ph-status').textContent = msg || '';
+    $('ph-status').style.color = color || 'var(--text3)';
+  }
+
+  function showError(msg){
+    $('ph-loading').style.display = 'none';
+    $('ph-content').style.display = 'none';
+    var e = $('ph-error');
+    e.style.display = 'block';
+    e.textContent = msg;
+  }
+
+  // Build one photo tile with controls. `which` is 'hero' or 'gallery'.
+  function makeTile(item, which, idx) {
+    var arr = state[which];
+    var max = which === 'hero' ? HERO_MAX : GALLERY_MAX;
+
+    var tile = document.createElement('div');
+    tile.style.cssText = 'position:relative;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg);';
+
+    var img = document.createElement('img');
+    img.src = item.url;
+    img.alt = '';
+    img.style.cssText = 'width:100%;height:110px;object-fit:cover;display:block;object-position:' + (item.position || 'center') + ';';
+    tile.appendChild(img);
+
+    // Primary badge on the first hero image
+    if (which === 'hero' && idx === 0) {
+      var badge = document.createElement('div');
+      badge.textContent = 'Primary';
+      badge.style.cssText = 'position:absolute;top:6px;left:6px;background:var(--accent);color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:.03em;';
+      tile.appendChild(badge);
+    }
+
+    // Controls row
+    var ctrl = document.createElement('div');
+    ctrl.style.cssText = 'display:flex;align-items:center;gap:4px;padding:6px;background:var(--surface);';
+
+    function iconBtn(label, title, fn, disabled) {
+      var b = document.createElement('button');
+      b.textContent = label;
+      b.title = title;
+      b.disabled = !!disabled;
+      b.style.cssText = 'flex:0 0 auto;width:26px;height:26px;border:1px solid var(--border);background:var(--bg);border-radius:6px;cursor:' + (disabled?'not-allowed':'pointer') + ';font-size:13px;color:var(--text2);opacity:' + (disabled?'.4':'1') + ';';
+      if (!disabled) b.addEventListener('click', fn);
+      return b;
+    }
+
+    ctrl.appendChild(iconBtn('↑', 'Move up', function(){ move(which, idx, -1); }, idx === 0));
+    ctrl.appendChild(iconBtn('↓', 'Move down', function(){ move(which, idx, 1); }, idx === arr.length-1));
+
+    // Position select
+    var sel = document.createElement('select');
+    sel.style.cssText = 'flex:1;min-width:0;height:26px;border:1px solid var(--border);background:var(--bg);border-radius:6px;font-size:11px;color:var(--text2);';
+    POSITIONS.forEach(function(p){
+      var o = document.createElement('option'); o.value = p;
+      o.textContent = p.charAt(0).toUpperCase()+p.slice(1);
+      if ((item.position||'center') === p) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function(){ arr[idx].position = sel.value; img.style.objectPosition = sel.value; setDirty(true); });
+    ctrl.appendChild(sel);
+
+    ctrl.appendChild(iconBtn('✕', 'Remove', function(){ remove(which, idx); }));
+
+    tile.appendChild(ctrl);
+    return tile;
+  }
+
+  function renderGrid(which) {
+    var grid = $('ph-' + which + '-grid');
+    var empty = $('ph-' + which + '-empty');
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+    var arr = state[which];
+    if (!arr.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    arr.forEach(function(item, idx){ grid.appendChild(makeTile(item, which, idx)); });
+  }
+
+  function renderAll(){ renderGrid('hero'); renderGrid('gallery'); }
+
+  function move(which, idx, delta) {
+    var arr = state[which];
+    var j = idx + delta;
+    if (j < 0 || j >= arr.length) return;
+    var tmp = arr[idx]; arr[idx] = arr[j]; arr[j] = tmp;
+    renderGrid(which); setDirty(true);
+  }
+  function remove(which, idx) {
+    state[which].splice(idx, 1);
+    renderGrid(which); setDirty(true);
+  }
+
+  // Upload one file → returns a promise resolving to {url, position}
+  function uploadFile(file) {
+    var fd = new FormData();
+    fd.append('file', file);
+    return fetch('/api/upload', { method: 'POST', body: fd })
+      .then(function(r){
+        if (r.status === 403) throw new Error('Not authorized to upload.');
+        if (!r.ok) throw new Error('Upload failed (HTTP ' + r.status + ')');
+        return r.json();
+      })
+      .then(function(d){
+        if (!d.ok || !d.url) throw new Error(d.error || 'Upload failed');
+        return { url: d.url, position: 'center' };
+      });
+  }
+
+  function handleFiles(which, fileList) {
+    var arr = state[which];
+    var max = which === 'hero' ? HERO_MAX : GALLERY_MAX;
+    var files = Array.prototype.slice.call(fileList);
+    var room = max - arr.length;
+    if (room <= 0) { setStatus(which + ' is full (max ' + max + ')', 'var(--amber)'); return; }
+    if (files.length > room) { files = files.slice(0, room); setStatus('Only ' + room + ' more allowed in ' + which, 'var(--amber)'); }
+    else setStatus('Uploading ' + files.length + '…', 'var(--text2)');
+
+    var done = 0, failed = 0;
+    Promise.all(files.map(function(f){
+      return uploadFile(f).then(function(photo){
+        arr.push(photo); done++; renderGrid(which); setDirty(true);
+      }).catch(function(e){ failed++; console.log('[pp-photos] upload error', e.message); });
+    })).then(function(){
+      setStatus(done + ' uploaded' + (failed ? (' · ' + failed + ' failed') : ''), failed ? 'var(--amber)' : 'var(--emerald)');
+      setTimeout(function(){ if(!dirty) setStatus(''); }, 3000);
+    });
+  }
+
+  function save() {
+    if (!dirty) return;
+    $('ph-save').disabled = true;
+    setStatus('Saving…', 'var(--text2)');
+    fetch('/api/partner-media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: PP_SLUG, photos: { hero: state.hero, gallery: state.gallery } })
+    })
+      .then(function(r){
+        if (r.status === 403) throw new Error('Not authorized to save for this property.');
+        if (!r.ok) throw new Error('Save failed (HTTP ' + r.status + ')');
+        return r.json();
+      })
+      .then(function(d){
+        if (!d.ok) throw new Error(d.error || 'Save failed');
+        setDirty(false);
+        setStatus('✓ Saved', 'var(--emerald)');
+        setTimeout(function(){ setStatus(''); }, 2500);
+      })
+      .catch(function(e){
+        $('ph-save').disabled = false;
+        setStatus('', 'var(--text3)');
+        alert('Could not save photos: ' + e.message);
+      });
+  }
+
+  // ── init ──
+  function load() {
+    fetch('/api/partner-media?slug=' + encodeURIComponent(PP_SLUG))
+      .then(function(r){
+        if (r.status === 403) throw new Error('You are not authorized to manage photos for this property.');
+        if (r.status === 404) throw new Error('Property record not found.');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(d){
+        state.hero = (d.photos && Array.isArray(d.photos.hero)) ? d.photos.hero.slice() : [];
+        state.gallery = (d.photos && Array.isArray(d.photos.gallery)) ? d.photos.gallery.slice() : [];
+        $('ph-loading').style.display = 'none';
+        $('ph-content').style.display = 'block';
+        renderAll();
+        setDirty(false);
+        $('ph-save').textContent = 'Saved';
+      })
+      .catch(function(e){ showError(e.message); });
+  }
+
+  $('ph-hero-input').addEventListener('change', function(e){ handleFiles('hero', e.target.files); e.target.value=''; });
+  $('ph-gallery-input').addEventListener('change', function(e){ handleFiles('gallery', e.target.files); e.target.value=''; });
+  $('ph-save').addEventListener('click', save);
+  window.addEventListener('beforeunload', function(e){ if (dirty) { e.preventDefault(); e.returnValue=''; } });
+
+  load();
+})();
+</script>
+
 </body>
 </html>
