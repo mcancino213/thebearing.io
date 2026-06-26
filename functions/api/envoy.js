@@ -3845,6 +3845,21 @@ View in admin: https://thebearing.io/admin-bookings.html
           };
         }).filter(Boolean);
       }
+      function cleanExperiences(exps) {
+        if (!Array.isArray(exps)) return [];
+        return exps.map(function(x) {
+          if (!x || typeof x !== 'object') return null;
+          var title = String(x.title || '').trim();
+          var desc = String(x.description || '').trim();
+          if (!title && !desc) return null;   // empty experience dropped
+          return {
+            title: title,
+            description: desc,
+            image: String(x.image || '').trim(),
+            tag: String(x.tag || '').trim()
+          };
+        }).filter(Boolean);
+      }
 
       if (request.method === 'GET') {
         const slug = url.searchParams.get('slug');
@@ -3868,7 +3883,8 @@ View in admin: https://thebearing.io/admin-bookings.html
           photos: (data.photos && typeof data.photos === 'object')
             ? { hero: cleanPhotoArray(data.photos.hero), gallery: cleanPhotoArray(data.photos.gallery) }
             : { hero: [], gallery: [] },
-          rooms: Array.isArray(data.rooms) ? data.rooms : []
+          rooms: Array.isArray(data.rooms) ? data.rooms : [],
+          experiences: Array.isArray(data.experiences) ? data.experiences : []
         });
       }
 
@@ -3902,6 +3918,10 @@ View in admin: https://thebearing.io/admin-bookings.html
           data.rooms = cleanRooms(body.rooms);
           applied.push('rooms');
         }
+        if (body.hasOwnProperty('experiences')) {
+          data.experiences = cleanExperiences(body.experiences);
+          applied.push('experiences');
+        }
         if (!applied.length) {
           return jsonResponse({ error: 'nothing to update — send photos and/or rooms' }, 400);
         }
@@ -3915,7 +3935,8 @@ View in admin: https://thebearing.io/admin-bookings.html
           slug: slug,
           applied: applied,
           photos: data.photos,
-          rooms: data.rooms
+          rooms: data.rooms,
+          experiences: data.experiences
         });
       }
 

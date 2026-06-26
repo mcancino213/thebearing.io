@@ -392,6 +392,16 @@ button{font-family:inherit;cursor:pointer;}
 
 /* INCLUSIONS */
 .included-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:28px;}
+
+/* EXPERIENCES (v75n) — matches nour-el-nil.html design reference */
+.exp-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:28px;}
+.exp-card{background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;display:grid;grid-template-columns:88px 1fr;}
+.exp-img{height:88px;overflow:hidden;background:var(--sand);}
+.exp-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.exp-body{padding:12px 14px;}
+.exp-title{font-family:'Instrument Serif',serif;font-size:.95rem;color:var(--ink);margin-bottom:3px;}
+.exp-desc{font-size:.78rem;color:var(--stone);line-height:1.5;}
+.exp-tag{display:inline-block;margin-top:5px;font-size:.6rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:2px 8px;border-radius:100px;background:var(--terra-dim);color:var(--terra);border:1px solid rgba(176,88,48,.18);}
 .inc-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;background:#fff;border:1px solid var(--border);border-radius:var(--r-md);}
 .inc-dot{width:6px;height:6px;border-radius:50%;background:var(--moss,#3a7055);flex-shrink:0;margin-top:5px;}
 .inc-txt{font-size:.78rem;color:var(--bark);line-height:1.45;}
@@ -1268,6 +1278,14 @@ button{font-family:inherit;cursor:pointer;}
     </div>
 
     
+<!-- EXPERIENCES (v75n) -->
+    <div id="experiences-section" style="display:none;">
+      <div class="sec-eyebrow" id="exp-eyebrow">On offer</div>
+      <h2 class="sec-title">What <em>awaits</em> you</h2>
+      <div class="exp-grid" id="experiences-grid"></div>
+    </div>
+
+    
 <!-- DETAILS -->
     <div id="details-section" style="display:none;">
       <div class="sec-eyebrow">Practical details</div>
@@ -1780,6 +1798,26 @@ function renderProperty(p,slug){
         return '<div class="inc-item'+(isExc?' exc-item':'')+'"><div class="inc-dot"></div><div class="inc-txt">'+esc(txt)+'</div></div>';
       }).join('');
       show('inclusions-section');
+    }
+  }
+
+  // Experiences (v75n) — render the "What awaits you" cards from p.experiences.
+  // Shape: [{title, description, image, tag}]. Matches nour-el-nil design ref.
+  if(p.experiences && p.experiences.length){
+    var eg=document.getElementById('experiences-grid');
+    if(eg){
+      var rows=p.experiences.filter(function(x){ return x && (x.title||x.description); });
+      if(rows.length){
+        eg.innerHTML=rows.map(function(x){
+          var img=x.image?('<div class="exp-img"><img src="'+esc(x.image)+'" alt="'+esc(x.title||'')+'"></div>'):'<div class="exp-img"></div>';
+          var tag=x.tag?('<span class="exp-tag">'+esc(x.tag)+'</span>'):'';
+          return '<div class="exp-card">'+img+'<div class="exp-body">'
+               + '<div class="exp-title">'+esc(x.title||'')+'</div>'
+               + '<div class="exp-desc">'+esc(x.description||'')+'</div>'
+               + tag + '</div></div>';
+        }).join('');
+        show('experiences-section');
+      }
     }
   }
 

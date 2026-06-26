@@ -1141,6 +1141,24 @@ window.addEventListener('load', async function() {
         </div>
       </div>
 
+      <!-- 6b. EXPERIENCES (v75n) -->
+      <div class="pe-section">
+        <div class="pe-section-head">
+          <div class="pe-section-left">
+            <div class="pe-section-icon">✦</div>
+            <div>
+              <div class="pe-section-title">Experiences</div>
+              <div class="pe-section-sub">The "What awaits you" cards on the property page — signature things a guest can do. Title, description, optional image and tag.</div>
+            </div>
+          </div>
+          <button class="pe-section-toggle" onclick="toggleSection(this)">▾</button>
+        </div>
+        <div class="pe-section-body">
+          <div id="exp-rows"></div>
+          <button type="button" class="pe-btn-secondary" onclick="addExperience()" style="margin-top:6px;">+ Add an experience</button>
+        </div>
+      </div>
+
       <!-- 7. CONTACT -->
       <div class="pe-section">
         <div class="pe-section-head">
@@ -2161,6 +2179,100 @@ function removePartnerUserId(index) {
   renderPartnerUserIdChips();
 }
 
+// ── v75n: Experiences editor ──────────────────────────────────────
+// State on window.__experiences: [{title, description, image, tag}].
+// Rendered on property.html "What awaits you". DOM-methods only.
+window.__experiences = window.__experiences || [];
+
+function renderExperiences() {
+  var wrap = document.getElementById('exp-rows');
+  if (!wrap) return;
+  while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
+  var arr = window.__experiences || [];
+  if (!arr.length) {
+    var empty = document.createElement('div');
+    empty.style.cssText = 'color:#9a9387;font-size:13px;padding:8px 0;';
+    empty.textContent = 'No experiences yet. Add the signature things a guest can do here.';
+    wrap.appendChild(empty);
+    return;
+  }
+  arr.forEach(function(x, i) { wrap.appendChild(makeExpRow(x, i)); });
+}
+
+function makeExpRow(x, i) {
+  var row = document.createElement('div');
+  row.style.cssText = 'border:1px solid #e6e0d4;border-radius:10px;padding:14px;margin-bottom:10px;background:#fff;';
+
+  var top = document.createElement('div');
+  top.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;';
+  function inp(ph, val, key) {
+    var el = document.createElement('input');
+    el.type = 'text'; el.placeholder = ph; el.value = val || '';
+    el.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e6e0d4;border-radius:7px;font-size:13px;box-sizing:border-box;';
+    el.addEventListener('input', function(){ window.__experiences[i][key] = el.value; });
+    return el;
+  }
+  top.appendChild(inp('Title (e.g. Karnak & Luxor Temples)', x.title, 'title'));
+  top.appendChild(inp('Tag (e.g. Guided, Exclusive)', x.tag, 'tag'));
+  row.appendChild(top);
+
+  var desc = document.createElement('textarea');
+  desc.placeholder = 'Description'; desc.value = x.description || ''; desc.rows = 2;
+  desc.style.cssText = 'width:100%;padding:8px 10px;border:1px solid #e6e0d4;border-radius:7px;font-size:13px;box-sizing:border-box;font-family:inherit;resize:vertical;margin-bottom:10px;';
+  desc.addEventListener('input', function(){ window.__experiences[i].description = desc.value; });
+  row.appendChild(desc);
+
+  // image row: url field + upload + thumbnail
+  var imgRow = document.createElement('div');
+  imgRow.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  var imgUrl = document.createElement('input');
+  imgUrl.type = 'text'; imgUrl.placeholder = 'Image URL'; imgUrl.value = x.image || '';
+  imgUrl.style.cssText = 'flex:1;padding:8px 10px;border:1px solid #e6e0d4;border-radius:7px;font-size:13px;';
+  imgUrl.addEventListener('input', function(){ window.__experiences[i].image = imgUrl.value; refreshThumb(); });
+  imgRow.appendChild(imgUrl);
+
+  var thumb = document.createElement('div');
+  thumb.style.cssText = 'width:48px;height:36px;border-radius:6px;background:#f0ece2 center/cover no-repeat;border:1px solid #e6e0d4;flex:0 0 auto;';
+  function refreshThumb(){ thumb.style.backgroundImage = imgUrl.value ? ('url('+imgUrl.value+')') : 'none'; }
+  refreshThumb();
+
+  var upLabel = document.createElement('label');
+  upLabel.className = 'pe-btn-secondary';
+  upLabel.style.cssText = 'cursor:pointer;padding:8px 12px;font-size:12px;white-space:nowrap;';
+  upLabel.textContent = 'Upload';
+  var upInput = document.createElement('input');
+  upInput.type = 'file'; upInput.accept = 'image/*'; upInput.style.display = 'none';
+  upInput.addEventListener('change', function(e){
+    var f = e.target.files[0]; if (!f) return;
+    upLabel.textContent = 'Uploading…';
+    var fd = new FormData(); fd.append('file', f);
+    fetch('/api/upload', { method:'POST', body: fd })
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d.ok && d.url){ imgUrl.value = d.url; window.__experiences[i].image = d.url; refreshThumb(); } upLabel.textContent='Upload'; })
+      .catch(function(){ upLabel.textContent='Upload'; });
+    e.target.value = '';
+  });
+  upLabel.appendChild(upInput);
+  imgRow.appendChild(thumb);
+  imgRow.appendChild(upLabel);
+
+  var del = document.createElement('button');
+  del.type = 'button'; del.textContent = 'Remove';
+  del.className = 'pe-btn-secondary';
+  del.style.cssText = 'padding:8px 12px;font-size:12px;color:#b04a3a;white-space:nowrap;';
+  del.addEventListener('click', function(){ window.__experiences.splice(i,1); renderExperiences(); });
+  imgRow.appendChild(del);
+
+  row.appendChild(imgRow);
+  return row;
+}
+
+function addExperience() {
+  window.__experiences = window.__experiences || [];
+  window.__experiences.push({ title:'', description:'', image:'', tag:'' });
+  renderExperiences();
+}
+
 // Helper: HTML attribute escape (chips render user-supplied emails)
 function escAttr(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -2543,6 +2655,10 @@ function updateJSON() {
     partner_emails: (window.__partnerEmails || []).slice(),
     // v75b: partner user IDs — Clerk user ids permitted to edit via pp-listing
     partnerUserIds: (window.__partnerUserIds || []).slice(),
+    // v75n: experiences — [{title, description, image, tag}], rendered on
+    // property.html "What awaits you". Also editable by partners via pp-experiences.
+    // MUST be included here so an admin save doesn't wipe partner-added experiences.
+    experiences: (window.__experiences || []).slice(),
 
     // Core identity
     name: getFieldVal('f-name'),
@@ -3580,6 +3696,7 @@ updateAll();
 // for new properties (the hydrate path calls this when loading a saved
 // property, but a fresh editor session needs this initial call too).
 if (typeof renderPartnerEmailChips === 'function') renderPartnerEmailChips();
+if (typeof renderExperiences === 'function') renderExperiences();
 setTimeout(initPhotoUpload, 300);
 </script>
 
@@ -3884,6 +4001,9 @@ async function propLoad() {
     // v75b: sync partnerUserIds into its chip list
     window.__partnerUserIds = Array.isArray(saved.partnerUserIds) ? saved.partnerUserIds.slice() : [];
     if (typeof renderPartnerUserIdChips === 'function') renderPartnerUserIdChips();
+    // v75n: sync experiences into the experiences editor
+    window.__experiences = Array.isArray(saved.experiences) ? saved.experiences.slice() : [];
+    if (typeof renderExperiences === 'function') renderExperiences();
     // Refresh the inline help text after load
     if (typeof validateCommission === 'function') validateCommission();
 

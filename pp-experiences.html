@@ -237,24 +237,185 @@ window.addEventListener('load', async function() {
 <script src="/assets/pp-sidebar-inject.js"></script>
 <div class="main-area">
 <div class="topbar">
-  <div><div class="topbar-title">Private Access experiences</div><div class=topbar-sub>Add exclusive experiences — these are a key differentiator on The Bearing.</div></div>
-  <div class="topbar-right"><button class="btn btn-primary btn-sm">+ Add new</button></div>
+  <div><div class="topbar-title">Experiences</div><div class=topbar-sub>The "What awaits you" cards on your listing — signature things a guest can do.</div></div>
+  <div class="topbar-right">
+    <span id="ex-status" style="font-size:13px;color:var(--text3);margin-right:4px;"></span>
+    <button class="btn btn-primary btn-sm" id="ex-save" disabled>Save changes</button>
+  </div>
 </div>
 <div class="page-body">
 
-<div class="card"><div class="card-body" style="padding:60px;text-align:center;">
-  <div class="empty-icon">✦</div>
-  <div class="empty-title" style="font-family:Fraunces,serif;font-size:20px;">Private Access experiences</div>
-  <div class="empty-desc" style="margin-top:8px;">Add exclusive experiences — these are a key differentiator on The Bearing.</div>
-  <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;">
-    <a href="pp-dashboard" class="btn btn-ghost">← Dashboard</a>
-    <button class="btn btn-primary">Get started</button>
-  </div>
-</div></div>
+<div id="ex-loading" style="text-align:center;padding:60px 0;color:var(--text3);font-size:14px;">Loading experiences…</div>
+<div id="ex-error" style="display:none;padding:24px;background:#fef3f2;border:1px solid #fdd;border-radius:12px;color:#a4271b;max-width:560px;"></div>
+
+<div id="ex-content" style="display:none;max-width:760px;">
+  <div id="ex-list"></div>
+  <div id="ex-empty" style="display:none;color:var(--text3);font-size:14px;text-align:center;padding:40px 0;">No experiences yet. Add the signature things a guest can do at your property.</div>
+  <button class="btn btn-ghost" id="ex-add" style="margin-top:16px;">+ Add an experience</button>
+</div>
+
 </div>
 </div>
 </div>
 
 <script src="/assets/pp-sidebar-badges.js"></script>
+<script>
+// v75n: pp-experiences editor. Reads/writes the experiences[] array via
+// /api/partner-media. Each experience: {title, description, image, tag}.
+// Matches the nour-el-nil "What awaits you" design + property.html render.
+// DOM-methods only.
+(function() {
+  var PP_SLUG = (new URLSearchParams(location.search).get('as') || 'nour-el-nil-x').trim();
+  var exps = [];
+  var dirty = false;
+
+  function $(id){ return document.getElementById(id); }
+  function setDirty(d){ dirty=d; $('ex-save').disabled=!d; $('ex-save').textContent = d?'Save changes':'Saved'; }
+  function setStatus(m,c){ $('ex-status').textContent=m||''; $('ex-status').style.color=c||'var(--text3)'; }
+  function showError(m){ $('ex-loading').style.display='none'; $('ex-content').style.display='none'; var e=$('ex-error'); e.style.display='block'; e.textContent=m; }
+
+  function makeCard(x, i) {
+    var card = document.createElement('div');
+    card.className = 'card'; card.style.marginBottom = '14px';
+    var body = document.createElement('div');
+    body.className = 'card-body'; body.style.padding = '18px 20px';
+
+    var head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;';
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:14px;font-weight:600;color:var(--text);';
+    title.textContent = x.title ? x.title : ('Experience ' + (i+1));
+    head.appendChild(title);
+    var hctrl = document.createElement('div');
+    hctrl.style.cssText = 'display:flex;gap:6px;';
+    function hbtn(label, fn, disabled){
+      var b=document.createElement('button'); b.textContent=label; b.className='btn btn-ghost btn-sm'; b.disabled=!!disabled;
+      if(disabled){ b.style.opacity='.4'; b.style.cursor='not-allowed'; } else b.addEventListener('click',fn);
+      return b;
+    }
+    hctrl.appendChild(hbtn('↑', function(){ move(i,-1); }, i===0));
+    hctrl.appendChild(hbtn('↓', function(){ move(i,1); }, i===exps.length-1));
+    var del = hbtn('Remove', function(){ if(confirm('Remove this experience?')){ exps.splice(i,1); render(); setDirty(true); } });
+    del.style.color = 'var(--red)';
+    hctrl.appendChild(del);
+    head.appendChild(hctrl);
+    body.appendChild(head);
+
+    // title + tag row
+    var row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:12px;';
+    function inp(ph, val, key, onin){
+      var el=document.createElement('input'); el.type='text'; el.placeholder=ph; el.value=val||'';
+      el.style.cssText='width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);box-sizing:border-box;';
+      el.addEventListener('input', function(){ x[key]=el.value; if(onin)onin(el.value); setDirty(true); });
+      return el;
+    }
+    row.appendChild(inp('Title (e.g. Karnak & Luxor Temples)', x.title, 'title', function(v){ title.textContent = v || ('Experience '+(i+1)); }));
+    row.appendChild(inp('Tag (e.g. Guided, Daily)', x.tag, 'tag'));
+    body.appendChild(row);
+
+    // description
+    var desc=document.createElement('textarea'); desc.placeholder='Description'; desc.value=x.description||''; desc.rows=2;
+    desc.style.cssText='width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);box-sizing:border-box;font-family:inherit;resize:vertical;margin-bottom:12px;';
+    desc.addEventListener('input', function(){ x.description=desc.value; setDirty(true); });
+    body.appendChild(desc);
+
+    // image: thumbnail + upload + url
+    var imgRow=document.createElement('div'); imgRow.style.cssText='display:flex;gap:10px;align-items:center;';
+    var thumb=document.createElement('div');
+    thumb.style.cssText='width:64px;height:48px;border-radius:8px;border:1px solid var(--border);background:#f0ece2 center/cover no-repeat;flex:0 0 auto;';
+    function refreshThumb(){ thumb.style.backgroundImage = x.image?('url('+x.image+')'):'none'; }
+    refreshThumb();
+    imgRow.appendChild(thumb);
+
+    var urlInp=document.createElement('input'); urlInp.type='text'; urlInp.placeholder='Image URL (or upload →)'; urlInp.value=x.image||'';
+    urlInp.style.cssText='flex:1;padding:9px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--bg);';
+    urlInp.addEventListener('input', function(){ x.image=urlInp.value; refreshThumb(); setDirty(true); });
+    imgRow.appendChild(urlInp);
+
+    var upLabel=document.createElement('label'); upLabel.className='btn btn-ghost btn-sm'; upLabel.style.cssText='cursor:pointer;white-space:nowrap;';
+    upLabel.textContent='Upload';
+    var upInput=document.createElement('input'); upInput.type='file'; upInput.accept='image/*'; upInput.style.display='none';
+    upInput.addEventListener('change', function(e){
+      var f=e.target.files[0]; if(!f)return;
+      upLabel.textContent='Uploading…'; setStatus('Uploading…','var(--text2)');
+      var fd=new FormData(); fd.append('file',f);
+      fetch('/api/upload',{method:'POST',body:fd})
+        .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+        .then(function(d){ if(d.ok&&d.url){ x.image=d.url; urlInp.value=d.url; refreshThumb(); setDirty(true); setStatus('Uploaded','var(--emerald)'); setTimeout(function(){ if(!dirty)setStatus(''); },2000); } upLabel.textContent='Upload'; })
+        .catch(function(err){ upLabel.textContent='Upload'; setStatus('Upload failed','var(--red)'); });
+      e.target.value='';
+    });
+    upLabel.appendChild(upInput);
+    imgRow.appendChild(upLabel);
+    body.appendChild(imgRow);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function render() {
+    var list=$('ex-list');
+    while(list.firstChild) list.removeChild(list.firstChild);
+    if(!exps.length){ $('ex-empty').style.display='block'; return; }
+    $('ex-empty').style.display='none';
+    exps.forEach(function(x,i){ list.appendChild(makeCard(x,i)); });
+  }
+
+  function move(i, delta){ var j=i+delta; if(j<0||j>=exps.length)return; var t=exps[i];exps[i]=exps[j];exps[j]=t; render(); setDirty(true); }
+
+  function addExp(){
+    exps.push({ title:'', description:'', image:'', tag:'' });
+    render(); setDirty(true);
+    var list=$('ex-list'); if(list.lastChild) list.lastChild.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+
+  function save(){
+    if(!dirty) return;
+    $('ex-save').disabled=true; setStatus('Saving…','var(--text2)');
+    fetch('/api/partner-media',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ slug: PP_SLUG, experiences: exps })
+    })
+      .then(function(r){
+        if(r.status===403) throw new Error('Not authorized to save for this property.');
+        if(!r.ok) throw new Error('Save failed (HTTP '+r.status+')');
+        return r.json();
+      })
+      .then(function(d){
+        if(!d.ok) throw new Error(d.error||'Save failed');
+        exps = Array.isArray(d.experiences) ? d.experiences : exps;
+        render(); setDirty(false);
+        setStatus('✓ Saved','var(--emerald)'); setTimeout(function(){ setStatus(''); },2500);
+      })
+      .catch(function(e){ $('ex-save').disabled=false; setStatus('','var(--text3)'); alert('Could not save experiences: '+e.message); });
+  }
+
+  function load(){
+    fetch('/api/partner-media?slug='+encodeURIComponent(PP_SLUG))
+      .then(function(r){
+        if(r.status===403) throw new Error('You are not authorized to manage experiences for this property.');
+        if(r.status===404) throw new Error('Property record not found.');
+        if(!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+      })
+      .then(function(d){
+        exps = Array.isArray(d.experiences) ? d.experiences.map(function(x){
+          return { title:x.title||'', description:x.description||'', image:x.image||'', tag:x.tag||'' };
+        }) : [];
+        $('ex-loading').style.display='none';
+        $('ex-content').style.display='block';
+        render(); setDirty(false); $('ex-save').textContent='Saved';
+      })
+      .catch(function(e){ showError(e.message); });
+  }
+
+  $('ex-add').addEventListener('click', addExp);
+  $('ex-save').addEventListener('click', save);
+  window.addEventListener('beforeunload', function(e){ if(dirty){ e.preventDefault(); e.returnValue=''; } });
+  load();
+})();
+</script>
+
 </body>
 </html>
