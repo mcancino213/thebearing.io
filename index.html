@@ -1576,7 +1576,7 @@
   <div class="module warm">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">From the collection</span><button class="see-all" onclick="toast('All guides coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row"><span class="eyebrow">From the collection</span><button class="see-all" onclick="window.location='/journal'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title">Our <em>editors</em> have been</h2>
       </div>
     </div>
@@ -1617,168 +1617,34 @@
   </div>
 
   <!-- HOTELS -->
-  <div class="module">
+  <div class="module" id="hotels-module" style="display:none;">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">Rare hotels</span><button class="see-all" onclick="toast('All hotels coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row"><span class="eyebrow">Rare hotels</span><button class="see-all" onclick="window.location='/hotels'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title">Places worth <em>lingering</em></h2>
       </div>
-      <div class="filters">
-        <button class="fpill active" onclick="setFilter(this)">All</button>
-        <button class="fpill" onclick="setFilter(this)">Under 20 rooms</button>
-        <button class="fpill" onclick="setFilter(this)">Beachfront</button>
-        <button class="fpill" onclick="setFilter(this)">Mountain</button>
-        <button class="fpill" onclick="setFilter(this)">Design</button>
-        <button class="fpill" onclick="setFilter(this)">Wellness</button>
-      </div>
-
-      <!-- Four Seasons Seychelles -->
-      <div class="prop-cards-wrap">
-      <div class="prop-card" onclick="toast('Four Seasons Resort Seychelles — property page coming soon')">
-        <div class="prop-img-wrap">
-          <img src="https://static.prod.r53.tablethotels.com/media/hotels/slideshow_images_staged/large/1099841.jpg" alt="Four Seasons Resort Seychelles" loading="lazy">
-          <div class="prop-overlay"></div>
-          <div class="prop-bottom">
-            <div><div class="prop-photo-name">Four Seasons Resort Seychelles</div><div class="prop-photo-loc">Mahé, Seychelles</div></div>
-            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Four Seasons Resort Seychelles','Mahé, Seychelles','https://static.prod.r53.tablethotels.com/media/hotels/slideshow_images_staged/large/1099841.jpg')">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="prop-body">
-          <div class="prop-tags"><span class="tag sea-d">Overwater</span><span class="tag dark">Beachfront</span></div>
-          <p class="prop-desc">Hillside infinity villas tumbling toward a private bay. Each has its own plunge pool and sweeping views of the Indian Ocean.</p>
-          <div class="prop-data">
-            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">67</div></div>
-            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.9</div></div>
-            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
-          </div>
-          <div class="prop-foot">
-            <div><div class="prop-from">From</div><div class="prop-price">$1,850 <span class="per">/ night</span></div></div>
-            <button class="prop-btn" onclick="event.stopPropagation();openInquiry('Four Seasons Resort Seychelles','Mahé, Seychelles')">Inquire</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chablé Yucatan -->
-      <div class="prop-card" onclick="toast('Chablé Yucatan — property page coming soon')">
-        <div class="prop-img-wrap">
-          <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/2e/50/a7/casita-terrace-each-casita.jpg?w=1200&h=-1&s=1" alt="Chablé Yucatan casita terrace" loading="lazy">
-          <div class="prop-overlay"></div>
-          <div class="prop-bottom">
-            <div><div class="prop-photo-name">Chablé Yucatan</div><div class="prop-photo-loc">Chocholá, Mexico</div></div>
-            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Chablé Yucatan','Chocholá, Mexico','https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/2e/50/a7/casita-terrace-each-casita.jpg?w=1200&h=-1&s=1')">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="prop-body">
-          <div class="prop-tags"><span class="tag gold-d">Wellness</span><span class="tag dark">Jungle</span></div>
-          <p class="prop-desc">Private casitas lost in the jungle around a 17th-century hacienda. A cenote-fed spa, Mayan ceremony rituals, and zero reason to leave.</p>
-          <div class="prop-data">
-            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">38</div></div>
-            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.9</div></div>
-            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
-          </div>
-          <div class="prop-foot">
-            <div><div class="prop-from">From</div><div class="prop-price">$980 <span class="per">/ night</span></div></div>
-            <button class="prop-btn" onclick="event.stopPropagation();openInquiry('Chablé Yucatan','Chocholá, Mexico')">Inquire</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Zuri Zanzibar -->
-      <div class="prop-card" onclick="toast('Zuri Zanzibar — property page coming soon')">
-        <div class="prop-img-wrap">
-          <img src="https://cdn.prod.website-files.com/607e99bffc9a6042b332722c/65b3a4b24c8cd6786dd70200_Zuri-Zanzibar-4.webp" alt="Zuri Zanzibar" loading="lazy">
-          <div class="prop-overlay"></div>
-          <div class="prop-bottom">
-            <div><div class="prop-photo-name">Zuri Zanzibar</div><div class="prop-photo-loc">Kendwa, Zanzibar</div></div>
-            <button class="prop-heart" onclick="event.stopPropagation();toggleWish(this,'Zuri Zanzibar','Kendwa, Zanzibar','https://cdn.prod.website-files.com/607e99bffc9a6042b332722c/65b3a4b24c8cd6786dd70200_Zuri-Zanzibar-4.webp')">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>
-            </button>
-          </div>
-        </div>
-        <div class="prop-body">
-          <div class="prop-tags"><span class="tag moss-d">Eco</span><span class="tag dark">Beachfront</span></div>
-          <p class="prop-desc">Sculpted from coral stone and driftwood on a remote northern beach. Sustainably built, wildly beautiful, and entirely off the tourist trail.</p>
-          <div class="prop-data">
-            <div class="d-cell"><div class="d-lbl">Rooms</div><div class="d-val">50</div></div>
-            <div class="d-cell"><div class="d-lbl">Rating</div><div class="d-val"><span class="star-ico"><svg viewBox="0 0 24 24" width="11" height="11" style="fill:var(--gold)"><use href="#ico-star"/></svg></span>4.8</div></div>
-            <div class="d-cell"><div class="d-lbl">Reserve Credits</div><div class="d-val">10 <span class="u">%</span></div></div>
-          </div>
-          <div class="prop-foot">
-            <div><div class="prop-from">From</div><div class="prop-price">$620 <span class="per">/ night</span></div></div>
-            <button class="prop-btn moss" onclick="event.stopPropagation();openInquiry('Zuri Zanzibar','Kendwa, Zanzibar')">Inquire</button>
-          </div>
-        </div>
-      </div>
-      </div><!-- end prop-cards-wrap -->
+      <!-- v75o: fake demo hotels (Four Seasons Seychelles, Chablé Yucatan,
+           Zuri Zanzibar) removed — no dummy data. Cards now render from KV
+           via the loader at the bottom of this file. The module stays hidden
+           until ≥2 real hotels exist in KV, then appears automatically. -->
+      <div class="prop-cards-wrap" id="home-hotel-cards"></div>
     </div>
   </div>
 
 
   <!-- CRUISES -->
-  <div class="module warm">
+  <div class="module warm" id="cruises-module" style="display:none;">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">Boutique cruises</span><button class="see-all" onclick="toast('All cruises coming soon')">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row"><span class="eyebrow">Boutique cruises</span><button class="see-all" onclick="window.location='/cruises'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title"><em>Small ships.</em> Big worlds.</h2>
       </div>
     </div>
-    <div class="h-scroll">
-      <!-- Nour El Nil -->
-      <div class="cruise-card" href='/nour-el-nil.html'>
-        <div class="cruise-img">
-          <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil dahabiya cabin" loading="lazy">
-        </div>
-        <div class="cruise-grad"></div>
-        <div class="cruise-nights">7 nights</div>
-        <div class="cruise-body">
-          <div class="cruise-line">Nour El Nil · max 24 guests</div>
-          <div class="cruise-name">Sailing the Nile by Dahabiya</div>
-          <div class="cruise-route">Luxor → Aswan · under sail</div>
-          <div class="cruise-foot">
-            <div class="cruise-price">$4,200 <small>pp</small></div>
-            <button class="cruise-btn" onclick="event.stopPropagation();window.location='/nour-el-nil.html'">View</button>
-          </div>
-        </div>
-      </div>
-      <!-- Aqua Nera -->
-      <div class="cruise-card" onclick="toast('Aqua Nera — property page coming soon')">
-        <div class="cruise-img">
-          <img src="https://d20knvk822eu5a.cloudfront.net/s3fs-public-optimized/static-assets/ships/aqua-nera/suites/suite-with-daybed.webp.webp?format=auto&width=2560&quality=80" alt="Aqua Nera suite Amazon" loading="lazy">
-        </div>
-        <div class="cruise-grad"></div>
-        <div class="cruise-nights">4 nights</div>
-        <div class="cruise-body">
-          <div class="cruise-line">Aqua Expeditions · 20 guests</div>
-          <div class="cruise-name">Amazon Rainforest Expedition</div>
-          <div class="cruise-route">Iquitos → Pacaya Samiria Reserve</div>
-          <div class="cruise-foot">
-            <div class="cruise-price">$6,800 <small>pp</small></div>
-            <button class="cruise-btn" onclick="event.stopPropagation();toast('Aqua Nera — coming soon')">View</button>
-          </div>
-        </div>
-      </div>
-      <!-- Gypsy by Mekong Kingdoms -->
-      <div class="cruise-card" onclick="toast('Mekong River — property page coming soon')">
-        <div class="cruise-img">
-          <img src="https://d1jxe9bpbkcsev.cloudfront.net/2024/07/Gypsy-gallery-11.jpg" alt="Gypsy Mekong Kingdoms river cruise" loading="lazy">
-        </div>
-        <div class="cruise-grad"></div>
-        <div class="cruise-nights">8 nights</div>
-        <div class="cruise-body">
-          <div class="cruise-line">Mekong Kingdoms · 16 guests</div>
-          <div class="cruise-name">Mekong River: Slow Through Indochina</div>
-          <div class="cruise-route">Chiang Rai → Luang Prabang</div>
-          <div class="cruise-foot">
-            <div class="cruise-price">$5,400 <small>pp</small></div>
-            <button class="cruise-btn" onclick="event.stopPropagation();toast('Mekong River — coming soon')">View</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- v75o: static demo cards removed (fake Aqua Nera; stale Nour El Nil +
+         Gypsy cards with dead toast links and invented prices). Cards now
+         render from KV via the loader at the bottom of this file. Module
+         hidden until ≥2 real cruises exist. -->
+    <div class="h-scroll" id="home-cruise-cards"></div>
   </div>
 
 
@@ -2512,10 +2378,19 @@ document.addEventListener('click', function(e){
   var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
     'collections.html','journal.html','how-we-choose.html','founding-member.html',
     'about.html','my-account.html','bookings.html','conversations.html',
-    'saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
+    'saved.html','preferences.html','settings.html','404.html','property.html'];
+  // v75o: 12 dead demo-page entries removed (amangiri, al-moudira, soneva-fushi,
+  // capella-ubud, aqua-nera, mekong-navigator, etc.) — those files never existed.
+  // property.html added: it's a real page the KV cards link to.
   function fname(href){
-    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
+    try{
+      var f = href.split('/').pop().split('?')[0].split('#')[0];
+      // v75o: normalize clean URLs — '/nour-el-nil' and '/nour-el-nil.html'
+      // are the same page (CF Pages canonicalizes). Compare without extension.
+      return f.replace(/\.html$/,'');
+    }catch(e){ return ''; }
   }
+  var VALID_NORM = VALID.map(function(v){ return v.replace(/\.html$/,''); });
   document.addEventListener('click', function(e){
     var a = e.target.closest('a[href]');
     if(!a) return;
@@ -2523,7 +2398,7 @@ document.addEventListener('click', function(e){
     if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
     if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
     var f = fname(href);
-    if(f && VALID.indexOf(f) === -1){
+    if(f && VALID_NORM.indexOf(f) === -1){
       e.preventDefault();
       window.location = '404.html';
     }
@@ -2623,4 +2498,165 @@ function submitQuickEnquiry() {
 
 
 <script src="/assets/auth.js"></script>
+<script>
+// ── v75o: homepage property cards from KV ─────────────────────────
+// Replaces the hardcoded demo cards. Fetches all real properties, splits
+// by type, and renders each section ONLY when it has ≥2 real properties —
+// otherwise the section stays hidden (honest empty > thin or fake).
+// Special case: nour-el-nil-x displays as "Nour El Nil" and links to the
+// hand-built flagship page /nour-el-nil (the design source of truth);
+// every other property links to /property?slug={slug}.
+// DOM methods only. Missing price_from → price line simply omitted.
+(function(){
+  var MIN_TO_SHOW = 2;
+
+  function heroUrl(p){
+    try{ return (p.photos && p.photos.hero && p.photos.hero[0] && p.photos.hero[0].url) || ''; }catch(e){ return ''; }
+  }
+  function locLine(p){
+    return (p.render && p.render.location_line) || p.location ||
+           [p.region, p.country].filter(Boolean).join(', ') || '';
+  }
+  function displayName(slug, p){
+    if (slug === 'nour-el-nil-x') return 'Nour El Nil';
+    return p.name || slug;
+  }
+  function pageHref(slug){
+    if (slug === 'nour-el-nil-x') return '/nour-el-nil';
+    return '/property?slug=' + encodeURIComponent(slug);
+  }
+  function fmtPrice(p){
+    var v = parseInt(p.price_from, 10);
+    return (v && v > 0) ? ('$' + v.toLocaleString()) : null;
+  }
+
+  // ── cruise card (dark photo card, h-scroll) ──
+  function cruiseCard(slug, p){
+    var card = document.createElement('div');
+    card.className = 'cruise-card';
+    card.addEventListener('click', function(){ window.location = pageHref(slug); });
+
+    var imgWrap = document.createElement('div'); imgWrap.className = 'cruise-img';
+    var img = document.createElement('img');
+    img.src = heroUrl(p); img.alt = displayName(slug, p); img.loading = 'lazy';
+    imgWrap.appendChild(img); card.appendChild(imgWrap);
+
+    var grad = document.createElement('div'); grad.className = 'cruise-grad'; card.appendChild(grad);
+
+    var body = document.createElement('div'); body.className = 'cruise-body';
+    var line = document.createElement('div'); line.className = 'cruise-line';
+    line.textContent = locLine(p); body.appendChild(line);
+    var name = document.createElement('div'); name.className = 'cruise-name';
+    name.textContent = displayName(slug, p); body.appendChild(name);
+    if (p.tagline){
+      var route = document.createElement('div'); route.className = 'cruise-route';
+      route.textContent = p.tagline; body.appendChild(route);
+    }
+    var foot = document.createElement('div'); foot.className = 'cruise-foot';
+    var priceStr = fmtPrice(p);
+    if (priceStr){
+      var price = document.createElement('div'); price.className = 'cruise-price';
+      price.textContent = priceStr + ' ';
+      var small = document.createElement('small'); small.textContent = 'pp';
+      price.appendChild(small); foot.appendChild(price);
+    } else {
+      foot.appendChild(document.createElement('div')); // spacer keeps button right-aligned
+    }
+    var btn = document.createElement('button'); btn.className = 'cruise-btn'; btn.textContent = 'View';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); window.location = pageHref(slug); });
+    foot.appendChild(btn); body.appendChild(foot); card.appendChild(body);
+    return card;
+  }
+
+  // ── hotel card (light prop-card) ──
+  function hotelCard(slug, p){
+    var name = displayName(slug, p), loc = locLine(p), hero = heroUrl(p);
+    var card = document.createElement('div');
+    card.className = 'prop-card';
+    card.addEventListener('click', function(){ window.location = pageHref(slug); });
+
+    var iw = document.createElement('div'); iw.className = 'prop-img-wrap';
+    var img = document.createElement('img'); img.src = hero; img.alt = name; img.loading = 'lazy';
+    iw.appendChild(img);
+    var ov = document.createElement('div'); ov.className = 'prop-overlay'; iw.appendChild(ov);
+    var bottom = document.createElement('div'); bottom.className = 'prop-bottom';
+    var nm = document.createElement('div');
+    var pn = document.createElement('div'); pn.className = 'prop-photo-name'; pn.textContent = name;
+    var pl = document.createElement('div'); pl.className = 'prop-photo-loc'; pl.textContent = loc;
+    nm.appendChild(pn); nm.appendChild(pl); bottom.appendChild(nm);
+    var heart = document.createElement('button'); heart.className = 'prop-heart';
+    heart.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>';
+    heart.addEventListener('click', function(e){ e.stopPropagation(); if (typeof toggleWish==='function') toggleWish(heart, name, loc, hero); });
+    bottom.appendChild(heart); iw.appendChild(bottom); card.appendChild(iw);
+
+    var body = document.createElement('div'); body.className = 'prop-body';
+    if (Array.isArray(p.tags) && p.tags.length){
+      var tags = document.createElement('div'); tags.className = 'prop-tags';
+      p.tags.slice(0,2).forEach(function(t){
+        var tag = document.createElement('span'); tag.className = 'tag dark'; tag.textContent = t;
+        tags.appendChild(tag);
+      });
+      body.appendChild(tags);
+    }
+    var descTxt = p.tagline || p.short_pitch || '';
+    if (descTxt){
+      var desc = document.createElement('p'); desc.className = 'prop-desc'; desc.textContent = descTxt;
+      body.appendChild(desc);
+    }
+    var foot = document.createElement('div'); foot.className = 'prop-foot';
+    var priceStr = fmtPrice(p);
+    if (priceStr){
+      var pf = document.createElement('div');
+      var from = document.createElement('div'); from.className = 'prop-from'; from.textContent = 'From';
+      var price = document.createElement('div'); price.className = 'prop-price'; price.textContent = priceStr + ' ';
+      var per = document.createElement('span'); per.className = 'per'; per.textContent = '/ night';
+      price.appendChild(per); pf.appendChild(from); pf.appendChild(price); foot.appendChild(pf);
+    } else {
+      foot.appendChild(document.createElement('div'));
+    }
+    var btn = document.createElement('button'); btn.className = 'prop-btn'; btn.textContent = 'Inquire';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); if (typeof openInquiry==='function') openInquiry(name, loc); });
+    foot.appendChild(btn); body.appendChild(foot); card.appendChild(body);
+    return card;
+  }
+
+  // ── load + render ──
+  fetch('/api/property').then(function(r){ return r.json(); }).then(function(d){
+    var slugs = (d.slugs || []).filter(function(s){ return s.indexOf('__') !== 0; });
+    return Promise.all(slugs.map(function(s){
+      return fetch('/api/property?slug=' + encodeURIComponent(s))
+        .then(function(r){ return r.json(); })
+        .then(function(res){ return { slug: s, p: res.data }; })
+        .catch(function(){ return null; });
+    }));
+  }).then(function(rows){
+    rows = (rows || []).filter(function(r){ return r && r.p && heroUrl(r.p); }); // must have a photo to be a card
+    var cruises = rows.filter(function(r){ return /cruise/i.test(r.p.type || ''); });
+    var hotels  = rows.filter(function(r){ return /hotel|lodge|resort|camp/i.test(r.p.type || ''); });
+
+    // Flagship first in the cruise row
+    cruises.sort(function(a, b){
+      return (a.slug === 'nour-el-nil-x' ? -1 : 0) - (b.slug === 'nour-el-nil-x' ? -1 : 0);
+    });
+
+    if (cruises.length >= MIN_TO_SHOW){
+      var cWrap = document.getElementById('home-cruise-cards');
+      if (cWrap){
+        cruises.forEach(function(r){ cWrap.appendChild(cruiseCard(r.slug, r.p)); });
+        var cm = document.getElementById('cruises-module'); if (cm) cm.style.display = '';
+      }
+    }
+    if (hotels.length >= MIN_TO_SHOW){
+      var hWrap = document.getElementById('home-hotel-cards');
+      if (hWrap){
+        hotels.forEach(function(r){ hWrap.appendChild(hotelCard(r.slug, r.p)); });
+        var hm = document.getElementById('hotels-module'); if (hm) hm.style.display = '';
+      }
+    }
+  }).catch(function(e){
+    // KV unreachable → sections simply stay hidden. No fake fallback.
+    console.log('[home] property load failed:', e && e.message);
+  });
+})();
+</script>
 </body>
