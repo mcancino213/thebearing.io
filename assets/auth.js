@@ -80,13 +80,12 @@ var tbAuth = (function() {
     overlay.id = 'tb-auth-overlay';
     // v73i: defensive centering. Previous attempts used flex centering but
     // Miguel kept seeing the modal anchored incorrectly. CSS Grid with
-    // `place-items: start center` reliably puts the sheet centered
-    // horizontally and aligned to the TOP (so the top of the modal is
-    // always visible). Explicit `width:100vw; height:100vh` removes any
-    // ambiguity about the container filling the viewport. The sheet has
-    // `margin:5vh auto 5vh` for horizontal centering as a backup if grid
-    // misbehaves in some browser. `overflow-y:auto` lets the user scroll
-    // if the Clerk widget makes the sheet taller than the viewport.
+    // place-items reliably centers the sheet horizontally.
+    // v75w: changed vertical alignment start → center so the modal sits in
+    // the middle of the viewport (Miguel's request). The `overflow-y:auto`
+    // plus `padding:5vh 16px` keeps it reachable/scrollable if Clerk's widget
+    // is ever taller than the viewport — so centering can't push the top
+    // off-screen (the original reason `start` was used).
     overlay.style.cssText = [
       'position:fixed',
       'top:0',
@@ -96,7 +95,8 @@ var tbAuth = (function() {
       'background:rgba(0,0,0,.6)',
       'z-index:9000',
       'display:grid',
-      'place-items:start center',
+      'place-items:center center',
+      'align-content:safe center',
       'backdrop-filter:blur(6px)',
       'overflow-y:auto',
       'padding:5vh 16px'
