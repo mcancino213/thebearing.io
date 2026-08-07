@@ -117,6 +117,12 @@ button{font-family:inherit;cursor:pointer;}
 .prop-header{padding:18px 20px 0;}
 .prop-type-row{margin-bottom:10px;}
 .prop-type-pill{display:inline-flex;align-items:center;font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:4px 10px;border-radius:100px;background:rgba(46,106,138,.09);color:var(--sea);border:1px solid rgba(46,106,138,.2);}
+/* v75s: "Great for families" editorial badge — Bearing curation signal.
+   Warm terra tone + heart glyph distinguishes it from the cool type pill;
+   sits inline next to the type. Only shown when the property is tagged family. */
+.prop-family-badge{display:none;align-items:center;gap:5px;font-size:.62rem;font-weight:600;letter-spacing:.11em;text-transform:uppercase;padding:4px 11px;margin-left:7px;border-radius:100px;background:var(--terra-dim,rgba(176,88,48,.1));color:var(--terra,#b05830);border:1px solid rgba(176,88,48,.24);vertical-align:middle;}
+.prop-family-badge svg{width:11px;height:11px;flex-shrink:0;}
+.prop-family-badge.on{display:inline-flex;}
 .prop-name{font-family:'Instrument Serif',serif;font-size:2rem;line-height:1.08;color:var(--ink);margin-bottom:6px;}
 .prop-location{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--stone);margin-bottom:12px;}
 .prop-location svg{width:13px;height:13px;flex-shrink:0;color:var(--terra);}
@@ -1128,7 +1134,7 @@ button{font-family:inherit;cursor:pointer;}
 
   <!-- PROPERTY HEADER -->
   <div class="prop-header">
-    <div class="prop-type-row"><span class="prop-type-pill" id="prop-type-pill"></span></div>
+    <div class="prop-type-row"><span class="prop-type-pill" id="prop-type-pill"></span><span class="prop-family-badge" id="prop-family-badge"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.7-10-9.3C.6 8.5 2.2 5 5.5 5c2 0 3.4 1.2 4.2 2.4l.8 1.2.8-1.2C12.1 6.2 13.5 5 15.5 5c3.3 0 4.9 3.5 3.5 6.7C19.5 16.3 12 21 12 21z"/></svg>Great for families</span></div>
     <h1 class="prop-name" id="prop-name"></h1>
     <div class="prop-location">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z"/><circle cx="8" cy="6" r="1.5"/></svg>
@@ -1577,6 +1583,19 @@ function renderProperty(p,slug){
   if(ts.includes('cruise')){bcl.href='/cruises.html';bcl.textContent='Cruises';}
   else if(ts.includes('villa')){bcl.href='/villas.html';bcl.textContent='Villas';}
   setText('prop-type-pill',r.type_pill||p.type||'');
+  // v75s: show the "Great for families" editorial badge when this property
+  // carries the `family` tag. Tags may live at p.tags or p.details.tags;
+  // match case-insensitively against 'family' / 'families' / 'family-friendly'.
+  (function(){
+    var tagSrc = (Array.isArray(p.tags) && p.tags) ||
+                 (p.details && Array.isArray(p.details.tags) && p.details.tags) || [];
+    var isFamily = tagSrc.some(function(t){
+      var s = String(t||'').toLowerCase().trim();
+      return s === 'family' || s === 'families' || s === 'family-friendly' || s === 'family friendly';
+    });
+    var badge = document.getElementById('prop-family-badge');
+    if (badge && isFamily) badge.classList.add('on');
+  })();
   setText('prop-name',p.name||'');
   setText('prop-loc-text',loc);
   // Update Envoy context pill with real property name

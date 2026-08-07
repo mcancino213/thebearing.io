@@ -2592,7 +2592,24 @@ function submitQuickEnquiry() {
     var body = document.createElement('div'); body.className = 'prop-body';
     if (Array.isArray(p.tags) && p.tags.length){
       var tags = document.createElement('div'); tags.className = 'prop-tags';
-      p.tags.slice(0,2).forEach(function(t){
+      // v75s: a `family` tag renders as the distinct "Great for families"
+      // editorial badge (terra tone), not a generic tag — matching property.html.
+      var isFamily = p.tags.some(function(t){
+        var s = String(t||'').toLowerCase().trim();
+        return s==='family'||s==='families'||s==='family-friendly'||s==='family friendly';
+      });
+      if (isFamily){
+        var fam = document.createElement('span');
+        fam.className = 'tag';
+        fam.style.cssText = 'background:var(--terra-dim,rgba(176,88,48,.1));color:var(--terra,#b05830);border-color:rgba(176,88,48,.24);';
+        fam.textContent = '♥ Great for families';
+        tags.appendChild(fam);
+      }
+      // other tags (skip family, already shown), up to 2 more
+      p.tags.filter(function(t){
+        var s=String(t||'').toLowerCase().trim();
+        return !(s==='family'||s==='families'||s==='family-friendly'||s==='family friendly');
+      }).slice(0, isFamily?1:2).forEach(function(t){
         var tag = document.createElement('span'); tag.className = 'tag dark'; tag.textContent = t;
         tags.appendChild(tag);
       });
