@@ -2849,7 +2849,9 @@ function selectCabin(name) {
       }
     }
   }
-  openOverlay('inq-overlay');
+  // v75v: route through the auth gate (openEnquiry requires sign-in) so cabin
+  // "Select" can't bypass it. Cabin choice is set above and persists.
+  openEnquiry();
 }
 
 function togglePref(btn){ btn.classList.toggle('active'); }
