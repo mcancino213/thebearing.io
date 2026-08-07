@@ -633,7 +633,7 @@ function renderListingColumns() {
       // Unlisted pool
       (notInList.length
         ? '<div style="padding:8px;border-top:2px dashed var(--border);background:var(--bg);">' +
-            '<div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;padding:0 4px;">Not listed</div>' +
+            '<div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;padding:0 4px;">Available to add</div>' +
             notInList.map(function(p) { return lmCard(p, lt.id, false, -1); }).join('') +
           '</div>'
         : '') +
