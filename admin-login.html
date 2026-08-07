@@ -233,6 +233,21 @@ window.addEventListener('load', async function() {
     sessionStorage.removeItem('tb_admin_denied_reason');
     showDenialMessage(reason);
   }
+
+  // v75r: set the OAuth handshake rescue intent (same mechanism as pp-login).
+  // For Google/Apple sign-in, Clerk 6.x may land the user on /?__clerk_handshake=…
+  // (the homepage) because the social provider's redirect URL is configured in
+  // the Clerk dashboard, not overridable at this call site. index.html's
+  // bootstrap reads this intent and forwards to the target once the handshake
+  // completes. localStorage (not session) because the OAuth round-trip through
+  // Google/Apple can create a new browsing context. 10-min expiry handled reader-side.
+  try {
+    localStorage.setItem('tb_signin_intent', JSON.stringify({
+      target: '/admin-dashboard',
+      setAt: Date.now(),
+    }));
+  } catch(e) {}
+
   try {
   await window.Clerk.load({
       ui: { ClerkUI: window.__internal_ClerkUICtor },
@@ -257,7 +272,7 @@ window.addEventListener('load', async function() {
   // If already signed in: verify admin and redirect to dashboard, OR show denial without mounting sign-in
   if (window.Clerk.user) {
     if (isAdminUser(window.Clerk.user)) {
-      window.location.href = '/admin-dashboard.html';
+      window.location.href = '/admin-dashboard';
       return;
     } else {
       // Signed in but not an admin — show message; offer "switch account"
@@ -279,7 +294,15 @@ window.addEventListener('load', async function() {
 
   window.Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
     signUpUrl: null,
-    afterSignInUrl: '/admin-dashboard.html',
+    // v75r: same fix as pp-login (v75d). Clerk 6.x deprecated `afterSignInUrl`
+    // for OAuth (Google/Apple) — it silently drops the user at the site root
+    // (the homepage) instead of the dashboard. signInForceRedirectUrl is the
+    // property OAuth actually honors; Fallback covers the no-other-target case;
+    // afterSignInUrl kept for backward-compat with inline-form sign-ins. All
+    // point at the clean URL (no .html) so the redirect isn't itself redirected.
+    afterSignInUrl: '/admin-dashboard',
+    signInForceRedirectUrl: '/admin-dashboard',
+    signInFallbackRedirectUrl: '/admin-dashboard',
     socialProvider: ['google', 'apple'],
     waitlistMode: false,
   });
@@ -287,7 +310,7 @@ window.addEventListener('load', async function() {
   window.Clerk.addListener(function(resources) {
     if (resources.user) {
       if (isAdminUser(resources.user)) {
-        window.location.href = '/admin-dashboard.html';
+        window.location.href = '/admin-dashboard';
       } else {
         // Just-signed-in non-admin: show denial and reload to switch state
         showDenialMessage('not_authorized');
