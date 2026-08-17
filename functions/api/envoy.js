@@ -3640,7 +3640,7 @@ View in admin: https://thebearing.io/admin-bookings.html
       'checkin_time', 'checkout_time', 'children_policy', 'pet_policy',
       'included', 'not_included',
       // Tags and categories
-      'tags', 'amenities',
+      'tags', 'amenities', 'coords',
     ];
 
     if (url.pathname === '/api/partner-listing') {
@@ -3743,6 +3743,21 @@ View in admin: https://thebearing.io/admin-bookings.html
               data[key] = value;
             } else if (typeof value === 'string') {
               data[key] = value;
+            } else {
+              rejected.push(key);
+              continue;
+            }
+          } else if (key === 'coords') {
+            // v75y: charted position — must be {lat,lng} with valid ranges,
+            // or null to clear. Anything else rejected (partner-writable field).
+            if (value === null) {
+              delete data.coords;
+              applied[key] = null;
+              continue;
+            }
+            const la = value && parseFloat(value.lat), lo = value && parseFloat(value.lng);
+            if (isFinite(la) && isFinite(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180) {
+              data[key] = { lat: la, lng: lo };
             } else {
               rejected.push(key);
               continue;

@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════════════════════
+   THE BEARING — brand signature layer (v75y)
+   The navigational identity: coordinates, chart detailing, one
+   orchestrated arrival. Linked sitewide; evolve the brand HERE, not
+   per-page. Everything respects prefers-reduced-motion.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. THE COORDINATE DEVICE ─────────────────────────────────────
+   Every property is a charted position. Small tracked utility type,
+   e.g.  25.29°N 32.55°E — ESNA, THE NILE
+   Use .tb-coord anywhere a property is named. Hidden when empty. */
+.tb-coord{
+  display:inline-flex;align-items:center;gap:7px;
+  font-family:'Geist',ui-sans-serif,sans-serif;
+  font-size:.62rem;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gold,#9a7230);
+  white-space:nowrap;
+}
+.tb-coord:empty{display:none;}
+.tb-coord .tb-coord-pip{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--terra,#b05830);flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(176,88,48,.14);
+}
+/* Dark-surface variant (hero, dark cards) */
+.tb-coord.on-dark{color:rgba(255,255,255,.78);}
+.tb-coord.on-dark .tb-coord-pip{box-shadow:0 0 0 3px rgba(255,255,255,.18);}
+
+/* ── 2. CHART-EDGE RULE ───────────────────────────────────────────
+   Hairline with degree ticks, like the border of a nautical chart.
+   Replaces generic dividers. Ticks every 18px, a taller one each 5th. */
+.tb-chart-rule{
+  display:block;position:relative;height:9px;border:0;margin:0;
+  background:
+    repeating-linear-gradient(90deg,
+      var(--tick,rgba(30,24,16,.28)) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(90deg,
+      var(--tick,rgba(30,24,16,.28)) 0 1px, transparent 1px 90px);
+  background-size:100% 4px,100% 9px;
+  background-position:bottom left,bottom left;
+  background-repeat:repeat-x;
+}
+.tb-chart-rule::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:var(--tick,rgba(30,24,16,.28));
+}
+.tb-chart-rule.on-dark{--tick:rgba(255,255,255,.28);}
+
+/* Eyebrow + rule combo: <div class="tb-eyebrow-row"><span>…</span><i class="tb-chart-rule"></i></div> */
+.tb-eyebrow-row{display:flex;align-items:baseline;gap:14px;}
+.tb-eyebrow-row .tb-chart-rule{flex:1;align-self:center;}
+
+/* ── 3. THE ARRIVAL (hero orchestration) ──────────────────────────
+   One cinematic beat on load, then stillness:
+   kicker settles → headline rises → hero image eases 1.045 → 1 with
+   a 14s barely-perceptible drift. Add .tb-arrival to the hero section. */
+.tb-arrival .hero-img-wrap img,
+.tb-arrival .tb-hero-img{
+  animation:tbHeroSettle 2.2s cubic-bezier(.23,.7,.28,1) both,
+            tbHeroDrift 16s 2.2s ease-in-out infinite alternate;
+  will-change:transform;
+}
+@keyframes tbHeroSettle{from{transform:scale(1.045)}to{transform:scale(1.0)}}
+@keyframes tbHeroDrift{from{transform:scale(1.0) translateY(0)}to{transform:scale(1.012) translateY(-6px)}}
+
+.tb-arrival .hero-kicker{opacity:0;animation:tbRise .8s .25s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .hero-h1{opacity:0;animation:tbRise .9s .5s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .hero-sub{opacity:0;animation:tbRise .9s .72s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .search-panel{opacity:0;animation:tbRise .9s .95s cubic-bezier(.22,.68,.3,1) forwards;}
+@keyframes tbRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── 4. QUIET SCROLL REVEALS ──────────────────────────────────────
+   bearing.js adds .tb-reveal to modules and flips .in on entry.
+   8px rise, 550ms — felt, not seen. */
+.tb-reveal{opacity:0;transform:translateY(8px);
+  transition:opacity .55s cubic-bezier(.22,.68,.3,1),transform .55s cubic-bezier(.22,.68,.3,1);}
+.tb-reveal.in{opacity:1;transform:none;}
+
+/* ── ACCESSIBILITY: motion off = everything simply present ──────── */
+@media (prefers-reduced-motion: reduce){
+  .tb-arrival .hero-img-wrap img,.tb-arrival .tb-hero-img,
+  .tb-arrival .hero-kicker,.tb-arrival .hero-h1,
+  .tb-arrival .hero-sub,.tb-arrival .search-panel{animation:none;opacity:1;transform:none;}
+  .tb-reveal{opacity:1;transform:none;transition:none;}
+}

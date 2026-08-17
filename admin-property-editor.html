@@ -730,6 +730,16 @@ window.addEventListener('load', async function() {
                 <label class="pe-label">Location line<span class="pe-label-hint">(eyebrow — e.g. Serengeti, Tanzania)</span></label>
                 <input class="pe-input" id="f-location-line" placeholder="e.g. Serengeti, Tanzania">
               </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                <div>
+                  <label class="pe-label">Latitude<span class="pe-label-hint">(charted position — e.g. 25.29)</span></label>
+                  <input class="pe-input" id="f-coord-lat" placeholder="e.g. 25.29" inputmode="decimal">
+                </div>
+                <div>
+                  <label class="pe-label">Longitude<span class="pe-label-hint">(e.g. 32.55 · negative = W)</span></label>
+                  <input class="pe-input" id="f-coord-lng" placeholder="e.g. 32.55" inputmode="decimal">
+                </div>
+              </div>
               <div>
                 <label class="pe-label">Duration tagline<span class="pe-label-hint">(e.g. 3 nights minimum)</span></label>
                 <input class="pe-input" id="f-duration-tagline" placeholder="e.g. 3 nights minimum">
@@ -2682,6 +2692,13 @@ function updateJSON() {
       verified: verifiedEl ? verifiedEl.checked : false,
       stats: stats
     },
+    // v75y: charted position — the brand's coordinate device. Only saved when
+    // both values are valid numbers; otherwise omitted entirely (render hides).
+    coords: (function(){
+      var la = parseFloat(getFieldVal('f-coord-lat')), lo = parseFloat(getFieldVal('f-coord-lng'));
+      if (isFinite(la) && isFinite(lo) && la >= -90 && la <= 90 && lo >= -180 && lo <= 180) return { lat: la, lng: lo };
+      return undefined;
+    })(),
 
     // Overview (3 intro paragraphs + long body)
     overview: {
@@ -4129,6 +4146,9 @@ function geminiJsonToFields(j) {
   // Render block
   var r = j.render || {};
   set('f-location-line', r.location_line);
+  // v75y: hydrate charted position (coords live at top level, not render)
+  set('f-coord-lat', (j.coords && j.coords.lat != null) ? String(j.coords.lat) : '');
+  set('f-coord-lng', (j.coords && j.coords.lng != null) ? String(j.coords.lng) : '');
   set('f-duration-tagline', r.duration_tagline);
   set('f-type-pill', r.type_pill);
   if (r.rating != null) set('f-rating', String(r.rating));

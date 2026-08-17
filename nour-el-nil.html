@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Nour El Nil — The Bearing</title>
+<link rel="stylesheet" href="/assets/bearing.css">
 <meta name="description" content="Ten wind-powered dahabiyas, 24 guests maximum, Esna to Aswan in six days. Nour El Nil accesses Pharaonic sites no motorised ship can reach.">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
@@ -227,7 +228,14 @@
 
   /* ── SECTION HEADERS ── */
   .sec-eyebrow{font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mist);display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .sec-eyebrow::after{content:'';flex:1;height:1px;background:var(--border);}
+  .sec-eyebrow::after{content:'';flex:1;height:9px;align-self:center;
+  background:
+    repeating-linear-gradient(90deg, var(--border) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(90deg, var(--border) 0 1px, transparent 1px 90px),
+    linear-gradient(var(--border),var(--border));
+  background-size:100% 4px,100% 9px,100% 1px;
+  background-position:bottom left,bottom left,bottom left;
+  background-repeat:repeat-x;}
   .sec-title{font-family:'Instrument Serif',serif;font-size:1.45rem;color:var(--ink);margin-bottom:14px;line-height:1.2;}
   .sec-title em{font-style:italic;color:var(--terra);}
 
@@ -885,6 +893,7 @@
   <div class="prop-location">
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z"/><circle cx="8" cy="6" r="1.5"/></svg>
     Nile River, Egypt · Esna to Aswan
+    <span class="tb-coord" style="margin-left:10px;"><i class="tb-coord-pip"></i>25.29°N 32.55°E</span>
   </div>
   <div class="prop-rating-row">
     <span class="star-gold">★★★★★</span>
@@ -3018,5 +3027,6 @@ function tbSubmitBooking() {
 </script>
 
 <script src="/assets/auth.js"></script>
+<script src="/assets/bearing.js"></script>
 </body>
 </html>

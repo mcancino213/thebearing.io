@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Bearing — Rare Hotels & Cruises</title>
+<link rel="stylesheet" href="/assets/bearing.css">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
   // v73g: post-sign-in resume — if a user clicked Enquire on a property
@@ -1386,7 +1387,7 @@
 </div>
 
 <!-- HERO — Maldives overwater bungalows at golden hour -->
-<section class="hero">
+<section class="hero tb-arrival">
   <div class="hero-img-wrap">
     <img src="https://images.prestigeonline.com/wp-content/uploads/sites/5/2024/04/10221200/431313100_17874505356049139_5206131842345222780_n-1-1.jpeg?tr=w-1920"
          alt="Luxury resort pool with breathtaking ocean view" loading="eager" fetchpriority="high">
@@ -1467,7 +1468,7 @@
   <!-- ══ WHY THE BEARING — DIFFERENTIATORS ══ -->
   <section id="why-tc" style="padding:52px 20px 44px;">
 
-    <div style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);margin-bottom:8px;">Why The Bearing</div>
+    <div class="tb-eyebrow-row" style="margin-bottom:8px;"><span style="font-size:.62rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terra);">Why The Bearing</span><i class="tb-chart-rule" aria-hidden="true"></i></div>
     <h2 style="font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--ink);margin-bottom:6px;line-height:1.2;">Three things no other <em>travel site offers.</em></h2>
     <p style="font-size:.84rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">We built The Bearing around ideas that didn't exist anywhere else.</p>
 
@@ -1547,7 +1548,7 @@
   <div class="module warm">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">From the collection</span><button class="see-all" onclick="window.location='/journal'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row tb-eyebrow-row"><span class="eyebrow">From the collection</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;margin:0 14px;"></i><button class="see-all" onclick="window.location='/journal'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title">Our <em>editors</em> have been</h2>
       </div>
     </div>
@@ -1591,7 +1592,7 @@
   <div class="module" id="hotels-module" style="display:none;">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">Rare hotels</span><button class="see-all" onclick="window.location='/hotels'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row tb-eyebrow-row"><span class="eyebrow">Rare hotels</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;margin:0 14px;"></i><button class="see-all" onclick="window.location='/hotels'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title">Places worth <em>lingering</em></h2>
       </div>
       <!-- v75o: fake demo hotels (Four Seasons Seychelles, Chablé Yucatan,
@@ -1607,7 +1608,7 @@
   <div class="module warm" id="cruises-module" style="display:none;">
     <div class="module-inner">
       <div class="mod-head">
-        <div class="mod-row"><span class="eyebrow">Boutique cruises</span><button class="see-all" onclick="window.location='/cruises'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
+        <div class="mod-row tb-eyebrow-row"><span class="eyebrow">Boutique cruises</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;margin:0 14px;"></i><button class="see-all" onclick="window.location='/cruises'">See all <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"><use href="#ico-arrow-r"/></svg></button></div>
         <h2 class="mod-title"><em>Small ships.</em> Big worlds.</h2>
       </div>
     </div>
@@ -2517,6 +2518,11 @@ function submitQuickEnquiry() {
     var body = document.createElement('div'); body.className = 'cruise-body';
     var line = document.createElement('div'); line.className = 'cruise-line';
     line.textContent = locLine(p); body.appendChild(line);
+    // v75y: charted-position device — renders only when the record carries real coords
+    if (p.coords && window.tbCoordEl){
+      var co = window.tbCoordEl(p.coords.lat, p.coords.lng, null, true);
+      if (co){ co.style.marginBottom = '4px'; body.insertBefore(co, line); }
+    }
     var name = document.createElement('div'); name.className = 'cruise-name';
     name.textContent = displayName(slug, p); body.appendChild(name);
     if (p.tagline){
@@ -2554,7 +2560,13 @@ function submitQuickEnquiry() {
     var nm = document.createElement('div');
     var pn = document.createElement('div'); pn.className = 'prop-photo-name'; pn.textContent = name;
     var pl = document.createElement('div'); pl.className = 'prop-photo-loc'; pl.textContent = loc;
-    nm.appendChild(pn); nm.appendChild(pl); bottom.appendChild(nm);
+    nm.appendChild(pn); nm.appendChild(pl);
+    // v75y: charted-position device — only with real coords on the record
+    if (p.coords && window.tbCoordEl){
+      var co = window.tbCoordEl(p.coords.lat, p.coords.lng, null, true);
+      if (co){ co.style.marginTop = '3px'; nm.appendChild(co); }
+    }
+    bottom.appendChild(nm);
     var heart = document.createElement('button'); heart.className = 'prop-heart';
     heart.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="#ico-heart"/></svg>';
     heart.addEventListener('click', function(e){ e.stopPropagation(); if (typeof toggleWish==='function') toggleWish(heart, name, loc, hero); });
@@ -2647,4 +2659,5 @@ function submitQuickEnquiry() {
   });
 })();
 </script>
+<script src="/assets/bearing.js"></script>
 </body>
