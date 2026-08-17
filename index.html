@@ -855,15 +855,17 @@
     padding: 0 40px 60px !important;
   }
 
-  /* Differentiator cards — side by side */
-  .page section > div[style*="margin-bottom:14px"] {
+  /* v75x: "Why The Bearing" — 3 equal cards across on desktop */
+  #why-tc .why-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 0 !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    align-items: stretch;
   }
-  .page section > div[style*="margin-bottom:14px"] > div {
+  #why-tc .why-grid .why-card {
     margin-bottom: 0 !important;
+    display: flex;
+    flex-direction: column;
   }
 
   /* ── Bonus experience section ── */
@@ -1469,63 +1471,32 @@
     <h2 style="font-family:'Instrument Serif',serif;font-size:1.7rem;color:var(--ink);margin-bottom:6px;line-height:1.2;">Three things no other <em>travel site offers.</em></h2>
     <p style="font-size:.84rem;color:var(--stone);line-height:1.65;margin-bottom:20px;">We built The Bearing around ideas that didn't exist anywhere else.</p>
 
-    <!-- Card 1: Reserve Credits -->
-    <div style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
+    <div class="why-grid">
+    <!-- Card 1: Reserve Credits (v75x: simplified to uniform card) -->
+    <div class="why-card" style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
       <div style="position:absolute;inset:0;background:linear-gradient(135deg,#7a2e0a 0%,#a04020 40%,#6a3060 100%);"></div>
       <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.1;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,45 C80,15 180,70 280,40 C350,18 380,58 400,40 L400,80 L0,80Z" fill="#fff"/><path d="M0,58 C70,35 160,72 260,52 C340,35 375,62 400,52 L400,80 L0,80Z" fill="#60a5fa" opacity=".4"/></svg>
-      <div style="position:relative;padding:20px 20px 18px;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:10px;">
+      <div style="position:relative;padding:20px 20px 18px;display:flex;flex-direction:column;height:100%;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;align-self:flex-start;">
           <div style="width:6px;height:6px;border-radius:50%;background:#60a5fa;"></div>
           <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">Reserve Credits</span>
         </div>
-        <!-- Text left, photo right — both start at same top level -->
-        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">Every booking gets you one step closer to sailing one of the world's greatest cruises.</div>
-            <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;">Nour El Nil sails 250km of the ancient Nile aboard intimate 24-guest dahabiyas — named one of <em style="color:rgba(255,255,255,.85);">National Geographic's best cruises in the world</em>. Earn 10% of every The Bearing booking as Reserve Credits. Reach $4,000 and your cabin is on us.</div>
-          </div>
-          <div style="width:200px;flex-shrink:0;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.35);border:1.5px solid rgba(255,255,255,.15);align-self:stretch;min-height:120px;">
-            <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block;">
-          </div>
+        <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">Every booking earns credit toward a world-class cruise.</div>
+        <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;flex:1;">Earn 10% of every booking as Reserve Credits &mdash; toward a cabin aboard Nour El Nil, named by <em style="color:rgba(255,255,255,.85);">National Geographic</em> among the world's best cruises. Reach $4,000 and your cabin is on us.</div>
+        <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;">
+          <span style="font-size:.62rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#2e6a8a,#60a5fa);padding:3px 10px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;">10% back</span>
+          <div style="font-size:.75rem;color:rgba(255,255,255,.8);font-weight:500;">On every booking, toward your cabin.</div>
         </div>
-
-        <!-- NatGeo callout -->
-        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;margin-bottom:12px;">
-          <div style="width:28px;height:28px;border-radius:6px;background:#ffcc00;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="#000"><rect x="0" y="0" width="20" height="20" rx="2"/><text x="3" y="15" font-size="13" font-weight="700" fill="#ffcc00" font-family="serif">N</text></svg>
-          </div>
-          <div style="font-size:.75rem;color:rgba(255,255,255,.8);line-height:1.4;"><span style="font-weight:600;color:#fff;">National Geographic</span> — named Nour El Nil one of the world's best cruise experiences</div>
-        </div>
-
-        <!-- Mini progress bar -->
-        <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:.75rem;color:rgba(255,255,255,.75);font-weight:500;">Example · $14,200 booked</span>
-              <span style="font-size:.65rem;font-weight:800;color:#fff;background:linear-gradient(135deg,#2e6a8a,#60a5fa);padding:3px 10px;border-radius:100px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 2px 8px rgba(96,165,250,.4);">10% back</span>
-            </div>
-            <span style="font-size:.75rem;color:#93c5fd;font-weight:700;">$1,420 credits</span>
-          </div>
-          <div style="background:rgba(255,255,255,.12);border-radius:100px;height:7px;overflow:hidden;margin-bottom:7px;">
-            <div style="width:40.6%;height:100%;background:linear-gradient(90deg,#2e6a8a,#60a5fa);border-radius:100px;position:relative;">
-              <div style="position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.35));border-radius:100px;"></div>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:space-between;">
-            <span style="font-size:.65rem;color:rgba(255,255,255,.45);">$0</span>
-            <span style="font-size:.65rem;color:rgba(255,255,255,.45);">$4,000 · free cabin 🎉</span>
-          </div>
-        </div>
-
       </div>
     </div>
 
+
     <!-- Card 2: The Lens -->
-    <div style="border-radius:var(--r-xl);overflow:hidden;margin-bottom:20px;position:relative;">
+    <div class="why-card" style="border-radius:var(--r-xl);overflow:hidden;margin-bottom:20px;position:relative;">
       <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0d4a52 0%,#1a3a6e 55%,#2d1a5e 100%);"></div>
       <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.12;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,40 C80,10 160,70 240,40 C320,10 360,60 400,40 L400,80 L0,80Z" fill="#fff"/><path d="M0,55 C60,30 140,75 220,50 C300,25 360,65 400,50 L400,80 L0,80Z" fill="#ffd060" opacity=".4"/></svg>
-      <div style="position:relative;padding:20px 20px 16px;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;">
+      <div style="position:relative;padding:20px 20px 16px;display:flex;flex-direction:column;height:100%;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;align-self:flex-start;">
           <div style="width:6px;height:6px;border-radius:50%;background:#7dd3c8;"></div>
           <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">Insider Intelligence</span>
         </div>
@@ -1548,23 +1519,23 @@
     </div>
 
     <!-- Card 3: Exclusive Experience -->
-    <div style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
+    <div class="why-card" style="border-radius:var(--r-xl);overflow:hidden;position:relative;margin-bottom:20px;">
       <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0d1f2e 0%,#0a1a28 60%,#0d2a1a 100%);"></div>
       <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;opacity:.12;" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0,35 C100,5 200,65 300,35 C360,15 380,55 400,35 L400,80 L0,80Z" fill="#fff"/><path d="M0,50 C80,25 180,70 280,48 C350,30 380,60 400,48 L400,80 L0,80Z" fill="#ffd060" opacity=".35"/></svg>
-      <div style="position:relative;padding:20px 20px 18px;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;">
+      <div style="position:relative;padding:20px 20px 18px;display:flex;flex-direction:column;height:100%;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 10px 4px 7px;margin-bottom:14px;align-self:flex-start;">
           <div style="width:6px;height:6px;border-radius:50%;background:#ffd060;"></div>
           <span style="font-size:.62rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.85);">The Private Access</span>
         </div>
         <div style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;">An exclusive experience, included with every booking.</div>
-        <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;">Every property in our collection comes with a private experience arranged exclusively through The Bearing. A temple at sunrise before it opens. A chef's table in a rice field. A dawn trek with a conservation ranger. Things money alone cannot book.</div>
+        <div style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;flex:1;">Every property in our collection comes with a private experience arranged exclusively through The Bearing. A temple at sunrise before it opens. A chef's table in a rice field. A dawn trek with a conservation ranger. Things money alone cannot book.</div>
         <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;">
           <div style="width:5px;height:5px;border-radius:50%;background:#ffd060;flex-shrink:0;"></div>
           <div style="font-size:.75rem;color:rgba(255,255,255,.8);font-weight:500;">Same price as booking direct. No hidden fees.</div>
         </div>
       </div>
     </div>
-
+    </div><!-- /why-grid -->
 
   </section>
 
