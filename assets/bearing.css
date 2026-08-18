@@ -83,3 +83,94 @@
   .tb-arrival .hero-sub,.tb-arrival .search-panel{animation:none;opacity:1;transform:none;}
   .tb-reveal{opacity:1;transform:none;transition:none;}
 }
+
+/* ── 5. THE BEARING SEARCH (v75z) ─────────────────────────────────
+   One universal prompt. Serif input — the search IS the brand voice. */
+.tb-search{padding:18px 20px 16px;}
+.tb-search-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.tb-search-eyebrow span{font-size:.6rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--terra,#b05830);white-space:nowrap;}
+.tb-search-form{display:flex;align-items:center;gap:10px;border-bottom:1.5px solid var(--border,#e2dbcc);padding-bottom:10px;margin-bottom:12px;transition:border-color .25s;}
+.tb-search-form:focus-within{border-color:var(--terra,#b05830);}
+.tb-search-input{flex:1;border:none;outline:none;background:none;
+  font-family:'Instrument Serif',serif;font-size:1.28rem;color:var(--ink,#1e1810);
+  padding:2px 0;min-width:0;}
+.tb-search-input::placeholder{color:rgba(30,24,16,.38);font-style:italic;transition:opacity .4s;}
+.tb-search-go{display:flex;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;
+  border:none;border-radius:100px;cursor:pointer;color:#fff;
+  background:linear-gradient(135deg,var(--terra,#b05830),#8c4422);
+  box-shadow:0 3px 14px rgba(176,88,48,.32);transition:transform .18s,box-shadow .18s;}
+.tb-search-go:hover{transform:translateX(2px);box-shadow:0 5px 18px rgba(176,88,48,.42);}
+.tb-search-chips{display:flex;flex-wrap:wrap;gap:7px;}
+.tb-chip{border:1px solid var(--border,#e2dbcc);background:rgba(255,255,255,.55);
+  border-radius:100px;padding:6px 13px;cursor:pointer;
+  font-family:'Geist',ui-sans-serif,sans-serif;font-size:.72rem;font-weight:500;color:var(--stone,#6b6156);
+  transition:border-color .18s,color .18s,background .18s;}
+.tb-chip:hover{border-color:var(--terra,#b05830);color:var(--terra,#b05830);background:#fff;}
+.tb-chip-open{border-style:dashed;color:var(--gold,#9a7230);}
+@media (max-width:560px){
+  .tb-search-input{font-size:1.08rem;}
+  .tb-search-chips{gap:6px;}
+  .tb-chip{padding:5px 11px;font-size:.68rem;}
+}
+
+/* ── 6. HERO-AS-SEARCH + THE INSTRUMENT VOICE (v76a prototype) ─────
+   The question IS the headline. Mono = the instrument voice; chart
+   ink-blue = the hydrographic structural color. Terra remains signal. */
+:root{
+  --chart-ink:#16323e;          /* deep hydrographic ink */
+  --chart-blue:#3d7a96;         /* water-tint blue */
+  --tb-mono:'Fragment Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+.tb-mono{font-family:var(--tb-mono) !important;letter-spacing:.08em;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);border:0;}
+
+.tb-hero-centered{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;padding:80px 22px 60px;}
+.tb-hero-stage{width:min(760px,94vw);text-align:center;}
+.tb-hero-centered .hero-kicker{justify-content:center;margin-bottom:26px;}
+.tb-hero-centered .kicker-txt{font-family:var(--tb-mono);font-size:.6rem;letter-spacing:.26em;}
+
+.tb-hero-ask{display:flex;align-items:flex-end;gap:16px;margin-bottom:14px;padding-left:70px;} /* 54px orb + gap — keeps the question optically centered */
+.tb-hero-input{flex:1;min-width:0;border:none;outline:none;background:none;
+  font-family:'Instrument Serif',serif;font-style:italic;
+  font-size:clamp(1.9rem,4.6vw,3.1rem);line-height:1.15;color:#fff;
+  text-align:center;padding:0 0 6px;
+  text-shadow:0 2px 24px rgba(0,0,0,.35);caret-color:#fff;}
+.tb-hero-input::placeholder{color:rgba(255,255,255,.92);opacity:1;transition:opacity .45s;}
+.tb-hero-input:focus::placeholder{opacity:.28;}
+.tb-hero-go{display:flex;align-items:center;justify-content:center;width:54px;height:54px;flex-shrink:0;
+  border:1.5px solid rgba(255,255,255,.5);border-radius:100px;cursor:pointer;
+  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);color:#fff;
+  transition:background .2s,border-color .2s,transform .2s;}
+.tb-hero-go:hover{background:var(--terra,#b05830);border-color:var(--terra,#b05830);transform:translateX(3px);}
+
+.tb-hero-rule{margin:0 auto 18px;width:min(560px,80%);}
+.tb-hero-chips{justify-content:center;}
+.tb-hero-chips .tb-chip{background:rgba(20,16,10,.35);border-color:rgba(255,255,255,.28);color:rgba(255,255,255,.85);backdrop-filter:blur(6px);}
+.tb-hero-chips .tb-chip:hover{background:rgba(255,255,255,.14);border-color:#fff;color:#fff;}
+.tb-hero-chips .tb-chip-open{border-style:dashed;color:rgba(255,225,180,.9);}
+
+.tb-hero-positions{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  margin-top:34px;font-size:.58rem;letter-spacing:.14em;color:rgba(255,255,255,.5);}
+.tb-hero-positions i{width:22px;height:1px;background:rgba(255,255,255,.3);}
+
+/* Arrival retargeted to the new hero children */
+.tb-arrival .tb-hero-ask{opacity:0;animation:tbRise .9s .5s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .tb-hero-rule{opacity:0;animation:tbRise .8s .8s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .tb-hero-chips{opacity:0;animation:tbRise .9s .95s cubic-bezier(.22,.68,.3,1) forwards;}
+.tb-arrival .tb-hero-positions{opacity:0;animation:tbRise 1s 1.2s cubic-bezier(.22,.68,.3,1) forwards;}
+
+/* Instrument voice for eyebrows + coords sitewide (falls back to Geist where mono not loaded) */
+.tb-coord{font-family:var(--tb-mono);}
+.eyebrow,.sec-eyebrow{font-family:var(--tb-mono) !important;letter-spacing:.2em !important;}
+
+@media (max-width:640px){
+  .tb-hero-ask{flex-direction:column;align-items:stretch;gap:12px;padding-left:0;}
+  .tb-hero-input{text-align:center;font-size:clamp(1.6rem,7.4vw,2.1rem);}
+  .tb-hero-go{width:100%;height:46px;border-radius:14px;}
+  .tb-hero-positions{gap:8px;font-size:.52rem;}
+  .tb-hero-positions i{display:none;}
+}
+@media (prefers-reduced-motion: reduce){
+  .tb-arrival .tb-hero-ask,.tb-arrival .tb-hero-rule,
+  .tb-arrival .tb-hero-chips,.tb-arrival .tb-hero-positions{animation:none;opacity:1;transform:none;}
+}

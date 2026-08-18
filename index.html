@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>The Bearing — Rare Hotels & Cruises</title>
 <link rel="stylesheet" href="/assets/bearing.css">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Instrument+Serif:ital@0;1&family=Fragment+Mono:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script>
   // v73g: post-sign-in resume — if a user clicked Enquire on a property
   // (which stashes tb_pending_action) and Clerk's OAuth redirect dropped
@@ -1326,8 +1326,7 @@
     <a class="nav-link-d" href="/hotels.html">Hotels</a>
     <a class="nav-link-d" href="/cruises.html">Cruises</a>
     <a class="nav-link-d" href="/villas.html">Villas</a>
-    <a class="nav-link-d" href="/collections.html">Collections</a>
-    <a class="nav-link-d nav-vibe" href="/vibe-search.html">✦ Vibe Search</a>
+    <a class="nav-link-d nav-vibe" href="/vibe-search.html">Search</a>
     <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
     <a class="nav-link-d" href="/journal.html">Journal</a>
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
@@ -1362,8 +1361,7 @@
       <button class="menu-link" onclick="closeMenu();window.location='/hotels.html'"><span>Hotels</span><span class="menu-link-arr">›</span></button>
       <button class="menu-link" onclick="closeMenu();window.location='/cruises.html'"><span>Cruises</span><span class="menu-link-arr">›</span></button>
       <button class="menu-link" onclick="closeMenu();window.location='/villas.html'"><span>Villas</span><span class="menu-link-arr">›</span></button>
-      <button class="menu-link" onclick="closeMenu();window.location='/collections.html'"><span>Collections</span><span class="menu-link-arr">›</span></button>
-      <button class="menu-link" onclick="closeMenu();window.location='/vibe-search.html'"><span>✦ Vibe Search</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/vibe-search.html'"><span>Search</span><span class="menu-link-arr">›</span></button>
       <div class="menu-divider"></div>
       <div class="menu-section-label">Learn</div>
       <button class="menu-link" onclick="closeMenu();window.location='/how-we-choose.html'"><span>How we choose</span><span class="menu-link-arr">›</span></button>
@@ -1394,63 +1392,28 @@
   </div>
   <div class="hero-overlay"></div>
   <div class="hero-shimmer"></div>
-  <div class="hero-content">
-    <div class="hero-kicker"><div class="kicker-pip"></div><span class="kicker-txt">Pointing you to the extraordinary.</span></div>
-    <h1 class="hero-h1">Places that feel<br>like <em>yours</em></h1>
-    <p class="hero-sub">We search the world for boutique hideaways and intimate voyages that never appear on mass-market sites.</p>
-    <div class="search-panel">
-      <div class="stype-row">
-        <button class="stype active" data-stype="all" onclick="setStype(this)">
-          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></span>All
+  <div class="hero-content tb-hero-centered">
+    <div class="tb-hero-stage">
+      <div class="hero-kicker tb-mono"><div class="kicker-pip"></div><span class="kicker-txt">Pointing you to the extraordinary</span></div>
+      <form class="tb-hero-ask" onsubmit="event.preventDefault();tbGoSearch();">
+        <input id="tb-q" class="tb-hero-input" type="text" autocomplete="off"
+               placeholder="Where do you want to be?" aria-label="Describe where you want to be">
+        <button class="tb-hero-go" type="submit" aria-label="Search">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="20" y2="12"/><polyline points="14,5 21,12 14,19"/></svg>
         </button>
-        <button class="stype" data-stype="hotel" onclick="setStype(this)">
-          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-hotel"/></svg></span>Hotels
-        </button>
-        <button class="stype" data-stype="cruise" onclick="setStype(this)">
-          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-cruise"/></svg></span>Cruises
-        </button>
-        <button class="stype" data-stype="villa" onclick="setStype(this)">
-          <span class="stype-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"><use href="#ico-villa"/></svg></span>Villas
-        </button>
+      </form>
+      <i class="tb-chart-rule on-dark tb-hero-rule" aria-hidden="true"></i>
+      <div class="tb-search-chips tb-hero-chips">
+        <button type="button" class="tb-chip" onclick="tbGoSearch('The Nile by dahabiya — slow, under sail')">The Nile by dahabiya</button>
+        <button type="button" class="tb-chip" onclick="tbGoSearch('The Mekong, privately — just us on the river')">The Mekong, privately</button>
+        <button type="button" class="tb-chip" onclick="tbGoSearch('The Dolomites with kids — a hotel built for families')">The Dolomites with kids</button>
+        <button type="button" class="tb-chip tb-chip-open" onclick="tbGoSearch('Surprise me — somewhere I have not imagined yet')">Somewhere I haven&rsquo;t imagined</button>
       </div>
-      <div class="sfields">
-        <div class="sfield" id="home-dest-field" style="position:relative;cursor:text;" onclick="document.getElementById('home-dest-input').focus()">
-          <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-pin"/></svg></span>
-          <div style="flex:1;">
-            <div class="sfield-label">Destination</div>
-            <input id="home-dest-input" type="text" placeholder="Anywhere in the world" autocomplete="off"
-              style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:text;"
-              oninput="homeDestAutocomplete(this.value)"
-              onkeydown="if(event.key==='Enter'){tcSearchSubmit()}"
-              onfocus="this.parentNode.parentNode.style.background='var(--linen)'"
-              onblur="this.parentNode.parentNode.style.background=''">
-          </div>
-          <div id="home-dest-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1.5px solid var(--border-hi);border-radius:var(--r-lg);box-shadow:0 8px 32px rgba(80,55,25,.12);z-index:300;max-height:220px;overflow-y:auto;scrollbar-width:none;"></div>
-        </div>
-        <div class="sfield-row">
-          <div class="sfield" style="cursor:text;" onclick="document.getElementById('home-checkin').focus();try{document.getElementById('home-checkin').showPicker()}catch(e){}">
-            <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-calendar"/></svg></span>
-            <div style="flex:1;">
-              <div class="sfield-label">Check in</div>
-              <input id="home-checkin" type="date" style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:pointer;" onchange="if(document.getElementById('home-checkout').value && this.value > document.getElementById('home-checkout').value){document.getElementById('home-checkout').value=''}">
-            </div>
-          </div>
-          <div class="sfield" style="cursor:text;" onclick="document.getElementById('home-checkout').focus();try{document.getElementById('home-checkout').showPicker()}catch(e){}">
-            <span class="sfield-icon"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"><use href="#ico-moon"/></svg></span>
-            <div style="flex:1;">
-              <div class="sfield-label">Check out</div>
-              <input id="home-checkout" type="date" style="border:none;outline:none;background:none;font-family:'Geist',sans-serif;font-size:.88rem;color:var(--ink);width:100%;padding:0;cursor:pointer;">
-            </div>
-          </div>
-        </div>
-      </div>
-      <button class="search-cta" onclick="tcSearchSubmit()">Explore The Bearing</button>
-      <div style="text-align:center;padding:10px 12px 14px;display:flex;align-items:center;justify-content:center;gap:8px;">
-        <span style="font-size:.72rem;color:var(--stone);">Don't know where yet?</span>
-        <a href="/vibe-search.html" style="font-size:.72rem;font-weight:600;color:var(--terra);text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s;" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>
-          Search by vibe instead →
-        </a>
+      <!-- Real charted positions of the collection — data as texture, every number true -->
+      <div class="tb-hero-positions tb-mono" aria-hidden="true">
+        <span>25.29°N 32.55°E&ensp;ESNA</span><i></i>
+        <span>19.88°N 102.13°E&ensp;LUANG PRABANG</span><i></i>
+        <span>46.75°N 11.76°E&ensp;LÜSEN</span>
       </div>
     </div>
   </div>
@@ -2660,4 +2623,19 @@ function submitQuickEnquiry() {
 })();
 </script>
 <script src="/assets/bearing.js"></script>
+<script>
+/* v75z: universal search — hands the phrase to the vibe engine */
+function tbGoSearch(preset){
+  var q = preset || ((document.getElementById('tb-q')||{}).value || '').trim();
+  window.location = '/vibe-search' + (q ? ('?q=' + encodeURIComponent(q)) : '');
+}
+/* Rotating invitations (static under reduced motion) */
+(function(){
+  var el = document.getElementById('tb-q'); if (!el) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var lines = ['Where do you want to be?','A river with no other boats\u2026','Mountains the kids will remember\u2026','Sun in February, no crowds\u2026'];
+  var i = 0;
+  setInterval(function(){ if (document.activeElement === el || el.value) return; i = (i+1) % lines.length; el.placeholder = lines[i]; }, 3800);
+})();
+</script>
 </body>
