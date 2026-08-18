@@ -426,7 +426,7 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
     <a class="nav-link-d" href="/hotels.html">Hotels</a>
     <a class="nav-link-d" href="/cruises.html">Cruises</a>
     <a class="nav-link-d" href="/villas.html">Villas</a>
-    <a class="nav-link-d nav-vibe" href="/vibe-search.html">Search</a>
+    <a class="nav-link-d nav-vibe" href="/search.html">Search</a>
     <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
     <a class="nav-link-d" href="/journal.html">Journal</a>
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
@@ -510,6 +510,36 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
 
 <!-- SEARCH HERO -->
 <div class="search-hero">
+<!-- ═══ v76d: THE BEARING CONSOLIDATED SEARCH ═══
+     Query bar (brand voice) + live KV results + embedded Envoy refine.
+     Search happens HERE — no page-hopping. Legacy static UI below is
+     hidden by tbSearchInit (kept in markup for reversibility). -->
+<div id="tbs" style="max-width:980px;margin:0 auto;padding-bottom:60px;">
+  <div class="tb-search-eyebrow" style="margin-bottom:14px;"><span>Find your bearing</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;"></i></div>
+  <form onsubmit="event.preventDefault();tbsRun();" style="display:flex;align-items:flex-end;gap:14px;border-bottom:1.5px solid var(--border);padding-bottom:12px;margin-bottom:8px;">
+    <input id="tbs-q" type="text" autocomplete="off" placeholder="Where do you want to be?"
+      style="flex:1;min-width:0;border:none;outline:none;background:none;font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.2rem);color:var(--ink);padding:0;"
+      oninput="tbsRunSoon()">
+    <button type="submit" aria-label="Search" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;border:none;border-radius:100px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--terra),#8c4422);box-shadow:0 3px 14px rgba(176,88,48,.3);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+    </button>
+  </form>
+  <div id="tbs-status" class="tb-mono" style="font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--chart-blue,#3d7a96);margin-bottom:22px;"></div>
+
+  <div id="tbs-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-bottom:34px;"></div>
+
+  <!-- Embedded Envoy refine — the vibe layer ON the results, not a separate page -->
+  <div id="tbs-envoy" style="background:linear-gradient(135deg,#16323e,#1e4356);border-radius:20px;padding:22px 24px;color:#fff;">
+    <div class="tb-mono" style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:10px;">Refine with the Envoy</div>
+    <div style="font-family:'Instrument Serif',serif;font-size:1.15rem;margin-bottom:12px;">Describe the feeling — light, pace, who's coming — and the Envoy reads the collection for you.</div>
+    <div style="display:flex;gap:10px;align-items:flex-end;">
+      <textarea id="tbs-vibe" rows="2" placeholder="e.g. slow mornings on water, no crowds, my kids along…" style="flex:1;border:none;outline:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 14px;color:#fff;font-family:'Geist',sans-serif;font-size:.85rem;resize:vertical;"></textarea>
+      <button type="button" onclick="tbsAskEnvoy()" id="tbs-vibe-btn" style="padding:11px 18px;border:none;border-radius:12px;cursor:pointer;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;color:#16323e;background:#fff;white-space:nowrap;">Ask the Envoy</button>
+    </div>
+    <div id="tbs-envoy-note" style="display:none;margin-top:14px;font-family:'Instrument Serif',serif;font-size:1rem;line-height:1.6;color:rgba(255,255,255,.92);border-left:2px solid var(--terra);padding-left:14px;"></div>
+  </div>
+</div>
+
   <div class="search-hero-top">
     <div>
       <h1 class="search-hero-title">Find your next journey</h1>
@@ -1408,5 +1438,161 @@ function submitQuickEnquiry() {
 
 
 <script src="/assets/bearing.js"></script>
+<script>
+/* ═══ v76d consolidated search engine ═══ */
+var TBS = { all: [], t: null };
+function tbsInit(){
+  // Hide the legacy static search UI (everything in .search-hero after #tbs)
+  var hero = document.querySelector('.search-hero');
+  if (hero){
+    var seen = false;
+    Array.prototype.forEach.call(hero.children, function(el){
+      if (el.id === 'tbs'){ seen = true; return; }
+      if (seen || el.id !== 'tbs') { if (el.id !== 'tbs') el.style.display = 'none'; }
+    });
+  }
+  // Anything after the hero that belonged to the legacy results
+  document.querySelectorAll('.search-hero ~ *:not(script):not(footer):not(.footer)').forEach(function(el){
+    if (el.querySelector && (el.querySelector('.prop-card') || el.classList.contains('filters-bar'))) el.style.display='none';
+  });
+  var q = new URLSearchParams(location.search).get('q') || '';
+  var inp = document.getElementById('tbs-q');
+  if (inp){ inp.value = q; }
+  tbsLoad().then(function(){ tbsRun(); });
+}
+function tbsLoad(){
+  return fetch('/api/property').then(function(r){ return r.json(); }).then(function(d){
+    var slugs = (d.slugs||[]).filter(function(x){ return x.indexOf('__') !== 0; });
+    return Promise.all(slugs.map(function(sl){
+      return fetch('/api/property?slug=' + encodeURIComponent(sl)).then(function(r){ return r.json(); })
+        .then(function(res){ return { slug: sl, p: res.data }; }).catch(function(){ return null; });
+    }));
+  }).then(function(rows){
+    TBS.all = (rows||[]).filter(function(r){
+      if (!r || !r.p) return false;
+      var st = String(r.p.status||'').toLowerCase();
+      return st === 'live' || st === 'coming-soon';   // public results = published only
+    });
+  }).catch(function(){ TBS.all = []; });
+}
+function tbsTokens(str){ return String(str||'').toLowerCase().split(/[^a-z0-9°]+/).filter(function(w){ return w.length > 2; }); }
+function tbsHay(p){
+  var bits = [p.name, p.type, p.tagline, p.country, p.region,
+              p.render && p.render.location_line, p.render && p.render.type_pill,
+              (Array.isArray(p.tags) ? p.tags.join(' ') : '')];
+  return bits.join(' ').toLowerCase();
+}
+function tbsRunSoon(){ clearTimeout(TBS.t); TBS.t = setTimeout(tbsRun, 220); }
+function tbsRun(){
+  var q = (document.getElementById('tbs-q')||{}).value || '';
+  var toks = tbsTokens(q);
+  var scored = TBS.all.map(function(r){
+    var hay = tbsHay(r.p), score = 0;
+    toks.forEach(function(t){ if (hay.indexOf(t) !== -1) score++; });
+    return { r: r, score: score };
+  });
+  var hits = scored.filter(function(x){ return x.score > 0; }).sort(function(a,b){ return b.score - a.score; });
+  var status = document.getElementById('tbs-status');
+  var show;
+  if (!toks.length){
+    show = TBS.all; status.textContent = 'The collection · ' + TBS.all.length + ' places, each charted';
+  } else if (hits.length){
+    show = hits.map(function(x){ return x.r; });
+    status.textContent = hits.length + (hits.length === 1 ? ' bearing found' : ' bearings found');
+  } else {
+    show = TBS.all;
+    status.textContent = 'No exact match — the whole collection, below. Or ask the Envoy.';
+  }
+  tbsRender(show);
+}
+function tbsRender(rows){
+  var g = document.getElementById('tbs-results');
+  while (g.firstChild) g.removeChild(g.firstChild);
+  rows.forEach(function(r){
+    var p = r.p;
+    var name = (r.slug === 'nour-el-nil-x') ? 'Nour El Nil' : (p.name || r.slug);
+    var href = (r.slug === 'nour-el-nil-x') ? '/nour-el-nil' : ('/property?slug=' + encodeURIComponent(r.slug));
+    var hero = '';
+    try { hero = p.photos.hero[0].url; } catch(e){}
+    var card = document.createElement('a');
+    card.href = href;
+    card.style.cssText = 'display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:box-shadow .25s,transform .25s;';
+    card.onmouseenter = function(){ card.style.boxShadow='0 10px 44px rgba(80,55,25,.14)'; card.style.transform='translateY(-2px)'; };
+    card.onmouseleave = function(){ card.style.boxShadow='none'; card.style.transform='none'; };
+    if (hero){
+      var im = document.createElement('img');
+      im.src = hero; im.alt = name; im.loading = 'lazy';
+      im.style.cssText = 'width:100%;height:170px;object-fit:cover;display:block;';
+      card.appendChild(im);
+    }
+    var body = document.createElement('div'); body.style.cssText = 'padding:14px 16px 16px;';
+    if (p.coords && window.tbCoordEl){
+      var co = window.tbCoordEl(p.coords.lat, p.coords.lng, null, false);
+      if (co){ co.style.marginBottom = '5px'; body.appendChild(co); }
+    }
+    var nm = document.createElement('div');
+    nm.style.cssText = "font-family:'Instrument Serif',serif;font-size:1.15rem;color:var(--ink);margin-bottom:3px;";
+    nm.textContent = name; body.appendChild(nm);
+    var loc = document.createElement('div');
+    loc.style.cssText = 'font-size:.74rem;color:var(--stone);margin-bottom:6px;';
+    loc.textContent = (p.render && p.render.location_line) || [p.region, p.country].filter(Boolean).join(', ') || '';
+    body.appendChild(loc);
+    if (p.tagline){
+      var tg = document.createElement('div');
+      tg.style.cssText = 'font-size:.78rem;color:var(--stone);line-height:1.55;';
+      tg.textContent = p.tagline; body.appendChild(tg);
+    }
+    var pv = parseInt(p.price_from, 10);
+    if (pv > 0){
+      var pr = document.createElement('div');
+      pr.style.cssText = 'margin-top:9px;font-size:.72rem;color:var(--ink);font-weight:600;';
+      pr.textContent = 'From $' + pv.toLocaleString(); body.appendChild(pr);
+    }
+    card.appendChild(body);
+    g.appendChild(card);
+  });
+}
+function tbsAskEnvoy(){
+  var vibe = (document.getElementById('tbs-vibe')||{}).value.trim();
+  if (!vibe) return;
+  var btn = document.getElementById('tbs-vibe-btn');
+  var note = document.getElementById('tbs-envoy-note');
+  btn.disabled = true; btn.textContent = 'Reading the chart…';
+  // The Envoy only knows the REAL published collection — built live from KV.
+  var manifest = TBS.all.map(function(r){
+    var p = r.p;
+    return { slug: r.slug, name: p.name, type: p.type,
+             where: (p.render && p.render.location_line) || p.country || '',
+             tags: p.tags || [], line: p.tagline || '' };
+  });
+  fetch('/api/envoy', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6', max_tokens: 500,
+      system: 'You are The Envoy, The Bearing\'s travel matcher. This JSON array is the COMPLETE collection — recommend ONLY from it, by slug: ' + JSON.stringify(manifest) + ' — Reply with RAW JSON only, no fences: {"note":"2-3 warm editorial sentences explaining the match (or honestly saying nothing fits and describing the closest)","slugs":["best-match-first"]}. Never invent properties.',
+      messages: [{ role: 'user', content: vibe }]
+    })
+  }).then(function(r){ return r.json(); }).then(function(d){
+    var txt = ((d.content||[]).map(function(c){ return c.text||''; }).join('')).replace(/```json|```/g,'').trim();
+    var out = JSON.parse(txt);
+    note.style.display = 'block';
+    note.textContent = out.note || '';
+    var order = {}; (out.slugs||[]).forEach(function(sl,i){ order[sl] = i; });
+    var picked = TBS.all.filter(function(r){ return order.hasOwnProperty(r.slug); })
+                        .sort(function(a,b){ return order[a.slug]-order[b.slug]; });
+    if (picked.length){
+      tbsRender(picked);
+      document.getElementById('tbs-status').textContent = 'The Envoy\u2019s reading · ' + picked.length + (picked.length===1?' bearing':' bearings');
+      document.getElementById('tbs-results').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    btn.disabled = false; btn.textContent = 'Ask the Envoy';
+  }).catch(function(e){
+    note.style.display = 'block';
+    note.textContent = 'The Envoy could not be reached just now \u2014 the results above are the full collection, and every page has a direct line to the property.';
+    btn.disabled = false; btn.textContent = 'Ask the Envoy';
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tbsInit); else tbsInit();
+</script>
 </body>
 </html>

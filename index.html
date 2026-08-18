@@ -1326,7 +1326,7 @@
     <a class="nav-link-d" href="/hotels.html">Hotels</a>
     <a class="nav-link-d" href="/cruises.html">Cruises</a>
     <a class="nav-link-d" href="/villas.html">Villas</a>
-    <a class="nav-link-d nav-vibe" href="/vibe-search.html">Search</a>
+    <a class="nav-link-d nav-vibe" href="/search.html">Search</a>
     <a class="nav-link-d" href="/how-we-choose.html">How we choose</a>
     <a class="nav-link-d" href="/journal.html">Journal</a>
     <a class="nav-link-d featured" href="/the-envoy.html">The Envoy</a>
@@ -1361,7 +1361,7 @@
       <button class="menu-link" onclick="closeMenu();window.location='/hotels.html'"><span>Hotels</span><span class="menu-link-arr">›</span></button>
       <button class="menu-link" onclick="closeMenu();window.location='/cruises.html'"><span>Cruises</span><span class="menu-link-arr">›</span></button>
       <button class="menu-link" onclick="closeMenu();window.location='/villas.html'"><span>Villas</span><span class="menu-link-arr">›</span></button>
-      <button class="menu-link" onclick="closeMenu();window.location='/vibe-search.html'"><span>Search</span><span class="menu-link-arr">›</span></button>
+      <button class="menu-link" onclick="closeMenu();window.location='/search.html'"><span>Search</span><span class="menu-link-arr">›</span></button>
       <div class="menu-divider"></div>
       <div class="menu-section-label">Learn</div>
       <button class="menu-link" onclick="closeMenu();window.location='/how-we-choose.html'"><span>How we choose</span><span class="menu-link-arr">›</span></button>
@@ -2638,7 +2638,7 @@ document.addEventListener('keydown', function(e){
 });
 function tbGoSearch(preset){
   var q = preset || ((document.getElementById('tb-q')||{}).value || '').trim();
-  window.location = '/vibe-search' + (q ? ('?q=' + encodeURIComponent(q)) : '');
+  window.location = '/search' + (q ? ('?q=' + encodeURIComponent(q)) : '');
 }
 /* Rotating invitations (static under reduced motion) */
 (function(){
