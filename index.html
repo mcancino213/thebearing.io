@@ -1399,10 +1399,11 @@
         <input id="tb-q" class="tb-hero-input" type="text" autocomplete="off"
                placeholder="Where do you want to be?" aria-label="Describe where you want to be">
         <button class="tb-hero-go" type="submit" aria-label="Search">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="20" y2="12"/><polyline points="14,5 21,12 14,19"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
         </button>
       </form>
       <i class="tb-chart-rule on-dark tb-hero-rule" aria-hidden="true"></i>
+      <div class="tb-hero-hint"><b>Search the collection</b> · type anywhere, press enter</div>
       <div class="tb-search-chips tb-hero-chips">
         <button type="button" class="tb-chip" onclick="tbGoSearch('The Nile by dahabiya — slow, under sail')">The Nile by dahabiya</button>
         <button type="button" class="tb-chip" onclick="tbGoSearch('The Mekong, privately — just us on the river')">The Mekong, privately</button>
@@ -2625,6 +2626,16 @@ function submitQuickEnquiry() {
 <script src="/assets/bearing.js"></script>
 <script>
 /* v75z: universal search — hands the phrase to the vibe engine */
+/* Type-anywhere: a printable keypress focuses the search (desktop only) */
+document.addEventListener('keydown', function(e){
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key.length !== 1) return;
+  var a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
+  var q = document.getElementById('tb-q');
+  if (q){ q.focus(); }
+});
 function tbGoSearch(preset){
   var q = preset || ((document.getElementById('tb-q')||{}).value || '').trim();
   window.location = '/vibe-search' + (q ? ('?q=' + encodeURIComponent(q)) : '');
