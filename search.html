@@ -516,29 +516,31 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
      hidden by tbSearchInit (kept in markup for reversibility). -->
 <div id="tbs" style="max-width:980px;margin:0 auto;padding-bottom:60px;">
   <div class="tb-search-eyebrow" style="margin-bottom:14px;"><span>Find your bearing</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;"></i></div>
-  <form onsubmit="event.preventDefault();tbsRun();" style="display:flex;align-items:flex-end;gap:14px;border-bottom:1.5px solid var(--border);padding-bottom:12px;margin-bottom:8px;">
+  <form onsubmit="event.preventDefault();tbsRun();" style="border-bottom:1.5px solid var(--border);padding-bottom:12px;margin-bottom:10px;">
     <input id="tbs-q" type="text" autocomplete="off" placeholder="Where do you want to be?"
-      style="flex:1;min-width:0;border:none;outline:none;background:none;font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.2rem);color:var(--ink);padding:0;"
+      style="width:100%;border:none;outline:none;background:none;font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.2rem);color:var(--ink);padding:0 0 12px;"
       oninput="tbsRunSoon()">
-    <button type="submit" aria-label="Search" style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;border:none;border-radius:100px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--terra),#8c4422);box-shadow:0 3px 14px rgba(176,88,48,.3);">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-    </button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="submit" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1.5px solid var(--border);border-radius:100px;cursor:pointer;background:#fff;color:var(--ink);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        Match the collection
+      </button>
+      <button type="button" id="tbs-envoy-btn" onclick="tbsAskEnvoy()" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:100px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#16323e,#1e4356);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;box-shadow:0 3px 14px rgba(22,50,62,.28);">
+        <span style="color:var(--terra);">✦</span> Ask the Envoy to read it
+      </button>
+    </div>
   </form>
+  <div class="tb-mono" style="font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;">Matches instantly as you type · the Envoy reads mood, pace, and who's coming</div>
+  <!-- The Envoy's reading — ABOVE the results, part of the answer -->
+  <div id="tbs-envoy-note" style="display:none;background:linear-gradient(135deg,#16323e,#1e4356);border-radius:16px;padding:18px 22px;margin-bottom:22px;color:#fff;">
+    <div class="tb-mono" style="font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:8px;">The Envoy's reading</div>
+    <div id="tbs-envoy-text" style="font-family:'Instrument Serif',serif;font-size:1.08rem;line-height:1.6;border-left:2px solid var(--terra);padding-left:14px;"></div>
+  </div>
   <div id="tbs-status" class="tb-mono" style="font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--chart-blue,#3d7a96);margin-bottom:22px;"></div>
 
   <div id="tbs-results" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-bottom:34px;"></div>
 
-  <!-- Embedded Envoy refine — the vibe layer ON the results, not a separate page -->
-  <div id="tbs-envoy" style="background:linear-gradient(135deg,#16323e,#1e4356);border-radius:20px;padding:22px 24px;color:#fff;">
-    <div class="tb-mono" style="font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.65);margin-bottom:10px;">Refine with the Envoy</div>
-    <div style="font-family:'Instrument Serif',serif;font-size:1.15rem;margin-bottom:12px;">Describe the feeling — light, pace, who's coming — and the Envoy reads the collection for you.</div>
-    <div style="display:flex;gap:10px;align-items:flex-end;">
-      <textarea id="tbs-vibe" rows="2" placeholder="e.g. slow mornings on water, no crowds, my kids along…" style="flex:1;border:none;outline:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:10px 14px;color:#fff;font-family:'Geist',sans-serif;font-size:.85rem;resize:vertical;"></textarea>
-      <button type="button" onclick="tbsAskEnvoy()" id="tbs-vibe-btn" style="padding:11px 18px;border:none;border-radius:12px;cursor:pointer;font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;color:#16323e;background:#fff;white-space:nowrap;">Ask the Envoy</button>
-    </div>
-    <div id="tbs-envoy-note" style="display:none;margin-top:14px;font-family:'Instrument Serif',serif;font-size:1rem;line-height:1.6;color:rgba(255,255,255,.92);border-left:2px solid var(--terra);padding-left:14px;"></div>
   </div>
-</div>
 
   <div class="search-hero-top">
     <div>
@@ -1501,7 +1503,12 @@ function tbsRun(){
     status.textContent = hits.length + (hits.length === 1 ? ' bearing found' : ' bearings found');
   } else {
     show = TBS.all;
-    status.textContent = 'No exact match — the whole collection, below. Or ask the Envoy.';
+    status.innerHTML = 'No exact match — the whole collection is below, or ';
+    var b = document.createElement('button');
+    b.textContent = 'ask the Envoy to read your phrase \u2192';
+    b.style.cssText = 'border:none;background:none;cursor:pointer;color:var(--terra);font-family:inherit;font-size:inherit;letter-spacing:inherit;text-transform:inherit;padding:0;text-decoration:underline;';
+    b.onclick = tbsAskEnvoy;
+    status.appendChild(b);
   }
   tbsRender(show);
 }
@@ -1553,10 +1560,12 @@ function tbsRender(rows){
   });
 }
 function tbsAskEnvoy(){
-  var vibe = (document.getElementById('tbs-vibe')||{}).value.trim();
+  var vibe = ((document.getElementById('tbs-q')||{}).value||'').trim();
   if (!vibe) return;
-  var btn = document.getElementById('tbs-vibe-btn');
+  var btn = document.getElementById('tbs-envoy-btn');
+  if (!vibe){ var qi = document.getElementById('tbs-q'); if (qi) qi.focus(); return; }
   var note = document.getElementById('tbs-envoy-note');
+  var noteText = document.getElementById('tbs-envoy-text');
   btn.disabled = true; btn.textContent = 'Reading the chart…';
   // The Envoy only knows the REAL published collection — built live from KV.
   var manifest = TBS.all.map(function(r){
@@ -1576,7 +1585,8 @@ function tbsAskEnvoy(){
     var txt = ((d.content||[]).map(function(c){ return c.text||''; }).join('')).replace(/```json|```/g,'').trim();
     var out = JSON.parse(txt);
     note.style.display = 'block';
-    note.textContent = out.note || '';
+    noteText.textContent = out.note || '';
+    note.scrollIntoView({ behavior:'smooth', block:'nearest' });
     var order = {}; (out.slugs||[]).forEach(function(sl,i){ order[sl] = i; });
     var picked = TBS.all.filter(function(r){ return order.hasOwnProperty(r.slug); })
                         .sort(function(a,b){ return order[a.slug]-order[b.slug]; });
@@ -1585,11 +1595,11 @@ function tbsAskEnvoy(){
       document.getElementById('tbs-status').textContent = 'The Envoy\u2019s reading · ' + picked.length + (picked.length===1?' bearing':' bearings');
       document.getElementById('tbs-results').scrollIntoView({ behavior:'smooth', block:'start' });
     }
-    btn.disabled = false; btn.textContent = 'Ask the Envoy';
+    btn.disabled = false; btn.innerHTML = '<span style="color:var(--terra);">✦</span>&nbsp;Ask the Envoy to read it';
   }).catch(function(e){
     note.style.display = 'block';
-    note.textContent = 'The Envoy could not be reached just now \u2014 the results above are the full collection, and every page has a direct line to the property.';
-    btn.disabled = false; btn.textContent = 'Ask the Envoy';
+    noteText.textContent = 'The Envoy could not be reached just now \u2014 the results above are the full collection, and every page has a direct line to the property.';
+    btn.disabled = false; btn.innerHTML = '<span style="color:var(--terra);">✦</span>&nbsp;Ask the Envoy to read it';
   });
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tbsInit); else tbsInit();
