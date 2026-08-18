@@ -515,22 +515,33 @@ hr.section-sep{border:none;border-top:1px solid var(--border);margin:8px 0 24px;
      Search happens HERE — no page-hopping. Legacy static UI below is
      hidden by tbSearchInit (kept in markup for reversibility). -->
 <div id="tbs" style="max-width:980px;margin:0 auto;padding-bottom:60px;">
-  <div class="tb-search-eyebrow" style="margin-bottom:14px;"><span>Find your bearing</span><i class="tb-chart-rule" aria-hidden="true" style="flex:1;"></i></div>
-  <form onsubmit="event.preventDefault();tbsRun();" style="border-bottom:1.5px solid var(--border);padding-bottom:12px;margin-bottom:10px;">
-    <input id="tbs-q" type="text" autocomplete="off" placeholder="Where do you want to be?"
-      style="width:100%;border:none;outline:none;background:none;font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(1.5rem,3.4vw,2.2rem);color:var(--ink);padding:0 0 12px;"
+  <div class="tb-mono" style="display:flex;align-items:center;gap:10px;font-size:.6rem;letter-spacing:.24em;text-transform:uppercase;color:var(--chart-blue,#3d7a96);margin-bottom:14px;"><span style="color:var(--terra);">✦</span>Envoy AI Search<i class="tb-chart-rule" aria-hidden="true" style="flex:1;"></i></div>
+  <h1 style="font-family:'Instrument Serif',serif;font-size:clamp(1.7rem,3.6vw,2.5rem);color:var(--ink);line-height:1.15;margin:0 0 6px;">Tell the Envoy what you're dreaming of.</h1>
+  <p style="font-size:.86rem;color:var(--stone);line-height:1.6;margin:0 0 18px;max-width:560px;">Our AI reads the whole collection — mood, pace, season, who's coming — and points you to exactly the right place. Type anything.</p>
+
+  <form onsubmit="event.preventDefault();tbsAskEnvoy();" id="tbs-promptbox"
+    style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid var(--chart-blue,#3d7a96);border-radius:18px;padding:16px 16px 16px 22px;margin-bottom:10px;box-shadow:0 6px 30px rgba(22,50,62,.1);transition:border-color .25s,box-shadow .25s;">
+    <input id="tbs-q" type="text" autocomplete="off"
+      placeholder="A river with no other boats…"
+      aria-label="Describe the trip you want — the Envoy will read it"
+      style="flex:1;min-width:0;border:none;outline:none;background:none;font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(1.15rem,2.6vw,1.55rem);color:var(--ink);padding:4px 0;"
       oninput="tbsRunSoon()">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button type="submit" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1.5px solid var(--border);border-radius:100px;cursor:pointer;background:#fff;color:var(--ink);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-        Match the collection
-      </button>
-      <button type="button" id="tbs-envoy-btn" onclick="tbsAskEnvoy()" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:none;border-radius:100px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#16323e,#1e4356);font-family:'Geist',sans-serif;font-size:.8rem;font-weight:600;box-shadow:0 3px 14px rgba(22,50,62,.28);">
-        <span style="color:var(--terra);">✦</span> Ask the Envoy to read it
-      </button>
-    </div>
+    <button type="submit" id="tbs-envoy-btn" aria-label="Ask the Envoy"
+      style="display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border:none;border-radius:100px;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--terra),#8c4422);font-family:'Geist',sans-serif;font-size:.82rem;font-weight:700;white-space:nowrap;box-shadow:0 4px 16px rgba(176,88,48,.35);">
+      ✦&nbsp;Ask the Envoy
+    </button>
   </form>
-  <div class="tb-mono" style="font-size:.56rem;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:16px;">Matches instantly as you type · the Envoy reads mood, pace, and who's coming</div>
+  <div class="tb-mono" style="font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);margin-bottom:20px;">Results filter live as you type · ✦ sends your words to the AI</div>
+  <style>
+    #tbs-promptbox:focus-within{border-color:var(--terra);box-shadow:0 6px 34px rgba(176,88,48,.18);}
+    @keyframes tbsGlow{0%,100%{box-shadow:0 6px 30px rgba(22,50,62,.1);}50%{box-shadow:0 6px 34px rgba(61,122,150,.28);}}
+    #tbs-promptbox.idle{animation:tbsGlow 3.2s ease-in-out infinite;}
+    @media (prefers-reduced-motion: reduce){#tbs-promptbox.idle{animation:none;}}
+    @media (max-width:560px){
+      #tbs-promptbox{flex-direction:column;align-items:stretch;padding:16px;}
+      #tbs-promptbox button{justify-content:center;}
+    }
+  </style>
   <!-- The Envoy's reading — ABOVE the results, part of the answer -->
   <div id="tbs-envoy-note" style="display:none;background:linear-gradient(135deg,#16323e,#1e4356);border-radius:16px;padding:18px 22px;margin-bottom:22px;color:#fff;">
     <div class="tb-mono" style="font-size:.54rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-bottom:8px;">The Envoy's reading</div>
@@ -1602,6 +1613,40 @@ function tbsAskEnvoy(){
     btn.disabled = false; btn.innerHTML = '<span style="color:var(--terra);">✦</span>&nbsp;Ask the Envoy to read it';
   });
 }
+/* v76f: the box announces itself — typing placeholder + idle glow.
+   Both stop on focus/value; both off under reduced motion. */
+(function(){
+  var box = document.getElementById('tbs-promptbox');
+  var inp = document.getElementById('tbs-q');
+  if (!box || !inp) return;
+  box.classList.add('idle');
+  inp.addEventListener('focus', function(){ box.classList.remove('idle'); });
+  inp.addEventListener('blur', function(){ if (!inp.value) box.classList.add('idle'); });
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var EXAMPLES = [
+    'A river with no other boats\u2026',
+    'Somewhere warm in February, kids along\u2026',
+    'Old-world, slow mornings, real quiet\u2026',
+    'A boat small enough to feel like ours\u2026'
+  ];
+  var ei = 0, ci = 0, deleting = false, timer = null;
+  function tick(){
+    if (document.activeElement === inp || inp.value){ timer = setTimeout(tick, 1200); return; }
+    var full = EXAMPLES[ei];
+    if (!deleting){
+      ci++;
+      inp.placeholder = full.slice(0, ci);
+      if (ci >= full.length){ deleting = true; timer = setTimeout(tick, 2200); return; }
+      timer = setTimeout(tick, 55);
+    } else {
+      ci--;
+      inp.placeholder = full.slice(0, Math.max(ci, 0));
+      if (ci <= 0){ deleting = false; ei = (ei + 1) % EXAMPLES.length; timer = setTimeout(tick, 500); return; }
+      timer = setTimeout(tick, 28);
+    }
+  }
+  timer = setTimeout(tick, 900);
+})();
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tbsInit); else tbsInit();
 </script>
 </body>
