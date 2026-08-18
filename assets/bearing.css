@@ -187,3 +187,23 @@
   .tb-arrival .tb-hero-ask,.tb-arrival .tb-hero-rule,
   .tb-arrival .tb-hero-chips,.tb-arrival .tb-hero-positions{animation:none;opacity:1;transform:none;}
 }
+
+/* ── 7. SITEWIDE INSTRUMENT VOICE + HYDROGRAPHIC INK (v76c) ───────
+   Approved from the v76a/b prototype. Serif = the poetry;
+   mono = everything navigational. Ink-blue = structure. */
+
+/* Nav reads like an instrument panel */
+.nav-link-d{font-family:var(--tb-mono) !important;font-size:.66rem !important;
+  letter-spacing:.15em !important;text-transform:uppercase !important;font-weight:500 !important;}
+.nav-tagline,.kicker-txt{font-family:var(--tb-mono) !important;letter-spacing:.22em !important;}
+.menu-link span:first-child{font-family:var(--tb-mono);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;}
+
+/* Hydrographic ink for structural elements on light surfaces */
+.tb-coord{color:var(--chart-blue,#3d7a96);}
+.tb-coord .tb-coord-pip{background:var(--chart-blue,#3d7a96);box-shadow:0 0 0 3px rgba(61,122,150,.14);}
+.tb-coord.on-dark{color:rgba(255,255,255,.78);}
+.tb-coord.on-dark .tb-coord-pip{background:var(--terra,#b05830);box-shadow:0 0 0 3px rgba(255,255,255,.18);}
+.eyebrow,.sec-eyebrow{color:var(--chart-blue,#3d7a96) !important;}
+.tb-chart-rule{--tick:rgba(22,50,62,.26);}
+.tb-chart-rule.on-dark{--tick:rgba(255,255,255,.28);}
+.sec-eyebrow::after{filter:none;}
