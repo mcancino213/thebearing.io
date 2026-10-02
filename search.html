@@ -1205,6 +1205,23 @@ function ciAddPropertyCards(props) {
   msgs.appendChild(row); msgs.scrollTop = msgs.scrollHeight;
 }
 
+var ciOpen = false;
+var ciBusy = false;
+
+// Persist history across pages via sessionStorage
+// (v76i: this state block was missing on this page — ciSend/ciSendMsg/openEnvoy
+//  referenced ciBusy/ciHistory/ciSaveHistory and threw ReferenceError on every
+//  interaction, which is why the drawer's send arrow did nothing. Block copied
+//  verbatim from index.html, the working reference.)
+function ciLoadHistory() {
+  try { return JSON.parse(sessionStorage.getItem('ci_history') || '[]'); } catch(e) { return []; }
+}
+function ciSaveHistory(h) {
+  try { sessionStorage.setItem('ci_history', JSON.stringify(h)); } catch(e) {}
+}
+
+var ciHistory = ciLoadHistory();
+
 function openEnvoy() {
   ciOpen = true;
   document.getElementById('ci-drawer').classList.add('open');
@@ -1291,7 +1308,7 @@ async function ciSendMsg(text) {
   var t = ciShowTyping();
 
   try {
-    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var CI_API = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
     // Strip metadata fields before sending to API
     var apiMessages = ciHistory.map(function(m) {
       return { role: m.role, content: m.content };

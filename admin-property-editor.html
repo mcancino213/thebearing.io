@@ -2858,7 +2858,7 @@ async function aiFindProperty() {
   var systemMsg = "You are a research assistant. The user will give you a property name (a hotel, villa, or boutique cruise). Use web search to find ONE specific property matching the name. Return ONLY a raw JSON object — no markdown, no backticks, no preamble — with this exact shape:\n{\"name\":\"Full official property name\",\"location\":\"City, Country\",\"type\":\"hotel|villa|cruise\",\"year\":\"YYYY or YYYY/YYYY for renovated\",\"rooms\":\"number or null\",\"summary\":\"2 sentence factual summary — what it is and where, no marketing language\",\"source\":\"primary source URL you used\",\"confidence\":\"high|medium|low\"}\nIf multiple properties share the name, pick the most architecturally significant / well-reviewed one. If you genuinely cannot find it, return {\"error\":\"not_found\",\"reason\":\"brief explanation\"}.";
 
   try {
-    var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var ENVOY_API = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
     var response = await fetch(ENVOY_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2936,7 +2936,7 @@ async function aiGenerateFull(opts) {
   var userMsg = "Property to draft: " + prop.name + " (" + (prop.location || '') + ")\nType: " + (prop.type || '') + "\nFacts I already know: " + JSON.stringify(prop) + "\n\nUse web search to gather any additional facts you need (architect, materials, history, awards, logistics, room counts, season, exact location). Then draft the full property page in The Bearing voice using the spec below.\n\n" + fieldSpec;
 
   try {
-    var ENVOY_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var ENVOY_API = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
     var response = await fetch(ENVOY_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -3270,7 +3270,7 @@ function dosParseIntoFields(dossierText) {
 async function dosDraftWithAI() {
   var name = (document.getElementById('f-name') && document.getElementById('f-name').value || '').trim();
   if (!name) { dosShowMsg('Enter the property name in section 1 first.', 'error'); return; }
-  var api = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+  var api = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
   dosShowLoading('Researching ' + name + ' and drafting dossier answers...');
   document.getElementById('dos-draft-btn').disabled = true;
 

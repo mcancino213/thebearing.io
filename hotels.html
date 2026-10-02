@@ -1461,7 +1461,7 @@ async function ciSendMsg(text) {
   var t = ciShowTyping();
 
   try {
-    var CI_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/envoy' : 'https://api.anthropic.com/v1/messages';
+    var CI_API = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
     // Strip metadata fields before sending to API
     var apiMessages = ciHistory.map(function(m) {
       return { role: m.role, content: m.content };
