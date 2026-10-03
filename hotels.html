@@ -971,28 +971,12 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
     document.body.style.overflow='';
   }
 </script>
-<style>/* v76l: voyage card system ported from cruises.html */
-/* ── CINEMATIC VOYAGE CARDS ── */
-/* ── SPLIT EDITORIAL HERO ── */
-.voyages-header{position:relative;min-height:76vh;overflow:hidden;background:#1a120a;display:flex;align-items:flex-end;}
-.vh-badge{
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);
-  border-radius:100px;padding:6px 14px;
-  font-size:.65rem;color:rgba(255,255,255,.75);
-  margin-bottom:24px;
-}
-.vh-badge-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;}
-.voyages-header{min-height:88vh;}
-.voyage-filters{
-  display:flex;gap:8px;flex-wrap:wrap;
-  padding:20px 56px 28px;
-  background:var(--cream);
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-}
+<style>
+/* v76m: voyage card system — VERBATIM slice from cruises.html (regex extraction in v76l
+   hoisted mobile @media rules to global scope, so desktop rendered the stacked phone layout) */
 /* Voyage stack */
 .voyage-stack{display:flex;flex-direction:column;}
+
 /* Each voyage = cinematic full-bleed section */
 .voyage{position:relative;min-height:100dvh;display:flex;align-items:stretch;overflow:hidden;}
 .voyage-bg{position:absolute;inset:0;z-index:0;}
@@ -1003,27 +987,35 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .voyage:nth-child(2) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(2,8,20,.92) 0%,rgba(4,18,30,.85) 35%,rgba(4,18,30,.3) 65%,transparent 100%);}
 .voyage:nth-child(3) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(4,12,8,.92) 0%,rgba(6,18,10,.85) 35%,rgba(6,18,10,.3) 65%,transparent 100%);}
 .voyage:nth-child(4) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(10,8,20,.92) 0%,rgba(16,10,28,.85) 35%,rgba(16,10,28,.3) 65%,transparent 100%);}
+
 .voyage-content{position:relative;z-index:2;display:flex;align-items:center;width:100%;padding:80px 32px;}
 .voyage-left{flex:1;max-width:540px;padding-right:40px;}
 .voyage-right{width:340px;flex-shrink:0;}
+
 /* Voyage number */
 .voyage-num{font-family:'Instrument Serif',serif;font-size:5rem;line-height:1;color:rgba(255,255,255,.07);margin-bottom:-20px;user-select:none;}
+
 /* Type / status */
 .voyage-meta-top{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
 .voyage-type{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.45);}
 .voyage-status{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:100px;}
 .voyage-status-live{background:rgba(58,112,85,.7);color:#7dcea0;border:1px solid rgba(58,112,85,.4);}
 .voyage-status-coming{background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.12);}
+
 .voyage-name{font-family:'Instrument Serif',serif;font-size:clamp(2rem,5vw,3.4rem);color:#fff;line-height:1.05;margin-bottom:8px;}
 .voyage-tagline{font-size:.95rem;color:rgba(255,255,255,.5);margin-bottom:20px;line-height:1.6;}
+
 /* Animated route line */
 .voyage-route{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding:14px 18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;width:fit-content;}
 .voyage-port{font-size:.8rem;font-weight:600;color:#fff;}
 .voyage-route-anim{flex:1;min-width:60px;position:relative;height:2px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden;}
 .voyage-route-anim::after{content:'';position:absolute;top:0;left:-100%;height:100%;width:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);animation:routeFlow 2.5s ease-in-out infinite;}
+@keyframes routeFlow{0%{left:-60%;}100%{left:110%;}}
 .voyage-distance{font-size:.65rem;color:rgba(255,255,255,.35);white-space:nowrap;}
+
 /* The standout fact */
 .voyage-fact{font-family:'Instrument Serif',serif;font-size:1.05rem;font-style:italic;color:rgba(255,220,160,.85);border-left:2px solid rgba(255,200,100,.3);padding-left:16px;margin-bottom:28px;line-height:1.6;}
+
 /* Stats row */
 .voyage-stats{display:flex;gap:0;margin-bottom:28px;}
 .vstat{padding:12px 20px;border-right:1px solid rgba(255,255,255,.1);}
@@ -1031,6 +1023,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .vstat:last-child{border-right:none;}
 .vstat-lbl{font-size:.58rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:4px;}
 .vstat-val{font-size:.92rem;font-weight:600;color:#fff;}
+
 /* CTA area */
 .voyage-cta-row{display:flex;align-items:center;gap:16px;}
 .voyage-cta{padding:13px 28px;background:linear-gradient(135deg,var(--terra),var(--terra-d));color:#fff;border:none;border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap;}
@@ -1038,6 +1031,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .voyage-cta-ghost{padding:13px 28px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:100px;font-family:'Geist',sans-serif;font-size:.88rem;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .voyage-cta-ghost:hover{background:rgba(255,255,255,.14);color:#fff;}
 .voyage-price-note{font-size:.72rem;color:rgba(255,255,255,.3);}
+
 /* Right panel: key visual detail */
 .voyage-panel{background:rgba(255,255,255,.06);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:16px;}
 .voyage-panel-img{border-radius:12px;overflow:hidden;height:180px;}
@@ -1050,19 +1044,34 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .vpp-from{font-size:.6rem;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.06em;}
 .vpp-val{font-family:'Instrument Serif',serif;font-size:1.6rem;color:#fff;line-height:1;}
 .vpp-unit{font-size:.68rem;color:rgba(255,255,255,.35);}
+
 /* Divider between voyages */
 .voyage-divider{height:1px;background:linear-gradient(90deg,transparent,rgba(80,55,25,.2),transparent);margin:0 32px;}
+
 /* Scroll indicator on first voyage */
 .voyage-scroll-hint{position:absolute;bottom:28px;left:32px;z-index:3;display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.3);font-size:.7rem;animation:fadeHint 3s 2s both;}
+@keyframes fadeHint{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0;display:none;}}
+
 /* Bottom CTA */
 .voyages-footer{padding:80px 32px;text-align:center;background:var(--linen);border-top:1px solid var(--border);}
 .voyages-footer h2{font-family:'Instrument Serif',serif;font-size:1.8rem;color:var(--ink);margin-bottom:8px;}
 .voyages-footer p{font-size:.88rem;color:var(--stone);margin-bottom:24px;}
-.voyage-content{flex-direction:column;padding:60px 24px;}
-.voyage-left{max-width:100%;padding-right:0;margin-bottom:28px;}
-.voyage-right{width:100%;}
-.voyage-num{font-size:3rem;}
-.voyage-filters{padding:20px 24px 28px;}
+
+/* Upcoming banner */
+.upcoming-banner{background:linear-gradient(135deg,var(--ink),#2a2018);padding:48px 32px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;}
+.ub-text h3{font-family:'Instrument Serif',serif;font-size:1.4rem;color:#fff;margin-bottom:6px;}
+.ub-text p{font-size:.82rem;color:rgba(255,255,255,.4);}
+.ub-pills{display:flex;gap:10px;flex-wrap:wrap;}
+.ub-pill{padding:8px 18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:100px;font-size:.78rem;color:rgba(255,255,255,.55);}
+.ub-pill span{color:rgba(255,200,100,.7);}
+
+@media(max-width:900px){
+  .voyage-content{flex-direction:column;padding:60px 24px;}
+  .voyage-left{max-width:100%;padding-right:0;margin-bottom:28px;}
+  .voyage-right{width:100%;}
+  .voyage-num{font-size:3rem;}
+  .voyage-filters{padding:20px 24px 28px;}
+}
 </style>
 </head>
 <body>
@@ -1175,7 +1184,7 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 </div>
 
 <!-- Dynamic hotels from KV -->
-<div id="dynamic-hotels"></div>
+<div id="dynamic-hotels" class="voyage-stack"></div>
 <!-- v74d: honest empty state shown when no dynamic hotels load. Hidden if any KV-stored hotel renders. -->
 <div id="hotels-empty-state" style="display:none;text-align:center;padding:60px 24px 40px;color:var(--bark);">
   <div style="font-family:'Instrument Serif',serif;font-size:1.6rem;font-weight:400;margin-bottom:8px;color:var(--ink);">More properties coming soon</div>
