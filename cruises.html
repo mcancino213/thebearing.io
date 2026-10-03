@@ -1268,8 +1268,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 
 // ── Dynamic Cruises loader from KV ──────────────────────────────────────
 (function(){
-  var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev'))
-    ? '/api/property' : null;
+  var PROP_API = '/api/property'; /* v76l: same-origin always (www/preview fix, v76h class) */
   if (!PROP_API) return;
 
   var HARDCODED = ['nour-el-nil'];
