@@ -888,16 +888,10 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   .vh-stat-val{font-size:1.3rem;}
 }
 
-.voyage-filters{
-  display:flex;gap:8px;flex-wrap:wrap;
-  padding:20px 56px 28px;
-  background:var(--cream);
-  border-top:1px solid var(--border);
-  border-bottom:1px solid var(--border);
-}
-.vfpill{padding:7px 18px;border-radius:100px;border:1.5px solid var(--border-hi);background:#fff;font-size:.78rem;color:var(--bark);cursor:pointer;font-family:'Geist',sans-serif;transition:all .15s;white-space:nowrap;}
-.vfpill.active{background:var(--ink);color:#fff;border-color:var(--ink);}
-.vfpill:hover:not(.active){background:var(--linen);}
+.voyage-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:20px 32px;background:var(--ink,#1e1810);border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08);}
+.vfpill{padding:7px 18px;border-radius:100px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.07);font-size:.78rem;color:rgba(255,255,255,.78);cursor:pointer;font-family:'Geist',sans-serif;transition:all .15s;white-space:nowrap;}
+.vfpill.active{background:#fff;color:var(--ink);border-color:#fff;}
+.vfpill:hover:not(.active){background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45);color:#fff;}
 
 /* Voyage stack */
 .voyage-stack{display:flex;flex-direction:column;}
