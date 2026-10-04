@@ -1726,15 +1726,18 @@ function submitAccount(){
 // data without ever hitting the API. Now if we have a slug we navigate;
 // if we don't (static demo cards), we show a "coming soon" toast.
 function openQuickEnquiry(propertyName, slug) {
+  // v76q: quick-enquiry modals were FAKE (submit showed "Enquiry sent" without sending
+  // anything) or had undefined submits. All enquiry paths now converge on the property
+  // page's REAL auth-gated enquiry (openEnquiry + ?enquire=1 auto-open).
   if (slug) {
-    // Navigate to the property page. The user can click Enquire from there,
-    // which gates on auth and runs the real /api/conversation create flow.
-    window.location = '/property.html?slug=' + encodeURIComponent(slug);
-    return;
+    window.location = (slug === 'nour-el-nil-x' || slug === 'nour-el-nil')
+      ? '/nour-el-nil.html?enquire=1'
+      : '/property.html?slug=' + encodeURIComponent(slug) + '&enquire=1';
+  } else {
+    window.location = '/search.html?q=' + encodeURIComponent(propertyName || '');
   }
-  // No slug → static demo card without a real KV record. Be honest.
-  ppQuickToast('Coming soon to The Bearing — we curate properties carefully and this one isn\u2019t available to book yet.');
 }
+function submitQuickEnquiry() { closeQuickEnquiry(); } // v76q: markup safety — modal superseded by real enquiry flow
 function closeQuickEnquiry() {
   // Legacy — kept in case any code still calls it. The modal is no longer
   // shown but the close handler is harmless.

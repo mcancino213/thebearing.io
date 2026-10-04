@@ -30,7 +30,7 @@ var _t;function toast(m){var e=document.getElementById('toast-el');if(!e)return;
 // tbAuthEnquire path the other Enquire buttons use.
 function openEnquiry(){
   // v73f: stash pending enquiry intent for post-sign-in resume.
-  // See tbAuthEnquire() for the rationale.
+  // (pattern originated in the flagship's tbAuthEnquire — v76q: all buttons here use openEnquiry)
   try {
     sessionStorage.setItem('tb_pending_action', JSON.stringify({
       action: 'enquire',
@@ -1249,7 +1249,7 @@ button{font-family:inherit;cursor:pointer;}
         <div id="access-name" style="font-family:'Instrument Serif',serif;font-size:1.3rem;color:#fff;margin-bottom:7px;line-height:1.25;"></div>
         <div id="access-desc" style="font-size:.79rem;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:16px;"></div>
         <div id="access-bullets" style="display:none;flex-direction:column;gap:7px;margin-bottom:18px;"></div>
-        <button onclick="tbAuthEnquire()" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
+        <button onclick="openEnquiry()" style="width:100%;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:var(--r-md);background:rgba(255,255,255,.12);color:#fff;font-family:'Geist',sans-serif;font-size:.83rem;font-weight:600;cursor:pointer;letter-spacing:.02em;">
           Claim your private access &#8594;
         </button>
       </div>
@@ -1331,7 +1331,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>If something goes wrong, we fix it.</strong> We're reachable 24/7 during your journey. Our properties know our guests get priority.</div></div>
         <div class="promise-item"><div class="promise-pip"></div><div class="promise-txt"><strong>No hidden fees, ever.</strong> 0% commission added to your booking. What you see is what you pay.</div></div>
       </div>
-      <button class="promise-btn" onclick="tbAuthEnquire()">Start your inquiry — no commitment</button>
+      <button class="promise-btn" onclick="openEnquiry()">Start your inquiry — no commitment</button>
     </div>
 
     <!-- SIMILAR PROPERTIES -->
@@ -3672,6 +3672,12 @@ document.addEventListener('keydown', function(e) {
 
 
 <div class="toast" id="toast-el"></div>
+<script>
+// v76q: ?enquire=1 deep-link — listing-page "Enquire first" lands here and opens the REAL enquiry
+if (new URLSearchParams(location.search).get('enquire') === '1') {
+  window.addEventListener('load', function(){ setTimeout(function(){ if (typeof openEnquiry === 'function') openEnquiry(); }, 400); });
+}
+</script>
 <script src="/assets/auth.js"></script>
 <script src="/assets/bearing.js"></script>
 </body>

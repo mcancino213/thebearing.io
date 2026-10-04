@@ -1488,7 +1488,7 @@
         </div>
       </div>
 
-      <button class="f-next" onclick="submitEnquiryAndGo()">Open my conversation →</button>
+      <button class="f-next" onclick="goStep(3)">Open my conversation →</button>
       <p class="f-note">No payment now · No obligation · Cancel any time</p>
     </div>
 
@@ -1926,7 +1926,8 @@ function populateConfirmation(){
     }
   })
   .catch(function(e){ console.error('[Enquiry] Conversation create error:', e); });
-}
+  }
+} // v76q: close populateConfirmation — this brace was lost in a ~v75u edit, parse-killing the ENTIRE 3-step block (goStep, stepper, enquiry submit)
 
 function setText(id, txt){
   var el = document.getElementById(id);
@@ -3000,5 +3001,39 @@ function tbSubmitBooking() {
 
 <script src="/assets/auth.js"></script>
 <script src="/assets/bearing.js"></script>
+<script>
+// v76q: flagship photo lightbox — expandPhoto() was called by all 6 mosaic tiles but never defined
+(function(){
+  var ov = null, idx = 0, imgs = [];
+  function srcs(){ return Array.prototype.map.call(document.querySelectorAll('#mosaic-track img'), function(i){ return i.src; }); }
+  function build(){
+    ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:950;background:rgba(10,8,4,.94);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+    ov.innerHTML = '<img style="max-width:92vw;max-height:88vh;object-fit:contain;border-radius:6px;box-shadow:0 20px 80px rgba(0,0,0,.6);">' +
+      '<button data-nav="-1" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:100px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;font-size:1.1rem;cursor:pointer;">&#8249;</button>' +
+      '<button data-nav="1" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:100px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;font-size:1.1rem;cursor:pointer;">&#8250;</button>';
+    ov.addEventListener('click', function(e){
+      var nav = e.target.getAttribute && e.target.getAttribute('data-nav');
+      if (nav){ e.stopPropagation(); idx = (idx + parseInt(nav,10) + imgs.length) % imgs.length; ov.querySelector('img').src = imgs[idx]; return; }
+      if (e.target.tagName !== 'IMG') close();
+    });
+    document.body.appendChild(ov);
+  }
+  function close(){ if (ov){ ov.style.display = 'none'; document.body.style.overflow = ''; } }
+  document.addEventListener('keydown', function(e){ if (ov && ov.style.display !== 'none' && e.key === 'Escape') close(); });
+  window.expandPhoto = function(i){
+    imgs = srcs(); if (!imgs.length) return;
+    if (!ov) build();
+    idx = Math.min(Math.max(i,0), imgs.length - 1);
+    ov.querySelector('img').src = imgs[idx];
+    ov.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+})();
+// v76q: ?enquire=1 deep-link — opens the real auth-gated flagship enquiry
+if (new URLSearchParams(location.search).get('enquire') === '1') {
+  window.addEventListener('load', function(){ setTimeout(function(){ if (typeof tbAuthEnquire === 'function') tbAuthEnquire(); }, 400); });
+}
+</script>
 </body>
 </html>

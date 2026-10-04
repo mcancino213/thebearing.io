@@ -1660,12 +1660,18 @@ function submitAccount(){
 // toast. When KV-backed hotel cards land, they'll pass a slug arg and
 // redirect to /property?slug=X.
 function openQuickEnquiry(propertyName, slug) {
+  // v76q: quick-enquiry modals were FAKE (submit showed "Enquiry sent" without sending
+  // anything) or had undefined submits. All enquiry paths now converge on the property
+  // page's REAL auth-gated enquiry (openEnquiry + ?enquire=1 auto-open).
   if (slug) {
-    window.location = '/property.html?slug=' + encodeURIComponent(slug);
-    return;
+    window.location = (slug === 'nour-el-nil-x' || slug === 'nour-el-nil')
+      ? '/nour-el-nil.html?enquire=1'
+      : '/property.html?slug=' + encodeURIComponent(slug) + '&enquire=1';
+  } else {
+    window.location = '/search.html?q=' + encodeURIComponent(propertyName || '');
   }
-  ppQuickToast('Coming soon to The Bearing — we curate properties carefully and this one isn\u2019t available to book yet.');
 }
+function submitQuickEnquiry() { closeQuickEnquiry(); } // v76q: markup safety — modal superseded by real enquiry flow
 function closeQuickEnquiry() {
   var el = document.getElementById('quick-enquiry-overlay');
   if (el) el.style.display = 'none';

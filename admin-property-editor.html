@@ -159,6 +159,8 @@ input,select,textarea{font-family:inherit;font-size:15px;}
 .pe-section-title{font-family:'Fraunces',serif;font-size:18px;font-weight:400;color:var(--text);line-height:1.2;}
 .pe-section-sub{font-size:13px;color:var(--text2);margin-top:2px;}
 .pe-section-body{padding:28px;}
+.pe-section.collapsed .pe-section-body{display:none;}
+.pe-section.collapsed .pe-section-toggle{transform:rotate(-90deg);}
 
 /* Fields */
 .pe-field{margin-bottom:20px;}
@@ -2417,6 +2419,10 @@ function testImg(id) {
   else showToast('Enter a URL first','warn');
 }
 
+function toggleSection(btn) { // v76q: was referenced by every section header but never defined
+  var sec = btn.closest('.pe-section');
+  if (sec) sec.classList.toggle('collapsed');
+}
 function toggleTag(btn) {
   btn.classList.toggle('on');
   updateAll();

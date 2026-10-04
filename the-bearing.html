@@ -2476,26 +2476,23 @@ document.addEventListener('click', function(e){
 </div>
 
 <script>
-function openQuickEnquiry(propertyName) {
-  var label = document.getElementById('eq-property-label');
-  if (label && propertyName) label.textContent = propertyName;
-  var el = document.getElementById('quick-enquiry-overlay');
-  el.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+function openQuickEnquiry(propertyName, slug) {
+  // v76q: quick-enquiry modals were FAKE (submit showed "Enquiry sent" without sending
+  // anything) or had undefined submits. All enquiry paths now converge on the property
+  // page's REAL auth-gated enquiry (openEnquiry + ?enquire=1 auto-open).
+  if (slug) {
+    window.location = (slug === 'nour-el-nil-x' || slug === 'nour-el-nil')
+      ? '/nour-el-nil.html?enquire=1'
+      : '/property.html?slug=' + encodeURIComponent(slug) + '&enquire=1';
+  } else {
+    window.location = '/search.html?q=' + encodeURIComponent(propertyName || '');
+  }
 }
 function closeQuickEnquiry() {
   document.getElementById('quick-enquiry-overlay').style.display = 'none';
   document.body.style.overflow = '';
 }
-function submitQuickEnquiry() {
-  closeQuickEnquiry();
-  // Show confirmation toast
-  var toast = document.createElement('div');
-  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:100px;font-family:Geist,sans-serif;font-size:.84rem;font-weight:500;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.3);animation:fadeUp .25s ease;display:flex;align-items:center;gap:8px;';
-  toast.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Enquiry sent — the property will reply within 24 hours';
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 4000);
-}
+function submitQuickEnquiry() { closeQuickEnquiry(); } // v76q: fake 'Enquiry sent' toast removed — modal superseded by the real enquiry flow
 </script>
 
 
