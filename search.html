@@ -1061,34 +1061,7 @@ function destBlur(){
   document.querySelector('.search-bar').classList.remove('bar-focused');
 }
 </script>
-<script>
-// The Bearing 404 intercept — catches dead links and missing pages
-(function(){
-  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
-    'collections.html','journal.html','how-we-choose.html','founding-member.html',
-    'about.html','my-account.html','bookings.html','conversations.html',
-    'saved.html','preferences.html','settings.html','404.html','amangiri.html','al-moudira.html','singita-grumeti.html','soneva-fushi.html','la-maison-bleue.html','beyond-ngorongoro.html','capella-ubud.html','alila-jabal-akhdar.html','amangiri-villas.html','al-moudira-estate.html','aqua-nera.html','mekong-navigator.html'];
-  function fname(href){
-    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
-  }
-  document.addEventListener('click', function(e){
-    var a = e.target.closest('a[href]');
-    if(!a) return;
-    var href = a.getAttribute('href');
-    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
-    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
-    var f = fname(href);
-    if(f && VALID.indexOf(f) === -1){
-      e.preventDefault();
-      window.location = '404.html';
-    }
-  });
-  // Also intercept window.location assignments by watching for navigation errors
-  window.addEventListener('error', function(e){
-    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
-  }, true);
-})();
-</script>
+<!-- v76p: legacy 404-intercept removed — it whitelisted the FAKE demo pages while blocking real property links; real 404s are the server's job -->
 
 <button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
   <div class="ci-fab-pulse"></div>
@@ -1546,7 +1519,7 @@ function tbsRender(rows){
   rows.forEach(function(r){
     var p = r.p;
     var name = (r.slug === 'nour-el-nil-x') ? 'Nour El Nil' : (p.name || r.slug);
-    var href = (r.slug === 'nour-el-nil-x') ? '/nour-el-nil' : ('/property?slug=' + encodeURIComponent(r.slug));
+    var href = (r.slug === 'nour-el-nil-x') ? '/nour-el-nil.html' : ('/property.html?slug=' + encodeURIComponent(r.slug));
     var hero = '';
     try { hero = p.photos.hero[0].url; } catch(e){}
     var card = document.createElement('a');

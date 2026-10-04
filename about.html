@@ -1120,34 +1120,7 @@ function tcSearchFromInput(inputId) {
   tcSearch(el ? el.value : 'egypt');
 }
 </script>
-<script>
-// The Bearing 404 intercept — catches dead links and missing pages
-(function(){
-  var VALID = ['the-bearing.html','nour-el-nil.html','search.html','vibe-search.html','the-envoy.html','cruises.html','hotels.html','villas.html',
-    'collections.html','journal.html','how-we-choose.html','founding-member.html',
-    'about.html','my-account.html','bookings.html','conversations.html',
-    'saved.html','preferences.html','settings.html','404.html'];
-  function fname(href){
-    try{ return href.split('/').pop().split('?')[0].split('#')[0]; }catch(e){ return ''; }
-  }
-  document.addEventListener('click', function(e){
-    var a = e.target.closest('a[href]');
-    if(!a) return;
-    var href = a.getAttribute('href');
-    if(!href || href.charAt(0)==='#' || href.indexOf('mailto:')=== 0 || href.indexOf('tel:')=== 0) return;
-    if(href.indexOf('http')=== 0 || href.indexOf('//') === 0) return; // external
-    var f = fname(href);
-    if(f && VALID.indexOf(f) === -1){
-      e.preventDefault();
-      window.location = '404.html';
-    }
-  });
-  // Also intercept window.location assignments by watching for navigation errors
-  window.addEventListener('error', function(e){
-    if(e.target && (e.target.tagName === 'IMG' || e.target.tagName === 'SCRIPT')) return;
-  }, true);
-})();
-</script>
+<!-- v76p: legacy 404-intercept removed -->
 
 <button class="ci-fab" id="ci-fab" onclick="openEnvoy()">
   <div class="ci-fab-pulse"></div>

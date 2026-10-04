@@ -1393,7 +1393,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 // full rationale. Villas listing is currently all static demo cards.
 function openQuickEnquiry(propertyName, slug) {
   if (slug) {
-    window.location = '/property?slug=' + encodeURIComponent(slug);
+    window.location = '/property.html?slug=' + encodeURIComponent(slug);
     return;
   }
   ppQuickToast('Coming soon to The Bearing — we curate properties carefully and this one isn\u2019t available to book yet.');

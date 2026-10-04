@@ -1729,7 +1729,7 @@ function openQuickEnquiry(propertyName, slug) {
   if (slug) {
     // Navigate to the property page. The user can click Enquire from there,
     // which gates on auth and runs the real /api/conversation create flow.
-    window.location = '/property?slug=' + encodeURIComponent(slug);
+    window.location = '/property.html?slug=' + encodeURIComponent(slug);
     return;
   }
   // No slug → static demo card without a real KV record. Be honest.
