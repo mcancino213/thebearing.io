@@ -55,7 +55,7 @@
   .hero-img-wrap{position:absolute;inset:0;overflow:hidden;}
   .hero-img-wrap img{position:absolute;inset:0;animation:hZoom 14s ease-out forwards;}
   @keyframes hZoom{from{transform:scale(1.04)}to{transform:scale(1)}}
-  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,5,.22) 0%,rgba(10,8,5,.04) 42%,rgba(10,8,5,.42) 72%,rgba(10,8,5,.82) 100%);}
+  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,5,.14) 0%,rgba(10,8,5,.02) 42%,rgba(10,8,5,.26) 72%,rgba(10,8,5,.58) 100%); /* v76s: lighter — let the photo breathe */}
   .hero-shimmer{position:absolute;left:0;right:0;top:43%;height:1px;background:rgba(255,255,255,.1);box-shadow:0 0 28px 6px rgba(255,255,255,.05);}
   .hero-content{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:36px 22px 40px;}
   .hero-kicker{display:flex;align-items:center;gap:7px;margin-bottom:14px;opacity:0;animation:up .7s .3s forwards;}
@@ -902,8 +902,8 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 .voyage-bg img{width:100%;height:100%;object-fit:cover;object-position:center;}
 .voyage-bg-scrim{position:absolute;inset:0;}
 /* Each voyage has its own colour palette */
-.voyage:nth-child(1) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(8,4,2,.92) 0%,rgba(20,8,4,.85) 35%,rgba(20,8,4,.3) 65%,transparent 100%);}
-.voyage:nth-child(2) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(2,8,20,.92) 0%,rgba(4,18,30,.85) 35%,rgba(4,18,30,.3) 65%,transparent 100%);}
+.voyage:nth-child(1) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(8,4,2,.76) 0%,rgba(20,8,4,.6) 35%,rgba(20,8,4,.16) 65%,transparent 100%);}
+.voyage:nth-child(2) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(2,8,20,.76) 0%,rgba(4,18,30,.6) 35%,rgba(4,18,30,.16) 65%,transparent 100%);}
 .voyage:nth-child(3) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(4,12,8,.92) 0%,rgba(6,18,10,.85) 35%,rgba(6,18,10,.3) 65%,transparent 100%);}
 .voyage:nth-child(4) .voyage-bg-scrim{background:linear-gradient(105deg,rgba(10,8,20,.92) 0%,rgba(16,10,28,.85) 35%,rgba(16,10,28,.3) 65%,transparent 100%);}
 

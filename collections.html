@@ -55,7 +55,7 @@
   .hero-img-wrap{position:absolute;inset:0;overflow:hidden;}
   .hero-img-wrap img{position:absolute;inset:0;animation:hZoom 14s ease-out forwards;}
   @keyframes hZoom{from{transform:scale(1.04)}to{transform:scale(1)}}
-  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,5,.22) 0%,rgba(10,8,5,.04) 42%,rgba(10,8,5,.42) 72%,rgba(10,8,5,.82) 100%);}
+  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,5,.14) 0%,rgba(10,8,5,.02) 42%,rgba(10,8,5,.26) 72%,rgba(10,8,5,.58) 100%); /* v76s: lighter — let the photo breathe */}
   .hero-shimmer{position:absolute;left:0;right:0;top:43%;height:1px;background:rgba(255,255,255,.1);box-shadow:0 0 28px 6px rgba(255,255,255,.05);}
   .hero-content{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:36px 22px 40px;}
   .hero-kicker{display:flex;align-items:center;gap:7px;margin-bottom:14px;opacity:0;animation:up .7s .3s forwards;}
@@ -838,8 +838,8 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   @keyframes ciDot{0%,80%,100%{transform:scale(.55);opacity:.3;}40%{transform:scale(1);opacity:1;}}
 </style><style>
   .coll-hero{position:relative;height:300px;overflow:hidden;}
-  .coll-hero img{width:100%;height:100%;object-fit:cover;opacity:.65;}
-  .coll-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 20%,rgba(10,8,4,.88) 100%);}
+  .coll-hero img{width:100%;height:100%;object-fit:cover;opacity:1;}
+  .coll-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 38%,rgba(10,8,4,.6) 100%);}
   .coll-hero-content{position:absolute;bottom:0;left:0;right:0;padding:28px 24px;}
   .coll-wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px;}
   .coll-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:40px;}

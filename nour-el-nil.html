@@ -856,7 +856,7 @@
       </div>
   </div>
 
-  <div style="position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(8,6,3,.82) 0%,rgba(8,6,3,.45) 40%,rgba(8,6,3,.0) 100%);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(to top,rgba(8,6,3,.6) 0%,rgba(8,6,3,.45) 40%,rgba(8,6,3,.0) 100%);pointer-events:none;"></div>
   <div style="position:absolute;bottom:0;left:0;right:0;padding:16px 20px 20px;pointer-events:none;">
     <div style="font-size:.6rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,200,140,.8);margin-bottom:4px;">River cruise · Dahabiya fleet</div>
     <div style="font-family:'Instrument Serif',Georgia,serif;font-size:clamp(1.6rem,5.5vw,2.5rem);font-style:italic;color:#fff;line-height:1.05;margin-bottom:5px;text-shadow:0 2px 20px rgba(0,0,0,.3);">Nour El Nil</div>
@@ -3008,7 +3008,7 @@ function tbSubmitBooking() {
   function srcs(){ return Array.prototype.map.call(document.querySelectorAll('#mosaic-track img'), function(i){ return i.src; }); }
   function build(){
     ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;inset:0;z-index:950;background:rgba(10,8,4,.94);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:950;background:rgba(10,8,4,.6);display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
     ov.innerHTML = '<img style="max-width:92vw;max-height:88vh;object-fit:contain;border-radius:6px;box-shadow:0 20px 80px rgba(0,0,0,.6);">' +
       '<button data-nav="-1" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:100px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;font-size:1.1rem;cursor:pointer;">&#8249;</button>' +
       '<button data-nav="1" style="position:absolute;right:18px;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:100px;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.35);color:#fff;font-size:1.1rem;cursor:pointer;">&#8250;</button>';
