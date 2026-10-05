@@ -845,7 +845,8 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   @keyframes ciDot{0%,80%,100%{transform:scale(.55);opacity:.3;}40%{transform:scale(1);opacity:1;}}
 </style>
 <style>
-.ph-hero{position:relative;height:60vh;min-height:420px;overflow:hidden;background:#0a0804;}
+.ph-hero{position:relative;height:58vh;min-height:470px;overflow:hidden;background:#0a0804;} /* v76u: unified listing-hero height */
+@media (max-width:700px){ .ph-hero{height:52vh;min-height:400px;} }
 .ph-hero img{width:100%;height:100%;object-fit:cover;object-position:center 40%;opacity:1;animation:hZoom 14s ease-out forwards;}
 @keyframes hZoom{from{transform:scale(1.04)}to{transform:scale(1)}}
 .ph-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,8,4,.06) 0%,rgba(10,8,4,.52) 100%),linear-gradient(100deg,rgba(10,8,4,.34) 0%,rgba(10,8,4,.1) 45%,rgba(10,8,4,0) 68%);}
