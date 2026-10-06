@@ -3634,7 +3634,7 @@ View in admin: https://thebearing.io/admin-bookings.html
       // Editorial copy
       'short_pitch', 'long_pitch', 'long_history', 'bearing_edit',
       // Pricing copy (NOT commission_pct — that's admin-only)
-      'price_from', 'price_currency', 'pricing_model',
+      'price_from', 'price_currency', 'pricing_model', 'exclusive',
       'season_open', 'min_stay', 'max_group',
       // Stay logistics
       'checkin_time', 'checkout_time', 'children_policy', 'pet_policy',

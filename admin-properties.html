@@ -310,8 +310,7 @@ window.addEventListener('load', async function() {
 
 // ── KV SAVED PROPERTIES GRID ──────────────────────────────────────────
 (function renderKVSaved() {
-  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/api/property' : null;
+  var PROP_API = '/api/property' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!PROP_API) return;
 
   function healthColor(h) { return h >= 80 ? '#059669' : h >= 50 ? '#d97706' : '#dc2626'; }
@@ -449,8 +448,7 @@ function cfThumb(url) {
   if (!url) return url;
   return url.replace(/\/public$|\/thumb$|\/w=\d+$/, '/thumb');
 }
-var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-  ? '/api/property' : null;
+var PROP_API = '/api/property' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
 
 var _deleteTarget = null; // { slug, btn }
 

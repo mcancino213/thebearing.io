@@ -389,6 +389,8 @@ select.pe-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
 /* JSON panel */
 .pe-json-pre{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);overflow:auto;max-height:200px;line-height:1.6;white-space:pre-wrap;background:var(--bg);padding:14px;border-top:1px solid var(--border);}
+.pm-pill{padding:7px 14px;border:none;border-radius:7px;background:transparent;color:var(--text2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.pm-pill.on{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.18);}
 </style>
 <!-- Clerk Auth SDK + Admin Gate -->
 <script defer crossorigin="anonymous"
@@ -926,10 +928,34 @@ window.addEventListener('load', async function() {
             <div class="pe-section-num">3</div>
             <div class="pe-section-title">Rooms & pricing</div>
           </div>
-          <button class="btn btn-ghost btn-sm" onclick="addRoom()">+ Add room type</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div id="pricing-toggle" style="display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:9px;">
+              <button type="button" class="pm-pill on" data-pm="rooms" onclick="setPricingModel('rooms')">By room type</button>
+              <button type="button" class="pm-pill" data-pm="exclusive" onclick="setPricingModel('exclusive')">Whole property</button>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="add-room-btn" onclick="addRoom()">+ Add room type</button>
+          </div>
         </div>
         <div class="pe-section-body">
           <div id="rooms-wrap" style="margin-bottom:14px;"></div>
+          <input type="hidden" id="f-pricing-model" value="rooms">
+          <div id="exclusive-wrap" style="display:none;margin-bottom:14px;">
+            <div style="padding:12px 14px;background:var(--surface2);border-radius:9px;font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:14px;">
+              <strong style="color:var(--text);">Whole-property pricing.</strong> Guests book the entire place — villas, private islands, exclusive-use estates. No room types.
+            </div>
+            <div class="pe-grid-2" style="grid-template-columns:1fr 1fr 1fr;gap:12px;">
+              <div><label class="pe-label">Sleeps *</label><input class="pe-input" id="f-ex-sleeps" type="number" min="1" placeholder="e.g. 10" oninput="updateJSON()"></div>
+              <div><label class="pe-label">Bedrooms</label><input class="pe-input" id="f-ex-bedrooms" type="number" min="1" placeholder="e.g. 5" oninput="updateJSON()"></div>
+              <div><label class="pe-label">Bathrooms</label><input class="pe-input" id="f-ex-baths" type="number" min="1" placeholder="e.g. 5" oninput="updateJSON()"></div>
+            </div>
+            <div class="pe-grid-2" style="grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;">
+              <div><label class="pe-label">Price from (whole property) *</label><input class="pe-input" id="f-ex-price" type="number" min="0" placeholder="e.g. 4500" oninput="updateJSON()"></div>
+              <div><label class="pe-label">Per</label><select class="pe-input" id="f-ex-per" onchange="updateJSON()"><option value="night">night</option><option value="week">week</option></select></div>
+              <div><label class="pe-label">Minimum stay (nights)</label><input class="pe-input" id="f-ex-minnights" type="number" min="1" placeholder="e.g. 3" oninput="updateJSON()"></div>
+            </div>
+            <div style="margin-top:12px;"><label class="pe-label">Staff included</label><input class="pe-input" id="f-ex-staff" type="text" placeholder="e.g. Private chef, butler, housekeeping — all included" oninput="updateJSON()"></div>
+            <div style="margin-top:12px;"><label class="pe-label">One-line description</label><input class="pe-input" id="f-ex-oneline" type="text" placeholder="e.g. Five suites on a private two-acre island — staff of five" oninput="updateJSON()"></div>
+          </div>
           <div style="padding:14px;background:var(--surface2);border-radius:9px;font-size:13px;color:var(--text2);line-height:1.6;">
             <strong style="color:var(--text);">Commission:</strong> TheBearing collects the selected rate as a deposit. The property collects the remaining balance directly from the guest.
           </div>
@@ -2599,6 +2625,16 @@ function cc(el, id, max) {
   if(out){ out.textContent=len+' / '+max+' chars'; out.style.color=len>max?'var(--red)':len>max*.9?'var(--amber)':'var(--text3)'; }
 }
 
+function setPricingModel(m, silent) {
+  var f = document.getElementById('f-pricing-model');
+  if (f) f.value = m;
+  document.querySelectorAll('#pricing-toggle .pm-pill').forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-pm') === m); });
+  var ex = m === 'exclusive';
+  var rw = document.getElementById('rooms-wrap'); if (rw) rw.style.display = ex ? 'none' : '';
+  var ab = document.getElementById('add-room-btn'); if (ab) ab.style.display = ex ? 'none' : '';
+  var ew = document.getElementById('exclusive-wrap'); if (ew) ew.style.display = ex ? 'block' : 'none';
+  if (!silent) updateJSON();
+}
 function updateJSON() {
   // Hero images with positions — read from tile grid state
   var hero = (pgState['hero'] || []).map(function(item) {
@@ -2732,7 +2768,18 @@ function updateJSON() {
       gallery: gallery
     },
 
-    // Rooms & pricing
+    // Rooms & pricing — v76w: pricing_model 'rooms' (default) | 'exclusive' (whole property)
+    pricing_model: (getFieldVal('f-pricing-model') || 'rooms'),
+    exclusive: (function(){
+      if ((getFieldVal('f-pricing-model') || 'rooms') !== 'exclusive') return undefined;
+      function pi(id){ var v = parseInt(getFieldVal(id), 10); return isFinite(v) && v > 0 ? v : undefined; }
+      return {
+        sleeps: pi('f-ex-sleeps'), bedrooms: pi('f-ex-bedrooms'), bathrooms: pi('f-ex-baths'),
+        min_nights: pi('f-ex-minnights'),
+        price: pi('f-ex-price'), per: (getFieldVal('f-ex-per') || 'night'),
+        staff: getFieldVal('f-ex-staff'), one_line: getFieldVal('f-ex-oneline')
+      };
+    })(),
     rooms: rooms,
     commission_rate: getFieldVal('f-commission'),
     cancellation: getFieldVal('f-cancel'),
@@ -2793,6 +2840,10 @@ function updateJSON() {
     updated_at: new Date().toISOString()
   };
 
+  // v76w: exclusive price drives the listing-card price_from automatically
+  if (json.pricing_model === 'exclusive' && json.exclusive && json.exclusive.price) {
+    json.price_from = json.exclusive.price;
+  }
   var el = document.getElementById('json-out-2');
   if (el) el.textContent = JSON.stringify(json, null, 2);
   return json;
@@ -3193,7 +3244,7 @@ function dosAssemble() {
 }
 
 function dosDossierApi() {
-  return (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
+  return '/api/dossier' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
 }
 
 async function dosSave() {
@@ -3337,7 +3388,7 @@ async function dosDraftWithAI() {
 var dosSourceSlots = [1, 2, 3];
 
 function dosSourceApi() {
-  return (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  return '/api/source' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
 }
 
 function dosRenderSources() {
@@ -3549,7 +3600,7 @@ var itDays = [{ label: '', title: '', desc: '' }]; // default: 1 empty day
 var IT_MAX_DAYS = 21;
 
 function itApi() {
-  return (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/itinerary' : null;
+  return '/api/itinerary' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
 }
 
 function updateItineraryVisibility() {
@@ -3998,7 +4049,16 @@ async function propLoad() {
     // New format: structured data with __editorSnapshot embedded
     // Old format: flat snapshot object
     var snapshot = saved.__editorSnapshot || saved;
-    propRestore(snapshot);
+    try { propRestore(snapshot); } catch (e) { console.warn('[Editor] snapshot restore partial (legacy/API-shaped record):', e.message); }
+    // v76w: pricing-model sync — snapshot carries the f-ex-* inputs + hidden
+    // f-pricing-model automatically; legacy/API-saved records sync from top level.
+    if (saved.pricing_model) { var pmEl = document.getElementById('f-pricing-model'); if (pmEl) pmEl.value = saved.pricing_model; }
+    if (saved.exclusive) {
+      var _exm = {sleeps:'f-ex-sleeps',bedrooms:'f-ex-bedrooms',bathrooms:'f-ex-baths',min_nights:'f-ex-minnights',price:'f-ex-price',per:'f-ex-per',staff:'f-ex-staff',one_line:'f-ex-oneline'};
+      Object.keys(_exm).forEach(function(k){ var el = document.getElementById(_exm[k]); if (el && !el.value && saved.exclusive[k] != null) el.value = saved.exclusive[k]; });
+    }
+    if (typeof setPricingModel === 'function') setPricingModel((document.getElementById('f-pricing-model')||{value:'rooms'}).value || 'rooms', true);
+    updateJSON();
 
     // v72x — belt-and-suspenders sync for commercial-terms fields.
     // propRestore only reads f-*-prefixed snapshot keys. New top-level
@@ -4155,6 +4215,17 @@ function geminiJsonToFields(j) {
   // v75y: hydrate charted position (coords live at top level, not render)
   set('f-coord-lat', (j.coords && j.coords.lat != null) ? String(j.coords.lat) : '');
   set('f-coord-lng', (j.coords && j.coords.lng != null) ? String(j.coords.lng) : '');
+  // v76w: pricing model + whole-property fields (map entries; UI syncs after apply)
+  f['f-pricing-model'] = (j.pricing_model === 'exclusive') ? 'exclusive' : 'rooms';
+  var jx = j.exclusive || {};
+  set('f-ex-sleeps', jx.sleeps != null ? String(jx.sleeps) : '');
+  set('f-ex-bedrooms', jx.bedrooms != null ? String(jx.bedrooms) : '');
+  set('f-ex-baths', jx.bathrooms != null ? String(jx.bathrooms) : '');
+  set('f-ex-minnights', jx.min_nights != null ? String(jx.min_nights) : '');
+  set('f-ex-price', jx.price != null ? String(jx.price) : '');
+  set('f-ex-per', jx.per || 'night');
+  set('f-ex-staff', jx.staff || '');
+  set('f-ex-oneline', jx.one_line || '');
   set('f-duration-tagline', r.duration_tagline);
   set('f-type-pill', r.type_pill);
   if (r.rating != null) set('f-rating', String(r.rating));
@@ -4340,6 +4411,7 @@ function doGeminiImport(mode) {
   var fields;
   try {
     fields = geminiJsonToFields(obj);
+    setTimeout(function(){ if (typeof setPricingModel === 'function') setPricingModel((document.getElementById('f-pricing-model')||{value:'rooms'}).value || 'rooms', true); }, 60);
   } catch(e) {
     err.textContent = 'Could not convert JSON to form fields: ' + e.message;
     return;

@@ -395,8 +395,7 @@ function renderMembers() {
 }
 
 (async function loadMembers() {
-  var api = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/api/members' : null;
+  var api = '/api/members' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   var tbody = document.getElementById('members-tbody');
   if (!api) {
     tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Member data only available on the live site.</td></tr>';

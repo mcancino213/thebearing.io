@@ -1585,8 +1585,8 @@ var CI_SYSTEM = "You are The Envoy — the AI travel specialist of The Bearing, 
   var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
-  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  var DOSSIER_API = '/api/dossier' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
+  var SOURCE_API = '/api/source' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!DOSSIER_API) return;
   // Fetch dossier and sources in parallel
   Promise.all([
@@ -2896,8 +2896,7 @@ function tbSubmitBooking() {
 // elements so the editor acts as the CMS for this page.
 (function kvHydrate() {
   var SLUG = 'nour-el-nil';
-  var PROP_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-    ? '/api/property' : null;
+  var PROP_API = '/api/property' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!PROP_API) return;
 
   fetch(PROP_API + '?slug=' + encodeURIComponent(SLUG))

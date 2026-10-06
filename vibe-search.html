@@ -572,8 +572,8 @@ body{font-family:'Geist',sans-serif;background:var(--cream);color:var(--ink);min
   var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
   var path = location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
-  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  var DOSSIER_API = '/api/dossier' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
+  var SOURCE_API = '/api/source' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!DOSSIER_API) return;
   // Fetch dossier and sources in parallel
   Promise.all([
@@ -933,8 +933,7 @@ function ciAddPropertyCards(props) {
   var row = document.createElement('div');
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
-    var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-      ? '/property.html?slug=' + p.slug : '/property.html?slug=' + p.slug;
+    var href = '/property.html?slug=' + p.slug /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
     var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
     a.className = 'ci-prop-card';

@@ -1356,7 +1356,7 @@ button{font-family:inherit;cursor:pointer;}
 <div id="toast-el" class="toast"></div>
 
 <script>
-var PROP_API = (location.hostname==='thebearing.io'||location.hostname.endsWith('.workers.dev')) ? '/api/property' : null;
+var PROP_API = '/api/property' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
 var propData = null, heroUrls = [], galleryUrls = [], lbIdx = 0;
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -1631,7 +1631,12 @@ function renderProperty(p,slug){
   document.querySelectorAll('.inq-title').forEach(function(el,i){ if(i===0) el.textContent = 'Send an enquiry'; });
   // Update room/cabin selector label and populate options from p.rooms
   var inqCabin = document.getElementById('inq-cabin');
-  if(inqCabin && p.rooms && p.rooms.length){
+  var isExcl0 = (p.pricing_model==='exclusive') && p.exclusive;
+  if(inqCabin && isExcl0){
+    inqCabin.innerHTML = '<option value="Entire property" selected>Entire property \u2014 exclusive use</option>';
+    var cabinLbl0 = document.querySelector('label[for="inq-cabin"]');
+    if(cabinLbl0) cabinLbl0.textContent = 'Booking';
+  } else if(inqCabin && p.rooms && p.rooms.length){
     inqCabin.innerHTML = '<option value="">Not sure yet</option>' +
       p.rooms.filter(function(r){return r.name;}).map(function(r){
         return '<option value="'+esc(r.name)+'">'+esc(r.name)+(r.price?' — from $'+parseInt(r.price).toLocaleString()+(r.per?'/'+r.per:''):'')+'</option>';
@@ -1658,13 +1663,17 @@ function renderProperty(p,slug){
   // Subnav/book bar
   var gal=(p.photos&&p.photos.gallery)||[];
   galleryUrls=gal.map(function(g){return typeof g==='string'?g:g.url;}).filter(Boolean);
-  var hasRooms=p.rooms&&p.rooms.length;
+  var isExclusive=(p.pricing_model==='exclusive')&&p.exclusive;var hasRooms=!isExclusive&&p.rooms&&p.rooms.length;
   var hasItin=p.itinerary&&p.itinerary.days&&p.itinerary.days.length&&p.itinerary.days.some(function(d){return d.title||d.desc;});
   if(galleryUrls.length)show('sub-gallery');
   if(hasRooms){show('sub-rooms');if(ts.includes('cruise'))document.getElementById('sub-rooms').textContent='Cabins';}
   if(p.lens&&p.lens.experts&&p.lens.experts.length)show('sub-lens');
   if(hasItin)show('sub-itin');
-  if(hasRooms&&p.rooms[0].price){
+  if(isExclusive&&p.exclusive.price){
+    document.getElementById('bar-price').innerHTML='$'+parseInt(p.exclusive.price).toLocaleString()+' <small>/ '+(p.exclusive.per||'night')+'</small>';
+    setText('bar-perks-txt','Entire property \u00b7 exclusive use');
+    show('book-bar');
+  } else if(hasRooms&&p.rooms[0].price){
     var r0=p.rooms[0];
     document.getElementById('bar-price').innerHTML='$'+parseInt(r0.price).toLocaleString()+' <small>/ '+(r0.per||'night')+'</small>';
     setText('bar-perks-txt',r.duration_tagline||'Best rate guaranteed');
@@ -1748,7 +1757,7 @@ function renderProperty(p,slug){
   }
 
   // Rooms
-  if(hasRooms){
+  if(isExclusive||hasRooms){
     var rl=document.getElementById('rooms-list');
     var isCruise=ts.includes('cruise');
     if(isCruise)document.getElementById('rooms-title').innerHTML='The <em>cabins</em>';
@@ -1757,6 +1766,23 @@ function renderProperty(p,slug){
     // path on a property page should open the enquiry overlay. The inline
     // onclick="openEnquiry()" on the button is now authoritative; this
     // hydration block no longer touches it.
+    if(isExclusive){
+    var ex=p.exclusive;
+    var exStats=[ex.sleeps?'Sleeps '+ex.sleeps:'',ex.bedrooms?ex.bedrooms+' bedrooms':'',ex.bathrooms?ex.bathrooms+' bathrooms':'',ex.min_nights?ex.min_nights+'-night minimum':''].filter(Boolean);
+    var exPrice=ex.price?'$'+parseInt(ex.price).toLocaleString():'On request';
+    rl.innerHTML='<div class="cabin-card" style="grid-column:1/-1;">'+
+      '<div class="cabin-body">'+
+        '<div class="cabin-name">The whole place, yours</div>'+
+        (ex.one_line?'<div class="cabin-detail">'+esc(ex.one_line)+'</div>':'')+
+        (exStats.length?'<div class="cabin-detail" style="font-size:.72rem;color:var(--mist);">'+esc(exStats.join(' \u00b7 '))+'</div>':'')+
+        (ex.staff?'<div class="cabin-detail" style="margin-top:4px;">'+esc(ex.staff)+'</div>':'')+
+        '<div class="cabin-price">'+esc(exPrice)+'<small> / '+esc(ex.per||'night')+' \u00b7 entire property</small></div>'+
+        '<button class="cabin-btn" onclick="openEnquiry()">Enquire</button>'+
+      '</div></div>';
+    var rtitle=document.getElementById('rooms-title');if(rtitle)rtitle.innerHTML='Exclusive <em>use</em>';
+    var subR=document.getElementById('sub-rooms');if(subR)subR.textContent='Exclusive use';show('sub-rooms');
+    show('rooms-section');
+    } else {
     rl.innerHTML=p.rooms.map(function(rm){
       var meta=[rm.size?rm.size+(rm.size_unit==='sqft'?' ft²':' m²'):'',rm.beds||'',rm.max_occupancy?'Max '+rm.max_occupancy:''].filter(Boolean).join(' · ');
       var price=rm.price?'$'+parseInt(rm.price).toLocaleString():'POA';
@@ -1769,6 +1795,7 @@ function renderProperty(p,slug){
       return '<div class="cabin-card">'+img+'<div class="cabin-body"><div class="cabin-name">'+esc(rm.name||'')+'</div>'+(rm.description?'<div class="cabin-detail">'+esc(rm.description)+'</div>':'')+(meta?'<div class="cabin-detail" style="font-size:.7rem;color:var(--mist);">'+esc(meta)+'</div>':'')+'<div class="cabin-price">'+esc(price)+'<small>'+esc(per)+'</small></div>'+selectBtn+'</div></div>';
     }).join('');
     show('rooms-section');
+    }
   }
 
   // Private access
@@ -1866,7 +1893,18 @@ function renderProperty(p,slug){
   // (populated async by loadSimilar() called after renderProperty)
 
   // Desktop booking card
-  if(hasRooms&&p.rooms[0].price){
+  if(isExclusive&&p.exclusive.price){
+    var ex2=p.exclusive;
+    setText('dbc-price','$'+parseInt(ex2.price).toLocaleString());
+    setText('dbc-pp','per '+(ex2.per||'night')+' \u00b7 entire property');
+    var dd2=[];
+    if(loc)dd2.push(['Location',loc]);
+    if(ex2.sleeps)dd2.push(['Sleeps',ex2.sleeps]);
+    if(ex2.bedrooms)dd2.push(['Bedrooms',ex2.bedrooms]);
+    if(ex2.min_nights)dd2.push(['Minimum stay',ex2.min_nights+' nights']);
+    if(ex2.staff)dd2.push(['Staff',ex2.staff]);
+    document.getElementById('dbc-details').innerHTML=dd2.map(function(d){return '<div class="dbc-detail"><span class="dbc-detail-lbl">'+esc(d[0])+'</span><span class="dbc-detail-val">'+esc(String(d[1]))+'</span></div>';}).join('');
+  } else if(hasRooms&&p.rooms[0].price){
     var dr=p.rooms[0];
     setText('dbc-price','$'+parseInt(dr.price).toLocaleString());
     setText('dbc-pp','per '+(dr.per||'night')+(r.duration_tagline?' · '+r.duration_tagline:''));
@@ -2912,8 +2950,8 @@ function submitAccount(){
   var path = qs.get('slug') || location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (!path) return;
   if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
-  var DOSSIER_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/dossier' : null;
-  var SOURCE_API = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev')) ? '/api/source' : null;
+  var DOSSIER_API = '/api/dossier' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
+  var SOURCE_API = '/api/source' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!DOSSIER_API) return;
   // Fetch dossier and sources in parallel
   Promise.all([
@@ -3086,8 +3124,7 @@ function ciAddPropertyCards(props) {
   var row = document.createElement('div');
   row.className = 'ci-prop-cards';
   props.forEach(function(p) {
-    var href = (location.hostname === 'thebearing.io' || location.hostname.endsWith('.workers.dev'))
-      ? '/property.html?slug=' + p.slug : '/property.html?slug=' + p.slug;
+    var href = '/property.html?slug=' + p.slug /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
     var stars = p.rating ? '\u2605'.repeat(p.rating) : '';
     var a = document.createElement('a');
     a.className = 'ci-prop-card';
