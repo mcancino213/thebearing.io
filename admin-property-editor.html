@@ -3325,57 +3325,103 @@ function dosParseIntoFields(dossierText) {
 
 // LAYER 3: Use AI + web search to draft answers, populate empty fields only
 async function dosDraftWithAI() {
+  // v76x: the single-shot drafter was double-broken — one web-search-heavy call
+  // for all 42 questions blew past Cloudflare's ~100s response ceiling (endless
+  // spinner), and when it DID return, max_tokens:4096 truncated the JSON for 42
+  // long-form answers, so JSON.parse threw and ZERO fields filled. Now drafts
+  // CATEGORY BY CATEGORY: 7 small fast calls, fields fill live after each one,
+  // 90s timeout per call, and a failed section is skipped and reported instead
+  // of killing the run. Re-running retries only still-empty fields.
   var name = (document.getElementById('f-name') && document.getElementById('f-name').value || '').trim();
   if (!name) { dosShowMsg('Enter the property name in section 1 first.', 'error'); return; }
-  var api = '/api/envoy' /* v76h: same-origin always — the direct-API branch had no key and could never succeed; it broke www + preview domains */;
-  dosShowLoading('Researching ' + name + ' and drafting dossier answers...');
+  var api = '/api/envoy';
   document.getElementById('dos-draft-btn').disabled = true;
 
-  // Build the question schema for the AI
-  var schema = {};
-  DOSSIER_QUESTIONS.forEach(function(cat) {
-    cat.questions.forEach(function(q) { schema[q.id] = q.label; });
-  });
+  var locEl = document.getElementById('dos-hf-location');
+  var countryEl = document.getElementById('f-country');
+  var locHint = (locEl && locEl.value.trim()) || (countryEl && countryEl.value.trim()) || '';
 
-  var systemMsg = "You are The Envoy, building an in-depth dossier of a luxury travel property for The Bearing. Use web search aggressively to find specific facts, materials, history, awards, architect names, room counts, season dates, and any verifiable details. For sensory and operational questions where public sources are vague, draft a thoughtful first-pass answer the property's owner can refine. For pure insider questions (best room, secret dish, staff member by name, unmarked details), leave empty rather than fabricate — these require human knowledge.\n\nReturn ONLY a raw JSON object — no markdown, no backticks, no preamble — mapping field IDs to draft answers as strings. Use empty string \"\" for fields you cannot answer confidently. Schema:\n" + JSON.stringify(schema, null, 2) + "\n\nWrite in The Bearing voice: architectural precision, sensory specificity, no marketing fluff, brevity is luxury. Avoid words like 'luxury', 'stunning', 'beautiful', 'nestled'. Use concrete materials, light descriptions, specific sounds.";
+  var totalFilled = 0;
+  var failedCats = [];
+  var factsSoFar = '';
 
   try {
-    var res = await fetch(api, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        system: systemMsg,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{ role: 'user', content: 'Property to research: ' + name }]
-      })
-    });
-    if (!res.ok) throw new Error('API returned ' + res.status);
-    var data = await res.json();
-    var fullText = '';
-    if (data.content && Array.isArray(data.content)) {
-      data.content.forEach(function(b) { if (b.type === 'text' && b.text) fullText += b.text; });
+    for (var ci = 0; ci < DOSSIER_QUESTIONS.length; ci++) {
+      var cat = DOSSIER_QUESTIONS[ci];
+      // Only ask for fields that are still empty (preserves human input, makes re-runs cheap retries)
+      var pending = cat.questions.filter(function(q) {
+        var el = document.getElementById('dos-' + q.id);
+        return el && !(el.value || '').trim();
+      });
+      if (!pending.length) continue;
+
+      dosShowLoading('Researching ' + name + ' — ' + cat.cat + ' (' + (ci + 1) + '/' + DOSSIER_QUESTIONS.length + ')…');
+
+      var schema = {};
+      pending.forEach(function(q) { schema[q.id] = q.label + (q.hint ? ' (' + q.hint + ')' : ''); });
+
+      var systemMsg = "You are The Envoy, building one section of an in-depth dossier of a luxury travel property for The Bearing. Use web search to find specific verifiable facts (materials, history, awards, architect names, room counts, season dates). For sensory and operational questions where public sources are vague, draft a thoughtful first-pass answer the property's owner can refine. For pure insider questions (best room number, secret dish, staff member by name, unmarked details), leave the field an empty string rather than fabricate — these require human knowledge.\n\nReturn ONLY a raw JSON object — no markdown, no backticks, no preamble — mapping these field IDs to draft answers as strings (empty string \"\" for anything you cannot answer confidently):\n" + JSON.stringify(schema, null, 2) + "\n\nWrite in The Bearing voice: architectural precision, sensory specificity, no marketing fluff, brevity is luxury. Avoid words like 'luxury', 'stunning', 'beautiful', 'nestled'. Use concrete materials, light descriptions, specific sounds.";
+
+      var userMsg = 'Property to research: ' + name + (locHint ? ' (' + locHint + ')' : '') +
+        (factsSoFar ? '\n\nFacts already established in earlier sections (do not re-search these):\n' + factsSoFar.slice(0, 1600) : '') +
+        '\n\nDraft answers for this section: ' + cat.cat;
+
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var killer = ctrl ? setTimeout(function() { ctrl.abort(); }, 90000) : null;
+      try {
+        var res = await fetch(api, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: ctrl ? ctrl.signal : undefined,
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 2500,
+            system: systemMsg,
+            tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+            messages: [{ role: 'user', content: userMsg }]
+          })
+        });
+        if (!res.ok) throw new Error('API ' + res.status);
+        var data = await res.json();
+        var fullText = '';
+        if (data.content && Array.isArray(data.content)) {
+          data.content.forEach(function(b) { if (b.type === 'text' && b.text) fullText += b.text; });
+        }
+        fullText = fullText.replace(/```json|```/g, '').trim();
+        var m = fullText.match(/\{[\s\S]*\}/);
+        if (!m) throw new Error('unparseable response');
+        var draft = JSON.parse(m[0]);
+
+        var sectionFacts = [];
+        Object.keys(draft).forEach(function(fieldId) {
+          var val = draft[fieldId];
+          if (!val || typeof val !== 'string' || !val.trim()) return;
+          var el = document.getElementById('dos-' + fieldId);
+          if (!el) return;
+          if (el.value && el.value.trim()) return; // never overwrite human input
+          el.value = val;
+          totalFilled++;
+          if (ci === 0 && schema[fieldId]) sectionFacts.push(schema[fieldId] + ': ' + val);
+        });
+        if (ci === 0 && sectionFacts.length) factsSoFar = sectionFacts.join('\n');
+        dosUpdateProgress(); // fields fill live, section by section
+      } catch (err) {
+        failedCats.push(cat.cat);
+        console.warn('[Dossier] section failed:', cat.cat, err.message);
+      } finally {
+        if (killer) clearTimeout(killer);
+      }
     }
-    fullText = fullText.replace(/```json|```/g, '').trim();
-    var m = fullText.match(/\{[\s\S]*\}/);
-    if (!m) throw new Error('Could not parse AI response');
-    var draft = JSON.parse(m[0]);
-    // Populate ONLY empty fields (preserve human input)
-    var filled = 0;
-    Object.keys(draft).forEach(function(fieldId) {
-      var val = draft[fieldId];
-      if (!val || typeof val !== 'string' || !val.trim()) return;
-      var el = document.getElementById('dos-' + fieldId);
-      if (!el) return;
-      if (el.value && el.value.trim()) return; // skip filled
-      el.value = val;
-      filled++;
-    });
-    dosUpdateProgress();
-    dosShowMsg('✓ AI drafted ' + filled + ' empty fields. Refine and add insider knowledge below, then save.', 'success');
-  } catch (err) {
-    dosShowMsg('AI draft failed: ' + err.message, 'error');
+
+    if (totalFilled === 0 && failedCats.length) {
+      dosShowMsg('AI draft failed — no sections completed (' + failedCats.join(', ') + '). Check the connection and try again.', 'error');
+    } else if (failedCats.length) {
+      dosShowMsg('✓ AI drafted ' + totalFilled + ' fields. ' + failedCats.join(', ') + ' didn’t complete — run Draft with AI again to retry just those (only empty fields are filled).', 'error');
+    } else if (totalFilled === 0) {
+      dosShowMsg('Nothing to draft — every dossier field already has an answer.', 'success');
+    } else {
+      dosShowMsg('✓ AI drafted ' + totalFilled + ' empty fields across the dossier. Refine and add insider knowledge below, then save.', 'success');
+    }
   } finally {
     dosHideLoading();
     document.getElementById('dos-draft-btn').disabled = false;
