@@ -4088,6 +4088,28 @@ async function propSave() {
     if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
     propShowStatus('✓ Saved · ' + slug, 'success');
     try { localStorage.setItem('tb_editor_last_slug', slug); } catch(e) {}
+    // v77a: the top-right Save previously ignored the dossier (separate dos-*
+    // fields, separate KV key, separate button) — filling the dossier and
+    // pressing Save silently dropped it. One Save now saves EVERYTHING.
+    try {
+      var dosText = (typeof dosAssemble === 'function') ? dosAssemble() : '';
+      if (dosText) {
+        var dres = await fetch(dosDossierApi(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: slug, dossier: dosText })
+        });
+        var ddata = await dres.json();
+        if (dres.ok && !ddata.error) {
+          propShowStatus('\u2713 Saved \u00b7 ' + slug + ' (incl. dossier)', 'success');
+          if (typeof dosShowMsg === 'function') dosShowMsg('\u2713 Dossier saved together with the property.', 'success');
+        } else {
+          if (typeof dosShowMsg === 'function') dosShowMsg('Property saved, but the dossier didn\u2019t \u2014 press "Save dossier" to retry.', 'error');
+        }
+      }
+    } catch (dosErr) {
+      if (typeof dosShowMsg === 'function') dosShowMsg('Property saved, but the dossier didn\u2019t (' + dosErr.message + ') \u2014 press "Save dossier" to retry.', 'error');
+    }
     showToast('Property saved — ' + slug, 'success');
   } catch (err) {
     propShowStatus('Save failed: ' + err.message, 'error');
