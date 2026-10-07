@@ -3241,6 +3241,7 @@ function dosAssemble() {
       var el = document.getElementById('dos-' + q.id);
       var val = el && el.value && el.value.trim();
       if (val) {
+        val = val.replace(/\s*\n+\s*/g, ' '); // v76z: dosParseIntoFields is line-based — a multi-line answer silently lost every line after the first on reload
         section += q.label + ': ' + val + '\n';
         hasContent = true;
       }
@@ -3317,15 +3318,19 @@ function dosParseIntoFields(dossierText) {
       labelMap[q.label.toLowerCase()] = q.id;
     });
   });
+  // v76z: match against KNOWN label prefixes instead of splitting at the first
+  // ': ' — the vp-outcome label itself contains ': ', so its saved answer was
+  // silently dropped on every reload since the dossier feature shipped.
+  var labelKeys = Object.keys(labelMap);
   lines.forEach(function(line) {
-    var idx = line.indexOf(': ');
-    if (idx === -1) return;
-    var label = line.substring(0, idx).toLowerCase();
-    var value = line.substring(idx + 2);
-    var fieldId = labelMap[label];
-    if (fieldId) {
-      var el = document.getElementById('dos-' + fieldId);
-      if (el) { el.value = value; loaded++; }
+    var lower = line.toLowerCase();
+    for (var i = 0; i < labelKeys.length; i++) {
+      var L = labelKeys[i];
+      if (lower.indexOf(L + ': ') === 0) {
+        var el = document.getElementById('dos-' + labelMap[L]);
+        if (el) { el.value = line.substring(L.length + 2); loaded++; }
+        return;
+      }
     }
   });
   return loaded;
@@ -4082,6 +4087,7 @@ async function propSave() {
     var data = await res.json();
     if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
     propShowStatus('✓ Saved · ' + slug, 'success');
+    try { localStorage.setItem('tb_editor_last_slug', slug); } catch(e) {}
     showToast('Property saved — ' + slug, 'success');
   } catch (err) {
     propShowStatus('Save failed: ' + err.message, 'error');
@@ -4146,6 +4152,7 @@ async function propLoad() {
 
     propShowStatus('✓ Loaded · ' + slug, 'success');
     showToast('Loaded: ' + slug, 'success');
+    try { localStorage.setItem('tb_editor_last_slug', slug); } catch(e) {}
     // v76y: pull the saved dossier in automatically — returning to a property
     // no longer shows an empty dossier that looks like the save was lost.
     if (typeof dosLoad === 'function') dosLoad({ silent: true });
@@ -4555,10 +4562,13 @@ function showImportToastWithUndo(msg) {
   }, 20000);
 }
 
-// Auto-load if ?slug= is in the URL
+// Auto-load if ?slug= is in the URL — v76z: else reopen the LAST property
+// worked on (localStorage), so leaving and returning shows everything filled
+// instead of a blank form that looks like a lost save.
 (function() {
   var params = new URLSearchParams(location.search);
   var slug = params.get('slug');
+  if (!slug) { try { slug = localStorage.getItem('tb_editor_last_slug') || ''; } catch(e) {} }
   if (!slug) return;
   var attempts = 0;
   function tryLoad() {
