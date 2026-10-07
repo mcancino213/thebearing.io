@@ -2943,13 +2943,12 @@ function submitAccount(){
 // source URLs and prepend them all to CI_SYSTEM so The Envoy answers with
 // deep page-specific context.
 (function() {
-  var KNOWN_PROPERTY_SLUGS = ['nour-el-nil'];
-  // On property.html we read ?slug= from the query string.
-  // On a legacy hardcoded property page (nour-el-nil.html etc.) we'd fall back to the filename.
+  // v76y: the KNOWN_PROPERTY_SLUGS gate limited dossier injection to the FLAGSHIP
+  // only — every new property's Envoy was blind even with a saved dossier.
+  // Now runs for ANY slug; missing dossier/sources degrade gracefully below.
   var qs = new URLSearchParams(location.search);
   var path = qs.get('slug') || location.pathname.replace(/^\//,'').replace(/\.html$/,'');
   if (!path) return;
-  if (KNOWN_PROPERTY_SLUGS.indexOf(path) === -1) return;
   var DOSSIER_API = '/api/dossier' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   var SOURCE_API = '/api/source' /* v76w: same-origin always (hostname-conditional class killed repo-wide) */;
   if (!DOSSIER_API) return;
@@ -2962,7 +2961,37 @@ function submitAccount(){
     var sourceData = results[1];
     var hasDossier = dossierData && dossierData.dossier;
     var sources = (sourceData && sourceData.sources) || [];
-    if (!hasDossier && sources.length === 0) return;
+    if (!hasDossier && sources.length === 0) {
+      // v76y: no dossier yet — fall back to the property record itself so the
+      // Envoy at least knows the basics on any property page (propData is set
+      // by renderProperty; poll briefly since this IIFE races the KV load).
+      var tries = 0;
+      (function waitProp(){
+        var pd = window.propData;
+        if (!pd) { if (++tries < 24) setTimeout(waitProp, 250); return; }
+        var basics = [];
+        if (pd.name) basics.push('Name: ' + pd.name);
+        if (pd.type) basics.push('Type: ' + pd.type);
+        if (pd.render && pd.render.location_line) basics.push('Location: ' + pd.render.location_line);
+        if (pd.tagline) basics.push('Tagline: ' + pd.tagline);
+        if (pd.pricing_model === 'exclusive' && pd.exclusive) {
+          var ex = pd.exclusive;
+          basics.push('Booking model: exclusive use — the whole property only' +
+            (ex.sleeps ? ', sleeps ' + ex.sleeps : '') +
+            (ex.price ? ', from $' + ex.price + ' per ' + (ex.per || 'night') : '') +
+            (ex.min_nights ? ', ' + ex.min_nights + '-night minimum' : ''));
+          if (ex.staff) basics.push('Staff: ' + ex.staff);
+        } else if (pd.price_from) {
+          basics.push('From price: $' + pd.price_from);
+        }
+        if (Array.isArray(pd.inclusions) && pd.inclusions.length) basics.push('Included: ' + pd.inclusions.slice(0, 8).join('; '));
+        if (pd.verdict) basics.push('The Envoy tip: ' + pd.verdict);
+        if (!basics.length) return;
+        CI_SYSTEM = "You are The Envoy on the " + path + " property page. The guest is looking at this property now. Verified facts from the property record:\n" + basics.join('\n') + "\nAnswer property questions from these facts. NEVER invent room numbers, prices, distances or dates beyond them — if you don't know, say you'll find out. Unless the guest asks about somewhere else, every ambiguous question is about this property.\n\n" + CI_SYSTEM;
+        console.log('[Envoy] No dossier — injected ' + basics.length + ' record facts for ' + path);
+      })();
+      return;
+    }
     var contextBlocks = '';
     if (hasDossier) {
       contextBlocks += '=== PROPERTY DOSSIER ===\n' + dossierData.dossier + '\n=== END DOSSIER ===\n\n';

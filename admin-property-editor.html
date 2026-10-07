@@ -3151,9 +3151,16 @@ var DOSSIER_QUESTIONS = [
 ];
 
 function dosCurrentSlug() {
-  var v = (document.getElementById('f-slug') && document.getElementById('f-slug').value) || '';
-  if (!v) v = (document.getElementById('f-name') && document.getElementById('f-name').value || '').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  return v;
+  // v76y: dossiers were saved under the RAW f-slug value (case/spacing intact)
+  // while properties save under the normalized slug — keys could diverge, so a
+  // "saved" dossier was unfindable. One derivation now, normalized identically:
+  // slug box → f-slug → f-name.
+  function norm(v){ return (v || '').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  var box = document.getElementById('prop-slug-input');
+  if (box && box.value.trim()) return norm(box.value);
+  var fs = document.getElementById('f-slug');
+  if (fs && fs.value.trim()) return norm(fs.value);
+  return norm(document.getElementById('f-name') ? document.getElementById('f-name').value : '');
 }
 
 function dosRender() {
@@ -3274,17 +3281,18 @@ async function dosSave() {
   }
 }
 
-async function dosLoad() {
+async function dosLoad(opts) {
+  opts = opts || {};
   var slug = dosCurrentSlug();
-  if (!slug) { dosShowMsg('Set a property name or slug in section 1 first.', 'error'); return; }
+  if (!slug) { if (!opts.silent) dosShowMsg('Set a property name or slug in section 1 first.', 'error'); return; }
   var api = dosDossierApi();
-  if (!api) { dosShowMsg('Loading only works on the live site.', 'error'); return; }
-  dosShowLoading('Loading existing dossier for "' + slug + '"...');
+  if (!api) { if (!opts.silent) dosShowMsg('Loading only works on the live site.', 'error'); return; }
+  if (!opts.silent) dosShowLoading('Loading existing dossier for "' + slug + '"...');
   try {
     var res = await fetch(api + '?slug=' + encodeURIComponent(slug));
     var data = await res.json();
     if (!data.exists || !data.dossier) {
-      dosShowMsg('No existing dossier found for "' + slug + '". Start fresh below.', 'error');
+      if (!opts.silent) dosShowMsg('No existing dossier found for "' + slug + '". Start fresh below.', 'error');
       return;
     }
     // Parse the dossier text back into the form fields
@@ -4138,6 +4146,9 @@ async function propLoad() {
 
     propShowStatus('✓ Loaded · ' + slug, 'success');
     showToast('Loaded: ' + slug, 'success');
+    // v76y: pull the saved dossier in automatically — returning to a property
+    // no longer shows an empty dossier that looks like the save was lost.
+    if (typeof dosLoad === 'function') dosLoad({ silent: true });
     // Show delete button now that a real property is loaded
     var deleteBtn = document.getElementById('prop-delete-btn');
     if (deleteBtn) deleteBtn.style.display = '';
