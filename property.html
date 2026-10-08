@@ -2961,34 +2961,48 @@ function submitAccount(){
     var sourceData = results[1];
     var hasDossier = dossierData && dossierData.dossier;
     var sources = (sourceData && sourceData.sources) || [];
-    if (!hasDossier && sources.length === 0) {
-      // v76y: no dossier yet — fall back to the property record itself so the
-      // Envoy at least knows the basics on any property page (propData is set
-      // by renderProperty; poll briefly since this IIFE races the KV load).
-      var tries = 0;
+    // v77c: the property record's verified facts (price, capacity, staff,
+    // inclusions) are ALWAYS injected — previously only as a no-dossier
+    // fallback, so on dossier'd properties the Envoy deflected "what does it
+    // cost?" while the rate sat in the record on the same page.
+    function buildBasics(pd) {
+      var basics = [];
+      if (!pd) return basics;
+      if (pd.name) basics.push('Name: ' + pd.name);
+      if (pd.type) basics.push('Type: ' + pd.type);
+      if (pd.render && pd.render.location_line) basics.push('Location: ' + pd.render.location_line);
+      if (pd.tagline) basics.push('Tagline: ' + pd.tagline);
+      if (pd.pricing_model === 'exclusive' && pd.exclusive) {
+        var ex = pd.exclusive;
+        basics.push('Booking model: exclusive use \u2014 the whole property only' +
+          (ex.sleeps ? ', sleeps ' + ex.sleeps : '') +
+          (ex.bedrooms ? ', ' + ex.bedrooms + ' bedrooms' : '') +
+          (ex.price ? ', from $' + ex.price + ' per ' + (ex.per || 'night') + ' for the entire property' : '') +
+          (ex.min_nights ? ', ' + ex.min_nights + '-night minimum' : ''));
+        if (ex.staff) basics.push('Staff: ' + ex.staff);
+      } else if (Array.isArray(pd.rooms) && pd.rooms.length) {
+        var rl = pd.rooms.filter(function(r){ return r && r.name; }).map(function(r){
+          return r.name + (r.price ? ' from $' + r.price + '/' + (r.per || 'night') : '');
+        });
+        if (rl.length) basics.push('Rooms: ' + rl.join('; '));
+        if (pd.price_from) basics.push('From price: $' + pd.price_from);
+      } else if (pd.price_from) {
+        basics.push('From price: $' + pd.price_from);
+      }
+      if (Array.isArray(pd.inclusions) && pd.inclusions.length) basics.push('Included: ' + pd.inclusions.slice(0, 10).join('; '));
+      if (pd.cancellation) basics.push('Cancellation: ' + pd.cancellation);
+      if (pd.verdict) basics.push('The Envoy tip: ' + pd.verdict);
+      return basics;
+    }
+    if (!hasDossier && sources.length === 0 && true) {
+      var tries0 = 0;
       (function waitProp(){
         var pd = window.propData;
-        if (!pd) { if (++tries < 24) setTimeout(waitProp, 250); return; }
-        var basics = [];
-        if (pd.name) basics.push('Name: ' + pd.name);
-        if (pd.type) basics.push('Type: ' + pd.type);
-        if (pd.render && pd.render.location_line) basics.push('Location: ' + pd.render.location_line);
-        if (pd.tagline) basics.push('Tagline: ' + pd.tagline);
-        if (pd.pricing_model === 'exclusive' && pd.exclusive) {
-          var ex = pd.exclusive;
-          basics.push('Booking model: exclusive use — the whole property only' +
-            (ex.sleeps ? ', sleeps ' + ex.sleeps : '') +
-            (ex.price ? ', from $' + ex.price + ' per ' + (ex.per || 'night') : '') +
-            (ex.min_nights ? ', ' + ex.min_nights + '-night minimum' : ''));
-          if (ex.staff) basics.push('Staff: ' + ex.staff);
-        } else if (pd.price_from) {
-          basics.push('From price: $' + pd.price_from);
-        }
-        if (Array.isArray(pd.inclusions) && pd.inclusions.length) basics.push('Included: ' + pd.inclusions.slice(0, 8).join('; '));
-        if (pd.verdict) basics.push('The Envoy tip: ' + pd.verdict);
+        if (!pd) { if (++tries0 < 24) setTimeout(waitProp, 250); return; }
+        var basics = buildBasics(pd);
         if (!basics.length) return;
-        CI_SYSTEM = "You are The Envoy on the " + path + " property page. The guest is looking at this property now. Verified facts from the property record:\n" + basics.join('\n') + "\nAnswer property questions from these facts. NEVER invent room numbers, prices, distances or dates beyond them — if you don't know, say you'll find out. Unless the guest asks about somewhere else, every ambiguous question is about this property.\n\n" + CI_SYSTEM;
-        console.log('[Envoy] No dossier — injected ' + basics.length + ' record facts for ' + path);
+        CI_SYSTEM = "You are The Envoy on the " + path + " property page. The guest is looking at this property now. Verified facts from the property record:\n" + basics.join('\n') + "\nPrices are 'from' starting rates \u2014 share them freely as rough guidance and note the exact quote comes with the enquiry. NEVER invent figures beyond these. Unless the guest asks about somewhere else, every ambiguous question is about this property.\n\n" + CI_SYSTEM;
+        console.log('[Envoy] No dossier \u2014 injected ' + basics.length + ' record facts for ' + path);
       })();
       return;
     }
@@ -3008,6 +3022,16 @@ function submitAccount(){
     CI_SYSTEM = "You are The Envoy on the " + path + " property page. The user is currently looking at this property. Below is your authoritative knowledge for this property — a dossier and any cached source materials.\n\nIMPORTANT RULES:\n1. The DOSSIER is your primary, most-trusted source. Use its facts directly.\n2. The SOURCES are reference materials cached from external URLs. Use them when the dossier is silent on a topic. Cite them when you do (e.g. 'According to the cached TripAdvisor reviews...').\n3. NEVER invent room numbers, staff names, prices, distances, dates, or any specific facts that aren't in either the dossier or the sources. If you don't know something, say 'I don't have that detail on hand for this property — would you like me to find out for you?'\n4. Stay in The Bearing voice: architectural precision, sensory specificity, no marketing fluff.\n5. CURRENT PROPERTY FOCUS: Unless the guest explicitly asks about a different property or destination, treat all questions as being about this property. 'What's the best room?' means the best room here. 'How far is the airport?' means from this property. Default to this property for every ambiguous question.\n\n" + contextBlocks + CI_SYSTEM;
     var counts = (hasDossier ? '1 dossier' : '0 dossier') + ' + ' + sources.length + ' source(s)';
     console.log('[Envoy] Loaded ' + counts + ' for ' + path + ' (' + contextBlocks.length + ' chars total context)');
+    // v77c: layer the record's verified commercial facts on top of the dossier
+    var triesR = 0;
+    (function waitRec(){
+      var pd = window.propData;
+      if (!pd) { if (++triesR < 24) setTimeout(waitRec, 250); return; }
+      var basics = buildBasics(pd);
+      if (!basics.length) return;
+      CI_SYSTEM = "=== PROPERTY RECORD (VERIFIED \u2014 pricing & practical facts) ===\n" + basics.join('\n') + "\nPrices are 'from' starting rates \u2014 share them freely as rough guidance; the exact quote comes with the enquiry. Never invent figures beyond these.\n=== END PROPERTY RECORD ===\n\n" + CI_SYSTEM;
+      console.log('[Envoy] Record facts layered on dossier: ' + basics.length + ' lines');
+    })();
 
     // ── Context switch: inject a property-focus marker into conversation history ──
     // Converts slug to display name: "nour-el-nil" → "Nour El Nil"

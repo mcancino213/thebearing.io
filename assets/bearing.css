@@ -207,3 +207,123 @@
 .tb-chart-rule{--tick:rgba(22,50,62,.26);}
 .tb-chart-rule.on-dark{--tick:rgba(255,255,255,.28);}
 .sec-eyebrow::after{filter:none;}
+
+/* ── 8. THE ENVOY IDENTITY (v77d) ─────────────────────────────────────
+   One voice for every Envoy surface: all ~20 inline drawer copies, the
+   shared envoy-drawer module, and the-envoy demo chat. Replaces the
+   serif-on-brown bubbles (Cormorant .92rem #f0e2c8 on #2c2416 — the
+   legibility complaint) with a readable, branded system:
+   · surface: hydrographic ink (the brand's chart palette)
+   · THE ENVOY: editorial card — terra left rule, mono ✦ tag, Geist body
+   · guest: crisp warm-white bubble, unmistakably "me"
+   ID-based selectors + !important beat the per-page inline variants. */
+
+#ci-drawer, .ci-drawer{
+  background:linear-gradient(172deg,#14303c 0%,#0e222c 100%) !important;
+  border-left:1px solid rgba(255,255,255,.10) !important;
+  box-shadow:-14px 0 60px rgba(4,12,16,.55) !important;
+}
+#ci-drawer .ci-messages, .ci-drawer .ci-messages{
+  gap:16px !important;
+  scrollbar-color:rgba(127,176,196,.35) transparent !important;
+}
+/* The Envoy — an editorial card, not a balloon */
+#ci-drawer .ci-msg.ai, .ci-drawer .ci-msg.ai{
+  background:rgba(244,239,230,.065) !important;
+  border:none !important;
+  border-left:2px solid var(--terra,#b05830) !important;
+  border-radius:2px 14px 14px 2px !important;
+  padding:12px 16px 13px !important;
+  font-family:'Geist',-apple-system,sans-serif !important;
+  font-size:.875rem !important;
+  line-height:1.7 !important;
+  color:#f4efe6 !important;
+  box-shadow:none !important;
+}
+#ci-drawer .ci-msg.ai::before, .ci-drawer .ci-msg.ai::before{
+  content:"\2726\00a0 THE ENVOY";
+  display:block;
+  font-family:var(--tb-mono,'Fragment Mono',monospace);
+  font-size:.55rem;
+  letter-spacing:.24em;
+  color:#7fb0c4;
+  margin-bottom:7px;
+}
+/* The guest — crisp warm white, clearly "me" */
+#ci-drawer .ci-msg.user, .ci-drawer .ci-msg.user{
+  background:#f5f1e8 !important;
+  border:none !important;
+  border-radius:14px 14px 3px 14px !important;
+  padding:10px 15px !important;
+  font-family:'Geist',-apple-system,sans-serif !important;
+  font-size:.84rem !important;
+  font-weight:500;
+  line-height:1.6 !important;
+  color:#1e1810 !important;
+  box-shadow:0 2px 10px rgba(0,0,0,.25) !important;
+}
+/* Suggestions: instrument voice */
+#ci-drawer .ci-sug, .ci-drawer .ci-sug{
+  background:rgba(255,255,255,.05) !important;
+  border:1px solid rgba(255,255,255,.18) !important;
+  border-radius:100px !important;
+  color:rgba(244,239,230,.85) !important;
+  font-family:var(--tb-mono,'Fragment Mono',monospace) !important;
+  font-size:.62rem !important;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+}
+#ci-drawer .ci-sug:hover, .ci-drawer .ci-sug:hover{
+  border-color:var(--terra,#b05830) !important;
+  color:#fff !important;
+  background:rgba(176,88,48,.18) !important;
+}
+/* Composer */
+#ci-drawer .ci-input-row, .ci-drawer .ci-input-row{ border-top:1px solid rgba(255,255,255,.08) !important; }
+#ci-drawer .ci-input, .ci-drawer .ci-input{
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.14) !important;
+  color:#f4efe6 !important;
+  font-family:'Geist',sans-serif !important;
+}
+#ci-drawer .ci-input::placeholder, .ci-drawer .ci-input::placeholder{ color:rgba(244,239,230,.4) !important; }
+#ci-drawer .ci-input:focus, .ci-drawer .ci-input:focus{
+  border-color:var(--terra,#b05830) !important;
+  box-shadow:0 0 0 3px rgba(176,88,48,.16) !important;
+}
+#ci-drawer .ci-send, .ci-drawer .ci-send{ background:var(--terra,#b05830) !important; }
+#ci-drawer .ci-send:hover, .ci-drawer .ci-send:hover{ background:#8c4422 !important; }
+
+/* ── the-envoy page demo chat: same identity ── */
+.demo-chat{ background:linear-gradient(172deg,#14303c 0%,#0e222c 100%) !important; border:1px solid rgba(255,255,255,.1) !important; }
+.demo-chat-header{ border-bottom:1px solid rgba(255,255,255,.08) !important; }
+.dm-bubble-theirs{
+  background:rgba(244,239,230,.065) !important;
+  border:none !important;
+  border-left:2px solid var(--terra,#b05830) !important;
+  border-radius:2px 14px 14px 2px !important;
+  padding:11px 15px 12px !important;
+  font-family:'Geist',sans-serif !important;
+  font-size:.84rem !important;
+  line-height:1.65 !important;
+  color:#f4efe6 !important;
+}
+.dm-theirs{ display:block !important; }
+.dm-bubble-theirs::before{
+  content:"\2726\00a0 THE ENVOY";
+  display:block;
+  font-family:var(--tb-mono,'Fragment Mono',monospace);
+  font-size:.55rem;
+  letter-spacing:.24em;
+  color:#7fb0c4;
+  margin-bottom:6px;
+}
+.dm-bubble-mine{
+  background:#f5f1e8 !important;
+  color:#1e1810 !important;
+  font-family:'Geist',sans-serif !important;
+  font-size:.82rem !important;
+  font-weight:500;
+}
+.demo-input{ background:rgba(255,255,255,.07) !important; border:1px solid rgba(255,255,255,.14) !important; color:#f4efe6 !important; }
+.demo-send{ background:var(--terra,#b05830) !important; }
