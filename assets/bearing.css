@@ -327,3 +327,30 @@
 }
 .demo-input{ background:rgba(255,255,255,.07) !important; border:1px solid rgba(255,255,255,.14) !important; color:#f4efe6 !important; }
 .demo-send{ background:var(--terra,#b05830) !important; }
+
+/* v77e: Envoy enquiry handoff card (rendered by the bearing.js ciAddMsg wrapper) */
+#ci-drawer .ci-enquire-card, .ci-drawer .ci-enquire-card{
+  display:block; align-self:flex-start; max-width:90%;
+  background:linear-gradient(135deg,var(--terra,#b05830),#8c4422);
+  border-radius:4px 14px 14px 14px;
+  padding:12px 18px 13px;
+  text-decoration:none;
+  box-shadow:0 4px 18px rgba(176,88,48,.35);
+  transition:transform .15s, box-shadow .15s;
+}
+#ci-drawer .ci-enquire-card:hover, .ci-drawer .ci-enquire-card:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(176,88,48,.45);
+}
+.ci-enquire-kicker{
+  display:block;
+  font-family:var(--tb-mono,'Fragment Mono',monospace);
+  font-size:.52rem; letter-spacing:.22em;
+  color:rgba(255,255,255,.75);
+  margin-bottom:4px;
+}
+.ci-enquire-cta{
+  display:block;
+  font-family:'Geist',sans-serif;
+  font-size:.92rem; font-weight:600; color:#fff;
+}

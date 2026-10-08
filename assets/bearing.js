@@ -57,3 +57,55 @@
     initReveals();
   }
 })();
+
+/* ── v77e: Envoy enquiry handoff ──────────────────────────────────────
+   The Envoy ends a ready-to-proceed reply with [[ENQUIRE:slug]] (prompt
+   rule in envoy-prompt.js). This wrapper strips the marker from the
+   rendered message and appends a real "Start your enquiry" card in the
+   drawer. Wrapping window.ciAddMsg centrally (bearing.js is on every
+   public page) covers all ~20 inline drawer copies + the shared module
+   without touching them — no per-page drift. */
+(function () {
+  var tries = 0;
+  function enquireHref(slug) {
+    if (slug === 'nour-el-nil-x' || slug === 'nour-el-nil') return '/nour-el-nil.html?enquire=1';
+    return '/property.html?slug=' + encodeURIComponent(slug) + '&enquire=1';
+  }
+  function wrap() {
+    if (typeof window.ciAddMsg !== 'function') {
+      if (++tries < 40) setTimeout(wrap, 250);
+      return;
+    }
+    if (window.ciAddMsg.__tbEnquireWrapped) return;
+    var orig = window.ciAddMsg;
+    var wrapped = function (text, type) {
+      var slug = null;
+      if (type === 'ai' && typeof text === 'string') {
+        var m = text.match(/\[\[ENQUIRE:([a-z0-9-]+)\]\]/i);
+        if (m) {
+          slug = m[1].toLowerCase();
+          text = text.replace(/\s*\[\[ENQUIRE:[a-z0-9-]+\]\]\s*/gi, ' ').replace(/\s+$/, '').trim();
+        }
+      }
+      var out = orig(text, type);
+      if (slug) {
+        try {
+          var msgs = document.getElementById('ci-messages');
+          if (msgs) {
+            var card = document.createElement('a');
+            card.className = 'ci-enquire-card';
+            card.href = enquireHref(slug);
+            card.innerHTML = '<span class="ci-enquire-kicker">✦ NO COMMITMENT · REPLY WITHIN 24H</span><span class="ci-enquire-cta">Start your enquiry →</span>';
+            msgs.appendChild(card);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+        } catch (e) {}
+      }
+      return out;
+    };
+    wrapped.__tbEnquireWrapped = true;
+    window.ciAddMsg = wrapped;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wrap);
+  else wrap();
+})();

@@ -514,7 +514,10 @@ export default {
       }
 
       // POST { slug, dossier } → saves and returns { ok, slug }
+      // v77e: admin-gated — this text is injected into the Envoy as AUTHORITATIVE
+      // context; an open POST was a prompt-injection / content-poisoning hole.
       if (request.method === 'POST') {
+        if (!(await isAdmin())) return adminDenied();
         try {
           const data = await request.json();
           if (!data.slug || typeof data.slug !== 'string') {
@@ -616,7 +619,9 @@ export default {
 
       // POST { slug, slot, url, label, manualContent? } → fetches URL, strips HTML, caches
       // If manualContent is present, skip fetching and store the pasted content directly.
+      // v77e: admin-gated — cached sources are fed to the Envoy as trusted material.
       if (request.method === 'POST') {
+        if (!(await isAdmin())) return adminDenied();
         let data;
         try {
           data = await request.json();

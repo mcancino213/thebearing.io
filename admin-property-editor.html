@@ -3145,6 +3145,35 @@ var DOSSIER_QUESTIONS = [
     { id: 'lp-connectivity', label: 'Connectivity', hint: 'Wi-Fi, cell, intentional disconnection?' },
     { id: 'lp-dress', label: 'Dress code expectations', hint: '' }
   ]},
+  { cat: 'Getting there', icon: '08', desc: 'Guide-grade arrival knowledge. AI fills most from web search.', questions: [
+    { id: 'gt-airport', label: 'Nearest airports and typical routings', hint: 'IATA codes, which hub most guests connect through' },
+    { id: 'gt-transfer', label: 'Transfer options and real timings', hint: 'road vs air, durations, what the property arranges' },
+    { id: 'gt-charter', label: 'Private charter or scenic arrival option', hint: 'airstrip, helicopter, boat — if any' },
+    { id: 'gt-arrival', label: 'What arrival day actually looks like', hint: 'meet point, check-in rhythm, first-evening advice' }
+  ]},
+  { cat: 'The surroundings', icon: '09', desc: 'The world around the property.', questions: [
+    { id: 'su-landscape', label: 'The landscape and setting in plain terms', hint: 'what you see in every direction' },
+    { id: 'su-town', label: 'Nearest town or village and what it offers', hint: 'distance, character, worth a visit or not' },
+    { id: 'su-known-for', label: 'What this region is known for', hint: 'the one-line answer a well-travelled friend would give' },
+    { id: 'su-wildlife', label: 'Wildlife or nature highlights of the area', hint: 'if relevant — seasons included', textarea: true }
+  ]},
+  { cat: 'Beyond the property', icon: '10', desc: 'Recommended experiences OUTSIDE the property — the guide layer.', questions: [
+    { id: 'by-experiences', label: 'Three to five experiences worth leaving the property for', hint: 'name each + one line on why', textarea: true },
+    { id: 'by-eat', label: 'Where to eat or drink outside the property', hint: 'only if genuinely worth it — name + why', textarea: true },
+    { id: 'by-culture', label: 'Cultural or historic sites within reach', hint: 'with honest travel-time from the property', textarea: true },
+    { id: 'by-skip', label: 'The famous nearby thing that is NOT worth it', hint: 'guests trust a guide who says skip' }
+  ]},
+  { cat: 'When to go', icon: '11', desc: 'Seasonality a guide would actually explain.', questions: [
+    { id: 'wg-best', label: 'Best months and why', hint: 'weather, light, crowds, wildlife' },
+    { id: 'wg-avoid', label: 'Months to think twice about and why', hint: 'heat, rains, closures' },
+    { id: 'wg-events', label: 'Events or natural moments worth planning around', hint: 'festivals, migrations, harvests' }
+  ]},
+  { cat: 'Good to know', icon: '12', desc: 'Practicalities. Phrase changeable rules as "check current requirements".', questions: [
+    { id: 'gk-connectivity', label: 'Connectivity reality', hint: 'wifi, signal, where it drops' },
+    { id: 'gk-money', label: 'Money and tipping norms', hint: 'currency, cards vs cash, customary amounts' },
+    { id: 'gk-dress', label: 'What to pack or wear that guests get wrong', hint: 'layers, modesty norms, footwear' },
+    { id: 'gk-entry', label: 'Entry formalities pointer', hint: 'visa-on-arrival vs e-visa etc. — ALWAYS phrased as guidance to verify current requirements' }
+  ]},
   { cat: 'Notes & raw context', icon: '07', desc: 'Unstructured. Paste anything: GM phone notes, guest review excerpts, internal memos. The Envoy reads it all.', questions: [
     { id: 'nt-notes', label: 'Free-form notes about this property', hint: 'no structure required — just dump useful context here', textarea: true }
   ]}
