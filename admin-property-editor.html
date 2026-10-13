@@ -4117,6 +4117,7 @@ async function propSave() {
     if (!res.ok || data.error) { propShowStatus('Error: ' + (data.error || 'unknown'), 'error'); return; }
     propShowStatus('✓ Saved · ' + slug, 'success');
     try { localStorage.setItem('tb_editor_last_slug', slug); } catch(e) {}
+    try { history.replaceState(null, '', 'admin-property-editor?slug=' + encodeURIComponent(slug)); } catch(e) {}
     // v77a: the top-right Save previously ignored the dossier (separate dos-*
     // fields, separate KV key, separate button) — filling the dossier and
     // pressing Save silently dropped it. One Save now saves EVERYTHING.
@@ -4618,6 +4619,11 @@ function showImportToastWithUndo(msg) {
 // instead of a blank form that looks like a lost save.
 (function() {
   var params = new URLSearchParams(location.search);
+  // v77f: "+ New property" links here with ?new=1 — a deliberately blank form.
+  // Without this, the v76z last-property restore re-filled the form with
+  // whatever was edited last (Miguel: "every time I choose + New Property it
+  // is prefilled with Sonnwies details").
+  if (params.get('new')) return;
   var slug = params.get('slug');
   if (!slug) { try { slug = localStorage.getItem('tb_editor_last_slug') || ''; } catch(e) {} }
   if (!slug) return;
