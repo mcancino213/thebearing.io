@@ -588,12 +588,15 @@ window.addEventListener('load', async function() {
           <div class="pe-grid-2 pe-field">
             <div>
               <label class="pe-label">Commission %<span class="pe-label-req">*</span></label>
-              <div style="display:flex;align-items:stretch;gap:0;">
-                <input class="pe-input" id="f-commission-pct" type="number" min="1" max="25" step="0.1" placeholder="e.g. 15" oninput="updateAll();validateCommission();" style="border-top-right-radius:0;border-bottom-right-radius:0;">
-                <div style="display:flex;align-items:center;justify-content:center;padding:0 14px;background:#13171e;border:1px solid #242a33;border-left:none;border-top-right-radius:8px;border-bottom-right-radius:8px;color:#8a8580;font-size:13px;font-weight:500;">%</div>
-              </div>
+              <select class="pe-input" id="f-commission-pct" onchange="updateAll();validateCommission();" style="appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
+                <option value="">Select rate…</option>
+                <option value="25">25%</option>
+                <option value="20">20%</option>
+                <option value="15">15%</option>
+                <option value="10">10% (standard)</option>
+              </select>
               <div id="f-commission-help" style="font-family:'DM Sans',sans-serif;font-size:11px;color:#8a8580;margin-top:6px;line-height:1.5;">
-                Percentage TheBearing collects as a non-refundable deposit at booking. Range 1-25%. Negotiated per property. Member sees only the dollar amount, not the percentage.
+                Percentage TheBearing collects as a non-refundable deposit at booking. Negotiated per property. Member sees only the dollar amount, not the percentage.
               </div>
             </div>
             <div>
@@ -963,8 +966,8 @@ window.addEventListener('load', async function() {
             <div>
               <label class="pe-label">Commission rate</label>
               <select class="pe-input" id="f-commission" style="appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;">
-                <option value="10">10% (standard)</option><option value="12">12%</option>
-                <option value="15">15%</option><option value="8">8% (negotiated)</option>
+                <option value="25">25%</option><option value="20">20%</option>
+                <option value="15">15%</option><option value="10">10% (standard)</option>
               </select>
             </div>
             <div>
@@ -4179,6 +4182,15 @@ async function propLoad() {
     // API-only updates). Sync them down explicitly here.
     var commInput = document.getElementById('f-commission-pct');
     if (commInput && typeof saved.commission_pct === 'number' && !commInput.value) {
+      // v77g: the field is now a fixed-rate select (25/20/15/10). A legacy
+      // record may carry another negotiated value — add it as an option so
+      // the saved rate still displays instead of silently falling to blank.
+      if (commInput.tagName === 'SELECT' && ![].some.call(commInput.options, function(o){ return o.value === String(saved.commission_pct); })) {
+        var legacyOpt = document.createElement('option');
+        legacyOpt.value = String(saved.commission_pct);
+        legacyOpt.textContent = saved.commission_pct + '% (legacy)';
+        commInput.appendChild(legacyOpt);
+      }
       commInput.value = saved.commission_pct;
     }
     var bookingTypeSelect = document.getElementById('f-booking-type');
