@@ -109,3 +109,34 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wrap);
   else wrap();
 })();
+
+// ── v77h: shared rich voyage-card fragments ─────────────────────────────────
+// The flagship's hand-written card carries a number, tagline, pull quote and
+// a 4-stat strip; the dynamic KV cards on cruises/hotels/villas rendered only
+// name + location (Miguel: "they're just plain"). One shared builder here so
+// the three listing pages render the same richness and can't drift apart.
+(function () {
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  window.tbVoyageRich = function (p) {
+    p = p || {};
+    var tagline = p.tagline || p.hook || (p.overview && p.overview.p1) || '';
+    var q = (p.quote && p.quote.text) ? String(p.quote.text).replace(/^["“”\s]+|["“”\s]+$/g, '') : '';
+    if (q.length > 220) q = q.substring(0, 220).trimEnd() + '…';
+    var factHtml = q ? '<div class="voyage-fact">"' + esc(q) + '"</div>' : '';
+    var stats = (p.render && Array.isArray(p.render.stats))
+      ? p.render.stats.filter(function (s) { return s && (s.value || s.label); }).slice(0, 4) : [];
+    var statsHtml = stats.length
+      ? '<div class="voyage-stats">' + stats.map(function (s) {
+          return '<div class="vstat"><div class="vstat-lbl">' + esc(s.label || '') + '</div><div class="vstat-val">' + esc(s.value || '') + '</div></div>';
+        }).join('') + '</div>'
+      : '';
+    var durationHtml = (p.render && p.render.duration_tagline)
+      ? '<span class="voyage-distance">' + esc(p.render.duration_tagline) + '</span>' : '';
+    var exclusiveNote = null;
+    if (p.pricing_model === 'exclusive' && p.exclusive && p.exclusive.price) {
+      var ep = parseInt(String(p.exclusive.price).replace(/[^0-9]/g, ''), 10);
+      if (isFinite(ep) && ep > 0) exclusiveNote = 'From $' + ep.toLocaleString() + ' / ' + (p.exclusive.per || 'night') + ' · whole property';
+    }
+    return { tagline: tagline, factHtml: factHtml, statsHtml: statsHtml, durationHtml: durationHtml, exclusiveNote: exclusiveNote };
+  };
+})();

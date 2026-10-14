@@ -1228,6 +1228,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
     if (!results) { finish(); return; }
     var container = document.getElementById('dynamic-villas');
     if (!container) return;
+    var voyageNum = 1;
     results.forEach(function(res){
       if (!res || !res.data) return;
       var p = res.data;
@@ -1241,7 +1242,8 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
       var slug = res.slug;
       var href = '/property.html?slug=' + encodeURIComponent(slug);
       var price = p.price_from ? '$' + parseInt(p.price_from).toLocaleString() : '';
-      var tagline = p.tagline || '';
+      var rich = window.tbVoyageRich ? window.tbVoyageRich(p) : { tagline:'', factHtml:'', statsHtml:'', durationHtml:'', exclusiveNote:null };
+      var tagline = rich.tagline || '';
       var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
       var isFamily = Array.isArray(p.tags) && p.tags.indexOf('family') > -1;
       var coordTxt = (p.coords && window.tbCoord) ? window.tbCoord(p.coords.lat, p.coords.lng) : '';
@@ -1265,6 +1267,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
         '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
           '<div class="voyage-bg"><img src="' + esc(img) + '" alt="' + esc(p.name||slug) + '" loading="lazy"><div class="voyage-bg-scrim"></div></div>' +
           '<div class="voyage-content"><div class="voyage-left">' +
+            '<div class="voyage-num">' + ('0' + voyageNum).slice(-2) + '</div>' +
             '<div class="voyage-meta-top"><span class="voyage-type">' + esc(p.type||'Villa') + '</span>' + statusPill +
             (isFamily ? '<span class="voyage-status" style="background:rgba(176,88,48,.18);border-color:rgba(176,88,48,.5);color:#ffb08a;">\u2665 Great for families</span>' : '') + '</div>' +
             '<div class="voyage-name">' + esc(p.name||slug) + '</div>' +
@@ -1272,14 +1275,18 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
             '<div class="voyage-route">' +
               (coordTxt ? '<span class="voyage-port tb-mono" style="letter-spacing:.14em;">' + esc(coordTxt) + '</span>' : '') +
               (loc ? '<span class="voyage-port">' + esc(loc) + '</span>' : '') +
+              rich.durationHtml +
             '</div>' +
+            rich.factHtml +
+            rich.statsHtml +
             '<div class="voyage-cta-row">' +
               '<button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry(\'' + esc(p.name||slug) + '\', \'' + esc(slug) + '\')">Enquire first</button>' +
-              (price ? '<span class="voyage-price-note">From ' + price + ' / night</span>' : '') +
+              (rich.exclusiveNote ? '<span class="voyage-price-note">' + esc(rich.exclusiveNote) + '</span>' : (price ? '<span class="voyage-price-note">From ' + price + ' / night</span>' : '')) +
             '</div>' +
           '</div>' + paHtml + '</div>' +
         '</div>';
       container.appendChild(card);
+      voyageNum++;
       rendered++;
     });
     finish();

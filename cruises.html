@@ -1299,17 +1299,25 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
     if (!results) return;
     var container = document.getElementById('dynamic-voyages');
     if (!container) return;
+    var voyageNum = 2; // 01 is the hand-written flagship block
     results.forEach(function(res){
       if (!res || !res.data) return;
       var p = res.data;
       var type = (p.type||'').toLowerCase();
       if (!(type.indexOf('cruise')>-1 || type.indexOf('river')>-1 || type.indexOf('yacht')>-1 || type.indexOf('sail')>-1 || type.indexOf('navigator')>-1 || type.indexOf('dahabiya')>-1)) return;
+      // v77h: published-only — drafts were leaking onto the public cruises page
+      var st = String(p.status||'').toLowerCase();
+      if (st !== 'live' && st !== 'coming-soon') return;
+      var statusPill = (st === 'coming-soon')
+        ? '<span class="voyage-status">Coming soon</span>'
+        : '<span class="voyage-status voyage-status-live">\u2726 Bookable now</span>';
+      var rich = window.tbVoyageRich ? window.tbVoyageRich(p) : { tagline:'', factHtml:'', statsHtml:'', durationHtml:'', exclusiveNote:null };
       var slug = res.slug;
         var href = '/property.html?slug=' + encodeURIComponent(slug);
         var img = (p.photos && p.photos.hero && p.photos.hero.length) ? (p.photos.hero[0].url || p.photos.hero[0]) :
                   (p.hero_img || p.images && p.images[0] || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop');
         var price = p.price_from ? '$' + parseInt(p.price_from).toLocaleString() : '';
-        var tagline = p.tagline || p.bearing_edit || '';
+        var tagline = rich.tagline || p.bearing_edit || '';
         var loc = (p.render && p.render.location_line) ? p.render.location_line : (p.location||'');
 
         // Private access panel
@@ -1343,23 +1351,25 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
             '</div>' +
             '<div class="voyage-content">' +
               '<div class="voyage-left">' +
+                '<div class="voyage-num">' + ('0' + voyageNum).slice(-2) + '</div>' +
                 '<div class="voyage-meta-top">' +
-                  '<span class="voyage-type">' + esc(p.type||'Cruise') + '</span>' +
-                  '<span class="voyage-status voyage-status-live">✦ Bookable now</span>' +
+                  '<span class="voyage-type">' + esc(p.type||'Cruise') + '</span>' + statusPill +
                 '</div>' +
                 '<div class="voyage-name">' + esc(p.name||slug) + '</div>' +
                 (tagline ? '<div class="voyage-tagline">' + esc(tagline) + '</div>' : '') +
-                (loc ? '<div class="voyage-route"><span class="voyage-port">' + esc(loc) + '</span></div>' : '') +
-                (price ? '<div class="voyage-stats"><div class="vstat"><div class="vstat-lbl">From</div><div class="vstat-val">' + price + '</div></div></div>' : '') +
+                ((loc || rich.durationHtml) ? '<div class="voyage-route">' + (loc ? '<span class="voyage-port">' + esc(loc) + '</span>' : '') + rich.durationHtml + '</div>' : '') +
+                rich.factHtml +
+                (rich.statsHtml || (price ? '<div class="voyage-stats"><div class="vstat"><div class="vstat-lbl">From</div><div class="vstat-val">' + price + '</div></div></div>' : '')) +
                 '<div class="voyage-cta-row">' +
                   '<button class="voyage-cta-ghost" onclick="event.stopPropagation();openQuickEnquiry(\'' + esc(p.name||slug) + '\', \'' + esc(slug) + '\')">Enquire first</button>' +
-                  (price ? '<span class="voyage-price-note">From ' + price + ' pp</span>' : '') +
+                  (rich.exclusiveNote ? '<span class="voyage-price-note">' + esc(rich.exclusiveNote) + '</span>' : (price ? '<span class="voyage-price-note">From ' + price + ' pp</span>' : '')) +
                 '</div>' +
               '</div>' +
               paHtml +
             '</div>' +
           '</div>';
         container.appendChild(card);
+        voyageNum++;
     });
   })
   .catch(function(e){ console.log('[Cruises] KV load error:', e); });
