@@ -140,3 +140,84 @@
     return { tagline: tagline, factHtml: factHtml, statsHtml: statsHtml, durationHtml: durationHtml, exclusiveNote: exclusiveNote };
   };
 })();
+
+// ── v77i: THE CHART SCALE — shared filter band (replaces the pills) ─────────
+// tbScaleAttrs(p) derives filterable facts from a property record into data-
+// attributes for a .voyage card; tbScale(mountSel, items) renders the band,
+// counts matching cards live, and filters the stack on click. Hardcoded cards
+// (the flagship) participate by carrying the same data- attributes in markup.
+(function () {
+  var GEO = {
+    africa: ['kenya','namibia','botswana','egypt','tanzania','south africa','morocco','rwanda','uganda','zambia','zimbabwe','mozambique','seychelles','mauritius','madagascar','ethiopia'],
+    europe: ['italy','france','spain','greece','portugal','united kingdom','uk','scotland','england','ireland','switzerland','austria','germany','norway','sweden','finland','iceland','croatia','montenegro','turkey'],
+    asia: ['laos','indonesia','japan','thailand','vietnam','cambodia','myanmar','india','sri lanka','maldives','bhutan','nepal','philippines','malaysia','china','oman','jordan','uae'],
+    americas: ['peru','usa','united states','mexico','brazil','argentina','chile','costa rica','ecuador','galapagos','colombia','canada','belize','panama','bolivia','uruguay']
+  };
+  function geoOf(country) {
+    var c = String(country || '').toLowerCase().trim();
+    if (!c) return '';
+    for (var g in GEO) if (GEO[g].indexOf(c) > -1) return g;
+    return '';
+  }
+  function catOf(type) {
+    var t = String(type || '').toLowerCase();
+    if (t.indexOf('expedition') > -1) return 'expedition';
+    if (t.indexOf('river') > -1 || t.indexOf('dahabiya') > -1 || t.indexOf('houseboat') > -1) return 'river';
+    if (t.indexOf('ocean') > -1 || t.indexOf('sea') > -1 || t.indexOf('yacht') > -1 || t.indexOf('sail') > -1 || t.indexOf('phinisi') > -1) return 'ocean';
+    return '';
+  }
+  window.tbScaleAttrs = function (p) {
+    p = p || {};
+    var tags = (p.details && p.details.tags) || p.tags || [];
+    var low = tags.map(function (t) { return String(t).toLowerCase(); });
+    var guests = parseInt((p.details && p.details.max_guests) || p.maxg || '', 10);
+    var price = parseInt(String((p.pricing_model === 'exclusive' && p.exclusive && p.exclusive.price) || p.price_from || '').replace(/[^0-9]/g, ''), 10);
+    return ' data-f="1"' +
+      ' data-fcat="' + catOf(p.type) + '"' +
+      ' data-fgeo="' + geoOf(p.country) + '"' +
+      (isFinite(guests) && guests > 0 ? ' data-fguests="' + guests + '"' : '') +
+      (isFinite(price) && price > 0 ? ' data-fprice="' + price + '"' : '') +
+      (low.indexOf('adults only') > -1 ? ' data-fadults="1"' : '') +
+      ((low.indexOf('family-friendly') > -1 || low.indexOf('family') > -1) ? ' data-ffam="1"' : '') +
+      (p.pricing_model === 'exclusive' ? ' data-fexcl="1"' : '');
+  };
+  window.tbScale = function (mountSel, items) {
+    var active = 0;
+    function dataOf(card) {
+      var ds = card.dataset || {};
+      return { cat: ds.fcat || '', geo: ds.fgeo || '', guests: parseInt(ds.fguests || '0', 10) || 0,
+               price: parseInt(ds.fprice || '0', 10) || 0, adults: ds.fadults === '1', fam: ds.ffam === '1', excl: ds.fexcl === '1' };
+    }
+    function cards() { return [].slice.call(document.querySelectorAll('.voyage[data-f]')); }
+    function wrapperOf(card) {
+      var par = card.parentElement;
+      return (par && par.querySelector('.voyage-divider') && par.children.length <= 2) ? par : card;
+    }
+    function render() {
+      var mount = document.querySelector(mountSel);
+      if (!mount) return;
+      var cs = cards();
+      mount.innerHTML = '';
+      items.forEach(function (it, idx) {
+        var n = idx === 0 ? cs.length : cs.filter(function (c) { return it.test(dataOf(c)); }).length;
+        var a = document.createElement('a');
+        a.href = '#';
+        a.className = idx === active ? 'on' : '';
+        if (idx === active) a.setAttribute('aria-current', 'true');
+        a.innerHTML = '<em>' + (n > 0 ? ('0' + n).slice(-2) : '—') + '</em>' + it.label;
+        a.onclick = function (e) {
+          e.preventDefault();
+          active = idx;
+          cards().forEach(function (c) {
+            var ok = idx === 0 || it.test(dataOf(c));
+            wrapperOf(c).style.display = ok ? '' : 'none';
+          });
+          render();
+        };
+        mount.appendChild(a);
+      });
+    }
+    render();
+    window.__tbScaleRefresh = render;
+  };
+})();

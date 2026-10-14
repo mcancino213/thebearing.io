@@ -1187,6 +1187,8 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 </div>
 
 <!-- Dynamic hotels from KV -->
+<!-- v77i: the chart scale — filter columns between hairlines -->
+<div class="tb-scale" id="voyage-scale" aria-label="Filter hotels"></div>
 <div id="dynamic-hotels" class="voyage-stack"></div>
 <!-- v74d: honest empty state shown when no dynamic hotels load. Hidden if any KV-stored hotel renders. -->
 <div id="hotels-empty-state" style="display:none;text-align:center;padding:60px 24px 40px;color:var(--bark);">
@@ -1198,6 +1200,20 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 var toastT;
 function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+// v77i: chart-scale filters (shared tbScale in bearing.js)
+function initHotelScale(){
+  if (!window.tbScale) { setTimeout(initHotelScale, 200); return; }
+  window.tbScale('#voyage-scale', [
+    { label: 'All hotels', test: function(){ return true; } },
+    { label: 'Africa', test: function(d){ return d.geo === 'africa'; } },
+    { label: 'Europe', test: function(d){ return d.geo === 'europe'; } },
+    { label: 'Asia', test: function(d){ return d.geo === 'asia'; } },
+    { label: 'Americas', test: function(d){ return d.geo === 'americas'; } },
+    { label: 'For families', test: function(d){ return d.fam; } },
+    { label: 'Adults only', test: function(d){ return d.adults; } }
+  ]);
+}
+initHotelScale();
 
 // v76l: cruises' voyage-card system; published-only; same-origin API;
 // hero photo required (no stock fallbacks); coordinates device; family badge.
@@ -1261,7 +1277,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 
       var card = document.createElement('div');
       card.innerHTML = '<div class="voyage-divider"></div>' +
-        '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
+        '<div class="voyage"' + (window.tbScaleAttrs ? window.tbScaleAttrs(p) : '') + ' onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
           '<div class="voyage-bg"><img src="' + esc(img) + '" alt="' + esc(p.name||slug) + '" loading="lazy"><div class="voyage-bg-scrim"></div></div>' +
           '<div class="voyage-content"><div class="voyage-left">' +
             '<div class="voyage-num">' + ('0' + voyageNum).slice(-2) + '</div>' +
@@ -1285,6 +1301,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
       container.appendChild(card);
       voyageNum++;
       rendered++;
+      if (window.__tbScaleRefresh) window.__tbScaleRefresh();
     });
     finish();
   })

@@ -354,3 +354,20 @@
   font-family:'Geist',sans-serif;
   font-size:.92rem; font-weight:600; color:#fff;
 }
+
+/* ── §9 THE CHART SCALE (v77i) — filter band replacing the pills ─────────────
+   Full-width columns between two hairlines on the hero's own ink: serif count
+   above, mono label below, terra rule under the active column. Shared by
+   cruises / hotels / villas so the treatment cannot drift. */
+.tb-scale{display:flex;align-items:stretch;background:var(--ink,#1e1810);border-top:1px solid rgba(255,255,255,.07);border-bottom:1px solid rgba(255,255,255,.14);overflow-x:auto;scrollbar-width:none;}
+.tb-scale::-webkit-scrollbar{display:none;}
+.tb-scale a{flex:1 1 0;min-width:118px;text-align:center;text-decoration:none;padding:18px 10px 16px;position:relative;font-family:var(--tb-mono,'Fragment Mono',monospace);font-size:.66rem;letter-spacing:.17em;text-transform:uppercase;color:rgba(255,255,255,.44);white-space:nowrap;transition:color .15s;}
+.tb-scale a + a{border-left:1px solid rgba(255,255,255,.07);}
+.tb-scale a em{display:block;font-style:normal;font-family:'Instrument Serif',serif;font-size:1.15rem;letter-spacing:0;text-transform:none;color:rgba(255,255,255,.5);margin-bottom:6px;transition:color .15s;}
+.tb-scale a:hover{color:rgba(255,255,255,.75);}
+.tb-scale a:hover em{color:#fff;}
+.tb-scale a.on{color:#e8b490;}
+.tb-scale a.on em{color:#fff;}
+.tb-scale a.on::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--terra,#b05830);}
+.tb-scale a:focus-visible{outline:2px solid var(--terra,#b05830);outline-offset:-2px;}
+@media (max-width:900px){.tb-scale a{min-width:108px;padding:15px 8px 13px;}}

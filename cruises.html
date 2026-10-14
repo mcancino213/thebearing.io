@@ -1175,22 +1175,14 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
   </div>
 </div>
 
-<!-- Filter strip -->
-<div class="voyage-filters">
-  <button class="vfpill active" onclick="vfilt(this)">All voyages</button>
-  <button class="vfpill" onclick="vfilt(this)">River cruises</button>
-  <button class="vfpill" onclick="vfilt(this)">Ocean &amp; sea</button>
-  <button class="vfpill" onclick="vfilt(this)">Expedition</button>
-  <button class="vfpill" onclick="vfilt(this)">Under 25 guests</button>
-  <button class="vfpill" onclick="vfilt(this)">Adults only</button>
-  <button class="vfpill" onclick="vfilt(this)">Under $5,000pp</button>
-</div>
+<!-- v77i: the chart scale — filter columns between hairlines, replaces the pills -->
+<div class="tb-scale" id="voyage-scale" aria-label="Filter voyages"></div>
 
 <!-- Voyage stack -->
 <div class="voyage-stack">
 
   <!-- 1: Nour El Nil -->
-  <div class="voyage" onclick="window.location='/nour-el-nil.html'">
+  <div class="voyage" data-f="1" data-fcat="river" data-fgeo="africa" data-fguests="24" data-fprice="4200" onclick="window.location='/nour-el-nil.html'">
     <div class="voyage-bg">
       <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80&fit=crop" alt="Nour El Nil">
       <div class="voyage-bg-scrim"></div>
@@ -1254,7 +1246,20 @@ body.ci-open{margin-right:clamp(320px,25vw,480px);}.ci-fab.drawer-open{right:cal
 </div>
 
 <script>
-function vfilt(el){document.querySelectorAll('.vfpill').forEach(function(p){p.classList.remove('active')});el.classList.add('active');}
+// v77i: chart-scale filters (shared tbScale in bearing.js)
+function initVoyageScale(){
+  if (!window.tbScale) { setTimeout(initVoyageScale, 200); return; }
+  window.tbScale('#voyage-scale', [
+    { label: 'All voyages', test: function(){ return true; } },
+    { label: 'River', test: function(d){ return d.cat === 'river'; } },
+    { label: 'Ocean & sea', test: function(d){ return d.cat === 'ocean'; } },
+    { label: 'Expedition', test: function(d){ return d.cat === 'expedition'; } },
+    { label: 'Under 25 guests', test: function(d){ return d.guests > 0 && d.guests < 25; } },
+    { label: 'Adults only', test: function(d){ return d.adults; } },
+    { label: 'Under $5,000 pp', test: function(d){ return d.price > 0 && d.price < 5000; } }
+  ]);
+}
+initVoyageScale();
 function tcSearch(){window.location='/search.html';}
 var toastT;function toast(msg){var el=document.getElementById('toast-el');if(!el)return;el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){el.classList.remove('show');},2800);}
 
@@ -1344,7 +1349,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 
         var card = document.createElement('div');
         card.innerHTML = '<div class="voyage-divider"></div>' +
-          '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
+          '<div class="voyage"' + (window.tbScaleAttrs ? window.tbScaleAttrs(p) : '') + ' onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
             '<div class="voyage-bg">' +
               '<img src="' + img + '" alt="' + esc(p.name||slug) + '" loading="lazy">' +
               '<div class="voyage-bg-scrim"></div>' +
@@ -1371,6 +1376,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
         container.appendChild(card);
         voyageNum++;
     });
+    if (window.__tbScaleRefresh) window.__tbScaleRefresh();
   })
   .catch(function(e){ console.log('[Cruises] KV load error:', e); });
 })();

@@ -1184,6 +1184,8 @@ body{background:var(--cream);color:var(--ink);}
 </div>
 
 <!-- Dynamic villas from KV -->
+<!-- v77i: the chart scale — filter columns between hairlines -->
+<div class="tb-scale" id="voyage-scale" aria-label="Filter villas"></div>
 <div id="dynamic-villas" class="voyage-stack"></div>
 <!-- v74d: honest empty state shown when no dynamic villas load. Hidden if any KV-stored villa renders. -->
 <div id="villas-empty-state" style="display:none;text-align:center;background:var(--ink,#1e1810);padding:70px 24px 80px;margin:0;color:rgba(255,255,255,.8);">
@@ -1202,6 +1204,20 @@ body{background:var(--cream);color:var(--ink);}
 
 <script>
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+// v77i: chart-scale filters (shared tbScale in bearing.js)
+function initVillaScale(){
+  if (!window.tbScale) { setTimeout(initVillaScale, 200); return; }
+  window.tbScale('#voyage-scale', [
+    { label: 'All villas', test: function(){ return true; } },
+    { label: 'Whole property', test: function(d){ return d.excl; } },
+    { label: 'Africa', test: function(d){ return d.geo === 'africa'; } },
+    { label: 'Europe', test: function(d){ return d.geo === 'europe'; } },
+    { label: 'Asia', test: function(d){ return d.geo === 'asia'; } },
+    { label: 'Americas', test: function(d){ return d.geo === 'americas'; } },
+    { label: 'For families', test: function(d){ return d.fam; } }
+  ]);
+}
+initVillaScale();
 // ── Dynamic Villas loader — v76o: voyage cards, published-only, same-origin,
 //    photo required, coordinates device. Fake stats + filter pills removed.
 (function(){
@@ -1264,7 +1280,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 
       var card = document.createElement('div');
       card.innerHTML = '<div class="voyage-divider"></div>' +
-        '<div class="voyage" onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
+        '<div class="voyage"' + (window.tbScaleAttrs ? window.tbScaleAttrs(p) : '') + ' onclick="window.location=\'' + href + '\'" style="cursor:pointer;">' +
           '<div class="voyage-bg"><img src="' + esc(img) + '" alt="' + esc(p.name||slug) + '" loading="lazy"><div class="voyage-bg-scrim"></div></div>' +
           '<div class="voyage-content"><div class="voyage-left">' +
             '<div class="voyage-num">' + ('0' + voyageNum).slice(-2) + '</div>' +
@@ -1288,6 +1304,7 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
       container.appendChild(card);
       voyageNum++;
       rendered++;
+      if (window.__tbScaleRefresh) window.__tbScaleRefresh();
     });
     finish();
   })
